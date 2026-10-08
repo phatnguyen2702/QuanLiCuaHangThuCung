@@ -5,198 +5,198 @@ import entity.TaiKhoan;
 import java.sql.*;
 import java.util.ArrayList;
 
-import ConnectDB.connectDB;
-
 public class TaiKhoanDAO {
 
-    public ArrayList<TaiKhoan> getAll() {
+        // =========================================================
+        // LAY TAT CA
+        // =========================================================
 
-        ArrayList<TaiKhoan> list =
-                new ArrayList<>();
+        public ArrayList<TaiKhoan> getAll() {
 
-        String sql = """
-                SELECT maNhanVien,
-                       hoTen,
-                       matKhau,
-                       vaiTro,
-                       trangThai
-                FROM NhanVien
-                ORDER BY maNhanVien
-                """;
+                ArrayList<TaiKhoan> list = new ArrayList<>();
 
-        try (
-            Connection con =connectDB.getConnection();
+                String sql = "SELECT maNhanVien, hoTen, "
+                                + "soDienThoai, email, matKhau, "
+                                + "gioiTinh, vaiTro "
+                                + "FROM NhanVien "
+                                + "ORDER BY maNhanVien";
 
-            PreparedStatement ps =
-                    con.prepareStatement(sql);
+                try (
+                                Connection con = ConnectDB.connectDB.getConnection();
 
-            ResultSet rs =
-                    ps.executeQuery()
-        ) {
+                                PreparedStatement ps = con.prepareStatement(sql);
 
-            while (rs.next()) {
+                                ResultSet rs = ps.executeQuery()) {
 
-                TaiKhoan tk = new TaiKhoan();
+                        while (rs.next()) {
 
-                tk.setMaNhanVien(
-                        rs.getString("maNhanVien")
-                );
+                                TaiKhoan tk = new TaiKhoan(
+                                                rs.getString(
+                                                                "maNhanVien"),
+                                                rs.getString(
+                                                                "hoTen"),
+                                                rs.getString(
+                                                                "soDienThoai"),
+                                                rs.getString(
+                                                                "email"),
+                                                rs.getString(
+                                                                "matKhau"),
+                                                rs.getString(
+                                                                "gioiTinh"),
+                                                rs.getString(
+                                                                "vaiTro"));
 
-                tk.setHoTen(
-                        rs.getString("hoTen")
-                );
+                                list.add(tk);
+                        }
 
-                tk.setMatKhau(
-                        rs.getString("matKhau")
-                );
+                } catch (SQLException e) {
 
-                tk.setVaiTro(
-                        rs.getString("vaiTro")
-                );
+                        e.printStackTrace();
+                }
 
-                tk.setTrangThai(
-                        rs.getBoolean("trangThai")
-                );
-
-                list.add(tk);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+                return list;
         }
 
-        return list;
-    }
+        // =========================================================
+        // THEM
+        // =========================================================
 
-    public boolean them(TaiKhoan tk) {
+        public boolean them(
+                        TaiKhoan tk) {
 
-        String sql = """
-                INSERT INTO NhanVien
-                (
-                    maNhanVien,
-                    hoTen,
-                    matKhau,
-                    vaiTro,
-                    trangThai
-                )
-                VALUES (?, ?, ?, ?, ?)
-                """;
+                String sql = "INSERT INTO NhanVien "
+                                + "(maNhanVien, hoTen, soDienThoai, "
+                                + "email, matKhau, gioiTinh, vaiTro) "
+                                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (
-            Connection con =
-            		connectDB.getConnection();
+                try (
+                                Connection con = ConnectDB.connectDB.getConnection();
 
-            PreparedStatement ps =
-                    con.prepareStatement(sql)
-        ) {
+                                PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(
-                    1,
-                    tk.getMaNhanVien()
-            );
+                        ps.setString(
+                                        1,
+                                        tk.getMaNhanVien());
 
-            ps.setString(
-                    2,
-                    tk.getHoTen()
-            );
+                        ps.setString(
+                                        2,
+                                        tk.getHoTen());
 
-            ps.setString(
-                    3,
-                    tk.getMatKhau()
-            );
+                        ps.setString(
+                                        3,
+                                        tk.getSoDienThoai());
 
-            ps.setString(
-                    4,
-                    tk.getVaiTro()
-            );
+                        ps.setString(
+                                        4,
+                                        tk.getEmail());
 
-            ps.setBoolean(
-                    5,
-                    tk.isTrangThai()
-            );
+                        ps.setString(
+                                        5,
+                                        tk.getMatKhau());
 
-            return ps.executeUpdate() > 0;
+                        ps.setString(
+                                        6,
+                                        tk.getGioiTinh());
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+                        ps.setString(
+                                        7,
+                                        tk.getVaiTro());
+
+                        return ps.executeUpdate() > 0;
+
+                } catch (SQLException e) {
+
+                        e.printStackTrace();
+
+                        return false;
+                }
         }
-    }
 
-    public boolean sua(TaiKhoan tk) {
+        // =========================================================
+        // SUA
+        // =========================================================
 
-        String sql = """
-                UPDATE NhanVien
-                SET hoTen = ?,
-                    matKhau = ?,
-                    vaiTro = ?,
-                    trangThai = ?
-                WHERE maNhanVien = ?
-                """;
+        public boolean sua(
+                        TaiKhoan tk) {
 
-        try (
-            Connection con =
-            		connectDB.getConnection();
+                String sql = "UPDATE NhanVien SET "
+                                + "hoTen = ?, "
+                                + "soDienThoai = ?, "
+                                + "email = ?, "
+                                + "matKhau = ?, "
+                                + "gioiTinh = ?, "
+                                + "vaiTro = ? "
+                                + "WHERE maNhanVien = ?";
 
-            PreparedStatement ps =
-                    con.prepareStatement(sql)
-        ) {
+                try (
+                                Connection con = ConnectDB.connectDB.getConnection();
 
-            ps.setString(
-                    1,
-                    tk.getHoTen()
-            );
+                                PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(
-                    2,
-                    tk.getMatKhau()
-            );
+                        ps.setString(
+                                        1,
+                                        tk.getHoTen());
 
-            ps.setString(
-                    3,
-                    tk.getVaiTro()
-            );
+                        ps.setString(
+                                        2,
+                                        tk.getSoDienThoai());
 
-            ps.setBoolean(
-                    4,
-                    tk.isTrangThai()
-            );
+                        ps.setString(
+                                        3,
+                                        tk.getEmail());
 
-            ps.setString(
-                    5,
-                    tk.getMaNhanVien()
-            );
+                        ps.setString(
+                                        4,
+                                        tk.getMatKhau());
 
-            return ps.executeUpdate() > 0;
+                        ps.setString(
+                                        5,
+                                        tk.getGioiTinh());
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+                        ps.setString(
+                                        6,
+                                        tk.getVaiTro());
+
+                        ps.setString(
+                                        7,
+                                        tk.getMaNhanVien());
+
+                        return ps.executeUpdate() > 0;
+
+                } catch (SQLException e) {
+
+                        e.printStackTrace();
+
+                        return false;
+                }
         }
-    }
 
-    public boolean xoa(String maNhanVien) {
+        // =========================================================
+        // XOA
+        // =========================================================
 
-        String sql = """
-                DELETE FROM NhanVien
-                WHERE maNhanVien = ?
-                """;
+        public boolean xoa(
+                        String maNhanVien) {
 
-        try (
-            Connection con =
-            		connectDB.getConnection();
+                String sql = "DELETE FROM NhanVien "
+                                + "WHERE maNhanVien = ?";
 
-            PreparedStatement ps =
-                    con.prepareStatement(sql)
-        ) {
+                try (
+                                Connection con = ConnectDB.connectDB.getConnection();
 
-            ps.setString(1, maNhanVien);
+                                PreparedStatement ps = con.prepareStatement(sql)) {
 
-            return ps.executeUpdate() > 0;
+                        ps.setString(
+                                        1,
+                                        maNhanVien);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+                        return ps.executeUpdate() > 0;
+
+                } catch (SQLException e) {
+
+                        e.printStackTrace();
+
+                        return false;
+                }
         }
-    }
 }
