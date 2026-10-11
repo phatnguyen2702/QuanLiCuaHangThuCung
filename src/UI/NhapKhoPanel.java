@@ -1,5 +1,7 @@
 package UI;
 
+import UI.TrangChu.PhienLamViec;
+import UI.TrangChu.UIStyle;
 import dao.NhapKhoDAO;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
@@ -28,7 +30,7 @@ public class NhapKhoPanel extends JPanel {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ---- thong tin phieu ----
-    private final JTextField txtMaPhieu = UIStyle.oChiDoc("");
+    private final JTextField txtMaPhieu = UIStyle.o(10);   // tu nhap, de trong
     private final JTextField txtNgayNhap = UIStyle.oChiDoc("");
     private final JTextField txtNhanVien = UIStyle.oChiDoc(PhienLamViec.hoTen);
     private final JComboBox<NhaCungCap> cboNhaCungCap = new JComboBox<>();
@@ -226,11 +228,7 @@ public class NhapKhoPanel extends JPanel {
 
     private void phieuMoi() {
 
-        try {
-            txtMaPhieu.setText(dao.taoMaMoi());
-        } catch (SQLException ex) {
-            UIStyle.loi(this, ex);
-        }
+        txtMaPhieu.setText("");
 
         ngayNhap = LocalDateTime.now();
         txtNgayNhap.setText(ngayNhap.format(DINH_DANG_NGAY));
@@ -410,18 +408,31 @@ public class NhapKhoPanel extends JPanel {
             return;
         }
 
+        String maPhieu = txtMaPhieu.getText().trim();
+
+        if (maPhieu.isEmpty()) {
+            UIStyle.canhBao(this, "Vui lòng nhập mã phiếu.");
+            txtMaPhieu.requestFocusInWindow();
+            return;
+        }
+
+        if (maPhieu.length() > 10) {
+            UIStyle.canhBao(this, "Mã phiếu tối đa 10 ký tự.");
+            return;
+        }
+
         if (dong.isEmpty()) {
             UIStyle.canhBao(this, "Phiếu chưa có mặt hàng nào.");
             return;
         }
 
         if (hoanTat && !UIStyle.xacNhan(this,
-                "Hoàn tất nhập kho phiếu " + txtMaPhieu.getText() + "?")) {
+                "Hoàn tất nhập kho phiếu " + maPhieu + "?")) {
             return;
         }
 
         PhieuNhapKho phieu = new PhieuNhapKho(
-                txtMaPhieu.getText(),
+                maPhieu,
                 ngayNhap,
                 hoanTat,
                 PhienLamViec.maNV,

@@ -1,5 +1,7 @@
 package UI;
 
+import UI.TrangChu.PhienLamViec;
+import UI.TrangChu.UIStyle;
 import dao.SanPhamDAO;
 import entity.DanhMuc;
 import entity.NhaCungCap;
@@ -236,7 +238,7 @@ public class SanPhamPanel extends JPanel {
             SanPhamDialog dlg = new SanPhamDialog(
                     SwingUtilities.getWindowAncestor(this),
                     sp,
-                    sp == null ? dao.taoMaMoi() : null,
+                    sp == null ? "" : null,   // them moi: ma de trong, nguoi dung tu nhap
                     dsDanhMuc, dsNcc);
             dlg.setVisible(true);
 

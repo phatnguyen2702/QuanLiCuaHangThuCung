@@ -1,5 +1,7 @@
 package UI;
 
+import UI.TrangChu.PhienLamViec;
+import UI.TrangChu.UIStyle;
 import dao.DanhMucDAO;
 import entity.DanhMuc;
 import entity.SanPham;
@@ -175,18 +177,14 @@ public class DanhMucPanel extends JPanel {
 
     private void them() {
 
-        try {
-            DanhMucDialog dlg = new DanhMucDialog(
-                    SwingUtilities.getWindowAncestor(this),
-                    null, dao.taoMaMoi());
-            dlg.setVisible(true);
+        // Ma danh muc de trong: nguoi dung tu nhap
+        DanhMucDialog dlg = new DanhMucDialog(
+                SwingUtilities.getWindowAncestor(this),
+                null, "");
+        dlg.setVisible(true);
 
-            if (dlg.isDaLuu()) {
-                napLai();
-            }
-
-        } catch (SQLException ex) {
-            UIStyle.loi(this, ex);
+        if (dlg.isDaLuu()) {
+            napLai();
         }
     }
 

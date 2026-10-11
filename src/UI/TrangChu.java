@@ -1,1097 +1,931 @@
 package UI;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Supplier;
 
+/**
+ * KHUNG CHINH cua Pet Shop Pro.
+ *
+ * - Thanh menu "PET SHOP PRO" nam co dinh o tren cung, KHONG bi mo lai.
+ * - Vung noi dung ben duoi doi bang CardLayout (Trang chu, Kho, Spa, Hoa don,
+ *   He thong...) nen bam menu chi doi phan man hinh ben trong, khong nhay
+ *   cua so moi. Muc dang chon duoc to sang tren thanh menu.
+ * - Moi man hinh duoc tao lan dau khi mo, lan sau chi hien lai.
+ *
+ * Hai lop tien ich dung chung cho cac man hinh (UIStyle, PhienLamViec)
+ * duoc dat ngay trong file nay (cac panel import UI.TrangChu.UIStyle).
+ */
 public class TrangChu extends JFrame {
 
-        // =========================================================
-        // MAU GIAO DIEN
-        // =========================================================
+    private static final String[] TEN_TAB =
+            {"Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho"};
 
-        private final Color NAVY = new Color(18, 48, 82);
-        private final Color LIGHT_BLUE = new Color(229, 241, 252);
-        private final Color MENU_BLUE = new Color(207, 222, 235);
-        private final Color BG = new Color(245, 247, 250);
-        private final Color GREEN = new Color(72, 196, 62);
-        private final Color RED = new Color(210, 70, 70);
+    private static final DateTimeFormatter DINH_DANG_GIO =
+            DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy");
 
-        // =========================================================
-        // THONG TIN NHAN VIEN DANG DANG NHAP
-        // =========================================================
+    // =========================
+    // MAU SAC
+    // =========================
+    private final Color LIGHT_BLUE = UIStyle.LIGHT_BLUE;
+    private final Color MENU_BLUE = UIStyle.MENU_BLUE;
 
-        private String maNV;
-        private String hoTen;
-        private String vaiTro;
+    // =========================
+    // THONG TIN NHAN VIEN
+    // =========================
+    private String maNV;
+    private String hoTen;
+    private String vaiTro;
 
-        // =========================================================
-        // CARD LAYOUT
-        // =========================================================
+    // =========================
+    // KHUNG + NOI DUNG DOI THEO CARD
+    // =========================
+    private final CardLayout card = new CardLayout();
+    private final JPanel noiDung = new JPanel(card);
 
-        private CardLayout cardLayout;
-        private JPanel contentPanel;
+    private JLabel lbNgayTrangChu;            // dong ho tren man hinh Trang chu
 
-        // =========================================================
-        // CAC MAN HINH
-        // =========================================================
+    // Cac muc co man hinh rieng tren thanh menu (de to sang muc dang chon)
+    private JButton btnTrangChu;
+    private JButton btnKho;
+    private JButton btnSpa;
+    private JButton btnHoaDon;
+    private JButton btnHeThong;
+    private final ArrayList<JButton> nutMucChinh = new ArrayList<>();
 
-        private QuanLyTaiKhoan quanLyTaiKhoan;
-        private QuanLyCaLam quanLyCaLam;
-        private QuanLyPhanCa quanLyPhanCa;
-        private QuanLyLichHen quanLyLichHen;
-        private QuanLyThuCung quanLyThuCung;
-        private QuanLyPhieuDichVu quanLyPhieuDichVu;
-        private TraCuuHoaDon traCuuHoaDon;
-        private QuanLyThanhToan quanLyThanhToan;
-        private final ManHinhKho[] manHinhKho = new ManHinhKho[4];
-        private final JButton[] nutTabKho = new JButton[4];
-        private CardLayout khoCardLayout;
-        private JPanel khoContentPanel;
-        // =========================================================
-        // CONSTRUCTOR
-        // =========================================================
+    // 4 man hinh Kho: tao lan dau khi mo, lan sau chi nap lai du lieu
+    private final JPanel[] manHinh = new JPanel[TEN_TAB.length];
+    private final Runnable[] napLai = new Runnable[TEN_TAB.length];
 
-        public TrangChu(
-                        String maNV,
-                        String hoTen,
-                        String vaiTro) {
+    // Cac man hinh khac (lich hen, thu cung, hoa don, ca lam...): tao lan dau khi mo
+    private final Map<String, Component> manHinhKhac = new HashMap<>();
+    private TraCuuHoaDon traCuuHoaDon;
 
-                this.maNV = maNV;
-                this.hoTen = hoTen;
-                this.vaiTro = vaiTro;
+    private final javax.swing.Timer dongHo;
 
-                // =====================================================
-                // CAU HINH FRAME
-                // =====================================================
+    // =========================
+    // CONSTRUCTOR
+    // =========================
+    public TrangChu(String maNV, String hoTen, String vaiTro) {
 
-                setTitle("Pet Shop Pro - Trang chu");
+        this.maNV = maNV;
+        this.hoTen = hoTen;
+        this.vaiTro = vaiTro;
 
-                setSize(1200, 720);
+        PhienLamViec.dat(maNV, hoTen, vaiTro);
 
-                setLocationRelativeTo(null);
+        setTitle("Pet Shop Pro - Trang chủ");
+        setSize(1200, 720);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                setDefaultCloseOperation(
-                                JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-                setResizable(false);
+        // HEADER: dung yen, khong bao gio bi tao lai
+        add(taoHeader(), BorderLayout.NORTH);
 
-                setLayout(new BorderLayout());
+        // VUNG DUOI HEADER: noi dung doi theo card (sat ngay duoi thanh menu)
+        noiDung.setBackground(LIGHT_BLUE);
+        noiDung.add(createMainContent(), "trangchu");
 
-                // =====================================================
-                // HEADER
-                // =====================================================
+        add(noiDung, BorderLayout.CENTER);
 
-                add(
-                                createHeader(),
-                                BorderLayout.NORTH);
+        dongHo = new javax.swing.Timer(1000, e -> capNhatGio());
+        dongHo.start();
+        capNhatGio();
 
-                // =====================================================
-                // CARD LAYOUT
-                // =====================================================
+        hienTrangChu();
+    }
 
-                cardLayout = new CardLayout();
+    @Override
+    public void dispose() {
+        dongHo.stop();
+        super.dispose();
+    }
 
-                contentPanel = new JPanel(
-                                cardLayout);
+    // =========================================================
+    // CHUYEN MAN HINH (chi doi noi dung ben trong)
+    // =========================================================
 
-                contentPanel.setBackground(BG);
+    private void hienTrangChu() {
 
-                // =====================================================
-                // TRANG CHU
-                // =====================================================
+        card.show(noiDung, "trangchu");
+        datMucDangChon(btnTrangChu);
+        setTitle("Pet Shop Pro - Trang chủ");
+    }
 
-                contentPanel.add(
-                                createMainContent(),
-                                "TRANG_CHU");
+    /** tab: 0 Danh muc, 1 San pham, 2 Nhap kho, 3 Kiem ke kho. */
+    public void chuyenKho(int tab) {
 
-                quanLyTaiKhoan = new QuanLyTaiKhoan();
+        if (tab < 0 || tab >= TEN_TAB.length) {
+            tab = 0;
+        }
 
-                contentPanel.add(
-                                quanLyTaiKhoan,
-                                "TAI_KHOAN");
+        boolean laLanDau = manHinh[tab] == null;
 
-                quanLyCaLam = new QuanLyCaLam();
+        if (laLanDau) {
+            taoManHinh(tab);
+            noiDung.add(manHinh[tab], "tab" + tab);
+        }
 
-                contentPanel.add(
-                                quanLyCaLam,
-                                "CA_LAM");
+        card.show(noiDung, "tab" + tab);
+        datMucDangChon(btnKho);
+        setTitle("Pet Shop Pro - Kho & Danh mục - " + TEN_TAB[tab]);
 
-                quanLyPhanCa = new QuanLyPhanCa();
+        // Lan dau da tu nap du lieu trong constructor cua panel
+        if (!laLanDau) {
+            napLai[tab].run();
+        }
 
-                contentPanel.add(
-                                quanLyPhanCa,
-                                "PHAN_CA");
-                quanLyLichHen = new QuanLyLichHen();
-                contentPanel.add(quanLyLichHen, "LICH_HEN");
+        noiDung.revalidate();
+        noiDung.repaint();
+    }
 
-                quanLyThuCung = new QuanLyThuCung();
-                contentPanel.add(quanLyThuCung, "THU_CUNG");
+    private void taoManHinh(int tab) {
 
-                quanLyPhieuDichVu = new QuanLyPhieuDichVu();
-                contentPanel.add(quanLyPhieuDichVu, "PHIEU_DICH_VU");
-                contentPanel.add(taoManHinhKho(), "KHO");
+        switch (tab) {
+            case 0 -> {
+                DanhMucPanel p = new DanhMucPanel();
+                manHinh[tab] = p;
+                napLai[tab] = p::napLai;
+            }
+            case 1 -> {
+                SanPhamPanel p = new SanPhamPanel();
+                manHinh[tab] = p;
+                napLai[tab] = p::napLai;
+            }
+            case 2 -> {
+                NhapKhoPanel p = new NhapKhoPanel();
+                manHinh[tab] = p;
+                napLai[tab] = p::napLai;
+            }
+            default -> {
+                KiemKePanel p = new KiemKePanel();
+                manHinh[tab] = p;
+                napLai[tab] = p::napLai;
+            }
+        }
+    }
 
-                // =====================================================
-                // ADD CONTENT
-                // =====================================================
+    /** Hien mot man hinh khac (tao lan dau khi mo) va to sang muc menu tuong ung. */
+    private void hienManHinh(String khoa, String tieuDe, JButton muc,
+                             Supplier<? extends Component> tao) {
 
-                add(
-                                contentPanel,
-                                BorderLayout.CENTER);
+        Component c = manHinhKhac.get(khoa);
 
-                // =====================================================
-                // MAC DINH HIEN TRANG CHU
-                // =====================================================
+        if (c == null) {
+            c = tao.get();
+            manHinhKhac.put(khoa, c);
+            noiDung.add(c, khoa);
+        }
 
-                hienTrangChu();
+        card.show(noiDung, khoa);
+        datMucDangChon(muc);
+        setTitle("Pet Shop Pro - " + tieuDe);
+
+        noiDung.revalidate();
+        noiDung.repaint();
+    }
+
+    private void moLichHen() {
+        hienManHinh("lichhen", "Lịch hẹn Spa", btnSpa, QuanLyLichHen::new);
+    }
+
+    private void moThuCung() {
+        hienManHinh("thucung", "Thú cưng", btnSpa, QuanLyThuCung::new);
+    }
+
+    private void moPhieuDichVu() {
+        hienManHinh("phieudv", "Phiếu dịch vụ", btnSpa, QuanLyPhieuDichVu::new);
+    }
+
+    private void moTraCuuHoaDon() {
+        hienManHinh("hoadon", "Hóa đơn", btnHoaDon,
+                () -> traCuuHoaDon = new TraCuuHoaDon());
+        traCuuHoaDon.hienDanhSach();
+    }
+
+    private void moThanhToan() {
+        hienManHinh("thanhtoan", "Thanh toán", btnHoaDon,
+                () -> new QuanLyThanhToan(maNV));
+    }
+
+    private void moQuanLyTaiKhoan() {
+        hienManHinh("taikhoan", "Quản lý tài khoản", btnHeThong,
+                QuanLyTaiKhoan::new);
+    }
+
+    private void moQuanLyPhanCa() {
+        hienManHinh("phanca", "Quản lý phân ca", btnHeThong, QuanLyPhanCa::new);
+    }
+
+    private void moQuanLyCaLam() {
+        hienManHinh("calam", "Quản lý ca làm", btnHeThong, QuanLyCaLam::new);
+    }
+
+    private void datMucDangChon(JButton dangChon) {
+        for (JButton b : nutMucChinh) {
+            b.setBackground(b == dangChon ? UIStyle.ACTIVE_BLUE : UIStyle.NAVY);
+        }
+    }
+
+    // =========================================================
+    // DONG HO (chi hien tren man hinh Trang chu)
+    // =========================================================
+
+    private void capNhatGio() {
+
+        String gio = LocalDateTime.now().format(DINH_DANG_GIO);
+
+        if (lbNgayTrangChu != null) {
+            lbNgayTrangChu.setText("▣  " + gio);
+        }
+    }
+
+    // =========================================================
+    // HEADER "PET SHOP PRO" (thanh menu tren cung)
+    // =========================================================
+
+    private JPanel taoHeader() {
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(UIStyle.NAVY);
+        header.setBorder(new EmptyBorder(5, 18, 5, 18));
+
+        JPanel menu = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        menu.setOpaque(false);
+
+        JLabel logo = new JLabel("PET SHOP PRO");
+        logo.setForeground(Color.WHITE);
+        logo.setFont(UIStyle.font(Font.BOLD, 16));
+        menu.add(logo);
+
+        btnTrangChu = nutMenu("Trang chủ", e -> hienTrangChu());
+        menu.add(btnTrangChu);
+
+        btnKho = nutMenu("Kho & Danh mục",
+                e -> popupKho((JButton) e.getSource()));
+        menu.add(btnKho);
+
+        btnSpa = nutMenu("Spa & Lịch hẹn",
+                e -> popupSpa((JButton) e.getSource()));
+        menu.add(btnSpa);
+
+        btnHoaDon = nutMenu("Hóa Đơn",
+                e -> popupHoaDon((JButton) e.getSource()));
+        menu.add(btnHoaDon);
+
+        menu.add(nutMenu("Báo cáo",
+                e -> popupChuaCo((JButton) e.getSource(),
+                        "Theo ngày", "Theo tháng", "Theo năm")));
+
+        btnHeThong = nutMenu("Hệ thống",
+                e -> popupHeThong((JButton) e.getSource()));
+        menu.add(btnHeThong);
+
+        menu.add(nutMenu("Cài đặt",
+                e -> hienThongBao("Cài đặt")));
+
+        nutMucChinh.add(btnTrangChu);
+        nutMucChinh.add(btnKho);
+        nutMucChinh.add(btnSpa);
+        nutMucChinh.add(btnHoaDon);
+        nutMucChinh.add(btnHeThong);
+
+        header.add(menu, BorderLayout.WEST);
+
+        JButton btnNhanVien = nutMenu(PhienLamViec.hoTen + "  ●",
+                e -> hienThongTinNhanVien((JButton) e.getSource()));
+
+        header.add(btnNhanVien, BorderLayout.EAST);
+
+        return header;
+    }
+
+    private JButton nutMenu(String text, ActionListener hanhDong) {
+
+        JButton b = new JButton(text);
+
+        b.setForeground(Color.WHITE);
+        b.setBackground(UIStyle.NAVY);
+        b.setOpaque(true);
+        b.setContentAreaFilled(true);
+        b.setFont(UIStyle.font(Font.BOLD, 12));
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.addActionListener(hanhDong);
+
+        return b;
+    }
+
+    private void themMuc(JPopupMenu popup, String ten, ActionListener hanhDong) {
+        JMenuItem item = new JMenuItem(ten);
+        item.addActionListener(hanhDong);
+        popup.add(item);
+    }
+
+    private void popupKho(JButton nguon) {
+
+        JPopupMenu popup = new JPopupMenu();
+
+        for (int i = 0; i < TEN_TAB.length; i++) {
+            final int tab = i;
+            themMuc(popup, TEN_TAB[i], e -> chuyenKho(tab));
+        }
+
+        popup.show(nguon, 0, nguon.getHeight());
+    }
+
+    private void popupSpa(JButton nguon) {
+
+        JPopupMenu popup = new JPopupMenu();
+
+        themMuc(popup, "Lịch hẹn", e -> moLichHen());
+        themMuc(popup, "Thú cưng", e -> moThuCung());
+        themMuc(popup, "Khách hàng", e -> hienChuaCo("Khách hàng"));
+        themMuc(popup, "Phiếu dịch vụ", e -> moPhieuDichVu());
+
+        popup.show(nguon, 0, nguon.getHeight());
+    }
+
+    private void popupHoaDon(JButton nguon) {
+
+        JPopupMenu popup = new JPopupMenu();
+
+        themMuc(popup, "Hóa đơn", e -> moTraCuuHoaDon());
+        themMuc(popup, "Thanh toán", e -> moThanhToan());
+
+        popup.show(nguon, 0, nguon.getHeight());
+    }
+
+    // Cac muc chua co giao dien
+    private void popupChuaCo(JButton nguon, String... muc) {
+
+        JPopupMenu popup = new JPopupMenu();
+
+        for (String m : muc) {
+            themMuc(popup, m, e -> hienChuaCo(m));
+        }
+
+        popup.show(nguon, 0, nguon.getHeight());
+    }
+
+    private void popupHeThong(JButton nguon) {
+
+        JPopupMenu popup = new JPopupMenu();
+
+        themMuc(popup, "Quản lý tài khoản", e -> moQuanLyTaiKhoan());
+        themMuc(popup, "Quản lý phân ca", e -> moQuanLyPhanCa());
+        popup.addSeparator();
+        themMuc(popup, "Quản lý ca làm", e -> moQuanLyCaLam());
+
+        popup.show(nguon, 0, nguon.getHeight());
+    }
+
+    private void hienThongTinNhanVien(JButton nguon) {
+
+        JPopupMenu popup = new JPopupMenu();
+
+        JPanel info = new JPanel(new GridLayout(0, 2, 15, 8));
+        info.setBorder(new EmptyBorder(12, 12, 12, 12));
+
+        themThongTin(info, "Mã NV", PhienLamViec.maNV);
+        themThongTin(info, "Họ tên", PhienLamViec.hoTen);
+        themThongTin(info, "Vai trò", PhienLamViec.vaiTro);
+        themThongTin(info, "Trạng thái", "Đang hoạt động");
+
+        popup.add(info);
+        popup.addSeparator();
+
+        JMenuItem dangXuat = new JMenuItem("Đăng xuất");
+        dangXuat.addActionListener(e -> dangXuat());
+        popup.add(dangXuat);
+
+        popup.show(nguon,
+                -popup.getPreferredSize().width + nguon.getWidth(),
+                nguon.getHeight());
+    }
+
+    private void themThongTin(JPanel panel, String nhan, String giaTri) {
+        JLabel lb = new JLabel(nhan);
+        lb.setFont(UIStyle.font(Font.BOLD, 12));
+        panel.add(lb);
+        panel.add(new JLabel(giaTri));
+    }
+
+    private void dangXuat() {
+        dispose();
+        new DangNhap().setVisible(true);
+    }
+
+    // =========================================================
+    // NOI DUNG TRANG CHU
+    // =========================================================
+
+    private JPanel createMainContent() {
+
+        JPanel main = new JPanel(new BorderLayout());
+        main.setBackground(LIGHT_BLUE);
+
+        main.add(createTitleBar(), BorderLayout.NORTH);
+
+        JPanel center = new JPanel(new GridLayout(1, 2, 20, 0));
+        center.setBackground(LIGHT_BLUE);
+        center.setBorder(new EmptyBorder(20, 30, 30, 30));
+
+        center.add(createIntroduction());
+        center.add(createQuickAccess());
+
+        main.add(center, BorderLayout.CENTER);
+
+        return main;
+    }
+
+    // =========================================================
+    // THANH TIEU DE
+    // =========================================================
+
+    private JPanel createTitleBar() {
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(UIStyle.BAR);
+        panel.setBorder(new EmptyBorder(10, 25, 10, 25));
+
+        JLabel date = new JLabel("▣  " + LocalDateTime.now().format(DINH_DANG_GIO));
+        lbNgayTrangChu = date;
+        date.setFont(UIStyle.font(Font.BOLD, 12));
+
+        JLabel title = new JLabel("TRANG CHỦ", SwingConstants.CENTER);
+        title.setFont(UIStyle.font(Font.BOLD, 25));
+
+        panel.add(date, BorderLayout.WEST);
+        panel.add(title, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    // =========================================================
+    // ANH GIOI THIEU
+    // =========================================================
+
+    private JPanel createIntroduction() {
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(null);
+
+        try {
+            ImageIcon icon = new ImageIcon(
+                    getClass().getResource("/img/giothieutrangchu.png"));
+
+            Image anh = icon.getImage().getScaledInstance(
+                    550, 510, Image.SCALE_SMOOTH);
+
+            JLabel imageLabel = new JLabel(new ImageIcon(anh));
+            imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            imageLabel.setVerticalAlignment(SwingConstants.CENTER);
+
+            panel.add(imageLabel, BorderLayout.CENTER);
+
+        } catch (Exception e) {
+            JLabel loi = new JLabel("Không tìm thấy ảnh giới thiệu",
+                    SwingConstants.CENTER);
+            loi.setForeground(UIStyle.RED);
+            loi.setFont(UIStyle.font(Font.BOLD, 14));
+            panel.add(loi, BorderLayout.CENTER);
+        }
+
+        return panel;
+    }
+
+    // =========================================================
+    // TRUY CAP NHANH
+    // =========================================================
+
+    private JPanel createQuickAccess() {
+
+        JPanel panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        JLabel title = new JLabel("TRUY CẬP NHANH");
+        title.setFont(UIStyle.font(Font.BOLD, 18));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        panel.add(title);
+        panel.add(Box.createVerticalStrut(15));
+
+        addQuickButton(panel, "Thanh toán", "F4", this::moThanhToan);
+        addQuickButton(panel, "Quản lý lịch hẹn Spa", "F5", this::moLichHen);
+        addQuickButton(panel, "Quản lý sản phẩm", "F6", () -> chuyenKho(1));
+        addQuickButton(panel, "Quản lý khách hàng", "F7",
+                () -> hienChuaCo("Quản lý khách hàng"));
+        addQuickButton(panel, "Báo cáo doanh thu", "F8",
+                () -> hienChuaCo("Báo cáo doanh thu"));
+
+        return panel;
+    }
+
+    // =========================================================
+    // BUTTON TRUY CAP NHANH (bam chuot hoac phim tat)
+    // =========================================================
+
+    private void addQuickButton(
+            JPanel parent,
+            String text,
+            String shortcut,
+            Runnable hanhDong
+    ) {
+
+        JPanel row = new JPanel(new BorderLayout());
+        row.setBackground(MENU_BLUE);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+
+        JButton button = new JButton(text);
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setFont(UIStyle.font(Font.PLAIN, 14));
+        button.setBackground(MENU_BLUE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.addActionListener(e -> hanhDong.run());
+
+        // Phim tat (F4...F8) hoat dong o moi man hinh
+        String khoa = "truycapnhanh-" + shortcut;
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(shortcut), khoa);
+        getRootPane().getActionMap().put(khoa, new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                hanhDong.run();
+            }
+        });
+
+        JLabel key = new JLabel(shortcut);
+        key.setFont(UIStyle.font(Font.BOLD, 14));
+        key.setBorder(new EmptyBorder(0, 0, 0, 10));
+
+        row.add(button, BorderLayout.CENTER);
+        row.add(key, BorderLayout.EAST);
+
+        parent.add(row);
+        parent.add(Box.createVerticalStrut(5));
+    }
+
+    // =========================================================
+    // THONG BAO
+    // =========================================================
+
+    private void hienThongBao(String tenChucNang) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Bạn đang mở chức năng: " + tenChucNang,
+                "Pet Shop Pro",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    private void hienChuaCo(String tenChucNang) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Chức năng \"" + tenChucNang + "\" chưa có giao diện.",
+                "Pet Shop Pro",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    // =========================================================
+    // PHIEN LAM VIEC (nhan vien dang dang nhap, dung chung)
+    // =========================================================
+
+    public static final class PhienLamViec {
+
+        public static String maNV = "NV001";
+        public static String hoTen = "Đặng Đình An";
+        public static String vaiTro = "Quản lý";
+
+        private PhienLamViec() {
+        }
+
+        public static void dat(String ma, String ten, String role) {
+            maNV = ma;
+            hoTen = ten;
+            vaiTro = role;
+        }
+    }
+
+    // =========================================================
+    // MAU SAC, FONT, THANH PHAN DUNG CHUNG (lay tu giao dien Pet Shop Pro)
+    // =========================================================
+
+    public static final class UIStyle {
+
+        public static final Color NAVY = new Color(18, 48, 82);
+        public static final Color LIGHT_BLUE = new Color(229, 241, 252);
+        public static final Color MENU_BLUE = new Color(207, 222, 235);
+        public static final Color ACTIVE_BLUE = new Color(169, 194, 218);
+        public static final Color GREEN = new Color(72, 196, 62);
+        public static final Color RED = new Color(200, 40, 40);
+        public static final Color LINE = new Color(210, 218, 226);
+        public static final Color BAR = new Color(247, 249, 251);
+        public static final Color READONLY = new Color(235, 235, 235);
+
+        private UIStyle() {
         }
 
         // =========================================================
-        // HEADER - MENU CHUNG
+        // FONT + DINH DANG
         // =========================================================
 
-        private JPanel createHeader() {
+        public static Font font(int style, int size) {
+            return new Font("Segoe UI", style, size);
+        }
 
-                JPanel header = new JPanel(
-                                new BorderLayout());
+        private static final DecimalFormat DINH_DANG_TIEN;
 
-                header.setBackground(NAVY);
+        static {
+            DecimalFormatSymbols s = new DecimalFormatSymbols(Locale.US);
+            s.setGroupingSeparator('.');
+            DINH_DANG_TIEN = new DecimalFormat("#,##0", s);
+        }
 
-                header.setBorder(
-                                new EmptyBorder(
-                                                5,
-                                                18,
-                                                5,
-                                                18));
+        public static String tien(double v) {
+            return DINH_DANG_TIEN.format(v) + " ₫";
+        }
 
-                // =====================================================
-                // MENU BEN TRAI
-                // =====================================================
-
-                JPanel menu = new JPanel(
-                                new FlowLayout(
-                                                FlowLayout.LEFT,
-                                                5,
-                                                8));
-
-                menu.setOpaque(false);
-
-                // =====================================================
-                // LOGO
-                // =====================================================
-
-                JLabel logo = new JLabel(
-                                "PET SHOP PRO");
-
-                logo.setForeground(
-                                Color.WHITE);
-
-                logo.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                16));
-
-                logo.setBorder(
-                                new EmptyBorder(
-                                                0,
-                                                5,
-                                                0,
-                                                10));
-
-                menu.add(logo);
-
-                // =====================================================
-                // TRANG CHU
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "Trang chu",
-                                                e -> hienTrangChu()));
-
-                // =====================================================
-                // KHO
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "Kho & Danh muc",
-                                                e -> hienPopupKho(
-                                                                (JButton) e.getSource())));
-
-                // =====================================================
-                // SPA
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "Spa & Lich hen",
-                                                e -> hienPopupSpa(
-                                                                (JButton) e.getSource())));
-
-                // =====================================================
-                // HOA DON
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "Hoa don",
-                                                e -> hienPopupHoaDon(
-                                                                (JButton) e.getSource())));
-
-                // =====================================================
-                // BAO CAO
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "Bao cao",
-                                                e -> hienPopupBaoCao(
-                                                                (JButton) e.getSource())));
-
-                // =====================================================
-                // HE THONG
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "He thong",
-                                                e -> hienPopupHeThong(
-                                                                (JButton) e.getSource())));
-
-                // =====================================================
-                // CAI DAT
-                // =====================================================
-
-                menu.add(
-                                createMenuButton(
-                                                "Cai dat",
-                                                e -> hienThongBao(
-                                                                "Cai dat")));
-
-                header.add(
-                                menu,
-                                BorderLayout.WEST);
-
-                // =====================================================
-                // USER BEN PHAI
-                // =====================================================
-
-                JButton btnNhanVien = createMenuButton(
-                                hoTen + "  ●",
-                                e -> hienThongTinNhanVien(
-                                                (JButton) e.getSource()));
-
-                header.add(
-                                btnNhanVien,
-                                BorderLayout.EAST);
-
-                return header;
+        /** Doc so tien VND nguoi dung go ("335000", "335.000", "335,000 d"). */
+        public static long docTien(String s) {
+            String sach = s == null ? "" : s.replaceAll("[\\s.,₫dđ]", "");
+            if (!sach.matches("\\d{1,15}")) {
+                throw new NumberFormatException(s);
+            }
+            return Long.parseLong(sach);
         }
 
         // =========================================================
-        // TAO BUTTON MENU
+        // NUT BAM
         // =========================================================
 
-        private JButton createMenuButton(
-                        String text,
-                        java.awt.event.ActionListener action) {
+        private static JButton nut(String text, Color nen, Color chu, Color vien) {
 
-                JButton button = new JButton(text);
+            JButton b = new JButton(text);
 
-                button.setForeground(
-                                Color.WHITE);
+            b.setFont(font(Font.BOLD, 13));
+            b.setBackground(nen);
+            b.setForeground(chu);
+            b.setOpaque(true);
+            b.setContentAreaFilled(true);
+            b.setFocusPainted(false);
+            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-                button.setBackground(
-                                NAVY);
+            if (vien != null) {
+                b.setBorder(new CompoundBorder(
+                        new LineBorder(vien),
+                        new EmptyBorder(8, 18, 8, 18)));
+            } else {
+                b.setBorder(new EmptyBorder(9, 19, 9, 19));
+            }
 
-                button.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                12));
+            return b;
+        }
 
-                button.setFocusPainted(false);
+        public static JButton nutChinh(String text) {
+            return nut(text, NAVY, Color.WHITE, null);
+        }
 
-                button.setBorderPainted(false);
+        public static JButton nutXanh(String text) {
+            return nut(text, GREEN, Color.WHITE, null);
+        }
 
-                button.setCursor(
-                                new Cursor(
-                                                Cursor.HAND_CURSOR));
+        public static JButton nutPhu(String text) {
+            return nut(text, Color.WHITE, NAVY, NAVY);
+        }
 
-                button.addActionListener(
-                                action);
+        public static JButton nutXoa(String text) {
+            return nut(text, Color.WHITE, RED, LINE);
+        }
 
-                return button;
+        public static JButton nutTab(String text, boolean dangChon) {
+            JButton b = nut(text, dangChon ? ACTIVE_BLUE : Color.WHITE,
+                    dangChon ? Color.WHITE : NAVY, NAVY);
+            return b;
         }
 
         // =========================================================
-        // HIEN TRANG CHU
+        // O NHAP / NHAN
         // =========================================================
 
-        private void hienTrangChu() {
+        public static JLabel nhan(String text) {
+            JLabel l = new JLabel(text);
+            l.setFont(font(Font.BOLD, 13));
+            return l;
+        }
 
-                cardLayout.show(
-                                contentPanel,
-                                "TRANG_CHU");
+        public static JTextField o(int cot) {
+            JTextField t = new JTextField(cot);
+            t.setFont(font(Font.PLAIN, 13));
+            return t;
+        }
+
+        public static JTextField oChiDoc(String giaTri) {
+            JTextField t = o(10);
+            t.setText(giaTri);
+            t.setEditable(false);
+            t.setBackground(READONLY);
+            return t;
+        }
+
+        /** Them 1 dong "nhan + o nhap" vao form dung GridBagLayout. */
+        public static void hang(JPanel form, int dong, String ten,
+                                JComponent thanhPhan, boolean cao) {
+
+            GridBagConstraints g = new GridBagConstraints();
+            g.gridy = dong;
+            g.insets = new Insets(6, 0, 6, 15);
+            g.anchor = cao ? GridBagConstraints.NORTHWEST : GridBagConstraints.WEST;
+
+            g.gridx = 0;
+            g.weightx = 0;
+            form.add(nhan(ten), g);
+
+            g.gridx = 1;
+            g.weightx = 1;
+            g.insets = new Insets(6, 0, 6, 0);
+            g.fill = GridBagConstraints.HORIZONTAL;
+            form.add(thanhPhan, g);
         }
 
         // =========================================================
-        // HIEN QUAN LY TAI KHOAN
+        // THE / THONG KE
         // =========================================================
 
-        private void hienQuanLyTaiKhoan() {
+        public static JPanel the() {
+            JPanel p = new JPanel();
+            p.setBackground(Color.WHITE);
+            p.setBorder(new CompoundBorder(
+                    new LineBorder(LINE),
+                    new EmptyBorder(15, 15, 15, 15)));
+            return p;
+        }
 
-                cardLayout.show(
-                                contentPanel,
-                                "TAI_KHOAN");
+        public static JPanel theThongKe(String tieuDe, JLabel giaTri) {
+
+            JPanel p = new JPanel();
+            p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+            p.setBackground(Color.WHITE);
+            p.setBorder(new CompoundBorder(
+                    new LineBorder(LINE),
+                    new EmptyBorder(14, 18, 14, 18)));
+
+            JLabel lb = new JLabel(tieuDe);
+            lb.setForeground(Color.GRAY);
+            lb.setFont(font(Font.PLAIN, 13));
+            lb.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            giaTri.setFont(font(Font.BOLD, 26));
+            giaTri.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            p.add(lb);
+            p.add(Box.createVerticalStrut(6));
+            p.add(giaTri);
+
+            return p;
         }
 
         // =========================================================
-        // HIEN QUAN LY CA LAM
+        // BANG
         // =========================================================
 
-        private void hienQuanLyCaLam() {
+        /** Dinh dang bang theo kieu Pet Shop Pro (header navy, hang cao 32). */
+        public static void taoBang(JTable bang, int... cotCanPhai) {
 
-                cardLayout.show(
-                                contentPanel,
-                                "CA_LAM");
-        }
+            bang.setRowHeight(32);
+            bang.setFont(font(Font.PLAIN, 13));
+            bang.setShowGrid(false);
+            bang.setShowHorizontalLines(true);
+            bang.setGridColor(new Color(225, 230, 236));
+            bang.setSelectionBackground(MENU_BLUE);
+            bang.setSelectionForeground(Color.BLACK);
+            bang.setFillsViewportHeight(true);
+            bang.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // =========================================================
-        // HIEN QUAN LY PHAN CA
-        // =========================================================
-        private void hienQuanLyPhanCa() {
-
-                cardLayout.show(
-                                contentPanel,
-                                "PHAN_CA");
-        }
-        // =========================================================
-        // NOI DUNG TRANG CHU
-        // =========================================================
-
-        private JPanel createMainContent() {
-
-                JPanel main = new JPanel(
-                                new BorderLayout());
-
-                main.setBackground(
-                                LIGHT_BLUE);
-
-                main.add(
-                                createTitleBar(),
-                                BorderLayout.NORTH);
-
-                // =====================================================
-                // CENTER
-                // =====================================================
-
-                JPanel center = new JPanel(
-                                new GridLayout(
-                                                1,
-                                                2,
-                                                20,
-                                                0));
-
-                center.setBackground(
-                                LIGHT_BLUE);
-
-                center.setBorder(
-                                new EmptyBorder(
-                                                20,
-                                                30,
-                                                30,
-                                                30));
-
-                center.add(
-                                createIntroduction());
-
-                center.add(
-                                createQuickAccess());
-
-                main.add(
-                                center,
-                                BorderLayout.CENTER);
-
-                return main;
-        }
-
-        // =========================================================
-        // TITLE BAR
-        // =========================================================
-
-        private JPanel createTitleBar() {
-
-                JPanel panel = new JPanel(
-                                new BorderLayout());
-
-                panel.setBackground(
-                                new Color(
-                                                247,
-                                                249,
-                                                251));
-
-                panel.setBorder(
-                                new EmptyBorder(
-                                                10,
-                                                25,
-                                                10,
-                                                25));
-
-                // =====================================================
-                // DATE
-                // =====================================================
-
-                JLabel date = new JLabel(
-                                "▣  "
-                                                + LocalDateTime.now()
-                                                                .format(
-                                                                                DateTimeFormatter.ofPattern(
-                                                                                                "HH:mm:ss | dd/MM/yyyy")));
-
-                date.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                12));
-
-                // =====================================================
-                // TITLE
-                // =====================================================
-
-                JLabel title = new JLabel(
-                                "TRANG CHU",
-                                SwingConstants.CENTER);
-
-                title.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                25));
-
-                title.setForeground(
-                                NAVY);
-
-                panel.add(
-                                date,
-                                BorderLayout.WEST);
-
-                panel.add(
-                                title,
-                                BorderLayout.CENTER);
-
-                return panel;
-        }
-
-        // =========================================================
-        // ANH GIOI THIEU
-        // =========================================================
-
-        private JPanel createIntroduction() {
-
-                JPanel panel = new JPanel(
-                                new BorderLayout());
-
-                panel.setBackground(
-                                Color.WHITE);
-
-                try {
-
-                        ImageIcon icon = new ImageIcon(
-                                        getClass().getResource(
-                                                        "/img/giothieutrangchu.png"));
-
-                        Image image = icon.getImage();
-
-                        Image scaledImage = image.getScaledInstance(
-                                        550,
-                                        510,
-                                        Image.SCALE_SMOOTH);
-
-                        JLabel imageLabel = new JLabel(
-                                        new ImageIcon(
-                                                        scaledImage));
-
-                        imageLabel.setHorizontalAlignment(
-                                        SwingConstants.CENTER);
-
-                        imageLabel.setVerticalAlignment(
-                                        SwingConstants.CENTER);
-
-                        panel.add(
-                                        imageLabel,
-                                        BorderLayout.CENTER);
-
-                } catch (Exception e) {
-
-                        JLabel error = new JLabel(
-                                        "Khong tim thay anh gioi thieu",
-                                        SwingConstants.CENTER);
-
-                        error.setForeground(
-                                        RED);
-
-                        error.setFont(
-                                        new Font(
-                                                        "Segoe UI",
-                                                        Font.BOLD,
-                                                        14));
-
-                        panel.add(
-                                        error,
-                                        BorderLayout.CENTER);
+            JTableHeader header = bang.getTableHeader();
+            header.setReorderingAllowed(false);
+            header.setPreferredSize(new Dimension(0, 40));
+            header.setDefaultRenderer(new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(
+                        JTable t, Object v, boolean sel, boolean foc,
+                        int r, int c) {
+                    super.getTableCellRendererComponent(t, v, false, false, r, c);
+                    setOpaque(true);
+                    setBackground(NAVY);
+                    setForeground(Color.WHITE);
+                    setFont(font(Font.BOLD, 13));
+                    setHorizontalAlignment(SwingConstants.CENTER);
+                    setBorder(new javax.swing.border.MatteBorder(
+                            0, 0, 0, 1, Color.WHITE));
+                    return this;
                 }
+            });
 
-                return panel;
-        }
+            bang.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+                @Override
+                public Component getTableCellRendererComponent(
+                        JTable t, Object v, boolean sel, boolean foc,
+                        int r, int c) {
+                    super.getTableCellRendererComponent(t, v, sel, false, r, c);
+                    setBorder(new EmptyBorder(0, 10, 0, 10));
 
-        // =========================================================
-        // TRUY CAP NHANH
-        // =========================================================
-
-        private JPanel createQuickAccess() {
-
-                JPanel panel = new JPanel();
-
-                panel.setBackground(
-                                Color.WHITE);
-
-                panel.setBorder(
-                                new EmptyBorder(
-                                                15,
-                                                15,
-                                                15,
-                                                15));
-
-                panel.setLayout(
-                                new BoxLayout(
-                                                panel,
-                                                BoxLayout.Y_AXIS));
-
-                // =====================================================
-                // TITLE
-                // =====================================================
-
-                JLabel title = new JLabel(
-                                "TRUY CAP NHANH");
-
-                title.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                18));
-
-                title.setAlignmentX(
-                                Component.CENTER_ALIGNMENT);
-
-                panel.add(title);
-
-                panel.add(
-                                Box.createVerticalStrut(15));
-
-                // =====================================================
-                // BUTTON
-                // =====================================================
-
-                addQuickButton(
-                                panel,
-                                "Thanh toan",
-                                "F4",
-                                this::hienQuanLyThanhToan);
-
-                addQuickButton(
-                                panel,
-                                "Quan ly lich hen Spa",
-                                "F5",
-                                this::hienQuanLyLichHen);
-
-                addQuickButton(
-                                panel,
-                                "Quan ly san pham",
-                                "F6",
-                                () -> hienKho(1));
-
-                addQuickButton(
-                                panel,
-                                "Quan ly khach hang",
-                                "F7",
-                                () -> hienChucNangChuaCoGiaoDien("Quan ly khach hang"));
-
-                addQuickButton(
-                                panel,
-                                "Bao cao doanh thu",
-                                "F8",
-                                () -> hienChucNangChuaCoGiaoDien("Bao cao doanh thu"));
-
-                return panel;
-        }
-
-        // =========================================================
-        // QUICK BUTTON
-        // =========================================================
-
-        private void addQuickButton(
-                        JPanel parent,
-                        String text,
-                        String shortcut,
-                        Runnable action) {
-
-                JPanel row = new JPanel(
-                                new BorderLayout());
-
-                row.setBackground(
-                                MENU_BLUE);
-
-                row.setMaximumSize(
-                                new Dimension(
-                                                Integer.MAX_VALUE,
-                                                45));
-
-                JButton button = new JButton(text);
-
-                button.setHorizontalAlignment(
-                                SwingConstants.LEFT);
-
-                button.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.PLAIN,
-                                                14));
-
-                button.setBackground(
-                                MENU_BLUE);
-
-                button.setFocusPainted(false);
-
-                button.setBorderPainted(false);
-
-                button.addActionListener(
-                                e -> action.run());
-
-                String actionKey = "quick-access-" + shortcut;
-                getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-                                .put(KeyStroke.getKeyStroke(shortcut), actionKey);
-                getRootPane().getActionMap().put(actionKey, new AbstractAction() {
-                        @Override
-                        public void actionPerformed(java.awt.event.ActionEvent e) {
-                                action.run();
+                    boolean phai = false;
+                    for (int x : cotCanPhai) {
+                        if (x == c) {
+                            phai = true;
+                            break;
                         }
-                });
-
-                JLabel key = new JLabel(shortcut);
-
-                key.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                14));
-
-                key.setBorder(
-                                new EmptyBorder(
-                                                0,
-                                                0,
-                                                0,
-                                                10));
-
-                row.add(
-                                button,
-                                BorderLayout.CENTER);
-
-                row.add(
-                                key,
-                                BorderLayout.EAST);
-
-                parent.add(row);
-
-                parent.add(
-                                Box.createVerticalStrut(5));
-        }
-
-        // =========================================================
-        // POPUP KHO
-        // =========================================================
-
-        private void hienPopupKho(
-                        JButton source) {
-
-                JPopupMenu popup = new JPopupMenu();
-
-                themMenuKho(popup, "Danh muc", 0);
-                themMenuKho(popup, "San pham", 1);
-                themMenuKho(popup, "Nhap kho", 2);
-                themMenuKho(popup, "Kiem ke", 3);
-
-                popup.show(source, 0, source.getHeight());
-        }
-
-        // =========================================================
-        // POPUP SPA
-        // =========================================================
-
-        private void hienPopupSpa(JButton source) {
-                JPopupMenu popup = new JPopupMenu();
-
-                // 1. Nút Lịch hẹn
-                JMenuItem mnuLichHen = new JMenuItem("Lich hen");
-                mnuLichHen.addActionListener(e -> hienQuanLyLichHen());
-                popup.add(mnuLichHen);
-
-                // 2. Nút Thú cưng
-                JMenuItem mnuThuCung = new JMenuItem("Thu cung");
-                mnuThuCung.addActionListener(e -> hienQuanLyThuCung());
-                popup.add(mnuThuCung);
-
-                // 3. Khach hang chua co giao dien rieng
-                themMenuItem(popup, "Khach hang");
-
-                // 4. Nút Phiếu dịch vụ (ĐÃ KẾT NỐI)
-                JMenuItem mnuPhieuDV = new JMenuItem("Phieu dich vu");
-                mnuPhieuDV.addActionListener(e -> hienQuanLyPhieuDichVu());
-                popup.add(mnuPhieuDV);
-
-                popup.show(source, 0, source.getHeight());
-        }
-        // =========================================================
-        // POPUP HOA DON
-        // =========================================================
-
-        private void hienPopupHoaDon(
-                        JButton source) {
-
-                JPopupMenu popup = new JPopupMenu();
-
-                JMenuItem hoaDon = new JMenuItem("Hoa don");
-                hoaDon.addActionListener(e -> hienTraCuuHoaDon());
-                popup.add(hoaDon);
-
-                JMenuItem thanhToan = new JMenuItem("Thanh toan");
-                thanhToan.addActionListener(e -> hienQuanLyThanhToan());
-                popup.add(thanhToan);
-
-                popup.show(
-                                source,
-                                0,
-                                source.getHeight());
-        }
-
-        // =========================================================
-        // POPUP BAO CAO
-        // =========================================================
-
-        private void hienPopupBaoCao(
-                        JButton source) {
-
-                JPopupMenu popup = new JPopupMenu();
-
-                themMenuItem(
-                                popup,
-                                "Theo ngay");
-
-                themMenuItem(
-                                popup,
-                                "Theo thang");
-
-                themMenuItem(
-                                popup,
-                                "Theo nam");
-
-                popup.show(
-                                source,
-                                0,
-                                source.getHeight());
-        }
-
-        // =========================================================
-        // POPUP HE THONG
-        // =========================================================
-
-        private void hienPopupHeThong(
-                        JButton source) {
-
-                JPopupMenu popup = new JPopupMenu();
-
-                // =====================================================
-                // QUAN LY TAI KHOAN
-                // =====================================================
-
-                JMenuItem taiKhoan = new JMenuItem(
-                                "Quan ly tai khoan");
-
-                taiKhoan.addActionListener(
-                                e -> hienQuanLyTaiKhoan());
-
-                popup.add(taiKhoan);
-
-                // =====================================================
-                // QUAN LY PHAN CA
-                // =====================================================
-                JMenuItem phanCa = new JMenuItem("Quan ly phan ca");
-
-                phanCa.addActionListener(
-                                e -> hienQuanLyPhanCa());
-
-                popup.add(phanCa);
-                // =====================================================
-                // SEPARATOR
-                // =====================================================
-
-                popup.addSeparator();
-
-                // =====================================================
-                // QUAN LY CA LAM
-                // =====================================================
-
-                JMenuItem caLam = new JMenuItem(
-                                "Quan ly ca lam");
-
-                caLam.addActionListener(
-                                e -> hienQuanLyCaLam());
-
-                popup.add(caLam);
-
-                // =====================================================
-                // HIEN POPUP
-                // =====================================================
-
-                popup.show(
-                                source,
-                                0,
-                                source.getHeight());
-        }
-
-        // =========================================================
-        // MENU ITEM CHUNG
-        // =========================================================
-
-        private void themMenuItem(
-                        JPopupMenu popup,
-                        String text) {
-
-                JMenuItem item = new JMenuItem(text);
-
-                item.addActionListener(
-                                e -> hienChucNangChuaCoGiaoDien(text));
-
-                popup.add(item);
-        }
-
-        private void themMenuKho(JPopupMenu popup, String text, int tab) {
-                JMenuItem item = new JMenuItem(text);
-                item.addActionListener(e -> hienKho(tab));
-                popup.add(item);
-        }
-
-        private JPanel taoManHinhKho() {
-                JPanel panel = new JPanel(new BorderLayout());
-
-                JPanel thanhTab = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-                thanhTab.setBackground(Color.WHITE);
-
-                String[] tenTab = {"Danh muc", "San pham", "Nhap kho", "Kiem ke"};
-                for (int i = 0; i < tenTab.length; i++) {
-                        final int tab = i;
-                        nutTabKho[i] = UIStyle.nutTab(tenTab[i], false);
-                        nutTabKho[i].addActionListener(e -> hienKho(tab));
-                        thanhTab.add(nutTabKho[i]);
+                    }
+                    setHorizontalAlignment(phai ? SwingConstants.RIGHT
+                            : SwingConstants.LEFT);
+                    return this;
                 }
-
-                khoCardLayout = new CardLayout();
-                khoContentPanel = new JPanel(khoCardLayout);
-                khoContentPanel.setBackground(LIGHT_BLUE);
-
-                panel.add(thanhTab, BorderLayout.NORTH);
-                panel.add(khoContentPanel, BorderLayout.CENTER);
-                return panel;
+            });
         }
 
-        private void hienKho(int tab) {
-                if (tab < 0 || tab >= manHinhKho.length) {
-                        tab = 0;
-                }
-
-                boolean lanDau = manHinhKho[tab] == null;
-                if (lanDau) {
-                        manHinhKho[tab] = taoManHinhKho(tab);
-                        khoContentPanel.add((JPanel) manHinhKho[tab], "KHO_" + tab);
-                }
-
-                khoCardLayout.show(khoContentPanel, "KHO_" + tab);
-                if (!lanDau) {
-                        manHinhKho[tab].napLai();
-                }
-
-                for (int i = 0; i < nutTabKho.length; i++) {
-                        boolean dangChon = i == tab;
-                        nutTabKho[i].setBackground(
-                                        dangChon ? UIStyle.ACTIVE_BLUE : Color.WHITE);
-                        nutTabKho[i].setForeground(
-                                        dangChon ? Color.WHITE : UIStyle.NAVY);
-                }
-
-                cardLayout.show(contentPanel, "KHO");
-                khoContentPanel.revalidate();
-                khoContentPanel.repaint();
-        }
-
-        private ManHinhKho taoManHinhKho(int tab) {
-                switch (tab) {
-                        case 0:
-                                return new DanhMucPanel();
-                        case 1:
-                                return new SanPhamPanel();
-                        case 2:
-                                return new NhapKhoPanel();
-                        default:
-                                return new KiemKePanel();
-                }
-        }
-
-        // =========================================================
-        // THONG TIN NHAN VIEN
-        // =========================================================
-
-        private void hienThongTinNhanVien(
-                        JButton source) {
-
-                JPopupMenu popup = new JPopupMenu();
-
-                JPanel info = new JPanel(
-                                new GridLayout(
-                                                0,
-                                                2,
-                                                15,
-                                                8));
-
-                info.setBorder(
-                                new EmptyBorder(
-                                                12,
-                                                12,
-                                                12,
-                                                12));
-
-                themThongTin(
-                                info,
-                                "Ma NV",
-                                maNV);
-
-                themThongTin(
-                                info,
-                                "Ho ten",
-                                hoTen);
-
-                themThongTin(
-                                info,
-                                "Vai tro",
-                                vaiTro);
-
-                popup.add(info);
-
-                popup.addSeparator();
-
-                // =====================================================
-                // DANG XUAT
-                // =====================================================
-
-                JMenuItem dangXuat = new JMenuItem(
-                                "Dang xuat");
-
-                dangXuat.addActionListener(
-                                e -> {
-
-                                        dispose();
-
-                                        new DangNhap()
-                                                        .setVisible(true);
-                                });
-
-                popup.add(
-                                dangXuat);
-
-                popup.show(
-                                source,
-                                -popup.getPreferredSize().width
-                                                + source.getWidth(),
-                                source.getHeight());
-        }
-
-        // =========================================================
-        // THEM THONG TIN
-        // =========================================================
-
-        private void themThongTin(
-                        JPanel panel,
-                        String label,
-                        String value) {
-
-                JLabel lb = new JLabel(label);
-
-                lb.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                12));
-
-                JLabel val = new JLabel(value);
-
-                panel.add(lb);
-                panel.add(val);
+        public static JScrollPane cuon(JTable bang) {
+            JScrollPane sp = new JScrollPane(bang);
+            sp.setBorder(new LineBorder(LINE));
+            sp.getViewport().setBackground(Color.WHITE);
+            return sp;
         }
 
         // =========================================================
         // THONG BAO
         // =========================================================
 
-        private void hienThongBao(
-                        String tenChucNang) {
-
-                JOptionPane.showMessageDialog(
-                                this,
-                                "Ban dang mo chuc nang: "
-                                                + tenChucNang,
-                                "Pet Shop Pro",
-                                JOptionPane.INFORMATION_MESSAGE);
+        public static void thongBao(Component cha, String noiDung) {
+            JOptionPane.showMessageDialog(cha, noiDung, "Pet Shop Pro",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
 
-        private void hienChucNangChuaCoGiaoDien(String tenChucNang) {
-                JOptionPane.showMessageDialog(
-                                this,
-                                "Chuc nang \"" + tenChucNang + "\" chua co giao dien.",
-                                "Pet Shop Pro",
-                                JOptionPane.INFORMATION_MESSAGE);
+        public static void canhBao(Component cha, String noiDung) {
+            JOptionPane.showMessageDialog(cha, noiDung, "Pet Shop Pro",
+                    JOptionPane.WARNING_MESSAGE);
         }
 
-        private void hienQuanLyLichHen() {
-                cardLayout.show(contentPanel, "LICH_HEN");
+        public static boolean xacNhan(Component cha, String noiDung) {
+            return JOptionPane.showConfirmDialog(cha, noiDung, "Pet Shop Pro",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
         }
 
-        private void hienQuanLyThuCung() {
-                cardLayout.show(contentPanel, "THU_CUNG");
-        }
+        public static void loi(Component cha, Exception ex) {
 
-        private void hienQuanLyPhieuDichVu() {
-                cardLayout.show(contentPanel, "PHIEU_DICH_VU");
-        }
+            String nd;
 
-        private void hienTraCuuHoaDon() {
-                if (traCuuHoaDon == null) {
-                        traCuuHoaDon = new TraCuuHoaDon();
-                        contentPanel.add(traCuuHoaDon, "TRA_CUU_HOA_DON");
+            if (ex instanceof SQLException sql) {
+                if (sql.getErrorCode() == 547) {
+                    nd = "Không thực hiện được vì dữ liệu này đang được dùng ở nơi khác\n"
+                            + "(ví dụ: danh mục còn sản phẩm, sản phẩm đã có phiếu nhập/hóa đơn).";
+                } else if (sql.getErrorCode() == 2627 || sql.getErrorCode() == 2601) {
+                    nd = "Mã này đã tồn tại, vui lòng nhập mã khác.";
+                } else {
+                    nd = "Lỗi cơ sở dữ liệu:\n" + sql.getMessage();
                 }
-                cardLayout.show(contentPanel, "TRA_CUU_HOA_DON");
-                traCuuHoaDon.hienDanhSach();
+            } else {
+                nd = "Có lỗi xảy ra:\n" + ex.getMessage();
+            }
+
+            ex.printStackTrace();
+
+            JOptionPane.showMessageDialog(cha, nd, "Pet Shop Pro",
+                    JOptionPane.ERROR_MESSAGE);
         }
 
-        private void hienQuanLyThanhToan() {
-                if (quanLyThanhToan == null) {
-                        quanLyThanhToan = new QuanLyThanhToan(maNV);
-                        contentPanel.add(quanLyThanhToan, "THANH_TOAN");
-                }
-                cardLayout.show(contentPanel, "THANH_TOAN");
+        /** Hang nut Huy / Luu o cuoi hop thoai. */
+        public static JPanel hangNut(JButton huy, JButton luu) {
+            JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+            p.setOpaque(false);
+            p.add(huy);
+            p.add(luu);
+            return p;
         }
+    }
 }
