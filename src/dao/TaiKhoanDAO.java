@@ -31,20 +31,13 @@ public class TaiKhoanDAO {
                         while (rs.next()) {
 
                                 TaiKhoan tk = new TaiKhoan(
-                                                rs.getString(
-                                                                "maNhanVien"),
-                                                rs.getString(
-                                                                "hoTen"),
-                                                rs.getString(
-                                                                "soDienThoai"),
-                                                rs.getString(
-                                                                "email"),
-                                                rs.getString(
-                                                                "matKhau"),
-                                                rs.getString(
-                                                                "gioiTinh"),
-                                                rs.getString(
-                                                                "vaiTro"));
+                                                rs.getString("maNhanVien"),
+                                                rs.getString("hoTen"),
+                                                rs.getString("soDienThoai"),
+                                                rs.getString("email"),
+                                                rs.getString("matKhau"),
+                                                rs.getString("gioiTinh"),
+                                                rs.getString("vaiTro"));
 
                                 list.add(tk);
                         }
@@ -69,53 +62,23 @@ public class TaiKhoanDAO {
                                 + "email, matKhau, gioiTinh, vaiTro) "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-                try (
-                                Connection con = ConnectDB.connectDB.getConnection();
-
+                try (Connection con = ConnectDB.connectDB.getConnection();
                                 PreparedStatement ps = con.prepareStatement(sql)) {
-
-                        ps.setString(
-                                        1,
-                                        tk.getMaNhanVien());
-
-                        ps.setString(
-                                        2,
-                                        tk.getHoTen());
-
-                        ps.setString(
-                                        3,
-                                        tk.getSoDienThoai());
-
-                        ps.setString(
-                                        4,
-                                        tk.getEmail());
-
-                        ps.setString(
-                                        5,
-                                        tk.getMatKhau());
-
-                        ps.setString(
-                                        6,
-                                        tk.getGioiTinh());
-
-                        ps.setString(
-                                        7,
-                                        tk.getVaiTro());
-
+                        ps.setString(1, tk.getMaNhanVien());
+                        ps.setString(2, tk.getHoTen());
+                        ps.setString(3, tk.getSoDienThoai());
+                        ps.setString(4, tk.getEmail());
+                        ps.setString(5, tk.getMatKhau());
+                        ps.setString(6, tk.getGioiTinh());
+                        ps.setString(7, tk.getVaiTro());
                         return ps.executeUpdate() > 0;
-
                 } catch (SQLException e) {
-
                         e.printStackTrace();
-
                         return false;
                 }
         }
 
-        // =========================================================
         // SUA
-        // =========================================================
-
         public boolean sua(
                         TaiKhoan tk) {
 
@@ -127,75 +90,43 @@ public class TaiKhoanDAO {
                                 + "gioiTinh = ?, "
                                 + "vaiTro = ? "
                                 + "WHERE maNhanVien = ?";
-
                 try (
                                 Connection con = ConnectDB.connectDB.getConnection();
 
                                 PreparedStatement ps = con.prepareStatement(sql)) {
 
-                        ps.setString(
-                                        1,
-                                        tk.getHoTen());
+                        ps.setString(1, tk.getHoTen());
 
-                        ps.setString(
-                                        2,
-                                        tk.getSoDienThoai());
+                        ps.setString(2, tk.getSoDienThoai());
 
-                        ps.setString(
-                                        3,
-                                        tk.getEmail());
+                        ps.setString(3, tk.getEmail());
 
-                        ps.setString(
-                                        4,
-                                        tk.getMatKhau());
+                        ps.setString(4, tk.getMatKhau());
 
-                        ps.setString(
-                                        5,
-                                        tk.getGioiTinh());
+                        ps.setString(5, tk.getGioiTinh());
 
-                        ps.setString(
-                                        6,
-                                        tk.getVaiTro());
+                        ps.setString(6, tk.getVaiTro());
 
-                        ps.setString(
-                                        7,
-                                        tk.getMaNhanVien());
-
+                        ps.setString(7, tk.getMaNhanVien());
                         return ps.executeUpdate() > 0;
-
                 } catch (SQLException e) {
-
                         e.printStackTrace();
-
                         return false;
                 }
         }
 
-        // =========================================================
         // XOA
-        // =========================================================
-
         public boolean xoa(
                         String maNhanVien) {
-
                 String sql = "DELETE FROM NhanVien "
                                 + "WHERE maNhanVien = ?";
-
                 try (
                                 Connection con = ConnectDB.connectDB.getConnection();
-
                                 PreparedStatement ps = con.prepareStatement(sql)) {
-
-                        ps.setString(
-                                        1,
-                                        maNhanVien);
-
+                        ps.setString(1, maNhanVien);
                         return ps.executeUpdate() > 0;
-
                 } catch (SQLException e) {
-
                         e.printStackTrace();
-
                         return false;
                 }
         }

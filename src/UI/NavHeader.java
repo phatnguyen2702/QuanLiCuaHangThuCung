@@ -4,7 +4,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
-/** Thanh menu tren cung (giong header cua TrangChu), dung chung cho moi man hinh. */
+/**
+ * Thanh menu tren cung (giong header cua TrangChu), dung chung cho moi man
+ * hinh.
+ */
 public class NavHeader extends JPanel {
 
     private final JFrame cha;
@@ -25,31 +28,23 @@ public class NavHeader extends JPanel {
         logo.setForeground(Color.WHITE);
         logo.setFont(UIStyle.font(Font.BOLD, 16));
         menu.add(logo);
-
         menu.add(nutMenu("Trang chủ", "trangchu".equals(mucDangChon),
                 e -> DieuHuong.moTrangChu(cha)));
-
         menu.add(nutMenu("Kho & Danh mục", "kho".equals(mucDangChon),
                 e -> popupKho((JButton) e.getSource())));
-
         menu.add(nutMenu("Spa & Lịch hẹn", false,
                 e -> popupThongBao((JButton) e.getSource(),
                         "Lịch hẹn", "Thú cưng", "Khách hàng", "Phiếu dịch vụ")));
-
         menu.add(nutMenu("Hóa Đơn", false,
                 e -> popupThongBao((JButton) e.getSource(),
                         "Hóa đơn", "Thanh toán")));
-
         menu.add(nutMenu("Báo cáo", false,
                 e -> popupThongBao((JButton) e.getSource(),
                         "Theo ngày", "Theo tháng", "Theo năm")));
-
         menu.add(nutMenu("Hệ thống", false,
                 e -> popupHeThong((JButton) e.getSource())));
-
         menu.add(nutMenu("Cài đặt", false,
                 e -> thongBao("Cài đặt")));
-
         add(menu, BorderLayout.WEST);
 
         JButton btnNhanVien = nutMenu(PhienLamViec.hoTen + "  ●", false,
@@ -63,7 +58,7 @@ public class NavHeader extends JPanel {
     // =========================================================
 
     private JButton nutMenu(String text, boolean dangChon,
-                            java.awt.event.ActionListener hanhDong) {
+            java.awt.event.ActionListener hanhDong) {
 
         JButton b = new JButton(text);
 
@@ -86,7 +81,7 @@ public class NavHeader extends JPanel {
 
     private void popupKho(JButton nguon) {
 
-        String[] ten = {"Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho"};
+        String[] ten = { "Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho" };
 
         JPopupMenu popup = new JPopupMenu();
 

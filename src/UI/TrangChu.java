@@ -41,9 +41,10 @@ public class TrangChu extends JFrame {
 
                 setTitle("Pet Shop Pro - Trang chủ");
                 setSize(1200, 720);
+                setMinimumSize(new Dimension(1000, 650)); // Đảm bảo cửa sổ không bị thu nhỏ quá giới hạn
                 setLocationRelativeTo(null);
                 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                setResizable(false);
+                setResizable(true); // Cho phép thay đổi kích thước để thích ứng với mọi màn hình máy tính khác
                 setLayout(new BorderLayout());
 
                 add(createHeader(), BorderLayout.NORTH);
@@ -52,9 +53,15 @@ public class TrangChu extends JFrame {
                 contentPanel = new JPanel(cardLayout);
                 contentPanel.setBackground(BG);
 
-                // Thêm các màn hình vào CardLayout
-                contentPanel.add(createMainContent(), "TRANG_CHU");
+                // Thêm màn hình trang chủ vào JScrollPane để chống tràn/bể bố cục chiều dọc
+                // trên máy màn hình nhỏ
+                JPanel mainContent = createMainContent();
+                JScrollPane scrollPaneTrangChu = new JScrollPane(mainContent);
+                scrollPaneTrangChu.setBorder(null);
+                scrollPaneTrangChu.getVerticalScrollBar().setUnitIncrement(16);
+                contentPanel.add(scrollPaneTrangChu, "TRANG_CHU");
 
+                // Thêm các màn hình quản lý khác vào CardLayout
                 quanLyTaiKhoan = new QuanLyTaiKhoan();
                 contentPanel.add(quanLyTaiKhoan, "TAI_KHOAN");
 
@@ -70,7 +77,6 @@ public class TrangChu extends JFrame {
                 traCuuHoaDon = new TraCuuHoaDon();
                 contentPanel.add(traCuuHoaDon, "TRA_CUU_HOA_DON");
 
-                // Khởi tạo và thêm các màn hình Kho vào CardLayout
                 danhMucPanel = new DanhMucPanel();
                 contentPanel.add(danhMucPanel, "DANH_MUC");
 
@@ -155,7 +161,6 @@ public class TrangChu extends JFrame {
                 cardLayout.show(contentPanel, "TRA_CUU_HOA_DON");
         }
 
-        // Các hàm chuyển đổi màn hình Kho
         private void hienDanhMuc() {
                 cardLayout.show(contentPanel, "DANH_MUC");
         }
