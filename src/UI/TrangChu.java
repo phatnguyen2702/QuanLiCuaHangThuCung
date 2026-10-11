@@ -45,6 +45,10 @@ public class TrangChu extends JFrame {
         private QuanLyLichHen quanLyLichHen;
         private QuanLyThuCung quanLyThuCung;
         private QuanLyPhieuDichVu quanLyPhieuDichVu;
+        private JPanel danhMucPanel;
+        private JPanel sanPhamPanel;
+        private JPanel nhapKhoPanel;
+        private JPanel kiemKePanel;
         // =========================================================
         // CONSTRUCTOR
         // =========================================================
@@ -65,21 +69,10 @@ public class TrangChu extends JFrame {
                 setTitle("Pet Shop Pro - Trang chu");
 
                 setSize(1200, 720);
-<<<<<<< HEAD
-                setMinimumSize(new Dimension(1000, 650)); // Đảm bảo cửa sổ không bị thu nhỏ quá giới hạn
+                setMinimumSize(new Dimension(1000, 620));
                 setLocationRelativeTo(null);
                 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                setResizable(true); // Cho phép thay đổi kích thước để thích ứng với mọi màn hình máy tính khác
-=======
-
-                setLocationRelativeTo(null);
-
-                setDefaultCloseOperation(
-                                JFrame.EXIT_ON_CLOSE);
-
-                setResizable(false);
-
->>>>>>> main
+                setResizable(true);
                 setLayout(new BorderLayout());
 
                 // =====================================================
@@ -101,25 +94,9 @@ public class TrangChu extends JFrame {
 
                 contentPanel.setBackground(BG);
 
-<<<<<<< HEAD
-                // Thêm màn hình trang chủ vào JScrollPane để chống tràn/bể bố cục chiều dọc
-                // trên máy màn hình nhỏ
-                JPanel mainContent = createMainContent();
-                JScrollPane scrollPaneTrangChu = new JScrollPane(mainContent);
-                scrollPaneTrangChu.setBorder(null);
-                scrollPaneTrangChu.getVerticalScrollBar().setUnitIncrement(16);
-                contentPanel.add(scrollPaneTrangChu, "TRANG_CHU");
-=======
-                // =====================================================
-                // TRANG CHU
-                // =====================================================
+                // Thêm các màn hình vào CardLayout
+                contentPanel.add(createMainContent(), "TRANG_CHU");
 
-                contentPanel.add(
-                                createMainContent(),
-                                "TRANG_CHU");
->>>>>>> main
-
-                // Thêm các màn hình quản lý khác vào CardLayout
                 quanLyTaiKhoan = new QuanLyTaiKhoan();
 
                 contentPanel.add(
@@ -143,25 +120,24 @@ public class TrangChu extends JFrame {
                 quanLyThuCung = new QuanLyThuCung();
                 contentPanel.add(quanLyThuCung, "THU_CUNG");
 
-<<<<<<< HEAD
-                danhMucPanel = new DanhMucPanel();
-                contentPanel.add(danhMucPanel, "DANH_MUC");
-=======
+                // Man hinh phieu dich vu
                 quanLyPhieuDichVu = new QuanLyPhieuDichVu();
                 contentPanel.add(quanLyPhieuDichVu, "PHIEU_DICH_VU");
-                // =====================================================
-                // ADD CONTENT
-                // =====================================================
->>>>>>> main
 
-                add(
-                                contentPanel,
-                                BorderLayout.CENTER);
+                // Khởi tạo và thêm các màn hình Kho vào CardLayout
+                danhMucPanel = new DanhMucPanel();
+                contentPanel.add(danhMucPanel, "DANH_MUC");
 
-                // =====================================================
-                // MAC DINH HIEN TRANG CHU
-                // =====================================================
+                sanPhamPanel = new SanPhamPanel();
+                contentPanel.add(sanPhamPanel, "SAN_PHAM");
 
+                nhapKhoPanel = new NhapKhoPanel();
+                contentPanel.add(nhapKhoPanel, "NHAP_KHO");
+
+                kiemKePanel = new KiemKePanel();
+                contentPanel.add(kiemKePanel, "KIEM_KE");
+
+                add(contentPanel, BorderLayout.CENTER);
                 hienTrangChu();
         }
 
@@ -260,14 +236,13 @@ public class TrangChu extends JFrame {
                                                                 (JButton) e.getSource())));
 
                 // =====================================================
-                // BAO CAO
+                // CAI DAT
                 // =====================================================
 
                 menu.add(
                                 createMenuButton(
-                                                "Bao cao",
-                                                e -> hienPopupBaoCao(
-                                                                (JButton) e.getSource())));
+                                                "Cai dat",
+                                                e -> hienThongBao("Cai dat")));
 
                 // =====================================================
                 // HE THONG
@@ -280,14 +255,14 @@ public class TrangChu extends JFrame {
                                                                 (JButton) e.getSource())));
 
                 // =====================================================
-                // CAI DAT
+                // BAO CAO
                 // =====================================================
 
                 menu.add(
                                 createMenuButton(
-                                                "Cai dat",
-                                                e -> hienThongBao(
-                                                                "Cai dat")));
+                                                "Bao cao",
+                                                e -> hienPopupBaoCao(
+                                                                (JButton) e.getSource())));
 
                 header.add(
                                 menu,
@@ -383,17 +358,12 @@ public class TrangChu extends JFrame {
         // =========================================================
         private void hienQuanLyPhanCa() {
 
-<<<<<<< HEAD
-
-        private void hienThanhToan() {
-                cardLayout.show(contentPanel, "THANH_TOAN");
+                cardLayout.show(
+                                contentPanel,
+                                "PHAN_CA");
         }
 
-        private void hienTraCuuHoaDon() {
-                traCuuHoaDon.hienDanhSach();
-                cardLayout.show(contentPanel, "TRA_CUU_HOA_DON");
-        }
-
+        // Các hàm chuyển đổi màn hình Kho
         private void hienDanhMuc() {
                 cardLayout.show(contentPanel, "DANH_MUC");
         }
@@ -408,15 +378,7 @@ public class TrangChu extends JFrame {
 
         private void hienKiemKe() {
                 cardLayout.show(contentPanel, "KIEM_KE");
-=======
-                cardLayout.show(
-                                contentPanel,
-                                "PHAN_CA");
->>>>>>> main
         }
-        // =========================================================
-        // NOI DUNG TRANG CHU
-        // =========================================================
 
         private JPanel createMainContent() {
 
@@ -491,11 +453,10 @@ public class TrangChu extends JFrame {
                 // =====================================================
 
                 JLabel date = new JLabel(
-                                "▣  "
-                                                + LocalDateTime.now()
-                                                                .format(
-                                                                                DateTimeFormatter.ofPattern(
-                                                                                                "HH:mm:ss | dd/MM/yyyy")));
+                                "▣  " + LocalDateTime.now()
+                                                .format(
+                                                                DateTimeFormatter.ofPattern(
+                                                                                "HH:mm:ss | dd/MM/yyyy")));
 
                 date.setFont(
                                 new Font(
@@ -536,60 +497,46 @@ public class TrangChu extends JFrame {
         // =========================================================
 
         private JPanel createIntroduction() {
+                JPanel panel = new JPanel(new BorderLayout());
+                panel.setBackground(Color.WHITE);
 
-                JPanel panel = new JPanel(
-                                new BorderLayout());
-
-                panel.setBackground(
-                                Color.WHITE);
-
-                try {
-
-                        ImageIcon icon = new ImageIcon(
-                                        getClass().getResource(
-                                                        "/img/giothieutrangchu.png"));
-
-                        Image image = icon.getImage();
-
-                        Image scaledImage = image.getScaledInstance(
-                                        550,
-                                        510,
-                                        Image.SCALE_SMOOTH);
-
-                        JLabel imageLabel = new JLabel(
-                                        new ImageIcon(
-                                                        scaledImage));
-
-                        imageLabel.setHorizontalAlignment(
+                java.net.URL imageUrl = getClass().getResource("/img/giothieutrangchu.png");
+                if (imageUrl == null) {
+                        JLabel error = new JLabel("Khong tim thay anh: /img/giothieutrangchu.png",
                                         SwingConstants.CENTER);
-
-                        imageLabel.setVerticalAlignment(
-                                        SwingConstants.CENTER);
-
-                        panel.add(
-                                        imageLabel,
-                                        BorderLayout.CENTER);
-
-                } catch (Exception e) {
-
-                        JLabel error = new JLabel(
-                                        "Khong tim thay anh gioi thieu",
-                                        SwingConstants.CENTER);
-
-                        error.setForeground(
-                                        RED);
-
-                        error.setFont(
-                                        new Font(
-                                                        "Segoe UI",
-                                                        Font.BOLD,
-                                                        14));
-
-                        panel.add(
-                                        error,
-                                        BorderLayout.CENTER);
+                        error.setForeground(RED);
+                        error.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                        panel.add(error, BorderLayout.CENTER);
+                        return panel;
                 }
 
+                Image originalImage = new ImageIcon(imageUrl).getImage();
+                JLabel imageLabel = new JLabel();
+                imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                imageLabel.setVerticalAlignment(SwingConstants.CENTER);
+
+                // Cap nhat kich thuoc anh theo kich thuoc khung, khong keo gian qua muc.
+                Runnable scaleImage = () -> {
+                        int availableWidth = Math.max(1, panel.getWidth() - 16);
+                        int availableHeight = Math.max(1, panel.getHeight() - 16);
+                        int originalWidth = Math.max(1, originalImage.getWidth(panel));
+                        int originalHeight = Math.max(1, originalImage.getHeight(panel));
+                        double scale = Math.min((double) availableWidth / originalWidth,
+                                        (double) availableHeight / originalHeight);
+                        int width = Math.max(1, (int) (originalWidth * scale));
+                        int height = Math.max(1, (int) (originalHeight * scale));
+                        imageLabel.setIcon(new ImageIcon(originalImage.getScaledInstance(
+                                        width, height, Image.SCALE_SMOOTH)));
+                };
+
+                panel.add(imageLabel, BorderLayout.CENTER);
+                panel.addComponentListener(new java.awt.event.ComponentAdapter() {
+                        @Override
+                        public void componentResized(java.awt.event.ComponentEvent e) {
+                                scaleImage.run();
+                        }
+                });
+                SwingUtilities.invokeLater(scaleImage);
                 return panel;
         }
 
@@ -707,8 +654,15 @@ public class TrangChu extends JFrame {
 
                 button.setBorderPainted(false);
 
-                button.addActionListener(
-                                e -> hienThongBao(text));
+                button.addActionListener(e -> {
+                        if (text.equals("Quan ly lich hen Spa")) {
+                                hienQuanLyLichHen();
+                        } else if (text.equals("Quan ly san pham")) {
+                                hienSanPham();
+                        } else {
+                                hienThongBao(text);
+                        }
+                });
 
                 JLabel key = new JLabel(shortcut);
 
@@ -743,15 +697,24 @@ public class TrangChu extends JFrame {
         // POPUP KHO
         // =========================================================
 
-        private void hienPopupKho(
-                        JButton source) {
-
+        private void hienPopupKho(JButton source) {
                 JPopupMenu popup = new JPopupMenu();
 
-                themMenuItem(popup, "Danh muc");
-                themMenuItem(popup, "San pham");
-                themMenuItem(popup, "Nhap kho");
-                themMenuItem(popup, "Kiem ke");
+                JMenuItem danhMuc = new JMenuItem("Danh muc");
+                danhMuc.addActionListener(e -> hienDanhMuc());
+                popup.add(danhMuc);
+
+                JMenuItem sanPham = new JMenuItem("San pham");
+                sanPham.addActionListener(e -> hienSanPham());
+                popup.add(sanPham);
+
+                JMenuItem nhapKho = new JMenuItem("Nhap kho");
+                nhapKho.addActionListener(e -> hienNhapKho());
+                popup.add(nhapKho);
+
+                JMenuItem kiemKe = new JMenuItem("Kiem ke");
+                kiemKe.addActionListener(e -> hienKiemKe());
+                popup.add(kiemKe);
 
                 popup.show(source, 0, source.getHeight());
         }
@@ -1023,5 +986,12 @@ public class TrangChu extends JFrame {
 
         private void hienQuanLyPhieuDichVu() {
                 cardLayout.show(contentPanel, "PHIEU_DICH_VU");
+        }
+
+        public static void main(String[] args) {
+                SwingUtilities.invokeLater(() -> {
+                        TrangChu frame = new TrangChu("NV001", "Nhan vien demo", "Quan ly");
+                        frame.setVisible(true);
+                });
         }
 }
