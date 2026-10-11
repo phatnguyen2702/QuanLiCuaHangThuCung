@@ -44,6 +44,7 @@ public class TrangChu extends JFrame {
         private QuanLyPhanCa quanLyPhanCa;
         private QuanLyLichHen quanLyLichHen;
         private QuanLyThuCung quanLyThuCung;
+        private QuanLyPhieuDichVu quanLyPhieuDichVu;
         // =========================================================
         // CONSTRUCTOR
         // =========================================================
@@ -124,6 +125,8 @@ public class TrangChu extends JFrame {
                 quanLyThuCung = new QuanLyThuCung();
                 contentPanel.add(quanLyThuCung, "THU_CUNG");
 
+                quanLyPhieuDichVu = new QuanLyPhieuDichVu();
+                contentPanel.add(quanLyPhieuDichVu, "PHIEU_DICH_VU");
                 // =====================================================
                 // ADD CONTENT
                 // =====================================================
@@ -710,16 +713,23 @@ public class TrangChu extends JFrame {
         private void hienPopupSpa(JButton source) {
                 JPopupMenu popup = new JPopupMenu();
 
+                // 1. Nút Lịch hẹn
                 JMenuItem mnuLichHen = new JMenuItem("Lich hen");
                 mnuLichHen.addActionListener(e -> hienQuanLyLichHen());
                 popup.add(mnuLichHen);
 
+                // 2. Nút Thú cưng
                 JMenuItem mnuThuCung = new JMenuItem("Thu cung");
                 mnuThuCung.addActionListener(e -> hienQuanLyThuCung());
                 popup.add(mnuThuCung);
 
+                // 3. Nút Khách hàng (Chưa làm giao diện thì giữ nguyên hàm tạm)
                 themMenuItem(popup, "Khach hang");
-                themMenuItem(popup, "Phieu dich vu");
+
+                // 4. Nút Phiếu dịch vụ (ĐÃ KẾT NỐI)
+                JMenuItem mnuPhieuDV = new JMenuItem("Phieu dich vu");
+                mnuPhieuDV.addActionListener(e -> hienQuanLyPhieuDichVu());
+                popup.add(mnuPhieuDV);
 
                 popup.show(source, 0, source.getHeight());
         }
@@ -959,5 +969,9 @@ public class TrangChu extends JFrame {
 
         private void hienQuanLyThuCung() {
                 cardLayout.show(contentPanel, "THU_CUNG");
+        }
+
+        private void hienQuanLyPhieuDichVu() {
+                cardLayout.show(contentPanel, "PHIEU_DICH_VU");
         }
 }

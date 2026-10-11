@@ -569,3 +569,10 @@ GO
 -- Thêm khóa ngoại
 ALTER TABLE ThuCung ADD CONSTRAINT FK_ThuCung_KhachHang FOREIGN KEY (maKhachHang) REFERENCES KhachHang(maKhachHang);
 GO
+ALTER TABLE PhieuDichVu ADD maLichHen VARCHAR(10) NULL;
+GO
+ALTER TABLE PhieuDichVu ADD CONSTRAINT FK_PhieuDichVu_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen);
+GO
+-- Cập nhật giả định một số mã lịch hẹn cho dữ liệu cũ để test
+UPDATE PhieuDichVu SET maLichHen = 'LH001' WHERE maPhieuDichVu = 'PDV001';
+GO
