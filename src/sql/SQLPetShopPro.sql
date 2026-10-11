@@ -219,7 +219,7 @@ GO
 ======================================================= */
 
 CREATE TABLE HoaDon (
-    maHoaDon VARCHAR(10) NOT NULL PRIMARY KEY,
+    maHoaDon VARCHAR(15) NOT NULL PRIMARY KEY,
     ngayLap DATETIME2 NULL,
     maPhuongThuc VARCHAR(10) NOT NULL,
     maKhachHang VARCHAR(10) NOT NULL,
@@ -240,13 +240,24 @@ CREATE TABLE HoaDon (
 );
 GO
 
+CREATE TABLE BoDemHoaDon (
+    id INT NOT NULL PRIMARY KEY,
+    giaTri INT NOT NULL,
+    CONSTRAINT CK_BoDemHoaDon_id CHECK (id = 1),
+    CONSTRAINT CK_BoDemHoaDon_giaTri CHECK (giaTri BETWEEN 0 AND 9999)
+);
+GO
+
+INSERT INTO BoDemHoaDon (id, giaTri) VALUES (1, 0);
+GO
+
 /*
    Trong mo hinh goc, 3 cot maThuCung/maDichVu/maSanPham
    duoc danh dau NOT NULL. De giao dien ban hang co the tao
    dong san pham HOAC dong dich vu, o day cho phep NULL.
 */
 CREATE TABLE ChiTietHoaDon (
-    maHoaDon VARCHAR(10) NOT NULL,
+    maHoaDon VARCHAR(15) NOT NULL,
     maThuCung VARCHAR(10) NULL,
     maDichVu VARCHAR(10) NULL,
     maSanPham VARCHAR(10) NULL,
@@ -495,30 +506,38 @@ GO
 INSERT INTO HoaDon
 (maHoaDon, ngayLap, maPhuongThuc, maKhachHang, maNhanVien, maVoucher)
 VALUES
-('HD001', '2026-10-07 08:30:00', 'PT001', 'KH001', 'NV002', NULL),
-('HD002', '2026-10-07 09:15:00', 'PT002', 'KH002', 'NV002', 'VC001'),
-('HD003', '2026-10-07 10:20:00', 'PT001', 'KH003', 'NV002', 'VC002'),
-('HD004', '2026-10-06 14:10:00', 'PT003', 'KH004', 'NV002', NULL),
-('HD005', '2026-10-06 16:40:00', 'PT001', 'KH005', 'NV002', NULL);
+('HD0010710260001', '2026-10-07 08:30:00', 'PT001', 'KH001', 'NV002', NULL),
+('HD0020710260002', '2026-10-07 09:15:00', 'PT002', 'KH002', 'NV002', 'VC001'),
+('HD0030710260003', '2026-10-07 10:20:00', 'PT001', 'KH003', 'NV002', 'VC002'),
+('HD0040610260004', '2026-10-06 14:10:00', 'PT003', 'KH004', 'NV002', NULL),
+('HD0050610260005', '2026-10-06 16:40:00', 'PT001', 'KH005', 'NV002', NULL);
+GO
+
+UPDATE BoDemHoaDon
+SET giaTri = (
+    SELECT ISNULL(MAX(TRY_CONVERT(INT, RIGHT(maHoaDon, 4))), 0)
+    FROM HoaDon
+)
+WHERE id = 1;
 GO
 
 INSERT INTO ChiTietHoaDon
 (maHoaDon, maThuCung, maDichVu, maSanPham, soLuong, donGia, phanTramGiam)
 VALUES
-('HD001', NULL, NULL, 'SP001', 1, 250000, 0),
-('HD001', NULL, NULL, 'SP003', 2, 59000, 0),
+('HD0010710260001', NULL, NULL, 'SP001', 1, 250000, 0),
+('HD0010710260001', NULL, NULL, 'SP003', 2, 59000, 0),
 
-('HD002', NULL, NULL, 'SP002', 2, 135000, 10),
-('HD002', NULL, NULL, 'SP008', 3, 39000, 10),
+('HD0020710260002', NULL, NULL, 'SP002', 2, 135000, 10),
+('HD0020710260002', NULL, NULL, 'SP008', 3, 39000, 10),
 
-('HD003', NULL, 'DV001', NULL, 1, 120000, 15),
-('HD003', NULL, 'DV002', NULL, 1, 180000, 15),
+('HD0030710260003', NULL, 'DV001', NULL, 1, 120000, 15),
+('HD0030710260003', NULL, 'DV002', NULL, 1, 180000, 15),
 
-('HD004', NULL, NULL, 'SP005', 1, 145000, 0),
-('HD004', NULL, NULL, 'SP006', 1, 150000, 0),
+('HD0040610260004', NULL, NULL, 'SP005', 1, 145000, 0),
+('HD0040610260004', NULL, NULL, 'SP006', 1, 150000, 0),
 
-('HD005', NULL, NULL, 'SP004', 1, 120000, 0),
-('HD005', NULL, NULL, 'SP007', 1, 99000, 0);
+('HD0050610260005', NULL, NULL, 'SP004', 1, 120000, 0),
+('HD0050610260005', NULL, NULL, 'SP007', 1, 99000, 0);
 GO
 
 INSERT INTO PhieuNhapKho

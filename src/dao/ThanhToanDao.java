@@ -8,8 +8,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import ConnectDB.connectDB;
 import entity.ThanhToan;
@@ -132,6 +134,37 @@ public class ThanhToanDao {
         return phuongThucs;
     }
 
+    public String taoMaHoaDon(String maKhachHang, LocalDate ngayLap)
+            throws SQLException {
+        if (maKhachHang == null || ngayLap == null) {
+            throw new IllegalArgumentException("Thiếu mã khách hàng hoặc ngày lập hóa đơn.");
+        }
+
+        String chuSoMaKhachHang = maKhachHang.replaceAll("\\D", "");
+        if (chuSoMaKhachHang.length() < 3) {
+            throw new IllegalArgumentException(
+                    "Mã khách hàng phải có ít nhất 3 chữ số để tạo mã hóa đơn.");
+        }
+
+        String sql = "UPDATE BoDemHoaDon "
+                + "SET giaTri = CASE WHEN giaTri >= 9999 THEN 1 ELSE giaTri + 1 END "
+                + "OUTPUT INSERTED.giaTri "
+                + "WHERE id = 1";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) {
+                throw new SQLException(
+                        "Không cấp được số thứ tự hóa đơn. Hãy kiểm tra bộ đếm hóa đơn.");
+            }
+
+            int thuTuMua = rs.getInt(1);
+            return "HD" + chuSoMaKhachHang.substring(0, 3)
+                    + ngayLap.format(DateTimeFormatter.ofPattern("ddMMyy", Locale.ROOT))
+                    + String.format(Locale.ROOT, "%04d", thuTuMua);
+        }
+    }
+
     public String taoHoaDon(
             String maHoaDon,
             String maNhanVien,
@@ -145,7 +178,7 @@ public class ThanhToanDao {
             throw new IllegalArgumentException("Hóa đơn chưa có mặt hàng.");
         }
 
-        if (maHoaDon == null || !maHoaDon.matches("HD[A-F0-9]{8}")) {
+        if (maHoaDon == null || !maHoaDon.matches("HD\\d{13}")) {
             throw new IllegalArgumentException("Mã hóa đơn không hợp lệ.");
         }
         String insertHoaDon = "INSERT INTO HoaDon "
