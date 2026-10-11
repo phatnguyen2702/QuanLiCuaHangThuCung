@@ -1,3 +1,4 @@
+
 CREATE TABLE DanhMuc (
     maDanhMuc VARCHAR(10) NOT NULL PRIMARY KEY,
     tenDanhMuc NVARCHAR(50) NULL,
@@ -557,4 +558,14 @@ VALUES
 ('KK001', 'SP004', 14, 14, 1),
 ('KK001', 'SP005', 11, 10, 0),
 ('KK001', 'SP006', 17, 17, 1);
+GO
+ALTER TABLE ThuCung ADD maKhachHang VARCHAR(10);
+ALTER TABLE ThuCung ADD trangThai NVARCHAR(50) DEFAULT N'Đang hoạt động';
+GO
+-- Cập nhật dữ liệu cũ để không bị null
+UPDATE ThuCung SET trangThai = N'Đang hoạt động';
+UPDATE ThuCung SET maKhachHang = 'KH001' WHERE maKhachHang IS NULL; 
+GO
+-- Thêm khóa ngoại
+ALTER TABLE ThuCung ADD CONSTRAINT FK_ThuCung_KhachHang FOREIGN KEY (maKhachHang) REFERENCES KhachHang(maKhachHang);
 GO

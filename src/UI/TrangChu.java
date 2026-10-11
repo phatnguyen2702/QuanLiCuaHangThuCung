@@ -42,6 +42,8 @@ public class TrangChu extends JFrame {
         private QuanLyTaiKhoan quanLyTaiKhoan;
         private QuanLyCaLam quanLyCaLam;
         private QuanLyPhanCa quanLyPhanCa;
+        private QuanLyLichHen quanLyLichHen;
+        private QuanLyThuCung quanLyThuCung;
         // =========================================================
         // CONSTRUCTOR
         // =========================================================
@@ -116,6 +118,11 @@ public class TrangChu extends JFrame {
                 contentPanel.add(
                                 quanLyPhanCa,
                                 "PHAN_CA");
+                quanLyLichHen = new QuanLyLichHen();
+                contentPanel.add(quanLyLichHen, "LICH_HEN");
+
+                quanLyThuCung = new QuanLyThuCung();
+                contentPanel.add(quanLyThuCung, "THU_CUNG");
 
                 // =====================================================
                 // ADD CONTENT
@@ -688,59 +695,34 @@ public class TrangChu extends JFrame {
 
                 JPopupMenu popup = new JPopupMenu();
 
-                themMenuItem(
-                                popup,
-                                "Danh muc");
+                themMenuItem(popup, "Danh muc");
+                themMenuItem(popup, "San pham");
+                themMenuItem(popup, "Nhap kho");
+                themMenuItem(popup, "Kiem ke");
 
-                themMenuItem(
-                                popup,
-                                "San pham");
-
-                themMenuItem(
-                                popup,
-                                "Nhap kho");
-
-                themMenuItem(
-                                popup,
-                                "Kiem ke");
-
-                popup.show(
-                                source,
-                                0,
-                                source.getHeight());
+                popup.show(source, 0, source.getHeight());
         }
 
         // =========================================================
         // POPUP SPA
         // =========================================================
 
-        private void hienPopupSpa(
-                        JButton source) {
-
+        private void hienPopupSpa(JButton source) {
                 JPopupMenu popup = new JPopupMenu();
 
-                themMenuItem(
-                                popup,
-                                "Lich hen");
+                JMenuItem mnuLichHen = new JMenuItem("Lich hen");
+                mnuLichHen.addActionListener(e -> hienQuanLyLichHen());
+                popup.add(mnuLichHen);
 
-                themMenuItem(
-                                popup,
-                                "Thu cung");
+                JMenuItem mnuThuCung = new JMenuItem("Thu cung");
+                mnuThuCung.addActionListener(e -> hienQuanLyThuCung());
+                popup.add(mnuThuCung);
 
-                themMenuItem(
-                                popup,
-                                "Khach hang");
+                themMenuItem(popup, "Khach hang");
+                themMenuItem(popup, "Phieu dich vu");
 
-                themMenuItem(
-                                popup,
-                                "Phieu dich vu");
-
-                popup.show(
-                                source,
-                                0,
-                                source.getHeight());
+                popup.show(source, 0, source.getHeight());
         }
-
         // =========================================================
         // POPUP HOA DON
         // =========================================================
@@ -969,5 +951,13 @@ public class TrangChu extends JFrame {
                                                 + tenChucNang,
                                 "Pet Shop Pro",
                                 JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        private void hienQuanLyLichHen() {
+                cardLayout.show(contentPanel, "LICH_HEN");
+        }
+
+        private void hienQuanLyThuCung() {
+                cardLayout.show(contentPanel, "THU_CUNG");
         }
 }
