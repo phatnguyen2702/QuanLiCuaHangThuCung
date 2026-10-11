@@ -65,9 +65,21 @@ public class TrangChu extends JFrame {
                 setTitle("Pet Shop Pro - Trang chu");
 
                 setSize(1200, 720);
+<<<<<<< HEAD
+                setMinimumSize(new Dimension(1000, 650)); // Đảm bảo cửa sổ không bị thu nhỏ quá giới hạn
                 setLocationRelativeTo(null);
                 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                setResizable(true); // Cho phép thay đổi kích thước để thích ứng với mọi màn hình máy tính khác
+=======
+
+                setLocationRelativeTo(null);
+
+                setDefaultCloseOperation(
+                                JFrame.EXIT_ON_CLOSE);
+
                 setResizable(false);
+
+>>>>>>> main
                 setLayout(new BorderLayout());
 
                 // =====================================================
@@ -89,9 +101,25 @@ public class TrangChu extends JFrame {
 
                 contentPanel.setBackground(BG);
 
-                // Thêm các màn hình vào CardLayout
-                contentPanel.add(createMainContent(), "TRANG_CHU");
+<<<<<<< HEAD
+                // Thêm màn hình trang chủ vào JScrollPane để chống tràn/bể bố cục chiều dọc
+                // trên máy màn hình nhỏ
+                JPanel mainContent = createMainContent();
+                JScrollPane scrollPaneTrangChu = new JScrollPane(mainContent);
+                scrollPaneTrangChu.setBorder(null);
+                scrollPaneTrangChu.getVerticalScrollBar().setUnitIncrement(16);
+                contentPanel.add(scrollPaneTrangChu, "TRANG_CHU");
+=======
+                // =====================================================
+                // TRANG CHU
+                // =====================================================
 
+                contentPanel.add(
+                                createMainContent(),
+                                "TRANG_CHU");
+>>>>>>> main
+
+                // Thêm các màn hình quản lý khác vào CardLayout
                 quanLyTaiKhoan = new QuanLyTaiKhoan();
 
                 contentPanel.add(
@@ -115,20 +143,25 @@ public class TrangChu extends JFrame {
                 quanLyThuCung = new QuanLyThuCung();
                 contentPanel.add(quanLyThuCung, "THU_CUNG");
 
-                // Khởi tạo và thêm các màn hình Kho vào CardLayout
+<<<<<<< HEAD
                 danhMucPanel = new DanhMucPanel();
                 contentPanel.add(danhMucPanel, "DANH_MUC");
+=======
+                quanLyPhieuDichVu = new QuanLyPhieuDichVu();
+                contentPanel.add(quanLyPhieuDichVu, "PHIEU_DICH_VU");
+                // =====================================================
+                // ADD CONTENT
+                // =====================================================
+>>>>>>> main
 
-                sanPhamPanel = new SanPhamPanel();
-                contentPanel.add(sanPhamPanel, "SAN_PHAM");
+                add(
+                                contentPanel,
+                                BorderLayout.CENTER);
 
-                nhapKhoPanel = new NhapKhoPanel();
-                contentPanel.add(nhapKhoPanel, "NHAP_KHO");
+                // =====================================================
+                // MAC DINH HIEN TRANG CHU
+                // =====================================================
 
-                kiemKePanel = new KiemKePanel();
-                contentPanel.add(kiemKePanel, "KIEM_KE");
-
-                add(contentPanel, BorderLayout.CENTER);
                 hienTrangChu();
         }
 
@@ -350,12 +383,17 @@ public class TrangChu extends JFrame {
         // =========================================================
         private void hienQuanLyPhanCa() {
 
-                cardLayout.show(
-                                contentPanel,
-                                "PHAN_CA");
+<<<<<<< HEAD
+
+        private void hienThanhToan() {
+                cardLayout.show(contentPanel, "THANH_TOAN");
         }
 
-        // Các hàm chuyển đổi màn hình Kho
+        private void hienTraCuuHoaDon() {
+                traCuuHoaDon.hienDanhSach();
+                cardLayout.show(contentPanel, "TRA_CUU_HOA_DON");
+        }
+
         private void hienDanhMuc() {
                 cardLayout.show(contentPanel, "DANH_MUC");
         }
@@ -370,7 +408,15 @@ public class TrangChu extends JFrame {
 
         private void hienKiemKe() {
                 cardLayout.show(contentPanel, "KIEM_KE");
+=======
+                cardLayout.show(
+                                contentPanel,
+                                "PHAN_CA");
+>>>>>>> main
         }
+        // =========================================================
+        // NOI DUNG TRANG CHU
+        // =========================================================
 
         private JPanel createMainContent() {
 
