@@ -1,11 +1,10 @@
 package UI;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class TrangChu extends JFrame {
 
@@ -42,6 +41,8 @@ public class TrangChu extends JFrame {
         private QuanLyTaiKhoan quanLyTaiKhoan;
         private QuanLyCaLam quanLyCaLam;
         private QuanLyPhanCa quanLyPhanCa;
+        private final QuanLyThanhToan thanhToan;
+        private final TraCuuHoaDon traCuuHoaDon;
         // =========================================================
         // CONSTRUCTOR
         // =========================================================
@@ -116,6 +117,18 @@ public class TrangChu extends JFrame {
                 contentPanel.add(
                                 quanLyPhanCa,
                                 "PHAN_CA");
+
+                thanhToan = new QuanLyThanhToan(maNV);
+
+                contentPanel.add(
+                                thanhToan,
+                                "THANH_TOAN");
+
+                traCuuHoaDon = new TraCuuHoaDon();
+
+                contentPanel.add(
+                                traCuuHoaDon,
+                                "TRA_CUU_HOA_DON");
 
                 // =====================================================
                 // ADD CONTENT
@@ -353,6 +366,24 @@ public class TrangChu extends JFrame {
                 cardLayout.show(
                                 contentPanel,
                                 "PHAN_CA");
+        }
+        // =========================================================
+        // HIEN THANH TOAN
+        // =========================================================
+        private void hienThanhToan() {
+
+                cardLayout.show(
+                                contentPanel,
+                                "THANH_TOAN");
+        }
+
+        private void hienTraCuuHoaDon() {
+
+                traCuuHoaDon.hienDanhSach();
+
+                cardLayout.show(
+                                contentPanel,
+                                "TRA_CUU_HOA_DON");
         }
         // =========================================================
         // NOI DUNG TRANG CHU
@@ -647,8 +678,13 @@ public class TrangChu extends JFrame {
 
                 button.setBorderPainted(false);
 
-                button.addActionListener(
-                                e -> hienThongBao(text));
+                button.addActionListener(e -> {
+                        if ("Thanh toan".equals(text)) {
+                                hienThanhToan();
+                        } else {
+                                hienThongBao(text);
+                        }
+                });
 
                 JLabel key = new JLabel(shortcut);
 
@@ -750,13 +786,13 @@ public class TrangChu extends JFrame {
 
                 JPopupMenu popup = new JPopupMenu();
 
-                themMenuItem(
-                                popup,
-                                "Hoa don");
+                JMenuItem traCuuItem = new JMenuItem("Tra cứu hóa đơn");
+                traCuuItem.addActionListener(e -> hienTraCuuHoaDon());
+                popup.add(traCuuItem);
 
-                themMenuItem(
-                                popup,
-                                "Thanh toan");
+                JMenuItem thanhToanItem = new JMenuItem("Thanh toan");
+                thanhToanItem.addActionListener(e -> hienThanhToan());
+                popup.add(thanhToanItem);
 
                 popup.show(
                                 source,
