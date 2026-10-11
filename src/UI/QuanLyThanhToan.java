@@ -687,18 +687,24 @@ public class QuanLyThanhToan extends JPanel {
             return;
         }
 
-        String maHoaDon = taoMaHoaDon();
-        if (chuyenKhoan) {
-            if (!hienMaQrDemo(maHoaDon, tongThanhToan)) {
-                return;
-            }
-        } else {
+        if (!chuyenKhoan) {
             int confirm = JOptionPane.showConfirmDialog(
                     this, "Xác nhận thanh toán " + dinhDangTien(tongThanhToan) + "?",
                     "Thanh toán", JOptionPane.YES_NO_OPTION);
             if (confirm != JOptionPane.YES_OPTION) {
                 return;
             }
+        }
+
+        String maHoaDon;
+        try {
+            maHoaDon = dao.taoMaHoaDon(maKhachHang, ngayLap);
+        } catch (SQLException | IllegalArgumentException e) {
+            hienLoi("Không tạo được mã hóa đơn: " + e.getMessage());
+            return;
+        }
+        if (chuyenKhoan && !hienMaQrDemo(maHoaDon, tongThanhToan)) {
+            return;
         }
 
         try {
@@ -733,11 +739,6 @@ public class QuanLyThanhToan extends JPanel {
         } catch (Exception e) {
             hienLoi("Thanh toán thất bại; hóa đơn chưa được lưu: " + e.getMessage());
         }
-    }
-
-    private String taoMaHoaDon() {
-        return "HD" + java.util.UUID.randomUUID()
-                .toString().replace("-", "").substring(0, 8).toUpperCase(Locale.ROOT);
     }
 
     private boolean hienMaQrDemo(String maHoaDon, BigDecimal tongThanhToan) {
