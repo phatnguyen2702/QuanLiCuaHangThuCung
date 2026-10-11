@@ -1,7 +1,6 @@
 package UI;
 
-import dao.PhieuKiemKeDAO;
-import dao.SanPhamDAO;
+import dao.KiemKeDAO;
 import entity.ChiTietPhieuKiemKe;
 import entity.PhieuKiemKe;
 import entity.SanPham;
@@ -18,11 +17,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Tab "Kiem ke kho" - Kiem ke ton kho. */
-public class KiemKePanel extends JPanel implements ManHinhKho {
+/** Man hinh "Kiem ke kho" - Kiem ke ton kho (nam trong khung TrangChu). */
+public class KiemKePanel extends JPanel {
 
-    private final PhieuKiemKeDAO phieuDAO = new PhieuKiemKeDAO();
-    private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
+    private final KiemKeDAO dao = new KiemKeDAO();
 
     private final DefaultTableModel model = new DefaultTableModel(
             new String[]{"Mã SP", "Tên sản phẩm", "Tồn hệ thống",
@@ -171,7 +169,6 @@ public class KiemKePanel extends JPanel implements ManHinhKho {
     // DU LIEU
     // =========================================================
 
-    @Override
     public void napLai() {
         // Dang kiem do thi giu nguyen, chua kiem gi thi lay ton moi nhat
         if (!coDongDaKiem()) {
@@ -191,13 +188,13 @@ public class KiemKePanel extends JPanel implements ManHinhKho {
     private void phieuMoi() {
 
         try {
-            maPhieu = phieuDAO.taoMaMoi();
+            maPhieu = dao.taoMaMoi();
             lbTieuDe.setText("Kiểm kê kho — " + maPhieu);
 
             tatCa.clear();
 
-            // Ton he thong = ton kho dang tinh trong SanPhamDAO
-            for (SanPham sp : sanPhamDAO.getAll()) {
+            // Ton he thong = ton kho dang tinh tu du lieu nhap / ban / kiem ke
+            for (SanPham sp : dao.laySanPhamKemTon()) {
                 ChiTietPhieuKiemKe ct = new ChiTietPhieuKiemKe();
                 ct.setMaSanPham(sp.getMaSanPham());
                 ct.setTenSanPham(sp.getTenSanPham());
@@ -368,7 +365,7 @@ public class KiemKePanel extends JPanel implements ManHinhKho {
                 PhienLamViec.maNV);
 
         try {
-            phieuDAO.luu(phieu, daKiem);
+            dao.luu(phieu, daKiem);
 
             UIStyle.thongBao(this, "Đã chốt kiểm kê " + maPhieu + ".");
 
