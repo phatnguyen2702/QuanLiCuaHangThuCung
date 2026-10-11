@@ -11,970 +11,970 @@ import java.util.ArrayList;
 
 public class QuanLyCaLam extends JPanel {
 
-    // ==============================
-    // MAU
-    // ==============================
+        // ==============================
+        // MAU
+        // ==============================
 
-    private final Color NAVY = new Color(18, 48, 82);
-    private final Color BG = new Color(245, 247, 250);
-    private final Color GREEN = new Color(72, 196, 62);
-    private final Color RED = new Color(210, 70, 70);
-    private final Color ORANGE = new Color(230, 150, 50);
+        private final Color NAVY = new Color(18, 48, 82);
+        private final Color BG = new Color(245, 247, 250);
+        private final Color GREEN = new Color(72, 196, 62);
+        private final Color RED = new Color(210, 70, 70);
+        private final Color ORANGE = new Color(230, 150, 50);
 
-    // ==============================
-    // FORM
-    // ==============================
+        // ==============================
+        // FORM
+        // ==============================
 
-    private JTextField txtMaCa;
-    private JTextField txtTenCa;
-    private JTextField txtGioBatDau;
-    private JTextField txtGioKetThuc;
+        private JTextField txtMaCa;
+        private JTextField txtTenCa;
+        private JTextField txtGioBatDau;
+        private JTextField txtGioKetThuc;
 
-    private JTextField txtTimKiem;
+        private JTextField txtTimKiem;
 
-    // ==============================
-    // TABLE
-    // ==============================
+        // ==============================
+        // TABLE
+        // ==============================
 
-    private JTable table;
-    private DefaultTableModel model;
+        private JTable table;
+        private DefaultTableModel model;
 
-    // ==============================
-    // DAO
-    // ==============================
+        // ==============================
+        // DAO
+        // ==============================
 
-    private CaLamDAO caLamDAO;
+        private CaLamDAO caLamDAO;
 
-    // ==============================
-    // CONSTRUCTOR
-    // ==============================
+        // ==============================
+        // CONSTRUCTOR
+        // ==============================
 
-    public QuanLyCaLam() {
+        public QuanLyCaLam() {
 
-        caLamDAO = new CaLamDAO();
+                caLamDAO = new CaLamDAO();
 
-        setLayout(new BorderLayout());
+                setLayout(new BorderLayout());
 
-        setBackground(BG);
+                setBackground(BG);
 
-        add(
-                createTitle(),
-                BorderLayout.NORTH);
+                add(
+                                createTitle(),
+                                BorderLayout.NORTH);
 
-        add(
-                createCenter(),
-                BorderLayout.CENTER);
+                add(
+                                createCenter(),
+                                BorderLayout.CENTER);
 
-        loadData();
-    }
+                loadData();
+        }
 
-    // ==============================
-    // TITLE
-    // ==============================
+        // ==============================
+        // TITLE
+        // ==============================
 
-    private JPanel createTitle() {
+        private JPanel createTitle() {
 
-        JPanel panel = new JPanel(
-                new BorderLayout());
+                JPanel panel = new JPanel(
+                                new BorderLayout());
 
-        panel.setBackground(Color.WHITE);
+                panel.setBackground(Color.WHITE);
 
-        panel.setBorder(
-                new EmptyBorder(
-                        18,
-                        25,
-                        18,
-                        25));
+                panel.setBorder(
+                                new EmptyBorder(
+                                                18,
+                                                25,
+                                                18,
+                                                25));
 
-        JLabel title = new JLabel(
-                "QUAN LY CA LAM");
+                JLabel title = new JLabel(
+                                "QUAN LY CA LAM");
 
-        title.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        24));
+                title.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.BOLD,
+                                                24));
 
-        title.setForeground(NAVY);
+                title.setForeground(NAVY);
 
-        JLabel sub = new JLabel(
-                "Quan ly thong tin ca lam viec");
+                JLabel sub = new JLabel(
+                                "Quan ly thong tin ca lam viec");
 
-        sub.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13));
+                sub.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.PLAIN,
+                                                13));
 
-        sub.setForeground(Color.GRAY);
+                sub.setForeground(Color.GRAY);
 
-        JPanel text = new JPanel();
+                JPanel text = new JPanel();
 
-        text.setOpaque(false);
+                text.setOpaque(false);
 
-        text.setLayout(
-                new BoxLayout(
-                        text,
-                        BoxLayout.Y_AXIS));
+                text.setLayout(
+                                new BoxLayout(
+                                                text,
+                                                BoxLayout.Y_AXIS));
 
-        text.add(title);
+                text.add(title);
 
-        text.add(
-                Box.createVerticalStrut(5));
+                text.add(
+                                Box.createVerticalStrut(5));
 
-        text.add(sub);
+                text.add(sub);
 
-        panel.add(
-                text,
-                BorderLayout.WEST);
+                panel.add(
+                                text,
+                                BorderLayout.WEST);
 
-        return panel;
-    }
+                return panel;
+        }
 
-    // ==============================
-    // CENTER
-    // ==============================
+        // ==============================
+        // CENTER
+        // ==============================
 
-    private JPanel createCenter() {
+        private JPanel createCenter() {
 
-        JPanel panel = new JPanel(
-                new BorderLayout(
-                        15,
-                        15));
+                JPanel panel = new JPanel(
+                                new BorderLayout(
+                                                15,
+                                                15));
 
-        panel.setBackground(BG);
+                panel.setBackground(BG);
 
-        panel.setBorder(
-                new EmptyBorder(
-                        20,
-                        25,
-                        20,
-                        25));
+                panel.setBorder(
+                                new EmptyBorder(
+                                                20,
+                                                25,
+                                                20,
+                                                25));
 
-        panel.add(
-                createForm(),
-                BorderLayout.NORTH);
+                panel.add(
+                                createForm(),
+                                BorderLayout.NORTH);
 
-        panel.add(
-                createTablePanel(),
-                BorderLayout.CENTER);
+                panel.add(
+                                createTablePanel(),
+                                BorderLayout.CENTER);
 
-        return panel;
-    }
+                return panel;
+        }
 
-    // ==============================
-    // FORM
-    // ==============================
+        // ==============================
+        // FORM
+        // ==============================
 
-    private JPanel createForm() {
+        private JPanel createForm() {
 
-        JPanel panel = new JPanel(
-                new GridBagLayout());
+                JPanel panel = new JPanel(
+                                new GridBagLayout());
 
-        panel.setBackground(Color.WHITE);
+                panel.setBackground(Color.WHITE);
 
-        panel.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
+                panel.setBorder(
+                                BorderFactory.createCompoundBorder(
+                                                BorderFactory.createLineBorder(
+                                                                new Color(
+                                                                                220,
+                                                                                225,
+                                                                                230)),
+                                                new EmptyBorder(
+                                                                15,
+                                                                15,
+                                                                15,
+                                                                15)));
+
+                GridBagConstraints gbc = new GridBagConstraints();
+
+                gbc.insets = new Insets(
+                                6,
+                                8,
+                                6,
+                                8);
+
+                gbc.fill = GridBagConstraints.HORIZONTAL;
+
+                // ==============================
+                // MA CA
+                // ==============================
+
+                gbc.gridx = 0;
+                gbc.gridy = 0;
+                gbc.weightx = 0;
+
+                panel.add(
+                                createLabel("Ma ca:"),
+                                gbc);
+
+                txtMaCa = new JTextField();
+
+                styleTextField(txtMaCa);
+
+                gbc.gridx = 1;
+                gbc.weightx = 1;
+
+                panel.add(
+                                txtMaCa,
+                                gbc);
+
+                // ==============================
+                // TEN CA
+                // ==============================
+
+                gbc.gridx = 2;
+                gbc.weightx = 0;
+
+                panel.add(
+                                createLabel("Ten ca:"),
+                                gbc);
+
+                txtTenCa = new JTextField();
+
+                styleTextField(txtTenCa);
+
+                gbc.gridx = 3;
+                gbc.weightx = 1;
+
+                panel.add(
+                                txtTenCa,
+                                gbc);
+
+                // ==============================
+                // GIO BAT DAU
+                // ==============================
+
+                gbc.gridx = 0;
+                gbc.gridy = 1;
+                gbc.weightx = 0;
+
+                panel.add(
+                                createLabel("Gio bat dau:"),
+                                gbc);
+
+                txtGioBatDau = new JTextField();
+
+                styleTextField(txtGioBatDau);
+
+                gbc.gridx = 1;
+                gbc.weightx = 1;
+
+                panel.add(
+                                txtGioBatDau,
+                                gbc);
+
+                // ==============================
+                // GIO KET THUC
+                // ==============================
+
+                gbc.gridx = 2;
+                gbc.weightx = 0;
+
+                panel.add(
+                                createLabel("Gio ket thuc:"),
+                                gbc);
+
+                txtGioKetThuc = new JTextField();
+
+                styleTextField(txtGioKetThuc);
+
+                gbc.gridx = 3;
+                gbc.weightx = 1;
+
+                panel.add(
+                                txtGioKetThuc,
+                                gbc);
+
+                // ==============================
+                // BUTTON
+                // ==============================
+
+                JPanel buttons = createButtonPanel();
+
+                gbc.gridx = 0;
+                gbc.gridy = 2;
+                gbc.gridwidth = 4;
+                gbc.weightx = 1;
+
+                panel.add(
+                                buttons,
+                                gbc);
+
+                return panel;
+        }
+
+        // ==============================
+        // LABEL
+        // ==============================
+
+        private JLabel createLabel(String text) {
+
+                JLabel label = new JLabel(text);
+
+                label.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.BOLD,
+                                                12));
+
+                label.setForeground(
                                 new Color(
-                                        220,
-                                        225,
-                                        230)),
-                        new EmptyBorder(
-                                15,
-                                15,
-                                15,
-                                15)));
+                                                60,
+                                                60,
+                                                60));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        gbc.insets = new Insets(
-                6,
-                8,
-                6,
-                8);
-
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+                return label;
+        }
 
         // ==============================
-        // MA CA
+        // TEXT FIELD
         // ==============================
 
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0;
+        private void styleTextField(
+                        JTextField textField) {
 
-        panel.add(
-                createLabel("Ma ca:"),
-                gbc);
+                textField.setPreferredSize(
+                                new Dimension(
+                                                220,
+                                                34));
 
-        txtMaCa = new JTextField();
-
-        styleTextField(txtMaCa);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-
-        panel.add(
-                txtMaCa,
-                gbc);
+                textField.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.PLAIN,
+                                                13));
+        }
 
         // ==============================
-        // TEN CA
+        // BUTTON PANEL
         // ==============================
 
-        gbc.gridx = 2;
-        gbc.weightx = 0;
+        private JPanel createButtonPanel() {
 
-        panel.add(
-                createLabel("Ten ca:"),
-                gbc);
+                JPanel panel = new JPanel(
+                                new FlowLayout(
+                                                FlowLayout.RIGHT,
+                                                8,
+                                                0));
 
-        txtTenCa = new JTextField();
+                panel.setBackground(Color.WHITE);
 
-        styleTextField(txtTenCa);
+                JButton btnThem = createActionButton(
+                                "Them",
+                                GREEN);
 
-        gbc.gridx = 3;
-        gbc.weightx = 1;
+                JButton btnSua = createActionButton(
+                                "Sua",
+                                NAVY);
 
-        panel.add(
-                txtTenCa,
-                gbc);
+                JButton btnXoa = createActionButton(
+                                "Xoa",
+                                RED);
 
-        // ==============================
-        // GIO BAT DAU
-        // ==============================
+                JButton btnLamMoi = createActionButton(
+                                "Lam moi",
+                                ORANGE);
 
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 0;
+                btnThem.addActionListener(
+                                e -> them());
 
-        panel.add(
-                createLabel("Gio bat dau:"),
-                gbc);
+                btnSua.addActionListener(
+                                e -> sua());
 
-        txtGioBatDau = new JTextField();
+                btnXoa.addActionListener(
+                                e -> xoa());
 
-        styleTextField(txtGioBatDau);
+                btnLamMoi.addActionListener(
+                                e -> lamMoi());
 
-        gbc.gridx = 1;
-        gbc.weightx = 1;
+                panel.add(btnThem);
+                panel.add(btnSua);
+                panel.add(btnXoa);
+                panel.add(btnLamMoi);
 
-        panel.add(
-                txtGioBatDau,
-                gbc);
-
-        // ==============================
-        // GIO KET THUC
-        // ==============================
-
-        gbc.gridx = 2;
-        gbc.weightx = 0;
-
-        panel.add(
-                createLabel("Gio ket thuc:"),
-                gbc);
-
-        txtGioKetThuc = new JTextField();
-
-        styleTextField(txtGioKetThuc);
-
-        gbc.gridx = 3;
-        gbc.weightx = 1;
-
-        panel.add(
-                txtGioKetThuc,
-                gbc);
+                return panel;
+        }
 
         // ==============================
-        // BUTTON
+        // ACTION BUTTON
         // ==============================
 
-        JPanel buttons = createButtonPanel();
+        private JButton createActionButton(
+                        String text,
+                        Color color) {
 
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 4;
-        gbc.weightx = 1;
+                JButton button = new JButton(text);
 
-        panel.add(
-                buttons,
-                gbc);
+                button.setBackground(color);
 
-        return panel;
-    }
+                button.setForeground(Color.WHITE);
 
-    // ==============================
-    // LABEL
-    // ==============================
+                button.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.BOLD,
+                                                12));
 
-    private JLabel createLabel(String text) {
+                button.setFocusPainted(false);
 
-        JLabel label = new JLabel(text);
+                button.setBorderPainted(false);
 
-        label.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        12));
+                button.setPreferredSize(
+                                new Dimension(
+                                                85,
+                                                34));
 
-        label.setForeground(
-                new Color(
-                        60,
-                        60,
-                        60));
+                return button;
+        }
 
-        return label;
-    }
+        // ==============================
+        // TABLE
+        // ==============================
 
-    // ==============================
-    // TEXT FIELD
-    // ==============================
+        private JPanel createTablePanel() {
 
-    private void styleTextField(
-            JTextField textField) {
+                JPanel panel = new JPanel(
+                                new BorderLayout(
+                                                10,
+                                                10));
 
-        textField.setPreferredSize(
-                new Dimension(
-                        220,
-                        34));
+                panel.setBackground(Color.WHITE);
 
-        textField.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        13));
-    }
+                panel.setBorder(
+                                BorderFactory.createCompoundBorder(
+                                                BorderFactory.createLineBorder(
+                                                                new Color(
+                                                                                220,
+                                                                                225,
+                                                                                230)),
+                                                new EmptyBorder(
+                                                                10,
+                                                                10,
+                                                                10,
+                                                                10)));
 
-    // ==============================
-    // BUTTON PANEL
-    // ==============================
+                // ==============================
+                // TOP
+                // ==============================
 
-    private JPanel createButtonPanel() {
+                JPanel top = new JPanel(
+                                new BorderLayout());
 
-        JPanel panel = new JPanel(
-                new FlowLayout(
-                        FlowLayout.RIGHT,
-                        8,
-                        0));
+                top.setBackground(Color.WHITE);
 
-        panel.setBackground(Color.WHITE);
+                JLabel title = new JLabel(
+                                "DANH SACH CA LAM");
 
-        JButton btnThem = createActionButton(
-                "Them",
-                GREEN);
+                title.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.BOLD,
+                                                16));
 
-        JButton btnSua = createActionButton(
-                "Sua",
-                NAVY);
+                title.setForeground(NAVY);
 
-        JButton btnXoa = createActionButton(
-                "Xoa",
-                RED);
+                top.add(
+                                title,
+                                BorderLayout.WEST);
 
-        JButton btnLamMoi = createActionButton(
-                "Lam moi",
-                ORANGE);
+                // ==============================
+                // SEARCH
+                // ==============================
 
-        btnThem.addActionListener(
-                e -> them());
+                JPanel search = new JPanel(
+                                new FlowLayout(
+                                                FlowLayout.RIGHT,
+                                                5,
+                                                0));
 
-        btnSua.addActionListener(
-                e -> sua());
+                search.setBackground(Color.WHITE);
 
-        btnXoa.addActionListener(
-                e -> xoa());
+                JLabel lbSearch = new JLabel("Tim kiem:");
 
-        btnLamMoi.addActionListener(
-                e -> lamMoi());
+                txtTimKiem = new JTextField(18);
 
-        panel.add(btnThem);
-        panel.add(btnSua);
-        panel.add(btnXoa);
-        panel.add(btnLamMoi);
+                txtTimKiem.setPreferredSize(
+                                new Dimension(
+                                                180,
+                                                32));
 
-        return panel;
-    }
+                JButton btnTim = createSmallButton(
+                                "Tim",
+                                NAVY);
 
-    // ==============================
-    // ACTION BUTTON
-    // ==============================
-
-    private JButton createActionButton(
-            String text,
-            Color color) {
-
-        JButton button = new JButton(text);
-
-        button.setBackground(color);
-
-        button.setForeground(Color.WHITE);
-
-        button.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        12));
-
-        button.setFocusPainted(false);
-
-        button.setBorderPainted(false);
-
-        button.setPreferredSize(
-                new Dimension(
-                        85,
-                        34));
-
-        return button;
-    }
-
-    // ==============================
-    // TABLE
-    // ==============================
-
-    private JPanel createTablePanel() {
-
-        JPanel panel = new JPanel(
-                new BorderLayout(
-                        10,
-                        10));
-
-        panel.setBackground(Color.WHITE);
-
-        panel.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
+                JButton btnTatCa = createSmallButton(
+                                "Tat ca",
                                 new Color(
-                                        220,
-                                        225,
-                                        230)),
-                        new EmptyBorder(
-                                10,
-                                10,
-                                10,
-                                10)));
+                                                100,
+                                                110,
+                                                120));
+
+                btnTim.addActionListener(
+                                e -> timKiem());
+
+                btnTatCa.addActionListener(
+                                e -> loadData());
+
+                search.add(lbSearch);
+                search.add(txtTimKiem);
+                search.add(btnTim);
+                search.add(btnTatCa);
+
+                top.add(
+                                search,
+                                BorderLayout.EAST);
+
+                panel.add(
+                                top,
+                                BorderLayout.NORTH);
+
+                // ==============================
+                // MODEL
+                // ==============================
+
+                model = new DefaultTableModel(
+                                new String[] {
+                                                "Ma ca",
+                                                "Ten ca",
+                                                "Gio bat dau",
+                                                "Gio ket thuc"
+                                },
+                                0) {
+
+                        @Override
+                        public boolean isCellEditable(
+                                        int row,
+                                        int column) {
+                                return false;
+                        }
+                };
+
+                table = new JTable(model);
+
+                table.setRowHeight(30);
+
+                table.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.PLAIN,
+                                                12));
+
+                table.getTableHeader()
+                                .setFont(
+                                                new Font(
+                                                                "Segoe UI",
+                                                                Font.BOLD,
+                                                                12));
+
+                table.getTableHeader()
+                                .setBackground(NAVY);
+
+                table.getTableHeader()
+                                .setForeground(Color.WHITE);
+
+                table.setSelectionMode(
+                                ListSelectionModel.SINGLE_SELECTION);
+
+                table.setAutoCreateRowSorter(true);
+
+                table.getSelectionModel()
+                                .addListSelectionListener(
+                                                e -> {
+
+                                                        if (!e.getValueIsAdjusting()) {
+                                                                hienThiDuLieu();
+                                                        }
+
+                                                });
+
+                JScrollPane scroll = new JScrollPane(table);
+
+                panel.add(
+                                scroll,
+                                BorderLayout.CENTER);
+
+                return panel;
+        }
 
         // ==============================
-        // TOP
+        // SMALL BUTTON
         // ==============================
 
-        JPanel top = new JPanel(
-                new BorderLayout());
+        private JButton createSmallButton(
+                        String text,
+                        Color color) {
 
-        top.setBackground(Color.WHITE);
+                JButton button = new JButton(text);
 
-        JLabel title = new JLabel(
-                "DANH SACH CA LAM");
+                button.setBackground(color);
 
-        title.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        16));
+                button.setForeground(Color.WHITE);
 
-        title.setForeground(NAVY);
+                button.setFont(
+                                new Font(
+                                                "Segoe UI",
+                                                Font.BOLD,
+                                                11));
 
-        top.add(
-                title,
-                BorderLayout.WEST);
+                button.setFocusPainted(false);
+
+                button.setBorderPainted(false);
+
+                button.setPreferredSize(
+                                new Dimension(
+                                                65,
+                                                32));
+
+                return button;
+        }
 
         // ==============================
-        // SEARCH
+        // LOAD DATA
         // ==============================
 
-        JPanel search = new JPanel(
-                new FlowLayout(
-                        FlowLayout.RIGHT,
-                        5,
-                        0));
+        private void loadData() {
 
-        search.setBackground(Color.WHITE);
+                model.setRowCount(0);
 
-        JLabel lbSearch = new JLabel("Tim kiem:");
+                ArrayList<CaLam> list = caLamDAO.getAll();
 
-        txtTimKiem = new JTextField(18);
+                for (CaLam ca : list) {
 
-        txtTimKiem.setPreferredSize(
-                new Dimension(
-                        180,
-                        32));
-
-        JButton btnTim = createSmallButton(
-                "Tim",
-                NAVY);
-
-        JButton btnTatCa = createSmallButton(
-                "Tat ca",
-                new Color(
-                        100,
-                        110,
-                        120));
-
-        btnTim.addActionListener(
-                e -> timKiem());
-
-        btnTatCa.addActionListener(
-                e -> loadData());
-
-        search.add(lbSearch);
-        search.add(txtTimKiem);
-        search.add(btnTim);
-        search.add(btnTatCa);
-
-        top.add(
-                search,
-                BorderLayout.EAST);
-
-        panel.add(
-                top,
-                BorderLayout.NORTH);
+                        model.addRow(
+                                        new Object[] {
+                                                        ca.getMaCa(),
+                                                        ca.getTenCa(),
+                                                        ca.getGioBatDau(),
+                                                        ca.getGioKetThuc()
+                                        });
+                }
+        }
 
         // ==============================
-        // MODEL
+        // HIEN THI
         // ==============================
 
-        model = new DefaultTableModel(
-                new String[] {
-                        "Ma ca",
-                        "Ten ca",
-                        "Gio bat dau",
-                        "Gio ket thuc"
-                },
-                0) {
+        private void hienThiDuLieu() {
 
-            @Override
-            public boolean isCellEditable(
-                    int row,
-                    int column) {
-                return false;
-            }
-        };
+                int selectedRow = table.getSelectedRow();
 
-        table = new JTable(model);
+                if (selectedRow < 0) {
+                        return;
+                }
 
-        table.setRowHeight(30);
+                int row = table.convertRowIndexToModel(
+                                selectedRow);
 
-        table.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        12));
+                txtMaCa.setText(
+                                valueAt(row, 0));
 
-        table.getTableHeader()
-                .setFont(
-                        new Font(
-                                "Segoe UI",
-                                Font.BOLD,
-                                12));
+                txtTenCa.setText(
+                                valueAt(row, 1));
 
-        table.getTableHeader()
-                .setBackground(NAVY);
+                txtGioBatDau.setText(
+                                valueAt(row, 2));
 
-        table.getTableHeader()
-                .setForeground(Color.WHITE);
+                txtGioKetThuc.setText(
+                                valueAt(row, 3));
 
-        table.setSelectionMode(
-                ListSelectionModel.SINGLE_SELECTION);
-
-        table.setAutoCreateRowSorter(true);
-
-        table.getSelectionModel()
-                .addListSelectionListener(
-                        e -> {
-
-                            if (!e.getValueIsAdjusting()) {
-                                hienThiDuLieu();
-                            }
-
-                        });
-
-        JScrollPane scroll = new JScrollPane(table);
-
-        panel.add(
-                scroll,
-                BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    // ==============================
-    // SMALL BUTTON
-    // ==============================
-
-    private JButton createSmallButton(
-            String text,
-            Color color) {
-
-        JButton button = new JButton(text);
-
-        button.setBackground(color);
-
-        button.setForeground(Color.WHITE);
-
-        button.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        11));
-
-        button.setFocusPainted(false);
-
-        button.setBorderPainted(false);
-
-        button.setPreferredSize(
-                new Dimension(
-                        65,
-                        32));
-
-        return button;
-    }
-
-    // ==============================
-    // LOAD DATA
-    // ==============================
-
-    private void loadData() {
-
-        model.setRowCount(0);
-
-        ArrayList<CaLam> list = caLamDAO.getAll();
-
-        for (CaLam ca : list) {
-
-            model.addRow(
-                    new Object[] {
-                            ca.getMaCa(),
-                            ca.getTenCa(),
-                            ca.getGioBatDau(),
-                            ca.getGioKetThuc()
-                    });
-        }
-    }
-
-    // ==============================
-    // HIEN THI
-    // ==============================
-
-    private void hienThiDuLieu() {
-
-        int selectedRow = table.getSelectedRow();
-
-        if (selectedRow < 0) {
-            return;
+                txtMaCa.setEnabled(false);
         }
 
-        int row = table.convertRowIndexToModel(
-                selectedRow);
+        private String valueAt(
+                        int row,
+                        int column) {
 
-        txtMaCa.setText(
-                valueAt(row, 0));
+                Object value = model.getValueAt(
+                                row,
+                                column);
 
-        txtTenCa.setText(
-                valueAt(row, 1));
-
-        txtGioBatDau.setText(
-                valueAt(row, 2));
-
-        txtGioKetThuc.setText(
-                valueAt(row, 3));
-
-        txtMaCa.setEnabled(false);
-    }
-
-    private String valueAt(
-            int row,
-            int column) {
-
-        Object value = model.getValueAt(
-                row,
-                column);
-
-        return value == null
-                ? ""
-                : value.toString();
-    }
-
-    // ==============================
-    // THEM
-    // ==============================
-
-    private void them() {
-
-        if (!kiemTraDuLieu()) {
-            return;
+                return value == null
+                                ? ""
+                                : value.toString();
         }
 
-        CaLam ca = getCaLamFromForm();
+        // ==============================
+        // THEM
+        // ==============================
 
-        if (caLamDAO.them(ca)) {
+        private void them() {
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Them ca lam thanh cong!",
-                    "Thong bao",
-                    JOptionPane.INFORMATION_MESSAGE);
+                if (!kiemTraDuLieu()) {
+                        return;
+                }
 
-            loadData();
+                CaLam ca = getCaLamFromForm();
 
-            lamMoi();
+                if (caLamDAO.them(ca)) {
 
-        } else {
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Them ca lam thanh cong!",
+                                        "Thong bao",
+                                        JOptionPane.INFORMATION_MESSAGE);
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Them ca lam that bai!",
-                    "Loi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
+                        loadData();
 
-    // ==============================
-    // SUA
-    // ==============================
+                        lamMoi();
 
-    private void sua() {
+                } else {
 
-        if (txtMaCa.isEnabled()) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui long chon ca can sua!",
-                    "Thong bao",
-                    JOptionPane.WARNING_MESSAGE);
-
-            return;
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Them ca lam that bai!",
+                                        "Loi",
+                                        JOptionPane.ERROR_MESSAGE);
+                }
         }
 
-        if (!kiemTraDuLieu()) {
-            return;
+        // ==============================
+        // SUA
+        // ==============================
+
+        private void sua() {
+
+                if (txtMaCa.isEnabled()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long chon ca can sua!",
+                                        "Thong bao",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                        return;
+                }
+
+                if (!kiemTraDuLieu()) {
+                        return;
+                }
+
+                CaLam ca = getCaLamFromForm();
+
+                if (caLamDAO.sua(ca)) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Cap nhat ca lam thanh cong!",
+                                        "Thong bao",
+                                        JOptionPane.INFORMATION_MESSAGE);
+
+                        loadData();
+
+                        lamMoi();
+
+                } else {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Cap nhat ca lam that bai!",
+                                        "Loi",
+                                        JOptionPane.ERROR_MESSAGE);
+                }
         }
 
-        CaLam ca = getCaLamFromForm();
+        // ==============================
+        // XOA
+        // ==============================
 
-        if (caLamDAO.sua(ca)) {
+        private void xoa() {
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Cap nhat ca lam thanh cong!",
-                    "Thong bao",
-                    JOptionPane.INFORMATION_MESSAGE);
+                if (txtMaCa.isEnabled()
+                                || txtMaCa.getText()
+                                                .trim()
+                                                .isEmpty()) {
 
-            loadData();
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long chon ca can xoa!",
+                                        "Thong bao",
+                                        JOptionPane.WARNING_MESSAGE);
 
-            lamMoi();
+                        return;
+                }
 
-        } else {
+                String maCa = txtMaCa.getText().trim();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Cap nhat ca lam that bai!",
-                    "Loi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
+                int result = JOptionPane.showConfirmDialog(
+                                this,
+                                "Ban co chac muon xoa ca "
+                                                + maCa
+                                                + "?",
+                                "Xac nhan",
+                                JOptionPane.YES_NO_OPTION);
 
-    // ==============================
-    // XOA
-    // ==============================
+                if (result != JOptionPane.YES_OPTION) {
+                        return;
+                }
 
-    private void xoa() {
+                if (caLamDAO.xoa(maCa)) {
 
-        if (txtMaCa.isEnabled()
-                || txtMaCa.getText()
-                        .trim()
-                        .isEmpty()) {
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Xoa ca lam thanh cong!",
+                                        "Thong bao",
+                                        JOptionPane.INFORMATION_MESSAGE);
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui long chon ca can xoa!",
-                    "Thong bao",
-                    JOptionPane.WARNING_MESSAGE);
+                        loadData();
 
-            return;
-        }
+                        lamMoi();
 
-        String maCa = txtMaCa.getText().trim();
+                } else {
 
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                "Ban co chac muon xoa ca "
-                        + maCa
-                        + "?",
-                "Xac nhan",
-                JOptionPane.YES_NO_OPTION);
-
-        if (result != JOptionPane.YES_OPTION) {
-            return;
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Xoa ca lam that bai!",
+                                        "Loi",
+                                        JOptionPane.ERROR_MESSAGE);
+                }
         }
 
-        if (caLamDAO.xoa(maCa)) {
+        // ==============================
+        // TIM KIEM
+        // ==============================
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Xoa ca lam thanh cong!",
-                    "Thong bao",
-                    JOptionPane.INFORMATION_MESSAGE);
+        private void timKiem() {
 
-            loadData();
+                String keyword = txtTimKiem.getText()
+                                .trim()
+                                .toLowerCase();
 
-            lamMoi();
+                if (keyword.isEmpty()) {
 
-        } else {
+                        loadData();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Xoa ca lam that bai!",
-                    "Loi",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
+                        return;
+                }
 
-    // ==============================
-    // TIM KIEM
-    // ==============================
+                model.setRowCount(0);
 
-    private void timKiem() {
+                ArrayList<CaLam> list = caLamDAO.getAll();
 
-        String keyword = txtTimKiem.getText()
-                .trim()
-                .toLowerCase();
+                for (CaLam ca : list) {
 
-        if (keyword.isEmpty()) {
+                        boolean match = safe(ca.getMaCa())
+                                        .contains(keyword)
 
-            loadData();
+                                        || safe(ca.getTenCa())
+                                                        .contains(keyword)
 
-            return;
-        }
+                                        || safe(ca.getGioBatDau())
+                                                        .contains(keyword)
 
-        model.setRowCount(0);
+                                        || safe(ca.getGioKetThuc())
+                                                        .contains(keyword);
 
-        ArrayList<CaLam> list = caLamDAO.getAll();
+                        if (match) {
 
-        for (CaLam ca : list) {
-
-            boolean match = safe(ca.getMaCa())
-                    .contains(keyword)
-
-                    || safe(ca.getTenCa())
-                            .contains(keyword)
-
-                    || safe(ca.getGioBatDau())
-                            .contains(keyword)
-
-                    || safe(ca.getGioKetThuc())
-                            .contains(keyword);
-
-            if (match) {
-
-                model.addRow(
-                        new Object[] {
-                                ca.getMaCa(),
-                                ca.getTenCa(),
-                                ca.getGioBatDau(),
-                                ca.getGioKetThuc()
-                        });
-            }
-        }
-    }
-
-    private String safe(String value) {
-
-        if (value == null) {
-            return "";
+                                model.addRow(
+                                                new Object[] {
+                                                                ca.getMaCa(),
+                                                                ca.getTenCa(),
+                                                                ca.getGioBatDau(),
+                                                                ca.getGioKetThuc()
+                                                });
+                        }
+                }
         }
 
-        return value.toLowerCase();
-    }
+        private String safe(String value) {
 
-    // ==============================
-    // LAM MOI
-    // ==============================
+                if (value == null) {
+                        return "";
+                }
 
-    private void lamMoi() {
-
-        txtMaCa.setText("");
-        txtTenCa.setText("");
-        txtGioBatDau.setText("");
-        txtGioKetThuc.setText("");
-
-        txtTimKiem.setText("");
-
-        txtMaCa.setEnabled(true);
-
-        table.clearSelection();
-    }
-
-    // ==============================
-    // KIEM TRA
-    // ==============================
-
-    private boolean kiemTraDuLieu() {
-
-        String maCa = txtMaCa.getText().trim();
-
-        String tenCa = txtTenCa.getText().trim();
-
-        String gioBatDau = txtGioBatDau.getText().trim();
-
-        String gioKetThuc = txtGioKetThuc.getText().trim();
-
-        if (maCa.isEmpty()) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui long nhap ma ca!");
-
-            txtMaCa.requestFocus();
-
-            return false;
+                return value.toLowerCase();
         }
 
-        if (tenCa.isEmpty()) {
+        // ==============================
+        // LAM MOI
+        // ==============================
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui long nhap ten ca!");
+        private void lamMoi() {
 
-            txtTenCa.requestFocus();
+                txtMaCa.setText("");
+                txtTenCa.setText("");
+                txtGioBatDau.setText("");
+                txtGioKetThuc.setText("");
 
-            return false;
+                txtTimKiem.setText("");
+
+                txtMaCa.setEnabled(true);
+
+                table.clearSelection();
         }
 
-        if (gioBatDau.isEmpty()) {
+        // ==============================
+        // KIEM TRA
+        // ==============================
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui long nhap gio bat dau!");
+        private boolean kiemTraDuLieu() {
 
-            txtGioBatDau.requestFocus();
+                String maCa = txtMaCa.getText().trim();
 
-            return false;
+                String tenCa = txtTenCa.getText().trim();
+
+                String gioBatDau = txtGioBatDau.getText().trim();
+
+                String gioKetThuc = txtGioKetThuc.getText().trim();
+
+                if (maCa.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap ma ca!");
+
+                        txtMaCa.requestFocus();
+
+                        return false;
+                }
+
+                if (tenCa.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap ten ca!");
+
+                        txtTenCa.requestFocus();
+
+                        return false;
+                }
+
+                if (gioBatDau.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap gio bat dau!");
+
+                        txtGioBatDau.requestFocus();
+
+                        return false;
+                }
+
+                if (gioKetThuc.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap gio ket thuc!");
+
+                        txtGioKetThuc.requestFocus();
+
+                        return false;
+                }
+
+                return true;
         }
 
-        if (gioKetThuc.isEmpty()) {
+        // ==============================
+        // FORM -> ENTITY
+        // ==============================
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Vui long nhap gio ket thuc!");
+        private CaLam getCaLamFromForm() {
 
-            txtGioKetThuc.requestFocus();
-
-            return false;
+                return new CaLam(
+                                txtMaCa.getText().trim(),
+                                txtTenCa.getText().trim(),
+                                txtGioBatDau.getText().trim(),
+                                txtGioKetThuc.getText().trim());
         }
-
-        return true;
-    }
-
-    // ==============================
-    // FORM -> ENTITY
-    // ==============================
-
-    private CaLam getCaLamFromForm() {
-
-        return new CaLam(
-                txtMaCa.getText().trim(),
-                txtTenCa.getText().trim(),
-                txtGioBatDau.getText().trim(),
-                txtGioKetThuc.getText().trim());
-    }
 }

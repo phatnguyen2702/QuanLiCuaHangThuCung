@@ -17,7 +17,7 @@ public class TrangChu extends JFrame {
         private final Color LIGHT_BLUE = new Color(229, 241, 252);
         private final Color MENU_BLUE = new Color(207, 222, 235);
         private final Color BG = new Color(245, 247, 250);
-        private final Color GREEN = new Color(72, 196, 62);
+        // private final Color GREEN = new Color(72, 196, 62);
         private final Color RED = new Color(210, 70, 70);
 
         // =========================================================
@@ -623,7 +623,7 @@ public class TrangChu extends JFrame {
 
                 row.setBackground(
                                 MENU_BLUE);
-
+                // sửa dimension
                 row.setMaximumSize(
                                 new Dimension(
                                                 Integer.MAX_VALUE,
