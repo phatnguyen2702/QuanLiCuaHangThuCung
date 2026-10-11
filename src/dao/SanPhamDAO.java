@@ -11,11 +11,14 @@ public class SanPhamDAO {
 
     /*
      * Bang SanPham khong co cot ton kho, nen ton kho duoc TINH tu du lieu:
-     *   ton = tong nhap (phieu nhap da hoan tat)
-     *       - tong ban (ChiTietHoaDon)
-     *       + chenh lech cac phieu kiem ke da chot (thuc te - he thong)
+     * ton = tong nhap (phieu nhap da hoan tat)
+     * - tong ban (ChiTietHoaDon)
+     * + chenh lech cac phieu kiem ke da chot (thuc te - he thong)
      */
-    /** Bieu thuc SQL tinh ton kho cua san pham co bi danh "sp" (dung chung cho DAO khac). */
+    /**
+     * Bieu thuc SQL tinh ton kho cua san pham co bi danh "sp" (dung chung cho DAO
+     * khac).
+     */
     static final String BIEU_THUC_TON = """
                    ISNULL((SELECT SUM(ct.soLuongNhap)
                            FROM ChiTietPhieuNhap ct
@@ -53,8 +56,8 @@ public class SanPhamDAO {
             """;
 
     public ArrayList<SanPham> timKiem(String tuKhoa,
-                                      String maDanhMuc,
-                                      String maNhaCungCap) throws SQLException {
+            String maDanhMuc,
+            String maNhaCungCap) throws SQLException {
 
         ArrayList<SanPham> list = new ArrayList<>();
 
@@ -80,9 +83,8 @@ public class SanPhamDAO {
         sql.append(" ORDER BY sp.maSanPham");
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql.toString())
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())) {
             for (int i = 0; i < thamSo.size(); i++) {
                 ps.setString(i + 1, thamSo.get(i));
             }
@@ -125,9 +127,8 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sp.getMaSanPham());
             ps.setString(2, sp.getTenSanPham());
             ps.setDouble(3, sp.getGiaNhap());
@@ -152,9 +153,8 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sp.getTenSanPham());
             ps.setDouble(2, sp.getGiaNhap());
             ps.setDouble(3, sp.getGiaBan());
@@ -171,9 +171,8 @@ public class SanPhamDAO {
         String sql = "DELETE FROM SanPham WHERE maSanPham = ?";
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maSanPham);
 
             return ps.executeUpdate() > 0;
@@ -190,9 +189,8 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maSanPham);
             ps.setString(2, maSanPham);
             ps.setString(3, maSanPham);
