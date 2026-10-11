@@ -45,6 +45,12 @@ public class TrangChu extends JFrame {
         private QuanLyLichHen quanLyLichHen;
         private QuanLyThuCung quanLyThuCung;
         private QuanLyPhieuDichVu quanLyPhieuDichVu;
+        private TraCuuHoaDon traCuuHoaDon;
+        private QuanLyThanhToan quanLyThanhToan;
+        private final ManHinhKho[] manHinhKho = new ManHinhKho[4];
+        private final JButton[] nutTabKho = new JButton[4];
+        private CardLayout khoCardLayout;
+        private JPanel khoContentPanel;
         // =========================================================
         // CONSTRUCTOR
         // =========================================================
@@ -127,6 +133,8 @@ public class TrangChu extends JFrame {
 
                 quanLyPhieuDichVu = new QuanLyPhieuDichVu();
                 contentPanel.add(quanLyPhieuDichVu, "PHIEU_DICH_VU");
+                contentPanel.add(taoManHinhKho(), "KHO");
+
                 // =====================================================
                 // ADD CONTENT
                 // =====================================================
@@ -594,27 +602,32 @@ public class TrangChu extends JFrame {
                 addQuickButton(
                                 panel,
                                 "Thanh toan",
-                                "F4");
+                                "F4",
+                                this::hienQuanLyThanhToan);
 
                 addQuickButton(
                                 panel,
                                 "Quan ly lich hen Spa",
-                                "F5");
+                                "F5",
+                                this::hienQuanLyLichHen);
 
                 addQuickButton(
                                 panel,
                                 "Quan ly san pham",
-                                "F6");
+                                "F6",
+                                () -> hienKho(1));
 
                 addQuickButton(
                                 panel,
                                 "Quan ly khach hang",
-                                "F7");
+                                "F7",
+                                () -> hienChucNangChuaCoGiaoDien("Quan ly khach hang"));
 
                 addQuickButton(
                                 panel,
                                 "Bao cao doanh thu",
-                                "F8");
+                                "F8",
+                                () -> hienChucNangChuaCoGiaoDien("Bao cao doanh thu"));
 
                 return panel;
         }
@@ -626,7 +639,8 @@ public class TrangChu extends JFrame {
         private void addQuickButton(
                         JPanel parent,
                         String text,
-                        String shortcut) {
+                        String shortcut,
+                        Runnable action) {
 
                 JPanel row = new JPanel(
                                 new BorderLayout());
@@ -658,7 +672,17 @@ public class TrangChu extends JFrame {
                 button.setBorderPainted(false);
 
                 button.addActionListener(
-                                e -> hienThongBao(text));
+                                e -> action.run());
+
+                String actionKey = "quick-access-" + shortcut;
+                getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                                .put(KeyStroke.getKeyStroke(shortcut), actionKey);
+                getRootPane().getActionMap().put(actionKey, new AbstractAction() {
+                        @Override
+                        public void actionPerformed(java.awt.event.ActionEvent e) {
+                                action.run();
+                        }
+                });
 
                 JLabel key = new JLabel(shortcut);
 
@@ -698,10 +722,10 @@ public class TrangChu extends JFrame {
 
                 JPopupMenu popup = new JPopupMenu();
 
-                themMenuItem(popup, "Danh muc");
-                themMenuItem(popup, "San pham");
-                themMenuItem(popup, "Nhap kho");
-                themMenuItem(popup, "Kiem ke");
+                themMenuKho(popup, "Danh muc", 0);
+                themMenuKho(popup, "San pham", 1);
+                themMenuKho(popup, "Nhap kho", 2);
+                themMenuKho(popup, "Kiem ke", 3);
 
                 popup.show(source, 0, source.getHeight());
         }
@@ -723,7 +747,7 @@ public class TrangChu extends JFrame {
                 mnuThuCung.addActionListener(e -> hienQuanLyThuCung());
                 popup.add(mnuThuCung);
 
-                // 3. Nút Khách hàng (Chưa làm giao diện thì giữ nguyên hàm tạm)
+                // 3. Khach hang chua co giao dien rieng
                 themMenuItem(popup, "Khach hang");
 
                 // 4. Nút Phiếu dịch vụ (ĐÃ KẾT NỐI)
@@ -742,13 +766,13 @@ public class TrangChu extends JFrame {
 
                 JPopupMenu popup = new JPopupMenu();
 
-                themMenuItem(
-                                popup,
-                                "Hoa don");
+                JMenuItem hoaDon = new JMenuItem("Hoa don");
+                hoaDon.addActionListener(e -> hienTraCuuHoaDon());
+                popup.add(hoaDon);
 
-                themMenuItem(
-                                popup,
-                                "Thanh toan");
+                JMenuItem thanhToan = new JMenuItem("Thanh toan");
+                thanhToan.addActionListener(e -> hienQuanLyThanhToan());
+                popup.add(thanhToan);
 
                 popup.show(
                                 source,
@@ -852,9 +876,80 @@ public class TrangChu extends JFrame {
                 JMenuItem item = new JMenuItem(text);
 
                 item.addActionListener(
-                                e -> hienThongBao(text));
+                                e -> hienChucNangChuaCoGiaoDien(text));
 
                 popup.add(item);
+        }
+
+        private void themMenuKho(JPopupMenu popup, String text, int tab) {
+                JMenuItem item = new JMenuItem(text);
+                item.addActionListener(e -> hienKho(tab));
+                popup.add(item);
+        }
+
+        private JPanel taoManHinhKho() {
+                JPanel panel = new JPanel(new BorderLayout());
+
+                JPanel thanhTab = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+                thanhTab.setBackground(Color.WHITE);
+
+                String[] tenTab = {"Danh muc", "San pham", "Nhap kho", "Kiem ke"};
+                for (int i = 0; i < tenTab.length; i++) {
+                        final int tab = i;
+                        nutTabKho[i] = UIStyle.nutTab(tenTab[i], false);
+                        nutTabKho[i].addActionListener(e -> hienKho(tab));
+                        thanhTab.add(nutTabKho[i]);
+                }
+
+                khoCardLayout = new CardLayout();
+                khoContentPanel = new JPanel(khoCardLayout);
+                khoContentPanel.setBackground(LIGHT_BLUE);
+
+                panel.add(thanhTab, BorderLayout.NORTH);
+                panel.add(khoContentPanel, BorderLayout.CENTER);
+                return panel;
+        }
+
+        private void hienKho(int tab) {
+                if (tab < 0 || tab >= manHinhKho.length) {
+                        tab = 0;
+                }
+
+                boolean lanDau = manHinhKho[tab] == null;
+                if (lanDau) {
+                        manHinhKho[tab] = taoManHinhKho(tab);
+                        khoContentPanel.add((JPanel) manHinhKho[tab], "KHO_" + tab);
+                }
+
+                khoCardLayout.show(khoContentPanel, "KHO_" + tab);
+                if (!lanDau) {
+                        manHinhKho[tab].napLai();
+                }
+
+                for (int i = 0; i < nutTabKho.length; i++) {
+                        boolean dangChon = i == tab;
+                        nutTabKho[i].setBackground(
+                                        dangChon ? UIStyle.ACTIVE_BLUE : Color.WHITE);
+                        nutTabKho[i].setForeground(
+                                        dangChon ? Color.WHITE : UIStyle.NAVY);
+                }
+
+                cardLayout.show(contentPanel, "KHO");
+                khoContentPanel.revalidate();
+                khoContentPanel.repaint();
+        }
+
+        private ManHinhKho taoManHinhKho(int tab) {
+                switch (tab) {
+                        case 0:
+                                return new DanhMucPanel();
+                        case 1:
+                                return new SanPhamPanel();
+                        case 2:
+                                return new NhapKhoPanel();
+                        default:
+                                return new KiemKePanel();
+                }
         }
 
         // =========================================================
@@ -963,6 +1058,14 @@ public class TrangChu extends JFrame {
                                 JOptionPane.INFORMATION_MESSAGE);
         }
 
+        private void hienChucNangChuaCoGiaoDien(String tenChucNang) {
+                JOptionPane.showMessageDialog(
+                                this,
+                                "Chuc nang \"" + tenChucNang + "\" chua co giao dien.",
+                                "Pet Shop Pro",
+                                JOptionPane.INFORMATION_MESSAGE);
+        }
+
         private void hienQuanLyLichHen() {
                 cardLayout.show(contentPanel, "LICH_HEN");
         }
@@ -973,5 +1076,22 @@ public class TrangChu extends JFrame {
 
         private void hienQuanLyPhieuDichVu() {
                 cardLayout.show(contentPanel, "PHIEU_DICH_VU");
+        }
+
+        private void hienTraCuuHoaDon() {
+                if (traCuuHoaDon == null) {
+                        traCuuHoaDon = new TraCuuHoaDon();
+                        contentPanel.add(traCuuHoaDon, "TRA_CUU_HOA_DON");
+                }
+                cardLayout.show(contentPanel, "TRA_CUU_HOA_DON");
+                traCuuHoaDon.hienDanhSach();
+        }
+
+        private void hienQuanLyThanhToan() {
+                if (quanLyThanhToan == null) {
+                        quanLyThanhToan = new QuanLyThanhToan(maNV);
+                        contentPanel.add(quanLyThanhToan, "THANH_TOAN");
+                }
+                cardLayout.show(contentPanel, "THANH_TOAN");
         }
 }
