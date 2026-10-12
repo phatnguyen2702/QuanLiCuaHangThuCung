@@ -592,6 +592,40 @@ ALTER TABLE PhieuDichVu ADD maLichHen VARCHAR(10) NULL;
 GO
 ALTER TABLE PhieuDichVu ADD CONSTRAINT FK_PhieuDichVu_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen);
 GO
+
+
+
+
+
+
+
+
+
+
+
+
 -- Cập nhật giả định một số mã lịch hẹn cho dữ liệu cũ để test
 UPDATE PhieuDichVu SET maLichHen = 'LH001' WHERE maPhieuDichVu = 'PDV001';
+GO
+
+ALTER TABLE PhieuDichVu ADD maLichHen VARCHAR(10) NULL;
+GO
+ALTER TABLE PhieuDichVu ADD CONSTRAINT FK_PhieuDichVu_LichHen FOREIGN KEY (maLichHen) REFERENCES LichHen(maLichHen);
+GO
+-- Cập nhật giả định một số mã lịch hẹn cho dữ liệu cũ để test
+UPDATE PhieuDichVu SET maLichHen = 'LH001' WHERE maPhieuDichVu = 'PDV001';
+GO
+ALTER TABLE ThuCung ADD maKhachHang VARCHAR(10);
+ALTER TABLE ThuCung ADD trangThai NVARCHAR(50) DEFAULT N'Đang hoạt động';
+GO
+-- Cập nhật dữ liệu cũ để không bị null
+UPDATE ThuCung SET trangThai = N'Đang hoạt động';
+UPDATE ThuCung SET maKhachHang = 'KH001' WHERE maKhachHang IS NULL; 
+GO
+-- Thêm khóa ngoại
+ALTER TABLE ThuCung ADD CONSTRAINT FK_ThuCung_KhachHang FOREIGN KEY (maKhachHang) REFERENCES KhachHang(maKhachHang);
+GO
+ALTER TABLE LichHen ADD trangThai NVARCHAR(50) DEFAULT N'Xác nhận';
+GO
+UPDATE LichHen SET trangThai = N'Xác nhận';
 GO

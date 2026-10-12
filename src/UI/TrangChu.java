@@ -1,3 +1,4 @@
+
 package UI;
 
 import javax.swing.*;
@@ -24,8 +25,8 @@ import java.util.function.Supplier;
  *
  * - Thanh menu "PET SHOP PRO" nam co dinh o tren cung, KHONG bi mo lai.
  * - Vung noi dung ben duoi doi bang CardLayout (Trang chu, Kho, Spa, Hoa don,
- *   He thong...) nen bam menu chi doi phan man hinh ben trong, khong nhay
- *   cua so moi. Muc dang chon duoc to sang tren thanh menu.
+ * He thong...) nen bam menu chi doi phan man hinh ben trong, khong nhay
+ * cua so moi. Muc dang chon duoc to sang tren thanh menu.
  * - Moi man hinh duoc tao lan dau khi mo, lan sau chi hien lai.
  *
  * Hai lop tien ich dung chung cho cac man hinh (UIStyle, PhienLamViec)
@@ -33,24 +34,21 @@ import java.util.function.Supplier;
  */
 public class TrangChu extends JFrame {
 
-    private static final String[] TEN_TAB =
-            {"Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho"};
+    // ==================== MAU GIAO DIEN ====================
 
-    private static final DateTimeFormatter DINH_DANG_GIO =
-            DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy");
+    private final Color LIGHT_BLUE = new Color(229, 241, 252);
+    private final Color MENU_BLUE = new Color(207, 222, 235);
 
-    // =========================
-    // MAU SAC
-    // =========================
-    private final Color LIGHT_BLUE = UIStyle.LIGHT_BLUE;
-    private final Color MENU_BLUE = UIStyle.MENU_BLUE;
+    // ==================== THONG TIN NHAN VIEN ====================
 
-    // =========================
-    // THONG TIN NHAN VIEN
-    // =========================
-    private String maNV;
-    private String hoTen;
-    private String vaiTro;
+    private final String maNV;
+    private final String hoTen;
+    private final String vaiTro;
+
+    // ==================== QUAN LY MAN HINH ====================
+    private static final String[] TEN_TAB = { "Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho" };
+
+    private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy");
 
     // =========================
     // KHUNG + NOI DUNG DOI THEO CARD
@@ -58,7 +56,7 @@ public class TrangChu extends JFrame {
     private final CardLayout card = new CardLayout();
     private final JPanel noiDung = new JPanel(card);
 
-    private JLabel lbNgayTrangChu;            // dong ho tren man hinh Trang chu
+    private JLabel lbNgayTrangChu; // dong ho tren man hinh Trang chu
 
     // Cac muc co man hinh rieng tren thanh menu (de to sang muc dang chon)
     private JButton btnTrangChu;
@@ -72,7 +70,8 @@ public class TrangChu extends JFrame {
     private final JPanel[] manHinh = new JPanel[TEN_TAB.length];
     private final Runnable[] napLai = new Runnable[TEN_TAB.length];
 
-    // Cac man hinh khac (lich hen, thu cung, hoa don, ca lam...): tao lan dau khi mo
+    // Cac man hinh khac (lich hen, thu cung, hoa don, ca lam...): tao lan dau khi
+    // mo
     private final Map<String, Component> manHinhKhac = new HashMap<>();
     private TraCuuHoaDon traCuuHoaDon;
 
@@ -182,9 +181,11 @@ public class TrangChu extends JFrame {
         }
     }
 
-    /** Hien mot man hinh khac (tao lan dau khi mo) va to sang muc menu tuong ung. */
+    /**
+     * Hien mot man hinh khac (tao lan dau khi mo) va to sang muc menu tuong ung.
+     */
     private void hienManHinh(String khoa, String tieuDe, JButton muc,
-                             Supplier<? extends Component> tao) {
+            Supplier<? extends Component> tao) {
 
         Component c = manHinhKhac.get(khoa);
 
@@ -551,8 +552,7 @@ public class TrangChu extends JFrame {
             JPanel parent,
             String text,
             String shortcut,
-            Runnable hanhDong
-    ) {
+            Runnable hanhDong) {
 
         JPanel row = new JPanel(new BorderLayout());
         row.setBackground(MENU_BLUE);
@@ -598,8 +598,7 @@ public class TrangChu extends JFrame {
                 this,
                 "Bạn đang mở chức năng: " + tenChucNang,
                 "Pet Shop Pro",
-                JOptionPane.INFORMATION_MESSAGE
-        );
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void hienChuaCo(String tenChucNang) {
@@ -608,8 +607,7 @@ public class TrangChu extends JFrame {
                 this,
                 "Chức năng \"" + tenChucNang + "\" chưa có giao diện.",
                 "Pet Shop Pro",
-                JOptionPane.INFORMATION_MESSAGE
-        );
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     // =========================================================
@@ -755,7 +753,7 @@ public class TrangChu extends JFrame {
 
         /** Them 1 dong "nhan + o nhap" vao form dung GridBagLayout. */
         public static void hang(JPanel form, int dong, String ten,
-                                JComponent thanhPhan, boolean cao) {
+                JComponent thanhPhan, boolean cao) {
 
             GridBagConstraints g = new GridBagConstraints();
             g.gridy = dong;
@@ -875,10 +873,6 @@ public class TrangChu extends JFrame {
             sp.getViewport().setBackground(Color.WHITE);
             return sp;
         }
-
-        // =========================================================
-        // THONG BAO
-        // =========================================================
 
         public static void thongBao(Component cha, String noiDung) {
             JOptionPane.showMessageDialog(cha, noiDung, "Pet Shop Pro",

@@ -16,7 +16,6 @@ public class QuanLyTaiKhoan extends JPanel {
         // =========================================================
 
         private final Color NAVY = new Color(18, 48, 82);
-        private final Color LIGHT_BLUE = new Color(229, 241, 252);
         private final Color BG = new Color(245, 247, 250);
         private final Color GREEN = new Color(72, 196, 62);
         private final Color RED = new Color(210, 70, 70);
