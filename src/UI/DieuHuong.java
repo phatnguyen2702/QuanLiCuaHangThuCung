@@ -1,45 +1,48 @@
 package UI;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 
-/**
- * Chuyen man hinh giong Dang nhap -> Trang chu:
- * mo khung moi o dung vi tri/kich thuoc cu roi dong khung cu,
- * khong de cua so moi len tren cua so cu.
- */
 public final class DieuHuong {
 
     private DieuHuong() {
     }
 
-    public static void moTrangChu(JFrame tu) {
-        chuyen(tu, new TrangChu(
-                PhienLamViec.maNV,
-                PhienLamViec.hoTen,
-                PhienLamViec.vaiTro));
-    }
-
-    /** tab: 0 Danh muc, 1 San pham, 2 Nhap kho, 3 Kiem ke kho. */
-    public static void moKho(JFrame tu, int tab) {
-
-        // Dang o trong Kho roi thi chi doi noi dung ben trong
-        if (tu instanceof KhoFrame kho) {
-            kho.chuyenTab(tab);
+    public static void moTrangChu(JFrame cha) {
+        if (cha instanceof TrangChu trangChu) {
+            trangChu.setVisible(true);
+            trangChu.toFront();
             return;
         }
 
-        chuyen(tu, new KhoFrame(tab));
+        if (cha != null) {
+            cha.dispose();
+        }
+
+        TrangChu frame = new TrangChu("NV001", "Nhân viên demo", "Quản lý");
+        frame.setVisible(true);
     }
 
-    public static void dangXuat(JFrame tu) {
-        tu.dispose();
+    public static void moKho(JFrame cha, int tab) {
+        if (cha instanceof TrangChu trangChu) {
+            trangChu.chuyenKho(tab);
+            trangChu.setVisible(true);
+            trangChu.toFront();
+            return;
+        }
+
+        if (cha != null) {
+            cha.dispose();
+        }
+
+        TrangChu frame = new TrangChu("NV001", "Nhân viên demo", "Quản lý");
+        frame.chuyenKho(tab);
+        frame.setVisible(true);
+    }
+
+    public static void dangXuat(JFrame cha) {
+        if (cha != null) {
+            cha.dispose();
+        }
         new DangNhap().setVisible(true);
-    }
-
-    private static void chuyen(JFrame tu, JFrame den) {
-        den.setBounds(tu.getBounds());
-        den.setExtendedState(tu.getExtendedState());
-        den.setVisible(true);
-        tu.dispose();
     }
 }

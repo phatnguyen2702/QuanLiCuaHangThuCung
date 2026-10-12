@@ -2,6 +2,9 @@ package UI;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import UI.TrangChu.UIStyle;
+
 import java.awt.*;
 
 /**
