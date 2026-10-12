@@ -1,7 +1,7 @@
 package UI;
 
-import dao.DanhMucDAO;
-import dao.NhaCungCapDAO;
+import UI.TrangChu.PhienLamViec;
+import UI.TrangChu.UIStyle;
 import dao.SanPhamDAO;
 import entity.DanhMuc;
 import entity.NhaCungCap;
@@ -15,13 +15,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
-/** Tab "San pham" - Quan ly san pham. */
-public class SanPhamPanel extends JPanel implements ManHinhKho {
+/**
+ * Man hinh "San pham" - Quan ly san pham (nam trong khung TrangChu).
+ * Form Them / Sua san pham la lop long SanPhamDialog o cuoi file.
+ */
+public class SanPhamPanel extends JPanel {
 
     private final SanPhamDAO dao = new SanPhamDAO();
-    private final DanhMucDAO danhMucDAO = new DanhMucDAO();
-    private final NhaCungCapDAO nhaCungCapDAO = new NhaCungCapDAO();
 
     private final DefaultTableModel model = new DefaultTableModel(
             new String[]{"Mã SP", "Tên sản phẩm", "Danh mục",
@@ -34,7 +36,7 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
 
     private final JTable bang = new JTable(model);
     private final JTextField txtTim = UIStyle.o(16);
-    private final JComboBox<UIStyle.Muc> cboDanhMuc = new JComboBox<>();
+    private final JComboBox<Muc> cboDanhMuc = new JComboBox<>();
     private final JLabel lbSoLuong = new JLabel("0 sản phẩm");
 
     private ArrayList<SanPham> dsHienTai = new ArrayList<>();
@@ -135,7 +137,6 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
     // DU LIEU
     // =========================================================
 
-    @Override
     public void napLai() {
         napCombo();
         napBang();
@@ -144,15 +145,15 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
     private void napCombo() {
 
         try {
-            UIStyle.Muc dangChon = (UIStyle.Muc) cboDanhMuc.getSelectedItem();
+            Muc dangChon = (Muc) cboDanhMuc.getSelectedItem();
             String maDangChon = dangChon == null ? null : dangChon.ma;
 
             dangNapCombo = true;
             cboDanhMuc.removeAllItems();
-            cboDanhMuc.addItem(new UIStyle.Muc(null, "Tất cả danh mục"));
+            cboDanhMuc.addItem(new Muc(null, "Tất cả danh mục"));
 
-            for (DanhMuc dm : danhMucDAO.getAll()) {
-                UIStyle.Muc m = new UIStyle.Muc(dm.getMaDanhMuc(),
+            for (DanhMuc dm : dao.layDanhSachDanhMuc()) {
+                Muc m = new Muc(dm.getMaDanhMuc(),
                         dm.getTenDanhMuc());
                 cboDanhMuc.addItem(m);
                 if (m.ma.equals(maDangChon)) {
@@ -170,7 +171,7 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
     private void napBang() {
 
         try {
-            UIStyle.Muc muc = (UIStyle.Muc) cboDanhMuc.getSelectedItem();
+            Muc muc = (Muc) cboDanhMuc.getSelectedItem();
             String maDanhMuc = muc == null ? null : muc.ma;
 
             dsHienTai = dao.timKiem(txtTim.getText(), maDanhMuc, null);
@@ -225,8 +226,8 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
     private void moForm(SanPham sp) {
 
         try {
-            ArrayList<DanhMuc> dsDanhMuc = danhMucDAO.getAll();
-            ArrayList<NhaCungCap> dsNcc = nhaCungCapDAO.getAll();
+            ArrayList<DanhMuc> dsDanhMuc = dao.layDanhSachDanhMuc();
+            ArrayList<NhaCungCap> dsNcc = dao.layDanhSachNhaCungCap();
 
             if (dsDanhMuc.isEmpty() || dsNcc.isEmpty()) {
                 UIStyle.canhBao(this,
@@ -237,7 +238,7 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
             SanPhamDialog dlg = new SanPhamDialog(
                     SwingUtilities.getWindowAncestor(this),
                     sp,
-                    sp == null ? dao.taoMaMoi() : null,
+                    sp == null ? "" : null,   // them moi: ma de trong, nguoi dung tu nhap
                     dsDanhMuc, dsNcc);
             dlg.setVisible(true);
 
@@ -257,17 +258,242 @@ public class SanPhamPanel extends JPanel implements ManHinhKho {
             return;
         }
 
-        if (!UIStyle.xacNhan(this,
-                "Xóa sản phẩm \"" + sp.getTenSanPham() + "\"?")) {
-            return;
-        }
-
         try {
+            // Da co phieu nhap / hoa don / kiem ke thi khong xoa duoc (khoa ngoai)
+            int lichSu = dao.demLichSu(sp.getMaSanPham());
+            if (lichSu > 0) {
+                UIStyle.canhBao(this, "Sản phẩm \"" + sp.getTenSanPham()
+                        + "\" đã phát sinh " + lichSu
+                        + " dòng nhập kho / hóa đơn / kiểm kê nên không thể xóa.\n"
+                        + "Muốn xóa cả sản phẩm lẫn lịch sử, hãy xóa ở màn hình Danh mục.");
+                return;
+            }
+
+            if (!UIStyle.xacNhan(this,
+                    "Xóa sản phẩm \"" + sp.getTenSanPham() + "\"?")) {
+                return;
+            }
+
             dao.xoa(sp.getMaSanPham());
             napBang();
 
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
+        }
+    }
+
+    // =========================================================
+    // MUC CUA COMBOBOX
+    // =========================================================
+
+    /** Muc cua combobox: hien ten, giu ma (ma = null nghia la "tat ca"). */
+    private static class Muc {
+        final String ma;
+        final String ten;
+
+        Muc(String ma, String ten) {
+            this.ma = ma;
+            this.ten = ten;
+        }
+
+        @Override
+        public String toString() {
+            return ten;
+        }
+    }
+
+    // =========================================================
+    // FORM THEM / SUA SAN PHAM
+    // =========================================================
+
+    /**
+     * Form Them / Sua san pham - dung cac cot cua bang SanPham:
+     * ma, ten, giaNhap, giaBan, maDanhMuc, maNhaCungCap.
+     * Ton kho khong phai cot cua SanPham, nen o "Them so luong" duoc luu thanh
+     * 1 phieu nhap kho hoan tat (ton = tong nhap - ban +/- kiem ke van khop).
+     */
+    private static class SanPhamDialog extends JDialog {
+
+        private final SanPhamDAO dao = new SanPhamDAO();
+        private final boolean dangSua;
+
+        private final JTextField txtMa = UIStyle.o(22);
+        private final JTextField txtTen = UIStyle.o(22);
+        private final JTextField txtGiaNhap = UIStyle.o(22);
+        private final JTextField txtGiaBan = UIStyle.o(22);
+        private final JSpinner spnThem =
+                new JSpinner(new SpinnerNumberModel(0, 0, 1_000_000, 1));
+        private final JComboBox<DanhMuc> cboDanhMuc = new JComboBox<>();
+        private final JComboBox<NhaCungCap> cboNhaCungCap = new JComboBox<>();
+
+        private boolean daLuu = false;
+
+        /** sp = null: them moi. maMoi: ma goi y khi them. */
+        public SanPhamDialog(Window cha, SanPham sp, String maMoi,
+                             List<DanhMuc> dsDanhMuc,
+                             List<NhaCungCap> dsNhaCungCap) {
+
+            super(cha, sp == null ? "Thêm sản phẩm" : "Sửa sản phẩm",
+                    ModalityType.APPLICATION_MODAL);
+
+            dangSua = sp != null;
+
+            for (DanhMuc dm : dsDanhMuc) {
+                cboDanhMuc.addItem(dm);
+            }
+            for (NhaCungCap n : dsNhaCungCap) {
+                cboNhaCungCap.addItem(n);
+            }
+
+            cboDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
+            cboNhaCungCap.setFont(UIStyle.font(Font.PLAIN, 13));
+
+            JPanel form = new JPanel(new GridBagLayout());
+            form.setBorder(new EmptyBorder(20, 25, 10, 25));
+
+            UIStyle.hang(form, 0, "Mã sản phẩm", txtMa, false);
+            UIStyle.hang(form, 1, "Tên sản phẩm", txtTen, false);
+            UIStyle.hang(form, 2, "Giá nhập", txtGiaNhap, false);
+            UIStyle.hang(form, 3, "Giá bán", txtGiaBan, false);
+            UIStyle.hang(form, 4, "Danh mục", cboDanhMuc, false);
+            UIStyle.hang(form, 5, "Nhà cung cấp", cboNhaCungCap, false);
+
+            spnThem.setFont(UIStyle.font(Font.PLAIN, 13));
+            int dongTiep = 6;
+            if (sp != null) {
+                UIStyle.hang(form, dongTiep++, "Tồn hiện tại",
+                        UIStyle.oChiDoc(String.valueOf(sp.getTonKho())), false);
+            }
+            UIStyle.hang(form, dongTiep,
+                    sp == null ? "Số lượng ban đầu" : "Thêm số lượng", spnThem, false);
+
+            if (dangSua) {
+                txtMa.setText(sp.getMaSanPham());
+                txtMa.setEditable(false);
+                txtMa.setBackground(UIStyle.READONLY);
+                txtTen.setText(sp.getTenSanPham());
+                txtGiaNhap.setText(String.valueOf((long) sp.getGiaNhap()));
+                txtGiaBan.setText(String.valueOf((long) sp.getGiaBan()));
+                chonDanhMuc(sp.getMaDanhMuc());
+                chonNhaCungCap(sp.getMaNhaCungCap());
+            } else {
+                txtMa.setText(maMoi);
+            }
+
+            JButton btnHuy = UIStyle.nutPhu("Hủy");
+            JButton btnLuu = UIStyle.nutXanh("Lưu");
+            btnHuy.addActionListener(e -> dispose());
+            btnLuu.addActionListener(e -> luu());
+
+            JPanel nut = UIStyle.hangNut(btnHuy, btnLuu);
+            nut.setBorder(new EmptyBorder(5, 25, 20, 25));
+
+            setLayout(new BorderLayout());
+            add(form, BorderLayout.CENTER);
+            add(nut, BorderLayout.SOUTH);
+
+            getRootPane().setDefaultButton(btnLuu);
+
+            pack();
+            setResizable(false);
+            setLocationRelativeTo(cha);
+        }
+
+        private void chonDanhMuc(String ma) {
+            for (int i = 0; i < cboDanhMuc.getItemCount(); i++) {
+                if (cboDanhMuc.getItemAt(i).getMaDanhMuc().equals(ma)) {
+                    cboDanhMuc.setSelectedIndex(i);
+                    return;
+                }
+            }
+        }
+
+        private void chonNhaCungCap(String ma) {
+            for (int i = 0; i < cboNhaCungCap.getItemCount(); i++) {
+                if (cboNhaCungCap.getItemAt(i).getMaNhaCungCap().equals(ma)) {
+                    cboNhaCungCap.setSelectedIndex(i);
+                    return;
+                }
+            }
+        }
+
+        private void luu() {
+
+            String ma = txtMa.getText().trim();
+            String ten = txtTen.getText().trim();
+
+            if (ma.isEmpty() || ten.isEmpty()) {
+                UIStyle.canhBao(this, "Vui lòng nhập mã và tên sản phẩm.");
+                return;
+            }
+
+            if (ma.length() > 10) {
+                UIStyle.canhBao(this, "Mã sản phẩm tối đa 10 ký tự.");
+                return;
+            }
+
+            if (ten.length() > 50) {
+                UIStyle.canhBao(this, "Tên sản phẩm tối đa 50 ký tự.");
+                return;
+            }
+
+            long giaNhap;
+            long giaBan;
+
+            try {
+                giaNhap = UIStyle.docTien(txtGiaNhap.getText());
+            } catch (NumberFormatException e) {
+                UIStyle.canhBao(this, "Giá nhập phải là số không âm (ví dụ 180000).");
+                return;
+            }
+
+            try {
+                giaBan = UIStyle.docTien(txtGiaBan.getText());
+            } catch (NumberFormatException e) {
+                UIStyle.canhBao(this, "Giá bán phải là số không âm (ví dụ 250000).");
+                return;
+            }
+
+            DanhMuc dm = (DanhMuc) cboDanhMuc.getSelectedItem();
+            NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+
+            if (dm == null || ncc == null) {
+                UIStyle.canhBao(this,
+                        "Cần có ít nhất 1 danh mục và 1 nhà cung cấp.");
+                return;
+            }
+
+            if (giaBan < giaNhap && !UIStyle.xacNhan(this,
+                    "Giá bán đang thấp hơn giá nhập. Vẫn lưu?")) {
+                return;
+            }
+
+            SanPham sp = new SanPham(ma, ten, giaNhap, giaBan,
+                    dm.getMaDanhMuc(), ncc.getMaNhaCungCap());
+
+            try {
+                if (dangSua) {
+                    dao.sua(sp);
+                } else {
+                    dao.them(sp);
+                }
+
+                int them = (Integer) spnThem.getValue();
+                if (them > 0) {
+                    dao.nhapBoSung(
+                            List.of(sp), List.of(them), PhienLamViec.maNV);
+                }
+
+                daLuu = true;
+                dispose();
+
+            } catch (SQLException ex) {
+                UIStyle.loi(this, ex);
+            }
+        }
+
+        public boolean isDaLuu() {
+            return daLuu;
         }
     }
 }
