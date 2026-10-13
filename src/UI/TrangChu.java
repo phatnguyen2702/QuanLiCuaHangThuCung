@@ -273,7 +273,7 @@ public class TrangChu extends JFrame {
         JPanel menu = new JPanel(new GridLayout(1, 7, 2, 0));
         menu.setOpaque(false);
 
-        btnTrangChu = nutNhom("Trang chủ");
+        btnTrangChu = nutNhom("TRANG CHỦ");
         btnTrangChu.addActionListener(e -> hienTrangChu());
 
         btnHeThong = nutNhom("HỆ THỐNG");
@@ -354,7 +354,6 @@ public class TrangChu extends JFrame {
         themMuc(p, "Quản lý phân ca", btnHeThong, this::moQuanLyPhanCa);
         themMuc(p, "Quản lý ca làm", btnHeThong, this::moQuanLyCaLam);
         p.addSeparator();
-        themMuc(p, "Trang chủ", btnHeThong, this::hienTrangChu);
         themMuc(p, "Đăng xuất", btnHeThong, this::dangXuat);
         return p;
     }
