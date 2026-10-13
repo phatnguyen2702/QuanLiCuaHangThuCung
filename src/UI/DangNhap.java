@@ -22,7 +22,7 @@ public class DangNhap extends JFrame {
 
         public DangNhap() {
 
-                setTitle("Pet Shop Pro - Dang nhap");
+                setTitle("Pet Shop Pro - Đăng Nhập");
                 setSize(1000, 570);
                 setLocationRelativeTo(null);
                 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -293,7 +293,7 @@ public class DangNhap extends JFrame {
                                                 card,
                                                 BoxLayout.Y_AXIS));
 
-                JLabel title = new JLabel("Dang Nhap");
+                JLabel title = new JLabel("Đăng Nhập");
 
                 title.setFont(
                                 new Font(
@@ -314,7 +314,7 @@ public class DangNhap extends JFrame {
                 // =========================
 
                 JLabel lbTaiKhoan = new JLabel(
-                                "TAI KHOAN");
+                                "TÀI KHOẢN");
 
                 lbTaiKhoan.setForeground(Color.GRAY);
 
@@ -402,7 +402,7 @@ public class DangNhap extends JFrame {
                 // =========================
 
                 JLabel lbMatKhau = new JLabel(
-                                "MAT KHAU");
+                                "MẬT KHẨU");
 
                 lbMatKhau.setForeground(Color.GRAY);
 
@@ -445,7 +445,7 @@ public class DangNhap extends JFrame {
                 // BUTTON
                 // =========================
 
-                JButton btnDangNhap = new JButton("DANG NHAP");
+                JButton btnDangNhap = new JButton("ĐĂNG NHẬP");
 
                 btnDangNhap.setBackground(GREEN);
 
@@ -502,8 +502,8 @@ public class DangNhap extends JFrame {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Vui long nhap tai khoan!",
-                                        "Thong bao",
+                                        "Vui lòng nhập tài khoản!",
+                                        "Thông báo",
                                         JOptionPane.WARNING_MESSAGE);
 
                         txtTaiKhoan.requestFocus();
@@ -519,7 +519,7 @@ public class DangNhap extends JFrame {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Vui long nhap mat khau!",
+                                        "Vui lòng nhập mật khẩu!",
                                         "Thong bao",
                                         JOptionPane.WARNING_MESSAGE);
 
@@ -557,8 +557,8 @@ public class DangNhap extends JFrame {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Dang nhap thanh cong!",
-                                        "Thong bao",
+                                        "Đăng nhập thành công!",
+                                        "Thông báo",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         dispose();
@@ -572,8 +572,8 @@ public class DangNhap extends JFrame {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Tai khoan hoac mat khau khong chinh xac!",
-                                        "Dang nhap that bai",
+                                        "Tài khoản hoặc mật khẩu không chính xác!",
+                                        "Đăng nhập thất bại",
                                         JOptionPane.ERROR_MESSAGE);
 
                         txtMatKhau.selectAll();
