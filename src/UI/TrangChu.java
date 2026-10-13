@@ -1,4 +1,3 @@
-
 package UI;
 
 import javax.swing.*;
@@ -21,93 +20,69 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * KHUNG CHINH cua Pet Shop Pro.
- *
- * - Thanh menu "PET SHOP PRO" nam co dinh o tren cung, KHONG bi mo lai.
- * - Vung noi dung ben duoi doi bang CardLayout (Trang chu, Kho, Spa, Hoa don,
- * He thong...) nen bam menu chi doi phan man hinh ben trong, khong nhay
- * cua so moi. Muc dang chon duoc to sang tren thanh menu.
- * - Moi man hinh duoc tao lan dau khi mo, lan sau chi hien lai.
- *
- * Hai lop tien ich dung chung cho cac man hinh (UIStyle, PhienLamViec)
- * duoc dat ngay trong file nay (cac panel import UI.TrangChu.UIStyle).
+ * Cua so chinh Pet Shop Pro - menu theo HUONG CHUC NANG.
+ * 6 nhom: He thong, Danh muc, Cap nhat, Xu ly, Tim kiem, Bao bieu.
+ * Moi chuc nang mo JPanel trong CardLayout, khong mo JFrame moi.
+ * Giu lai UIStyle va PhienLamViec long nhau cho cac lop UI hien tai.
  */
 public class TrangChu extends JFrame {
 
-    // ==================== MAU GIAO DIEN ====================
-
     private final Color LIGHT_BLUE = new Color(229, 241, 252);
     private final Color MENU_BLUE = new Color(207, 222, 235);
-
-    // ==================== THONG TIN NHAN VIEN ====================
-
     private final String maNV;
     private final String hoTen;
     private final String vaiTro;
 
-    // ==================== QUAN LY MAN HINH ====================
-    private static final String[] TEN_TAB = { "Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho" };
-
+    private static final String[] TEN_TAB = {
+            "Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho"
+    };
     private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy");
 
-    // =========================
-    // KHUNG + NOI DUNG DOI THEO CARD
-    // =========================
     private final CardLayout card = new CardLayout();
     private final JPanel noiDung = new JPanel(card);
-
-    private JLabel lbNgayTrangChu; // dong ho tren man hinh Trang chu
-
-    // Cac muc co man hinh rieng tren thanh menu (de to sang muc dang chon)
+    private JLabel lbNgayTrangChu;
     private JButton btnTrangChu;
-    private JButton btnKho;
-    private JButton btnSpa;
-    private JButton btnHoaDon;
     private JButton btnHeThong;
+    private JButton btnDanhMuc;
+    private JButton btnCapNhat;
+    private JButton btnXuLy;
+    private JButton btnTimKiem;
+    private JButton btnBaoBieu;
     private final ArrayList<JButton> nutMucChinh = new ArrayList<>();
+    private JButton nhomDaChon;
 
-    // 4 man hinh Kho: tao lan dau khi mo, lan sau chi nap lai du lieu
+    // Man hinh kho; nap lai du lieu khi quay lai.
     private final JPanel[] manHinh = new JPanel[TEN_TAB.length];
     private final Runnable[] napLai = new Runnable[TEN_TAB.length];
-
-    // Cac man hinh khac (lich hen, thu cung, hoa don, ca lam...): tao lan dau khi
-    // mo
+    // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
     private final Map<String, Component> manHinhKhac = new HashMap<>();
     private TraCuuHoaDon traCuuHoaDon;
-
     private final javax.swing.Timer dongHo;
 
-    // =========================
-    // CONSTRUCTOR
-    // =========================
     public TrangChu(String maNV, String hoTen, String vaiTro) {
-
         this.maNV = maNV;
         this.hoTen = hoTen;
         this.vaiTro = vaiTro;
 
+        // Hai lop PhienLamViec dang ton tai trong project: dong bo ca hai.
         PhienLamViec.dat(maNV, hoTen, vaiTro);
+        UI.PhienLamViec.dat(maNV, hoTen, vaiTro);
 
         setTitle("Pet Shop Pro - Trang chủ");
         setSize(1200, 720);
+        setMinimumSize(new Dimension(960, 610));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         setLayout(new BorderLayout());
-
-        // HEADER: dung yen, khong bao gio bi tao lai
         add(taoHeader(), BorderLayout.NORTH);
 
-        // VUNG DUOI HEADER: noi dung doi theo card (sat ngay duoi thanh menu)
         noiDung.setBackground(LIGHT_BLUE);
         noiDung.add(createMainContent(), "trangchu");
-
         add(noiDung, BorderLayout.CENTER);
 
         dongHo = new javax.swing.Timer(1000, e -> capNhatGio());
         dongHo.start();
         capNhatGio();
-
         hienTrangChu();
     }
 
@@ -117,46 +92,36 @@ public class TrangChu extends JFrame {
         super.dispose();
     }
 
-    // =========================================================
-    // CHUYEN MAN HINH (chi doi noi dung ben trong)
-    // =========================================================
-
     private void hienTrangChu() {
-
+        nhomDaChon = null;
         card.show(noiDung, "trangchu");
         datMucDangChon(btnTrangChu);
         setTitle("Pet Shop Pro - Trang chủ");
     }
 
-    /** tab: 0 Danh muc, 1 San pham, 2 Nhap kho, 3 Kiem ke kho. */
+    /** API cu cho DieuHuong.moKho(cha, tab) va nhung man hinh khac. */
     public void chuyenKho(int tab) {
-
-        if (tab < 0 || tab >= TEN_TAB.length) {
+        if (tab < 0 || tab >= TEN_TAB.length)
             tab = 0;
+        try {
+            boolean laLanDau = manHinh[tab] == null;
+            if (laLanDau) {
+                taoManHinh(tab);
+                noiDung.add(manHinh[tab], "tab" + tab);
+            }
+            card.show(noiDung, "tab" + tab);
+            datMucDangChon(nhomDaChon != null ? nhomDaChon : btnDanhMuc);
+            setTitle("Pet Shop Pro - " + TEN_TAB[tab]);
+            if (!laLanDau && napLai[tab] != null)
+                napLai[tab].run();
+            noiDung.revalidate();
+            noiDung.repaint();
+        } catch (RuntimeException ex) {
+            baoLoiMoManHinh(TEN_TAB[tab], ex);
         }
-
-        boolean laLanDau = manHinh[tab] == null;
-
-        if (laLanDau) {
-            taoManHinh(tab);
-            noiDung.add(manHinh[tab], "tab" + tab);
-        }
-
-        card.show(noiDung, "tab" + tab);
-        datMucDangChon(btnKho);
-        setTitle("Pet Shop Pro - Kho & Danh mục - " + TEN_TAB[tab]);
-
-        // Lan dau da tu nap du lieu trong constructor cua panel
-        if (!laLanDau) {
-            napLai[tab].run();
-        }
-
-        noiDung.revalidate();
-        noiDung.repaint();
     }
 
     private void taoManHinh(int tab) {
-
         switch (tab) {
             case 0 -> {
                 DanhMucPanel p = new DanhMucPanel();
@@ -181,48 +146,71 @@ public class TrangChu extends JFrame {
         }
     }
 
-    /**
-     * Hien mot man hinh khac (tao lan dau khi mo) va to sang muc menu tuong ung.
-     */
-    private void hienManHinh(String khoa, String tieuDe, JButton muc,
+    private void hienManHinh(String khoa, String tieuDe, JButton nhomMacDinh,
             Supplier<? extends Component> tao) {
-
-        Component c = manHinhKhac.get(khoa);
-
-        if (c == null) {
-            c = tao.get();
-            manHinhKhac.put(khoa, c);
-            noiDung.add(c, khoa);
+        try {
+            Component c = manHinhKhac.get(khoa);
+            if (c == null) {
+                c = tao.get();
+                manHinhKhac.put(khoa, c);
+                noiDung.add(c, khoa);
+            }
+            card.show(noiDung, khoa);
+            datMucDangChon(nhomDaChon != null ? nhomDaChon : nhomMacDinh);
+            setTitle("Pet Shop Pro - " + tieuDe);
+            noiDung.revalidate();
+            noiDung.repaint();
+        } catch (RuntimeException ex) {
+            baoLoiMoManHinh(tieuDe, ex);
         }
+    }
 
-        card.show(noiDung, khoa);
-        datMucDangChon(muc);
-        setTitle("Pet Shop Pro - " + tieuDe);
-
-        noiDung.revalidate();
-        noiDung.repaint();
+    private void baoLoiMoManHinh(String ten, RuntimeException ex) {
+        ex.printStackTrace();
+        JOptionPane.showMessageDialog(this,
+                "Không thể mở màn hình " + ten + ".\n"
+                        + "Vui lòng kiểm tra kết nối CSDL hoặc Console.\n"
+                        + ex.getMessage(),
+                "Pet Shop Pro - Lỗi mở màn hình", JOptionPane.ERROR_MESSAGE);
     }
 
     private void moLichHen() {
-        hienManHinh("lichhen", "Lịch hẹn Spa", btnSpa, QuanLyLichHen::new);
+        hienManHinh("lichhen", "Lịch hẹn Spa", btnCapNhat, QuanLyLichHen::new);
     }
 
     private void moThuCung() {
-        hienManHinh("thucung", "Thú cưng", btnSpa, QuanLyThuCung::new);
+        hienManHinh("thucung", "Quản lý thú cưng", btnDanhMuc, QuanLyThuCung::new);
+    }
+
+    private void moKhachHang() {
+        // Constructor THUC TE cua file QuanLyKhachHang.java can ma nhan vien.
+        hienManHinh("khachhang", "Quản lý khách hàng", btnDanhMuc,
+                () -> new QuanLyKhachHang(maNV));
+    }
+
+    private void moVoucher() {
+        hienManHinh("voucher", "Quản lý voucher", btnCapNhat, QuanLyVoucher::new);
     }
 
     private void moPhieuDichVu() {
-        hienManHinh("phieudv", "Phiếu dịch vụ", btnSpa, QuanLyPhieuDichVu::new);
+        hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnCapNhat,
+                QuanLyPhieuDichVu::new);
     }
 
     private void moTraCuuHoaDon() {
-        hienManHinh("hoadon", "Hóa đơn", btnHoaDon,
+        hienManHinh("hoadon", "Tra cứu hóa đơn", btnTimKiem,
                 () -> traCuuHoaDon = new TraCuuHoaDon());
-        traCuuHoaDon.hienDanhSach();
+        if (traCuuHoaDon != null) {
+            try {
+                traCuuHoaDon.hienDanhSach();
+            } catch (RuntimeException ex) {
+                baoLoiMoManHinh("Tra cứu hóa đơn", ex);
+            }
+        }
     }
 
     private void moThanhToan() {
-        hienManHinh("thanhtoan", "Thanh toán", btnHoaDon,
+        hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
                 () -> new QuanLyThanhToan(maNV));
     }
 
@@ -232,202 +220,216 @@ public class TrangChu extends JFrame {
     }
 
     private void moQuanLyPhanCa() {
-        hienManHinh("phanca", "Quản lý phân ca", btnHeThong, QuanLyPhanCa::new);
+        hienManHinh("phanca", "Quản lý phân ca", btnHeThong,
+                QuanLyPhanCa::new);
     }
 
     private void moQuanLyCaLam() {
-        hienManHinh("calam", "Quản lý ca làm", btnHeThong, QuanLyCaLam::new);
+        hienManHinh("calam", "Quản lý ca làm", btnHeThong,
+                QuanLyCaLam::new);
     }
 
+    private void chuyenTuNhom(JButton nhom, Runnable hanhDong) {
+        nhomDaChon = nhom;
+        hanhDong.run();
+    }
+
+    // To sang muc dang mo ngay tren thanh menu cung hang.
     private void datMucDangChon(JButton dangChon) {
         for (JButton b : nutMucChinh) {
-            b.setBackground(b == dangChon ? UIStyle.ACTIVE_BLUE : UIStyle.NAVY);
+            boolean active = b == dangChon;
+            b.setBackground(active ? new Color(48, 91, 138) : UIStyle.NAVY);
+            b.setForeground(Color.WHITE);
+            b.setFont(UIStyle.font(active ? Font.BOLD : Font.PLAIN, 12));
+        }
+        if (btnTrangChu != null) {
+            boolean active = btnTrangChu == dangChon;
+            btnTrangChu.setBackground(active ? new Color(48, 91, 138) : UIStyle.NAVY);
+            btnTrangChu.setForeground(Color.WHITE);
+            btnTrangChu.setFont(UIStyle.font(active ? Font.BOLD : Font.PLAIN, 12));
         }
     }
-
-    // =========================================================
-    // DONG HO (chi hien tren man hinh Trang chu)
-    // =========================================================
 
     private void capNhatGio() {
-
-        String gio = LocalDateTime.now().format(DINH_DANG_GIO);
-
         if (lbNgayTrangChu != null) {
-            lbNgayTrangChu.setText("▣  " + gio);
+            lbNgayTrangChu.setText("▣  " + LocalDateTime.now().format(DINH_DANG_GIO));
         }
     }
 
-    // =========================================================
-    // HEADER "PET SHOP PRO" (thanh menu tren cung)
-    // =========================================================
-
+    // ==================== MENU THEO HUONG CHUC NANG ====================
     private JPanel taoHeader() {
-
-        JPanel header = new JPanel(new BorderLayout());
+        // Chi mot hang: thuong hieu | Trang chu + 6 nhom chuc nang | nhan vien.
+        JPanel header = new JPanel(new BorderLayout(8, 0));
         header.setBackground(UIStyle.NAVY);
-        header.setBorder(new EmptyBorder(5, 18, 5, 18));
-
-        JPanel menu = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        menu.setOpaque(false);
+        header.setBorder(new EmptyBorder(7, 12, 7, 12));
 
         JLabel logo = new JLabel("PET SHOP PRO");
         logo.setForeground(Color.WHITE);
         logo.setFont(UIStyle.font(Font.BOLD, 16));
-        menu.add(logo);
+        logo.setHorizontalAlignment(SwingConstants.LEFT);
+        logo.setPreferredSize(new Dimension(148, 38));
+        header.add(logo, BorderLayout.WEST);
 
-        btnTrangChu = nutMenu("Trang chủ", e -> hienTrangChu());
+        JPanel menu = new JPanel(new GridLayout(1, 7, 2, 0));
+        menu.setOpaque(false);
+
+        btnTrangChu = nutNhom("Trang chủ");
+        btnTrangChu.addActionListener(e -> hienTrangChu());
+
+        btnHeThong = nutNhom("HỆ THỐNG");
+        btnDanhMuc = nutNhom("DANH MỤC");
+        btnCapNhat = nutNhom("CẬP NHẬT");
+        btnXuLy = nutNhom("XỬ LÝ");
+        btnTimKiem = nutNhom("TÌM KIẾM");
+        btnBaoBieu = nutNhom("BÁO BIỂU");
+
         menu.add(btnTrangChu);
-
-        btnKho = nutMenu("Kho & Danh mục",
-                e -> popupKho((JButton) e.getSource()));
-        menu.add(btnKho);
-
-        btnSpa = nutMenu("Spa & Lịch hẹn",
-                e -> popupSpa((JButton) e.getSource()));
-        menu.add(btnSpa);
-
-        btnHoaDon = nutMenu("Hóa Đơn",
-                e -> popupHoaDon((JButton) e.getSource()));
-        menu.add(btnHoaDon);
-
-        menu.add(nutMenu("Báo cáo",
-                e -> popupChuaCo((JButton) e.getSource(),
-                        "Theo ngày", "Theo tháng", "Theo năm")));
-
-        btnHeThong = nutMenu("Hệ thống",
-                e -> popupHeThong((JButton) e.getSource()));
         menu.add(btnHeThong);
+        menu.add(btnDanhMuc);
+        menu.add(btnCapNhat);
+        menu.add(btnXuLy);
+        menu.add(btnTimKiem);
+        menu.add(btnBaoBieu);
 
-        menu.add(nutMenu("Cài đặt",
-                e -> hienThongBao("Cài đặt")));
-
-        nutMucChinh.add(btnTrangChu);
-        nutMucChinh.add(btnKho);
-        nutMucChinh.add(btnSpa);
-        nutMucChinh.add(btnHoaDon);
         nutMucChinh.add(btnHeThong);
+        nutMucChinh.add(btnDanhMuc);
+        nutMucChinh.add(btnCapNhat);
+        nutMucChinh.add(btnXuLy);
+        nutMucChinh.add(btnTimKiem);
+        nutMucChinh.add(btnBaoBieu);
 
-        header.add(menu, BorderLayout.WEST);
+        btnHeThong.addActionListener(e -> hienPopup(btnHeThong, taoMenuHeThong()));
+        btnDanhMuc.addActionListener(e -> hienPopup(btnDanhMuc, taoMenuDanhMuc()));
+        btnCapNhat.addActionListener(e -> hienPopup(btnCapNhat, taoMenuCapNhat()));
+        btnXuLy.addActionListener(e -> hienPopup(btnXuLy, taoMenuXuLy()));
+        btnTimKiem.addActionListener(e -> hienPopup(btnTimKiem, taoMenuTimKiem()));
+        btnBaoBieu.addActionListener(e -> hienPopup(btnBaoBieu, taoMenuBaoBieu()));
 
-        JButton btnNhanVien = nutMenu(PhienLamViec.hoTen + "  ●",
-                e -> hienThongTinNhanVien((JButton) e.getSource()));
+        header.add(menu, BorderLayout.CENTER);
 
+        JButton btnNhanVien = new JButton(hoTen == null ? "Tài khoản" : hoTen);
+        btnNhanVien.setFont(UIStyle.font(Font.BOLD, 12));
+        btnNhanVien.setForeground(Color.WHITE);
+        btnNhanVien.setBackground(UIStyle.NAVY);
+        btnNhanVien.setFocusPainted(false);
+        btnNhanVien.setOpaque(true);
+        btnNhanVien.setBorder(new EmptyBorder(8, 6, 8, 6));
+        btnNhanVien.setPreferredSize(new Dimension(165, 38));
+        btnNhanVien.setToolTipText("Thông tin nhân viên / Đăng xuất");
+        btnNhanVien.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnNhanVien.addActionListener(e -> hienThongTinNhanVien(btnNhanVien));
         header.add(btnNhanVien, BorderLayout.EAST);
 
         return header;
     }
 
-    private JButton nutMenu(String text, ActionListener hanhDong) {
-
-        JButton b = new JButton(text);
-
-        b.setForeground(Color.WHITE);
+    private JButton nutNhom(String title) {
+        JButton b = new JButton(title);
+        b.setFont(UIStyle.font(Font.PLAIN, 12));
         b.setBackground(UIStyle.NAVY);
+        b.setForeground(Color.WHITE);
         b.setOpaque(true);
-        b.setContentAreaFilled(true);
-        b.setFont(UIStyle.font(Font.BOLD, 12));
         b.setFocusPainted(false);
-        b.setBorderPainted(false);
+        b.setBorder(new EmptyBorder(8, 3, 8, 3));
+        b.setToolTipText(title.equals("Trang chủ") ? "Về trang chủ" : "Mở menu " + title);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.addActionListener(hanhDong);
-
         return b;
     }
 
-    private void themMuc(JPopupMenu popup, String ten, ActionListener hanhDong) {
+    private void hienPopup(JButton nguon, JPopupMenu popup) {
+        popup.show(nguon, 0, nguon.getHeight());
+    }
+
+    private void themMuc(JPopupMenu popup, String ten, JButton nhom, Runnable hanhDong) {
         JMenuItem item = new JMenuItem(ten);
-        item.addActionListener(hanhDong);
+        item.setFont(UIStyle.font(Font.PLAIN, 13));
+        item.setBorder(new EmptyBorder(9, 14, 9, 14));
+        item.addActionListener(e -> chuyenTuNhom(nhom, hanhDong));
         popup.add(item);
     }
 
-    private void popupKho(JButton nguon) {
-
-        JPopupMenu popup = new JPopupMenu();
-
-        for (int i = 0; i < TEN_TAB.length; i++) {
-            final int tab = i;
-            themMuc(popup, TEN_TAB[i], e -> chuyenKho(tab));
-        }
-
-        popup.show(nguon, 0, nguon.getHeight());
+    private JPopupMenu taoMenuHeThong() {
+        JPopupMenu p = new JPopupMenu();
+        themMuc(p, "Quản lý tài khoản", btnHeThong, this::moQuanLyTaiKhoan);
+        themMuc(p, "Quản lý phân ca", btnHeThong, this::moQuanLyPhanCa);
+        themMuc(p, "Quản lý ca làm", btnHeThong, this::moQuanLyCaLam);
+        p.addSeparator();
+        themMuc(p, "Trang chủ", btnHeThong, this::hienTrangChu);
+        themMuc(p, "Đăng xuất", btnHeThong, this::dangXuat);
+        return p;
     }
 
-    private void popupSpa(JButton nguon) {
-
-        JPopupMenu popup = new JPopupMenu();
-
-        themMuc(popup, "Lịch hẹn", e -> moLichHen());
-        themMuc(popup, "Thú cưng", e -> moThuCung());
-        themMuc(popup, "Khách hàng", e -> hienChuaCo("Khách hàng"));
-        themMuc(popup, "Phiếu dịch vụ", e -> moPhieuDichVu());
-
-        popup.show(nguon, 0, nguon.getHeight());
+    private JPopupMenu taoMenuDanhMuc() {
+        JPopupMenu p = new JPopupMenu();
+        themMuc(p, "Danh mục sản phẩm", btnDanhMuc, () -> chuyenKho(0));
+        themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
+        themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
+        themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
+        themMuc(p, "Voucher / Mã giảm giá", btnDanhMuc, this::moVoucher);
+        return p;
     }
 
-    private void popupHoaDon(JButton nguon) {
-
-        JPopupMenu popup = new JPopupMenu();
-
-        themMuc(popup, "Hóa đơn", e -> moTraCuuHoaDon());
-        themMuc(popup, "Thanh toán", e -> moThanhToan());
-
-        popup.show(nguon, 0, nguon.getHeight());
+    private JPopupMenu taoMenuCapNhat() {
+        JPopupMenu p = new JPopupMenu();
+        themMuc(p, "Nhập kho", btnCapNhat, () -> chuyenKho(2));
+        themMuc(p, "Kiểm kê kho", btnCapNhat, () -> chuyenKho(3));
+        themMuc(p, "Lịch hẹn Spa", btnCapNhat, this::moLichHen);
+        themMuc(p, "Phiếu dịch vụ", btnCapNhat, this::moPhieuDichVu);
+        themMuc(p, "Voucher / Mã giảm giá", btnCapNhat, this::moVoucher);
+        return p;
     }
 
-    // Cac muc chua co giao dien
-    private void popupChuaCo(JButton nguon, String... muc) {
-
-        JPopupMenu popup = new JPopupMenu();
-
-        for (String m : muc) {
-            themMuc(popup, m, e -> hienChuaCo(m));
-        }
-
-        popup.show(nguon, 0, nguon.getHeight());
+    private JPopupMenu taoMenuXuLy() {
+        JPopupMenu p = new JPopupMenu();
+        themMuc(p, "Thanh toán hóa đơn", btnXuLy, this::moThanhToan);
+        themMuc(p, "Xử lý lịch hẹn Spa", btnXuLy, this::moLichHen);
+        themMuc(p, "Phân ca nhân viên", btnXuLy, this::moQuanLyPhanCa);
+        themMuc(p, "Quản lý ca làm", btnXuLy, this::moQuanLyCaLam);
+        return p;
     }
 
-    private void popupHeThong(JButton nguon) {
+    private JPopupMenu taoMenuTimKiem() {
+        JPopupMenu p = new JPopupMenu();
+        themMuc(p, "Tra cứu hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
+        themMuc(p, "Tra cứu khách hàng", btnTimKiem, this::moKhachHang);
+        themMuc(p, "Tra cứu sản phẩm", btnTimKiem, () -> chuyenKho(1));
+        themMuc(p, "Tra cứu thú cưng", btnTimKiem, this::moThuCung);
+        themMuc(p, "Tra cứu lịch hẹn", btnTimKiem, this::moLichHen);
+        return p;
+    }
 
-        JPopupMenu popup = new JPopupMenu();
-
-        themMuc(popup, "Quản lý tài khoản", e -> moQuanLyTaiKhoan());
-        themMuc(popup, "Quản lý phân ca", e -> moQuanLyPhanCa());
-        popup.addSeparator();
-        themMuc(popup, "Quản lý ca làm", e -> moQuanLyCaLam());
-
-        popup.show(nguon, 0, nguon.getHeight());
+    private JPopupMenu taoMenuBaoBieu() {
+        JPopupMenu p = new JPopupMenu();
+        // Project chua co panel BaoCao rieng: mo cac man hinh danh sach san co.
+        themMuc(p, "Danh sách hóa đơn", btnBaoBieu, this::moTraCuuHoaDon);
+        themMuc(p, "Danh sách khách hàng", btnBaoBieu, this::moKhachHang);
+        themMuc(p, "Danh sách sản phẩm", btnBaoBieu, () -> chuyenKho(1));
+        themMuc(p, "Danh sách voucher", btnBaoBieu, this::moVoucher);
+        return p;
     }
 
     private void hienThongTinNhanVien(JButton nguon) {
-
         JPopupMenu popup = new JPopupMenu();
-
         JPanel info = new JPanel(new GridLayout(0, 2, 15, 8));
         info.setBorder(new EmptyBorder(12, 12, 12, 12));
-
-        themThongTin(info, "Mã NV", PhienLamViec.maNV);
-        themThongTin(info, "Họ tên", PhienLamViec.hoTen);
-        themThongTin(info, "Vai trò", PhienLamViec.vaiTro);
+        themThongTin(info, "Mã NV", maNV);
+        themThongTin(info, "Họ tên", hoTen);
+        themThongTin(info, "Vai trò", vaiTro);
         themThongTin(info, "Trạng thái", "Đang hoạt động");
-
         popup.add(info);
         popup.addSeparator();
-
         JMenuItem dangXuat = new JMenuItem("Đăng xuất");
         dangXuat.addActionListener(e -> dangXuat());
         popup.add(dangXuat);
-
         popup.show(nguon,
-                -popup.getPreferredSize().width + nguon.getWidth(),
-                nguon.getHeight());
+                -popup.getPreferredSize().width + nguon.getWidth(), nguon.getHeight());
     }
 
     private void themThongTin(JPanel panel, String nhan, String giaTri) {
-        JLabel lb = new JLabel(nhan);
-        lb.setFont(UIStyle.font(Font.BOLD, 12));
-        panel.add(lb);
-        panel.add(new JLabel(giaTri));
+        JLabel label = new JLabel(nhan);
+        label.setFont(UIStyle.font(Font.BOLD, 12));
+        panel.add(label);
+        panel.add(new JLabel(giaTri != null ? giaTri : ""));
     }
 
     private void dangXuat() {
@@ -435,10 +437,7 @@ public class TrangChu extends JFrame {
         new DangNhap().setVisible(true);
     }
 
-    // =========================================================
-    // NOI DUNG TRANG CHU
-    // =========================================================
-
+    // ==================== NOI DUNG TRANG CHU ====================
     private JPanel createMainContent() {
 
         JPanel main = new JPanel(new BorderLayout());
@@ -486,32 +485,30 @@ public class TrangChu extends JFrame {
     // =========================================================
 
     private JPanel createIntroduction() {
-
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
-        panel.setBorder(null);
-
-        try {
-            ImageIcon icon = new ImageIcon(
-                    getClass().getResource("/img/giothieutrangchu.png"));
-
-            Image anh = icon.getImage().getScaledInstance(
-                    550, 510, Image.SCALE_SMOOTH);
-
-            JLabel imageLabel = new JLabel(new ImageIcon(anh));
-            imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            imageLabel.setVerticalAlignment(SwingConstants.CENTER);
-
-            panel.add(imageLabel, BorderLayout.CENTER);
-
-        } catch (Exception e) {
-            JLabel loi = new JLabel("Không tìm thấy ảnh giới thiệu",
-                    SwingConstants.CENTER);
-            loi.setForeground(UIStyle.RED);
-            loi.setFont(UIStyle.font(Font.BOLD, 14));
-            panel.add(loi, BorderLayout.CENTER);
+        java.net.URL url = getClass().getResource("/img/giothieutrangchu.png");
+        if (url == null) {
+            panel.add(new JLabel("Không tìm thấy ảnh giới thiệu", SwingConstants.CENTER));
+            return panel;
         }
-
+        Image anh = new ImageIcon(url).getImage();
+        JPanel anhCoGian = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                int w = getWidth(), h = getHeight();
+                int iw = anh.getWidth(this), ih = anh.getHeight(this);
+                if (iw <= 0 || ih <= 0 || w <= 0 || h <= 0)
+                    return;
+                double tile = Math.min((double) w / iw, (double) h / ih);
+                int newW = (int) (iw * tile), newH = (int) (ih * tile);
+                g.drawImage(anh, (w - newW) / 2, (h - newH) / 2,
+                        newW, newH, this);
+            }
+        };
+        anhCoGian.setBackground(Color.WHITE);
+        panel.add(anhCoGian, BorderLayout.CENTER);
         return panel;
     }
 
@@ -533,13 +530,16 @@ public class TrangChu extends JFrame {
         panel.add(title);
         panel.add(Box.createVerticalStrut(15));
 
-        addQuickButton(panel, "Thanh toán", "F4", this::moThanhToan);
-        addQuickButton(panel, "Quản lý lịch hẹn Spa", "F5", this::moLichHen);
-        addQuickButton(panel, "Quản lý sản phẩm", "F6", () -> chuyenKho(1));
+        addQuickButton(panel, "Thanh toán", "F4",
+                () -> chuyenTuNhom(btnXuLy, this::moThanhToan));
+        addQuickButton(panel, "Quản lý lịch hẹn Spa", "F5",
+                () -> chuyenTuNhom(btnCapNhat, this::moLichHen));
+        addQuickButton(panel, "Quản lý sản phẩm", "F6",
+                () -> chuyenTuNhom(btnDanhMuc, () -> chuyenKho(1)));
         addQuickButton(panel, "Quản lý khách hàng", "F7",
-                () -> hienChuaCo("Quản lý khách hàng"));
-        addQuickButton(panel, "Báo cáo doanh thu", "F8",
-                () -> hienChuaCo("Báo cáo doanh thu"));
+                () -> chuyenTuNhom(btnDanhMuc, this::moKhachHang));
+        addQuickButton(panel, "Tra cứu hóa đơn", "F8",
+                () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon));
 
         return panel;
     }
