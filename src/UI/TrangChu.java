@@ -1,5 +1,10 @@
 package UI;
 
+import ConnectDB.connectDB;
+import dao.HoaDonDAO;
+import dao.LichHenDAO;
+import entity.LichHen;
+
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -7,23 +12,28 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
  * Cua so chinh Pet Shop Pro - menu theo HUONG CHUC NANG.
- * 6 nhom: He thong, Danh muc, Cap nhat, Xu ly, Tim kiem, Bao bieu.
+ * 5 nhom: He thong, Danh muc, Nghiep vu, Tim kiem, Thong ke.
  * Moi chuc nang mo JPanel trong CardLayout, khong mo JFrame moi.
- * Giu lai UIStyle va PhienLamViec long nhau cho cac lop UI hien tai.
  */
 public class TrangChu extends JFrame {
 
@@ -37,66 +47,74 @@ public class TrangChu extends JFrame {
             "Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho"
     };
     private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy");
+    private static final DateTimeFormatter DINH_DANG_GIO_HEN = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final CardLayout card = new CardLayout();
-    private final JPanel noiDung = new JPanel(card);
-    private JLabel lbNgayTrangChu;
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel pnlNoiDung = new JPanel(cardLayout);
+    private JLabel lblNgayTrangChu;
     private JButton btnTrangChu;
     private JButton btnHeThong;
     private JButton btnDanhMuc;
-    private JButton btnCapNhat;
-    private JButton btnXuLy;
+    private JButton btnNghiepVu;
     private JButton btnTimKiem;
-    private JButton btnBaoBieu;
-    private final ArrayList<JButton> nutMucChinh = new ArrayList<>();
-    private JButton nhomDaChon;
+    private JButton btnThongKe;
+    private final ArrayList<JButton> dsBtnMucChinh = new ArrayList<>();
+    private JButton btnNhomDaChon;
 
     // Man hinh kho; nap lai du lieu khi quay lai.
-    private final JPanel[] manHinh = new JPanel[TEN_TAB.length];
+    private final JPanel[] arrPnlManHinhKho = new JPanel[TEN_TAB.length];
     private final Runnable[] napLai = new Runnable[TEN_TAB.length];
     // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
-    private final Map<String, Component> manHinhKhac = new HashMap<>();
-    private TraCuuHoaDon traCuuHoaDon;
-    private final javax.swing.Timer dongHo;
+    private final Map<String, Component> mapManHinhKhac = new HashMap<>();
+    private TraCuuHoaDon pnlTraCuuHoaDon;
+    private final javax.swing.Timer tmrDongHo;
+
+    // Thanh phan dong tren trang chu.
+    private JPanel pnlLichSpaNoiDung;
+    private JLabel lblPhuDeLichSpa;
+    private JLabel lblDoanhThuHomNay;
+    private JLabel lblLuotMuaHomNay;
+    private JLabel lblLichSpaHomNay;
+    private JLabel lblPhieuNhapHomNay;
 
     public TrangChu(String maNV, String hoTen, String vaiTro) {
         this.maNV = maNV;
         this.hoTen = hoTen;
         this.vaiTro = vaiTro;
 
-        // Hai lop PhienLamViec dang ton tai trong project: dong bo ca hai.
         PhienLamViec.dat(maNV, hoTen, vaiTro);
         UI.PhienLamViec.dat(maNV, hoTen, vaiTro);
 
         setTitle("Pet Shop Pro - Trang chủ");
         setSize(1200, 720);
-        setMinimumSize(new Dimension(960, 610));
+        setMinimumSize(new Dimension(980, 650));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        add(taoHeader(), BorderLayout.NORTH);
+        add(taoPnlHeader(), BorderLayout.NORTH);
 
-        noiDung.setBackground(LIGHT_BLUE);
-        noiDung.add(createMainContent(), "trangchu");
-        add(noiDung, BorderLayout.CENTER);
+        pnlNoiDung.setBackground(LIGHT_BLUE);
+        pnlNoiDung.add(taoPnlTrangChu(), "trangchu");
+        add(pnlNoiDung, BorderLayout.CENTER);
 
-        dongHo = new javax.swing.Timer(1000, e -> capNhatGio());
-        dongHo.start();
+        tmrDongHo = new javax.swing.Timer(1000, e -> capNhatGio());
+        tmrDongHo.start();
         capNhatGio();
         hienTrangChu();
     }
 
     @Override
     public void dispose() {
-        dongHo.stop();
+        tmrDongHo.stop();
         super.dispose();
     }
 
     private void hienTrangChu() {
-        nhomDaChon = null;
-        card.show(noiDung, "trangchu");
+        btnNhomDaChon = null;
+        cardLayout.show(pnlNoiDung, "trangchu");
         datMucDangChon(btnTrangChu);
         setTitle("Pet Shop Pro - Trang chủ");
+        napLichSpaSapToi();
     }
 
     /** API cu cho DieuHuong.moKho(cha, tab) va nhung man hinh khac. */
@@ -104,18 +122,18 @@ public class TrangChu extends JFrame {
         if (tab < 0 || tab >= TEN_TAB.length)
             tab = 0;
         try {
-            boolean laLanDau = manHinh[tab] == null;
+            boolean laLanDau = arrPnlManHinhKho[tab] == null;
             if (laLanDau) {
                 taoManHinh(tab);
-                noiDung.add(manHinh[tab], "tab" + tab);
+                pnlNoiDung.add(arrPnlManHinhKho[tab], "tab" + tab);
             }
-            card.show(noiDung, "tab" + tab);
-            datMucDangChon(nhomDaChon != null ? nhomDaChon : btnDanhMuc);
+            cardLayout.show(pnlNoiDung, "tab" + tab);
+            datMucDangChon(btnNhomDaChon != null ? btnNhomDaChon : btnDanhMuc);
             setTitle("Pet Shop Pro - " + TEN_TAB[tab]);
             if (!laLanDau && napLai[tab] != null)
                 napLai[tab].run();
-            noiDung.revalidate();
-            noiDung.repaint();
+            pnlNoiDung.revalidate();
+            pnlNoiDung.repaint();
         } catch (RuntimeException ex) {
             baoLoiMoManHinh(TEN_TAB[tab], ex);
         }
@@ -125,22 +143,22 @@ public class TrangChu extends JFrame {
         switch (tab) {
             case 0 -> {
                 DanhMucPanel p = new DanhMucPanel();
-                manHinh[tab] = p;
+                arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
             case 1 -> {
                 SanPhamPanel p = new SanPhamPanel();
-                manHinh[tab] = p;
+                arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
             case 2 -> {
                 NhapKhoPanel p = new NhapKhoPanel();
-                manHinh[tab] = p;
+                arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
             default -> {
                 KiemKePanel p = new KiemKePanel();
-                manHinh[tab] = p;
+                arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
         }
@@ -149,17 +167,17 @@ public class TrangChu extends JFrame {
     private void hienManHinh(String khoa, String tieuDe, JButton nhomMacDinh,
             Supplier<? extends Component> tao) {
         try {
-            Component c = manHinhKhac.get(khoa);
+            Component c = mapManHinhKhac.get(khoa);
             if (c == null) {
                 c = tao.get();
-                manHinhKhac.put(khoa, c);
-                noiDung.add(c, khoa);
+                mapManHinhKhac.put(khoa, c);
+                pnlNoiDung.add(c, khoa);
             }
-            card.show(noiDung, khoa);
-            datMucDangChon(nhomDaChon != null ? nhomDaChon : nhomMacDinh);
+            cardLayout.show(pnlNoiDung, khoa);
+            datMucDangChon(btnNhomDaChon != null ? btnNhomDaChon : nhomMacDinh);
             setTitle("Pet Shop Pro - " + tieuDe);
-            noiDung.revalidate();
-            noiDung.repaint();
+            pnlNoiDung.revalidate();
+            pnlNoiDung.repaint();
         } catch (RuntimeException ex) {
             baoLoiMoManHinh(tieuDe, ex);
         }
@@ -175,7 +193,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moLichHen() {
-        hienManHinh("lichhen", "Lịch hẹn Spa", btnCapNhat, QuanLyLichHen::new);
+        hienManHinh("lichhen", "Lịch hẹn Spa", btnNghiepVu, QuanLyLichHen::new);
     }
 
     private void moThuCung() {
@@ -183,26 +201,25 @@ public class TrangChu extends JFrame {
     }
 
     private void moKhachHang() {
-        // Constructor THUC TE cua file QuanLyKhachHang.java can ma nhan vien.
         hienManHinh("khachhang", "Quản lý khách hàng", btnDanhMuc,
                 () -> new QuanLyKhachHang(maNV));
     }
 
     private void moVoucher() {
-        hienManHinh("voucher", "Quản lý voucher", btnCapNhat, QuanLyVoucher::new);
+        hienManHinh("voucher", "Quản lý voucher", btnNghiepVu, QuanLyVoucher::new);
     }
 
     private void moPhieuDichVu() {
-        hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnCapNhat,
+        hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnNghiepVu,
                 QuanLyPhieuDichVu::new);
     }
 
     private void moTraCuuHoaDon() {
         hienManHinh("hoadon", "Tra cứu hóa đơn", btnTimKiem,
-                () -> traCuuHoaDon = new TraCuuHoaDon());
-        if (traCuuHoaDon != null) {
+                () -> pnlTraCuuHoaDon = new TraCuuHoaDon());
+        if (pnlTraCuuHoaDon != null) {
             try {
-                traCuuHoaDon.hienDanhSach();
+                pnlTraCuuHoaDon.hienDanhSach();
             } catch (RuntimeException ex) {
                 baoLoiMoManHinh("Tra cứu hóa đơn", ex);
             }
@@ -210,7 +227,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moThanhToan() {
-        hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
+        hienManHinh("thanhtoan", "Thanh toán", btnNghiepVu,
                 () -> new QuanLyThanhToan(maNV));
     }
 
@@ -220,7 +237,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moQuanLyPhanCa() {
-        hienManHinh("phanca", "Quản lý phân ca", btnHeThong,
+        hienManHinh("phanca", "Phân ca nhân viên", btnNghiepVu,
                 QuanLyPhanCa::new);
     }
 
@@ -230,17 +247,16 @@ public class TrangChu extends JFrame {
     }
 
     private void chuyenTuNhom(JButton nhom, Runnable hanhDong) {
-        nhomDaChon = nhom;
+        btnNhomDaChon = nhom;
         hanhDong.run();
     }
 
-    // To sang muc dang mo ngay tren thanh menu cung hang.
     private void datMucDangChon(JButton dangChon) {
-        for (JButton b : nutMucChinh) {
-            boolean active = b == dangChon;
-            b.setBackground(active ? new Color(48, 91, 138) : UIStyle.NAVY);
-            b.setForeground(Color.WHITE);
-            b.setFont(UIStyle.font(active ? Font.BOLD : Font.PLAIN, 12));
+        for (JButton btnTam : dsBtnMucChinh) {
+            boolean active = btnTam == dangChon;
+            btnTam.setBackground(active ? new Color(48, 91, 138) : UIStyle.NAVY);
+            btnTam.setForeground(Color.WHITE);
+            btnTam.setFont(UIStyle.font(active ? Font.BOLD : Font.PLAIN, 12));
         }
         if (btnTrangChu != null) {
             boolean active = btnTrangChu == dangChon;
@@ -251,61 +267,60 @@ public class TrangChu extends JFrame {
     }
 
     private void capNhatGio() {
-        if (lbNgayTrangChu != null) {
-            lbNgayTrangChu.setText("▣  " + LocalDateTime.now().format(DINH_DANG_GIO));
+        if (lblNgayTrangChu != null) {
+            lblNgayTrangChu.setText(LocalDateTime.now().format(DINH_DANG_GIO));
         }
     }
 
     // ==================== MENU THEO HUONG CHUC NANG ====================
-    private JPanel taoHeader() {
-        // Chi mot hang: thuong hieu | Trang chu + 6 nhom chuc nang | nhan vien.
+    private JPanel taoPnlHeader() {
         JPanel header = new JPanel(new BorderLayout(8, 0));
         header.setBackground(UIStyle.NAVY);
         header.setBorder(new EmptyBorder(7, 12, 7, 12));
 
-        JLabel logo = new JLabel("PET SHOP PRO");
-        logo.setForeground(Color.WHITE);
-        logo.setFont(UIStyle.font(Font.BOLD, 16));
-        logo.setHorizontalAlignment(SwingConstants.LEFT);
-        logo.setPreferredSize(new Dimension(148, 38));
-        header.add(logo, BorderLayout.WEST);
+        JPanel pnlThuongHieu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        pnlThuongHieu.setOpaque(false);
+        JLabel lblLogo = new JLabel("PET SHOP PRO", taiIcon("/img/logo.png", 26, 26), SwingConstants.LEFT);
+        lblLogo.setForeground(Color.WHITE);
+        lblLogo.setFont(UIStyle.font(Font.BOLD, 16));
+        lblLogo.setHorizontalTextPosition(SwingConstants.RIGHT);
+        lblLogo.setIconTextGap(8);
+        pnlThuongHieu.add(lblLogo);
+        pnlThuongHieu.setPreferredSize(new Dimension(160, 38));
+        header.add(pnlThuongHieu, BorderLayout.WEST);
 
-        JPanel menu = new JPanel(new GridLayout(1, 7, 2, 0));
-        menu.setOpaque(false);
+        JPanel pnlMenu = new JPanel(new GridLayout(1, 6, 2, 0));
+        pnlMenu.setOpaque(false);
 
-        btnTrangChu = nutNhom("TRANG CHỦ");
+        btnTrangChu = taoBtnNhom("Trang chủ", "/img/trangchulogo.png");
         btnTrangChu.addActionListener(e -> hienTrangChu());
 
-        btnHeThong = nutNhom("HỆ THỐNG");
-        btnDanhMuc = nutNhom("DANH MỤC");
-        btnCapNhat = nutNhom("CẬP NHẬT");
-        btnXuLy = nutNhom("XỬ LÝ");
-        btnTimKiem = nutNhom("TÌM KIẾM");
-        btnBaoBieu = nutNhom("BÁO BIỂU");
+        btnHeThong = taoBtnNhom("HỆ THỐNG", "/img/caidatlogo.png");
+        btnDanhMuc = taoBtnNhom("DANH MỤC", "/img/danhmuclogo.png");
+        btnNghiepVu = taoBtnNhom("NGHIỆP VỤ", "/img/nghiepvulogo.png");
+        btnTimKiem = taoBtnNhom("TÌM KIẾM", "/img/timkiemlogo.png");
+        btnThongKe = taoBtnNhom("THỐNG KÊ", "/img/thongkelogo.png");
 
-        menu.add(btnTrangChu);
-        menu.add(btnHeThong);
-        menu.add(btnDanhMuc);
-        menu.add(btnCapNhat);
-        menu.add(btnXuLy);
-        menu.add(btnTimKiem);
-        menu.add(btnBaoBieu);
+        pnlMenu.add(btnTrangChu);
+        pnlMenu.add(btnHeThong);
+        pnlMenu.add(btnDanhMuc);
+        pnlMenu.add(btnNghiepVu);
+        pnlMenu.add(btnTimKiem);
+        pnlMenu.add(btnThongKe);
 
-        nutMucChinh.add(btnHeThong);
-        nutMucChinh.add(btnDanhMuc);
-        nutMucChinh.add(btnCapNhat);
-        nutMucChinh.add(btnXuLy);
-        nutMucChinh.add(btnTimKiem);
-        nutMucChinh.add(btnBaoBieu);
+        dsBtnMucChinh.add(btnHeThong);
+        dsBtnMucChinh.add(btnDanhMuc);
+        dsBtnMucChinh.add(btnNghiepVu);
+        dsBtnMucChinh.add(btnTimKiem);
+        dsBtnMucChinh.add(btnThongKe);
 
         btnHeThong.addActionListener(e -> hienPopup(btnHeThong, taoMenuHeThong()));
         btnDanhMuc.addActionListener(e -> hienPopup(btnDanhMuc, taoMenuDanhMuc()));
-        btnCapNhat.addActionListener(e -> hienPopup(btnCapNhat, taoMenuCapNhat()));
-        btnXuLy.addActionListener(e -> hienPopup(btnXuLy, taoMenuXuLy()));
+        btnNghiepVu.addActionListener(e -> hienPopup(btnNghiepVu, taoMenuNghiepVu()));
         btnTimKiem.addActionListener(e -> hienPopup(btnTimKiem, taoMenuTimKiem()));
-        btnBaoBieu.addActionListener(e -> hienPopup(btnBaoBieu, taoMenuBaoBieu()));
+        btnThongKe.addActionListener(e -> hienPopup(btnThongKe, taoMenuThongKe()));
 
-        header.add(menu, BorderLayout.CENTER);
+        header.add(pnlMenu, BorderLayout.CENTER);
 
         JButton btnNhanVien = new JButton(hoTen == null ? "Tài khoản" : hoTen);
         btnNhanVien.setFont(UIStyle.font(Font.BOLD, 12));
@@ -314,7 +329,7 @@ public class TrangChu extends JFrame {
         btnNhanVien.setFocusPainted(false);
         btnNhanVien.setOpaque(true);
         btnNhanVien.setBorder(new EmptyBorder(8, 6, 8, 6));
-        btnNhanVien.setPreferredSize(new Dimension(165, 38));
+        btnNhanVien.setPreferredSize(new Dimension(170, 38));
         btnNhanVien.setToolTipText("Thông tin nhân viên / Đăng xuất");
         btnNhanVien.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnNhanVien.addActionListener(e -> hienThongTinNhanVien(btnNhanVien));
@@ -323,38 +338,45 @@ public class TrangChu extends JFrame {
         return header;
     }
 
-    private JButton nutNhom(String title) {
-        JButton b = new JButton(title);
-        b.setFont(UIStyle.font(Font.PLAIN, 12));
-        b.setBackground(UIStyle.NAVY);
-        b.setForeground(Color.WHITE);
-        b.setOpaque(true);
-        b.setFocusPainted(false);
-        b.setBorder(new EmptyBorder(8, 3, 8, 3));
-        b.setToolTipText(title.equals("Trang chủ") ? "Về trang chủ" : "Mở menu " + title);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return b;
+    private JButton taoBtnNhom(String title, String iconPath) {
+        JButton btnTam = new JButton(title, taiIcon(iconPath, 18, 18));
+        btnTam.setFont(UIStyle.font(Font.PLAIN, 12));
+        btnTam.setBackground(UIStyle.NAVY);
+        btnTam.setForeground(Color.WHITE);
+        btnTam.setOpaque(true);
+        btnTam.setFocusPainted(false);
+        btnTam.setBorder(new EmptyBorder(8, 3, 8, 3));
+        btnTam.setToolTipText(title.equals("Trang chủ") ? "Về trang chủ" : "Mở menu " + title);
+        btnTam.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnTam.setHorizontalTextPosition(SwingConstants.RIGHT);
+        btnTam.setIconTextGap(8);
+        return btnTam;
     }
 
-    private void hienPopup(JButton nguon, JPopupMenu popup) {
-        popup.show(nguon, 0, nguon.getHeight());
+    private ImageIcon taiIcon(String path, int w, int h) {
+        java.net.URL url = getClass().getResource(path);
+        if (url == null)
+            return null;
+        Image img = new ImageIcon(url).getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
+        return new ImageIcon(img);
     }
 
-    private void themMuc(JPopupMenu popup, String ten, JButton nhom, Runnable hanhDong) {
-        JMenuItem item = new JMenuItem(ten);
-        item.setFont(UIStyle.font(Font.PLAIN, 13));
-        item.setBorder(new EmptyBorder(9, 14, 9, 14));
-        item.addActionListener(e -> chuyenTuNhom(nhom, hanhDong));
-        popup.add(item);
+    private void hienPopup(JButton nguon, JPopupMenu popMenu) {
+        popMenu.show(nguon, 0, nguon.getHeight());
+    }
+
+    private void themMuc(JPopupMenu popMenu, String ten, JButton nhom, Runnable hanhDong) {
+        JMenuItem mniChucNang = new JMenuItem(ten);
+        mniChucNang.setFont(UIStyle.font(Font.PLAIN, 13));
+        mniChucNang.setBorder(new EmptyBorder(9, 14, 9, 14));
+        mniChucNang.addActionListener(e -> chuyenTuNhom(nhom, hanhDong));
+        popMenu.add(mniChucNang);
     }
 
     private JPopupMenu taoMenuHeThong() {
         JPopupMenu p = new JPopupMenu();
         themMuc(p, "Quản lý tài khoản", btnHeThong, this::moQuanLyTaiKhoan);
-        themMuc(p, "Quản lý phân ca", btnHeThong, this::moQuanLyPhanCa);
         themMuc(p, "Quản lý ca làm", btnHeThong, this::moQuanLyCaLam);
-        p.addSeparator();
-        themMuc(p, "Đăng xuất", btnHeThong, this::dangXuat);
         return p;
     }
 
@@ -364,26 +386,21 @@ public class TrangChu extends JFrame {
         themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
-        themMuc(p, "Voucher / Mã giảm giá", btnDanhMuc, this::moVoucher);
         return p;
     }
 
-    private JPopupMenu taoMenuCapNhat() {
+    private JPopupMenu taoMenuNghiepVu() {
         JPopupMenu p = new JPopupMenu();
-        themMuc(p, "Nhập kho", btnCapNhat, () -> chuyenKho(2));
-        themMuc(p, "Kiểm kê kho", btnCapNhat, () -> chuyenKho(3));
-        themMuc(p, "Lịch hẹn Spa", btnCapNhat, this::moLichHen);
-        themMuc(p, "Phiếu dịch vụ", btnCapNhat, this::moPhieuDichVu);
-        themMuc(p, "Voucher / Mã giảm giá", btnCapNhat, this::moVoucher);
-        return p;
-    }
-
-    private JPopupMenu taoMenuXuLy() {
-        JPopupMenu p = new JPopupMenu();
-        themMuc(p, "Thanh toán hóa đơn", btnXuLy, this::moThanhToan);
-        themMuc(p, "Xử lý lịch hẹn Spa", btnXuLy, this::moLichHen);
-        themMuc(p, "Phân ca nhân viên", btnXuLy, this::moQuanLyPhanCa);
-        themMuc(p, "Quản lý ca làm", btnXuLy, this::moQuanLyCaLam);
+        themMuc(p, "Nhập kho", btnNghiepVu, () -> chuyenKho(2));
+        themMuc(p, "Kiểm kê kho", btnNghiepVu, () -> chuyenKho(3));
+        p.addSeparator();
+        themMuc(p, "Lịch hẹn Spa", btnNghiepVu, this::moLichHen);
+        themMuc(p, "Phiếu dịch vụ", btnNghiepVu, this::moPhieuDichVu);
+        p.addSeparator();
+        themMuc(p, "Thanh toán hóa đơn", btnNghiepVu, this::moThanhToan);
+        themMuc(p, "Voucher / Mã giảm giá", btnNghiepVu, this::moVoucher);
+        p.addSeparator();
+        themMuc(p, "Phân ca nhân viên", btnNghiepVu, this::moQuanLyPhanCa);
         return p;
     }
 
@@ -397,38 +414,33 @@ public class TrangChu extends JFrame {
         return p;
     }
 
-    private JPopupMenu taoMenuBaoBieu() {
+    private JPopupMenu taoMenuThongKe() {
         JPopupMenu p = new JPopupMenu();
-        // Project chua co panel BaoCao rieng: mo cac man hinh danh sach san co.
-        themMuc(p, "Danh sách hóa đơn", btnBaoBieu, this::moTraCuuHoaDon);
-        themMuc(p, "Danh sách khách hàng", btnBaoBieu, this::moKhachHang);
-        themMuc(p, "Danh sách sản phẩm", btnBaoBieu, () -> chuyenKho(1));
-        themMuc(p, "Danh sách voucher", btnBaoBieu, this::moVoucher);
         return p;
     }
 
     private void hienThongTinNhanVien(JButton nguon) {
-        JPopupMenu popup = new JPopupMenu();
-        JPanel info = new JPanel(new GridLayout(0, 2, 15, 8));
-        info.setBorder(new EmptyBorder(12, 12, 12, 12));
-        themThongTin(info, "Mã NV", maNV);
-        themThongTin(info, "Họ tên", hoTen);
-        themThongTin(info, "Vai trò", vaiTro);
-        themThongTin(info, "Trạng thái", "Đang hoạt động");
-        popup.add(info);
-        popup.addSeparator();
+        JPopupMenu popMenu = new JPopupMenu();
+        JPanel pnlThongTin = new JPanel(new GridLayout(0, 2, 15, 8));
+        pnlThongTin.setBorder(new EmptyBorder(12, 12, 12, 12));
+        themThongTin(pnlThongTin, "Mã NV", maNV);
+        themThongTin(pnlThongTin, "Họ tên", hoTen);
+        themThongTin(pnlThongTin, "Vai trò", vaiTro);
+        themThongTin(pnlThongTin, "Trạng thái", "Đang hoạt động");
+        popMenu.add(pnlThongTin);
+        popMenu.addSeparator();
         JMenuItem dangXuat = new JMenuItem("Đăng xuất");
         dangXuat.addActionListener(e -> dangXuat());
-        popup.add(dangXuat);
-        popup.show(nguon,
-                -popup.getPreferredSize().width + nguon.getWidth(), nguon.getHeight());
+        popMenu.add(dangXuat);
+        popMenu.show(nguon,
+                -popMenu.getPreferredSize().width + nguon.getWidth(), nguon.getHeight());
     }
 
-    private void themThongTin(JPanel panel, String nhan, String giaTri) {
-        JLabel label = new JLabel(nhan);
-        label.setFont(UIStyle.font(Font.BOLD, 12));
-        panel.add(label);
-        panel.add(new JLabel(giaTri != null ? giaTri : ""));
+    private void themThongTin(JPanel pnlPanel, String lblNhan, String lblGiaTri) {
+        JLabel lblThongTin = new JLabel(lblNhan);
+        lblThongTin.setFont(UIStyle.font(Font.BOLD, 12));
+        pnlPanel.add(lblThongTin);
+        pnlPanel.add(new JLabel(lblGiaTri != null ? lblGiaTri : ""));
     }
 
     private void dangXuat() {
@@ -436,63 +448,83 @@ public class TrangChu extends JFrame {
         new DangNhap().setVisible(true);
     }
 
+    private void lamMoiTrangChu() {
+        capNhatGio();
+        napLichSpaSapToi();
+        napTongQuanHomNay();
+        pnlNoiDung.revalidate();
+        pnlNoiDung.repaint();
+    }
+
     // ==================== NOI DUNG TRANG CHU ====================
-    private JPanel createMainContent() {
+    private JPanel taoPnlTrangChu() {
+        JPanel pnlChinh = new JPanel(new BorderLayout());
+        pnlChinh.setBackground(LIGHT_BLUE);
+        pnlChinh.add(taoPnlThanhTieuDe(), BorderLayout.NORTH);
 
-        JPanel main = new JPanel(new BorderLayout());
-        main.setBackground(LIGHT_BLUE);
+        JPanel pnlThan = new JPanel(new BorderLayout(0, 14));
+        pnlThan.setBackground(LIGHT_BLUE);
+        pnlThan.setBorder(new EmptyBorder(16, 28, 16, 28));
 
-        main.add(createTitleBar(), BorderLayout.NORTH);
+        // Hai cot ben tren va duoi can nhau theo cung mot luoi.
+        JPanel pnlTren = new JPanel(new GridLayout(1, 2, 20, 0));
+        pnlTren.setOpaque(false);
+        pnlTren.add(taoPnlGioiThieu());
+        pnlTren.add(taoPnlTruyCapNhanh());
 
-        JPanel center = new JPanel(new GridLayout(1, 2, 20, 0));
-        center.setBackground(LIGHT_BLUE);
-        center.setBorder(new EmptyBorder(20, 30, 30, 30));
+        JPanel pnlDuoi = taoPnlTienIchDuoi();
+        pnlDuoi.setPreferredSize(new Dimension(0, 200));
 
-        center.add(createIntroduction());
-        center.add(createQuickAccess());
-
-        main.add(center, BorderLayout.CENTER);
-
-        return main;
+        pnlThan.add(pnlTren, BorderLayout.CENTER);
+        pnlThan.add(pnlDuoi, BorderLayout.SOUTH);
+        pnlChinh.add(pnlThan, BorderLayout.CENTER);
+        return pnlChinh;
     }
 
-    // =========================================================
-    // THANH TIEU DE
-    // =========================================================
+    private JPanel taoPnlThanhTieuDe() {
+        JPanel pnlPanel = new JPanel(new BorderLayout());
+        pnlPanel.setBackground(UIStyle.BAR);
+        pnlPanel.setBorder(new EmptyBorder(10, 25, 10, 25));
 
-    private JPanel createTitleBar() {
+        JLabel lblNgayHienTai = new JLabel(LocalDateTime.now().format(DINH_DANG_GIO));
+        lblNgayTrangChu = lblNgayHienTai;
+        lblNgayHienTai.setFont(UIStyle.font(Font.BOLD, 12));
 
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyle.BAR);
-        panel.setBorder(new EmptyBorder(10, 25, 10, 25));
+        JLabel lblTieuDeTrangChu = new JLabel("TRANG CHỦ", SwingConstants.CENTER);
+        lblTieuDeTrangChu.setFont(UIStyle.font(Font.BOLD, 25));
 
-        JLabel date = new JLabel("▣  " + LocalDateTime.now().format(DINH_DANG_GIO));
-        lbNgayTrangChu = date;
-        date.setFont(UIStyle.font(Font.BOLD, 12));
+        JPanel pnlThaoTac = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        pnlThaoTac.setOpaque(false);
 
-        JLabel title = new JLabel("TRANG CHỦ", SwingConstants.CENTER);
-        title.setFont(UIStyle.font(Font.BOLD, 25));
+        JButton btnLamMoi = UIStyle.nutPhu(" Làm mới");
+        btnLamMoi.setPreferredSize(new Dimension(135, 38));
+        btnLamMoi.addActionListener(e -> lamMoiTrangChu());
 
-        panel.add(date, BorderLayout.WEST);
-        panel.add(title, BorderLayout.CENTER);
+        JButton btnHoTro = UIStyle.nutPhu("? Hỗ trợ");
+        btnHoTro.setPreferredSize(new Dimension(125, 38));
+        btnHoTro.addActionListener(e -> moModalHoTro());
 
-        return panel;
+        pnlThaoTac.add(btnLamMoi);
+        pnlThaoTac.add(btnHoTro);
+
+        pnlPanel.add(lblNgayHienTai, BorderLayout.WEST);
+        pnlPanel.add(lblTieuDeTrangChu, BorderLayout.CENTER);
+        pnlPanel.add(pnlThaoTac, BorderLayout.EAST);
+        return pnlPanel;
     }
 
-    // =========================================================
-    // ANH GIOI THIEU
-    // =========================================================
+    private JPanel taoPnlGioiThieu() {
+        JPanel pnlPanel = new JPanel(new BorderLayout());
+        pnlPanel.setBackground(Color.WHITE);
+        pnlPanel.setBorder(new LineBorder(UIStyle.LINE));
 
-    private JPanel createIntroduction() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
         java.net.URL url = getClass().getResource("/img/giothieutrangchu.png");
         if (url == null) {
-            panel.add(new JLabel("Không tìm thấy ảnh giới thiệu", SwingConstants.CENTER));
-            return panel;
+            pnlPanel.add(new JLabel("Không tìm thấy ảnh giới thiệu", SwingConstants.CENTER));
+            return pnlPanel;
         }
         Image anh = new ImageIcon(url).getImage();
-        JPanel anhCoGian = new JPanel() {
+        JPanel pnlAnhCoGian = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -500,72 +532,373 @@ public class TrangChu extends JFrame {
                 int iw = anh.getWidth(this), ih = anh.getHeight(this);
                 if (iw <= 0 || ih <= 0 || w <= 0 || h <= 0)
                     return;
-                double tile = Math.min((double) w / iw, (double) h / ih);
-                int newW = (int) (iw * tile), newH = (int) (ih * tile);
-                g.drawImage(anh, (w - newW) / 2, (h - newH) / 2,
-                        newW, newH, this);
+                // Anh luon phu kin khung, khong con khoang trang lon.
+                // Giu ti le goc, cat bot rat it o canh neu can thiet.
+                double tile = Math.max((double) w / iw, (double) h / ih);
+                int newW = (int) Math.ceil(iw * tile);
+                int newH = (int) Math.ceil(ih * tile);
+                int x = (w - newW) / 2;
+                int y = 0; // Can tren bang khung Truy cap nhanh.
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.drawImage(anh, x, y, newW, newH, this);
+                g2.dispose();
             }
         };
-        anhCoGian.setBackground(Color.WHITE);
-        panel.add(anhCoGian, BorderLayout.CENTER);
-        return panel;
+        pnlAnhCoGian.setBackground(Color.WHITE);
+        pnlPanel.add(pnlAnhCoGian, BorderLayout.CENTER);
+        return pnlPanel;
     }
 
-    // =========================================================
-    // TRUY CAP NHANH
-    // =========================================================
-
-    private JPanel createQuickAccess() {
-
-        JPanel panel = new JPanel();
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    private JPanel taoPnlTruyCapNhanh() {
+        JPanel pnlPanel = new JPanel();
+        pnlPanel.setBackground(Color.WHITE);
+        pnlPanel.setBorder(new CompoundBorder(new LineBorder(UIStyle.LINE), new EmptyBorder(15, 15, 15, 15)));
+        pnlPanel.setLayout(new BoxLayout(pnlPanel, BoxLayout.Y_AXIS));
 
         JLabel title = new JLabel("TRUY CẬP NHANH");
         title.setFont(UIStyle.font(Font.BOLD, 18));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        panel.add(title);
-        panel.add(Box.createVerticalStrut(15));
+        pnlPanel.add(title);
+        pnlPanel.add(Box.createVerticalStrut(15));
 
-        addQuickButton(panel, "Thanh toán", "F4",
-                () -> chuyenTuNhom(btnXuLy, this::moThanhToan));
-        addQuickButton(panel, "Quản lý lịch hẹn Spa", "F5",
-                () -> chuyenTuNhom(btnCapNhat, this::moLichHen));
-        addQuickButton(panel, "Quản lý sản phẩm", "F6",
+        themBtnTruyCapNhanh(pnlPanel, "Thanh toán", "F4",
+                () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan));
+        themBtnTruyCapNhanh(pnlPanel, "Quản lý lịch hẹn Spa", "F5",
+                () -> chuyenTuNhom(btnNghiepVu, this::moLichHen));
+        themBtnTruyCapNhanh(pnlPanel, "Quản lý sản phẩm", "F6",
                 () -> chuyenTuNhom(btnDanhMuc, () -> chuyenKho(1)));
-        addQuickButton(panel, "Quản lý khách hàng", "F7",
+        themBtnTruyCapNhanh(pnlPanel, "Quản lý khách hàng", "F7",
                 () -> chuyenTuNhom(btnDanhMuc, this::moKhachHang));
-        addQuickButton(panel, "Tra cứu hóa đơn", "F8",
+        themBtnTruyCapNhanh(pnlPanel, "Tra cứu hóa đơn", "F8",
                 () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon));
+
+        return pnlPanel;
+    }
+
+    private JPanel taoPnlTienIchDuoi() {
+        JPanel pnlPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        pnlPanel.setOpaque(false);
+        pnlPanel.add(taoPnlLichSpaSapToi());
+        pnlPanel.add(taoPnlTongQuan());
+        return pnlPanel;
+    }
+
+    private JPanel taoPnlTongQuan() {
+        JPanel pnlTongQuan = new JPanel(new BorderLayout(0, 14));
+        pnlTongQuan.setBackground(Color.WHITE);
+        pnlTongQuan.setBorder(new CompoundBorder(new LineBorder(UIStyle.LINE), new EmptyBorder(14, 16, 14, 16)));
+
+        JLabel lblTieuDeTongQuan = new JLabel("Tổng quan hôm nay", taiIcon("/img/thongkelogo.png", 18, 18),
+                SwingConstants.LEFT);
+        lblTieuDeTongQuan.setFont(UIStyle.font(Font.BOLD, 17));
+        lblTieuDeTongQuan.setForeground(new Color(40, 55, 77));
+        lblTieuDeTongQuan.setIconTextGap(8);
+        pnlTongQuan.add(lblTieuDeTongQuan, BorderLayout.NORTH);
+
+        JPanel pnlLuoi = new JPanel(new GridLayout(2, 2, 12, 12));
+        pnlLuoi.setOpaque(false);
+
+        lblDoanhThuHomNay = taoGiaTriTongQuan("—");
+        lblLuotMuaHomNay = taoGiaTriTongQuan("—");
+        lblLichSpaHomNay = taoGiaTriTongQuan("—");
+        lblPhieuNhapHomNay = taoGiaTriTongQuan("—");
+
+        pnlLuoi.add(taoTheTongQuan("Doanh thu", lblDoanhThuHomNay));
+        pnlLuoi.add(taoTheTongQuan("Lượt mua", lblLuotMuaHomNay));
+        pnlLuoi.add(taoTheTongQuan("Lịch Spa", lblLichSpaHomNay));
+        pnlLuoi.add(taoTheTongQuan("Phiếu nhập", lblPhieuNhapHomNay));
+
+        pnlTongQuan.add(pnlLuoi, BorderLayout.CENTER);
+        napTongQuanHomNay();
+        return pnlTongQuan;
+    }
+
+    private JPanel taoTheTongQuan(String tieuDe, JLabel giaTri) {
+        JPanel panel = new JPanel(new BorderLayout(0, 6));
+
+        panel.setBackground(new Color(245, 248, 252));
+        panel.setBorder(new EmptyBorder(8, 12, 8, 12));
+
+        JLabel lblTieuDe = new JLabel(tieuDe);
+        lblTieuDe.setFont(UIStyle.font(Font.PLAIN, 12));
+
+        giaTri.setFont(UIStyle.font(Font.BOLD, 20));
+        giaTri.setForeground(new Color(18, 48, 82));
+
+        panel.add(lblTieuDe, BorderLayout.NORTH);
+        panel.add(giaTri, BorderLayout.CENTER);
 
         return panel;
     }
 
-    // =========================================================
-    // BUTTON TRUY CAP NHANH (bam chuot hoac phim tat)
-    // =========================================================
+    private JLabel taoGiaTriTongQuan(String text) {
+        JLabel lblTam = new JLabel(text);
+        lblTam.setFont(UIStyle.font(Font.BOLD, 23));
+        lblTam.setForeground(new Color(38, 45, 57));
+        return lblTam;
+    }
 
-    private void addQuickButton(
-            JPanel parent,
-            String text,
-            String shortcut,
-            Runnable hanhDong) {
+    private void napTongQuanHomNay() {
+        if (lblDoanhThuHomNay == null)
+            return;
+        try {
+            HoaDonDAO.ThongKe tk = new HoaDonDAO().layThongKe();
+            int lichSpaHomNay = demLichSpaHomNay();
+            int phieuNhapHomNay = demPhieuNhapHomNay();
 
-        JPanel row = new JPanel(new BorderLayout());
-        row.setBackground(MENU_BLUE);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+            lblDoanhThuHomNay.setText(formatVnd(tk.getDoanhThuHomNay()));
+            lblLuotMuaHomNay.setText(String.valueOf(tk.getHoaDonHomNay()));
+            lblLichSpaHomNay.setText(String.valueOf(lichSpaHomNay));
+            lblPhieuNhapHomNay.setText(String.valueOf(phieuNhapHomNay));
+        } catch (Exception ex) {
+            lblDoanhThuHomNay.setText("—");
+            lblLuotMuaHomNay.setText("—");
+            lblLichSpaHomNay.setText("—");
+            lblPhieuNhapHomNay.setText("—");
+        }
+    }
 
-        JButton button = new JButton(text);
-        button.setHorizontalAlignment(SwingConstants.LEFT);
-        button.setFont(UIStyle.font(Font.PLAIN, 14));
-        button.setBackground(MENU_BLUE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.addActionListener(e -> hanhDong.run());
+    private int demLichSpaHomNay() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM LichHen WHERE CAST(ngayGioHen AS DATE) = CAST(GETDATE() AS DATE)";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
 
-        // Phim tat (F4...F8) hoat dong o moi man hinh
+    private int demPhieuNhapHomNay() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM PhieuNhapKho WHERE CAST(ngayNhap AS DATE) = CAST(GETDATE() AS DATE)";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    private String formatVnd(BigDecimal soTien) {
+        return UIStyle.tien(soTien == null ? 0 : soTien.doubleValue());
+    }
+
+    private JPanel taoPnlLichSpaSapToi() {
+        JPanel card = new JPanel(new BorderLayout(0, 5));
+        card.setBackground(Color.WHITE);
+        card.setBorder(new CompoundBorder(new LineBorder(UIStyle.LINE), new EmptyBorder(10, 14, 10, 14)));
+
+        JPanel pnlTren = new JPanel(new BorderLayout());
+        pnlTren.setOpaque(false);
+
+        JPanel pnlBocTieuDe = new JPanel();
+        pnlBocTieuDe.setOpaque(false);
+        pnlBocTieuDe.setLayout(new BoxLayout(pnlBocTieuDe, BoxLayout.Y_AXIS));
+
+        JLabel title = new JLabel("Lịch Spa sắp tới", taiIcon("/img/lichlogo.png", 18, 18), SwingConstants.LEFT);
+        title.setFont(UIStyle.font(Font.BOLD, 17));
+        title.setForeground(new Color(40, 55, 77));
+        title.setIconTextGap(8);
+
+        lblPhuDeLichSpa = new JLabel("Đang tải dữ liệu lịch hẹn...");
+        lblPhuDeLichSpa.setFont(UIStyle.font(Font.PLAIN, 12));
+        lblPhuDeLichSpa.setForeground(Color.GRAY);
+
+        pnlBocTieuDe.add(title);
+        pnlBocTieuDe.add(Box.createVerticalStrut(2));
+        pnlBocTieuDe.add(lblPhuDeLichSpa);
+        pnlTren.add(pnlBocTieuDe, BorderLayout.WEST);
+
+        card.add(pnlTren, BorderLayout.NORTH);
+
+        pnlLichSpaNoiDung = new JPanel();
+        pnlLichSpaNoiDung.setOpaque(false);
+        pnlLichSpaNoiDung.setLayout(new BoxLayout(pnlLichSpaNoiDung, BoxLayout.Y_AXIS));
+        card.add(pnlLichSpaNoiDung, BorderLayout.CENTER);
+
+        napLichSpaSapToi();
+        return card;
+    }
+
+    private void napLichSpaSapToi() {
+        if (pnlLichSpaNoiDung == null || lblPhuDeLichSpa == null)
+            return;
+
+        pnlLichSpaNoiDung.removeAll();
+        LocalDateTime now = LocalDateTime.now();
+
+        try {
+            List<LichHen> tatCa = new LichHenDAO().getAll();
+            List<LichHen> sapToi = tatCa.stream()
+                    .filter(lh -> lh.getNgayGioHen() != null && !lh.getNgayGioHen().isBefore(now))
+                    .sorted(Comparator.comparing(LichHen::getNgayGioHen))
+                    .toList();
+
+            List<LichHen> trong90Phut = sapToi.stream()
+                    .filter(lh -> Duration.between(now, lh.getNgayGioHen()).toMinutes() <= 90)
+                    .limit(3)
+                    .toList();
+
+            long soLichHomNay = sapToi.stream()
+                    .filter(lh -> lh.getNgayGioHen().toLocalDate().equals(now.toLocalDate()))
+                    .count();
+
+            if (!trong90Phut.isEmpty()) {
+                lblPhuDeLichSpa.setText("Trong 90 phút tiếp theo");
+                for (LichHen lh : trong90Phut) {
+                    pnlLichSpaNoiDung.add(taoDongLichSpa(lh));
+                    pnlLichSpaNoiDung.add(Box.createVerticalStrut(3));
+                }
+                pnlLichSpaNoiDung.add(Box.createVerticalGlue());
+                pnlLichSpaNoiDung.add(taoChipTongKet(
+                        "Sắp tới: " + trong90Phut.size() + " lịch • Hôm nay: " + soLichHomNay + " lịch"));
+            } else if (!sapToi.isEmpty()) {
+                lblPhuDeLichSpa.setText("Hiển thị những lịch hẹn tiếp theo");
+                int dem = 0;
+                for (LichHen lh : sapToi) {
+                    pnlLichSpaNoiDung.add(taoDongLichSpa(lh));
+                    pnlLichSpaNoiDung.add(Box.createVerticalStrut(3));
+                    dem++;
+                    if (dem == 3)
+                        break;
+                }
+                pnlLichSpaNoiDung.add(Box.createVerticalGlue());
+                pnlLichSpaNoiDung.add(taoChipTongKet("Hôm nay: " + soLichHomNay + " lịch Spa"));
+            } else {
+                lblPhuDeLichSpa.setText("Chưa có lịch hẹn Spa sắp tới");
+                JLabel lblRong = new JLabel("Không có lịch hẹn nào trong dữ liệu hiện tại.");
+                lblRong.setFont(UIStyle.font(Font.PLAIN, 13));
+                lblRong.setForeground(Color.GRAY);
+                pnlLichSpaNoiDung.add(lblRong);
+            }
+        } catch (Exception ex) {
+            lblPhuDeLichSpa.setText("Không đọc được dữ liệu lịch hẹn");
+            JLabel lblLoi = new JLabel("Vui lòng kiểm tra kết nối CSDL hoặc dữ liệu Lịch hẹn Spa.");
+            lblLoi.setFont(UIStyle.font(Font.PLAIN, 13));
+            lblLoi.setForeground(new Color(170, 60, 60));
+            pnlLichSpaNoiDung.add(lblLoi);
+        }
+
+        pnlLichSpaNoiDung.revalidate();
+        pnlLichSpaNoiDung.repaint();
+    }
+
+    private JComponent taoDongLichSpa(LichHen lh) {
+        String gio = lh.getNgayGioHen() == null ? "--:--" : lh.getNgayGioHen().format(DINH_DANG_GIO_HEN);
+        String thuCung = khongRong(lh.getTenThuCung(), "Thú cưng");
+        String ghiChu = khongRong(lh.getGhiChu(), "Chăm sóc Spa");
+        // Khong de HTML tu xuong dong lam panel bi keo rong/le cot.
+        String strNoiDung = gio + "  ·  " + thuCung + "  ·  " + ghiChu;
+        if (strNoiDung.length() > 62)
+            strNoiDung = strNoiDung.substring(0, 59) + "...";
+        JLabel lblThongTin = new JLabel(strNoiDung);
+        lblThongTin.setToolTipText(gio + " - " + thuCung + " - " + ghiChu);
+        lblThongTin.setFont(UIStyle.font(Font.PLAIN, 12));
+        lblThongTin.setForeground(new Color(45, 56, 70));
+        lblThongTin.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblThongTin.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        return lblThongTin;
+    }
+
+    private String khongRong(String s, String macDinh) {
+        return (s == null || s.trim().isEmpty()) ? macDinh : s.trim();
+    }
+
+    private JComponent taoChipTongKet(String text) {
+        JLabel lblTam = new JLabel(text);
+        lblTam.setOpaque(true);
+        lblTam.setBackground(new Color(223, 245, 232));
+        lblTam.setForeground(new Color(28, 123, 81));
+        lblTam.setFont(UIStyle.font(Font.BOLD, 11));
+        lblTam.setBorder(new CompoundBorder(new LineBorder(new Color(200, 233, 216)), new EmptyBorder(4, 10, 4, 10)));
+        JPanel pnlBoc = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnlBoc.setOpaque(false);
+        pnlBoc.add(lblTam);
+        pnlBoc.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return pnlBoc;
+    }
+
+    private void moModalHoTro() {
+        JDialog dlgHoTro = new JDialog(this, "Hỗ trợ sử dụng Pet Shop Pro", true);
+        dlgHoTro.setSize(760, 560);
+        dlgHoTro.setLocationRelativeTo(this);
+        dlgHoTro.setLayout(new BorderLayout(0, 10));
+
+        JPanel pnlTieuDeHoTro = new JPanel(new BorderLayout());
+        pnlTieuDeHoTro.setBackground(UIStyle.NAVY);
+        pnlTieuDeHoTro.setBorder(new EmptyBorder(14, 18, 14, 18));
+        JLabel title = new JLabel("HỖ TRỢ - TỔNG QUAN CHỨC NĂNG", taiIcon("/img/logo.png", 24, 24),
+                SwingConstants.LEFT);
+        title.setForeground(Color.WHITE);
+        title.setFont(UIStyle.font(Font.BOLD, 18));
+        title.setIconTextGap(10);
+        pnlTieuDeHoTro.add(title, BorderLayout.WEST);
+        dlgHoTro.add(pnlTieuDeHoTro, BorderLayout.NORTH);
+
+        JEditorPane edpHuongDan = new JEditorPane();
+        edpHuongDan.setContentType("text/html");
+        edpHuongDan.setEditable(false);
+        edpHuongDan.setText(
+                """
+                        <html>
+                        <body style='font-family:Segoe UI; font-size:12px; padding:8px 10px;'>
+                        <h2 style='color:#123052; margin-top:0;'>Pet Shop Pro</h2>
+                        <p>Đây là màn hình trung tâm giúp nhân viên thao tác nhanh với các chức năng chính của cửa hàng thú cưng.</p>
+                        <h3 style='color:#123052;'>Mô tả menu trên thanh điều hướng</h3>
+                        <ul>
+                          <li><b>Trang chủ:</b> màn hình tổng quan, truy cập nhanh, lịch Spa sắp tới và hỗ trợ sử dụng.</li>
+                          <li><b>Hệ thống:</b> quản lý tài khoản nhân viên, quản lý ca làm, đăng xuất và quay về trang chủ.</li>
+                          <li><b>Danh mục:</b> quản lý danh mục sản phẩm, sản phẩm, khách hàng và thú cưng.</li>
+                          <li><b>Nghiệp vụ:</b> các thao tác vận hành cửa hàng như nhập kho, kiểm kê, lịch hẹn Spa, phiếu dịch vụ, thanh toán, voucher và phân ca nhân viên.</li>
+                          <li><b>Tìm kiếm:</b> tra cứu hóa đơn, khách hàng, sản phẩm, thú cưng và lịch hẹn.</li>
+                          <li><b>Thống kê:</b> thống kê doanh thu và thống kê lượt mua từ dữ liệu hóa đơn.</li>
+                        </ul>
+                        <h3 style='color:#123052;'>Khu vực trong trang chủ</h3>
+                        <ul>
+                          <li><b>Ảnh giới thiệu:</b> hình ảnh nhận diện thương hiệu Pet Shop Pro.</li>
+                          <li><b>Truy cập nhanh:</b> mở nhanh các chức năng thường dùng bằng chuột hoặc phím tắt F4-F8.</li>
+                          <li><b>Lịch Spa sắp tới:</b> hiển thị lịch hẹn gần nhất lấy từ dữ liệu lịch hẹn Spa.</li>
+                          <li><b>Hỗ trợ:</b> mở cửa sổ hướng dẫn tổng quan cách sử dụng giao diện.</li>
+                        </ul>
+                        <h3 style='color:#123052;'>Gợi ý sử dụng</h3>
+                        <ol>
+                          <li>Chọn menu chức năng trên thanh điều hướng để mở màn hình tương ứng.</li>
+                          <li>Dùng truy cập nhanh khi cần mở nhanh thao tác thường dùng.</li>
+                          <li>Kiểm tra lịch Spa sắp tới ở góc dưới bên trái để nắm các lịch hẹn gần nhất.</li>
+                          <li>Nhấn tên nhân viên ở góc trên bên phải để xem thông tin đăng nhập hoặc đăng xuất.</li>
+                        </ol>
+                        <p style='color:#666;'>Lưu ý: một số chức năng phụ thuộc dữ liệu SQL Server. Nếu không hiển thị, hãy kiểm tra kết nối CSDL.</p>
+                        </body>
+                        </html>
+                        """);
+        edpHuongDan.setCaretPosition(0);
+        JScrollPane scrHuongDan = new JScrollPane(edpHuongDan);
+        scrHuongDan.setBorder(new EmptyBorder(0, 12, 0, 12));
+        dlgHoTro.add(scrHuongDan, BorderLayout.CENTER);
+
+        JButton btnDongHoTro = UIStyle.nutChinh("Đóng");
+        btnDongHoTro.addActionListener(e -> dlgHoTro.dispose());
+        JPanel pnlDuoi = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
+        pnlDuoi.setBackground(Color.WHITE);
+        pnlDuoi.add(btnDongHoTro);
+        dlgHoTro.add(pnlDuoi, BorderLayout.SOUTH);
+
+        dlgHoTro.setVisible(true);
+    }
+
+    private void themBtnTruyCapNhanh(JPanel parent, String text, String shortcut, Runnable hanhDong) {
+        JPanel pnlDong = new JPanel(new BorderLayout());
+        pnlDong.setBackground(MENU_BLUE);
+        pnlDong.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+
+        JButton btnTruyCap = new JButton(text);
+        btnTruyCap.setHorizontalAlignment(SwingConstants.LEFT);
+        btnTruyCap.setFont(UIStyle.font(Font.PLAIN, 14));
+        btnTruyCap.setBackground(MENU_BLUE);
+        btnTruyCap.setFocusPainted(false);
+        btnTruyCap.setBorderPainted(false);
+        btnTruyCap.addActionListener(e -> hanhDong.run());
+
         String khoa = "truycapnhanh-" + shortcut;
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
                 .put(KeyStroke.getKeyStroke(shortcut), khoa);
@@ -576,37 +909,15 @@ public class TrangChu extends JFrame {
             }
         });
 
-        JLabel key = new JLabel(shortcut);
-        key.setFont(UIStyle.font(Font.BOLD, 14));
-        key.setBorder(new EmptyBorder(0, 0, 0, 10));
+        JLabel lblPhimTat = new JLabel(shortcut);
+        lblPhimTat.setFont(UIStyle.font(Font.BOLD, 14));
+        lblPhimTat.setBorder(new EmptyBorder(0, 0, 0, 10));
 
-        row.add(button, BorderLayout.CENTER);
-        row.add(key, BorderLayout.EAST);
+        pnlDong.add(btnTruyCap, BorderLayout.CENTER);
+        pnlDong.add(lblPhimTat, BorderLayout.EAST);
 
-        parent.add(row);
+        parent.add(pnlDong);
         parent.add(Box.createVerticalStrut(5));
-    }
-
-    // =========================================================
-    // THONG BAO
-    // =========================================================
-
-    private void hienThongBao(String tenChucNang) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Bạn đang mở chức năng: " + tenChucNang,
-                "Pet Shop Pro",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void hienChuaCo(String tenChucNang) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Chức năng \"" + tenChucNang + "\" chưa có giao diện.",
-                "Pet Shop Pro",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
     // =========================================================
@@ -614,7 +925,6 @@ public class TrangChu extends JFrame {
     // =========================================================
 
     public static final class PhienLamViec {
-
         public static String maNV = "NV001";
         public static String hoTen = "Đặng Đình An";
         public static String vaiTro = "Quản lý";
@@ -630,11 +940,10 @@ public class TrangChu extends JFrame {
     }
 
     // =========================================================
-    // MAU SAC, FONT, THANH PHAN DUNG CHUNG (lay tu giao dien Pet Shop Pro)
+    // MAU SAC, FONT, THANH PHAN DUNG CHUNG
     // =========================================================
 
     public static final class UIStyle {
-
         public static final Color NAVY = new Color(18, 48, 82);
         public static final Color LIGHT_BLUE = new Color(229, 241, 252);
         public static final Color MENU_BLUE = new Color(207, 222, 235);
@@ -647,10 +956,6 @@ public class TrangChu extends JFrame {
 
         private UIStyle() {
         }
-
-        // =========================================================
-        // FONT + DINH DANG
-        // =========================================================
 
         public static Font font(int style, int size) {
             return new Font("Segoe UI", style, size);
@@ -668,7 +973,6 @@ public class TrangChu extends JFrame {
             return DINH_DANG_TIEN.format(v) + " ₫";
         }
 
-        /** Doc so tien VND nguoi dung go ("335000", "335.000", "335,000 d"). */
         public static long docTien(String s) {
             String sach = s == null ? "" : s.replaceAll("[\\s.,₫dđ]", "");
             if (!sach.matches("\\d{1,15}")) {
@@ -677,31 +981,21 @@ public class TrangChu extends JFrame {
             return Long.parseLong(sach);
         }
 
-        // =========================================================
-        // NUT BAM
-        // =========================================================
-
         private static JButton nut(String text, Color nen, Color chu, Color vien) {
-
-            JButton b = new JButton(text);
-
-            b.setFont(font(Font.BOLD, 13));
-            b.setBackground(nen);
-            b.setForeground(chu);
-            b.setOpaque(true);
-            b.setContentAreaFilled(true);
-            b.setFocusPainted(false);
-            b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
+            JButton btnTam = new JButton(text);
+            btnTam.setFont(font(Font.BOLD, 13));
+            btnTam.setBackground(nen);
+            btnTam.setForeground(chu);
+            btnTam.setOpaque(true);
+            btnTam.setContentAreaFilled(true);
+            btnTam.setFocusPainted(false);
+            btnTam.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             if (vien != null) {
-                b.setBorder(new CompoundBorder(
-                        new LineBorder(vien),
-                        new EmptyBorder(8, 18, 8, 18)));
+                btnTam.setBorder(new CompoundBorder(new LineBorder(vien), new EmptyBorder(8, 18, 8, 18)));
             } else {
-                b.setBorder(new EmptyBorder(9, 19, 9, 19));
+                btnTam.setBorder(new EmptyBorder(9, 19, 9, 19));
             }
-
-            return b;
+            return btnTam;
         }
 
         public static JButton nutChinh(String text) {
@@ -721,14 +1015,9 @@ public class TrangChu extends JFrame {
         }
 
         public static JButton nutTab(String text, boolean dangChon) {
-            JButton b = nut(text, dangChon ? ACTIVE_BLUE : Color.WHITE,
+            return nut(text, dangChon ? ACTIVE_BLUE : Color.WHITE,
                     dangChon ? Color.WHITE : NAVY, NAVY);
-            return b;
         }
-
-        // =========================================================
-        // O NHAP / NHAN
-        // =========================================================
 
         public static JLabel nhan(String text) {
             JLabel l = new JLabel(text);
@@ -742,18 +1031,15 @@ public class TrangChu extends JFrame {
             return t;
         }
 
-        public static JTextField oChiDoc(String giaTri) {
+        public static JTextField oChiDoc(String lblGiaTri) {
             JTextField t = o(10);
-            t.setText(giaTri);
+            t.setText(lblGiaTri);
             t.setEditable(false);
             t.setBackground(READONLY);
             return t;
         }
 
-        /** Them 1 dong "nhan + o nhap" vao form dung GridBagLayout. */
-        public static void hang(JPanel form, int dong, String ten,
-                JComponent thanhPhan, boolean cao) {
-
+        public static void hang(JPanel form, int dong, String ten, JComponent thanhPhan, boolean cao) {
             GridBagConstraints g = new GridBagConstraints();
             g.gridy = dong;
             g.insets = new Insets(6, 0, 6, 15);
@@ -770,50 +1056,34 @@ public class TrangChu extends JFrame {
             form.add(thanhPhan, g);
         }
 
-        // =========================================================
-        // THE / THONG KE
-        // =========================================================
-
         public static JPanel the() {
-            JPanel p = new JPanel();
-            p.setBackground(Color.WHITE);
-            p.setBorder(new CompoundBorder(
-                    new LineBorder(LINE),
-                    new EmptyBorder(15, 15, 15, 15)));
-            return p;
+            JPanel pnlKetQua = new JPanel();
+            pnlKetQua.setBackground(Color.WHITE);
+            pnlKetQua.setBorder(new CompoundBorder(new LineBorder(LINE), new EmptyBorder(15, 15, 15, 15)));
+            return pnlKetQua;
         }
 
-        public static JPanel theThongKe(String tieuDe, JLabel giaTri) {
+        public static JPanel theThongKe(String tieuDe, JLabel lblGiaTri) {
+            JPanel pnlKetQua = new JPanel();
+            pnlKetQua.setLayout(new BoxLayout(pnlKetQua, BoxLayout.Y_AXIS));
+            pnlKetQua.setBackground(Color.WHITE);
+            pnlKetQua.setBorder(new CompoundBorder(new LineBorder(LINE), new EmptyBorder(14, 18, 14, 18)));
 
-            JPanel p = new JPanel();
-            p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-            p.setBackground(Color.WHITE);
-            p.setBorder(new CompoundBorder(
-                    new LineBorder(LINE),
-                    new EmptyBorder(14, 18, 14, 18)));
+            JLabel lblTam = new JLabel(tieuDe);
+            lblTam.setForeground(Color.GRAY);
+            lblTam.setFont(font(Font.PLAIN, 13));
+            lblTam.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            JLabel lb = new JLabel(tieuDe);
-            lb.setForeground(Color.GRAY);
-            lb.setFont(font(Font.PLAIN, 13));
-            lb.setAlignmentX(Component.LEFT_ALIGNMENT);
+            lblGiaTri.setFont(font(Font.BOLD, 26));
+            lblGiaTri.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            giaTri.setFont(font(Font.BOLD, 26));
-            giaTri.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-            p.add(lb);
-            p.add(Box.createVerticalStrut(6));
-            p.add(giaTri);
-
-            return p;
+            pnlKetQua.add(lblTam);
+            pnlKetQua.add(Box.createVerticalStrut(6));
+            pnlKetQua.add(lblGiaTri);
+            return pnlKetQua;
         }
 
-        // =========================================================
-        // BANG
-        // =========================================================
-
-        /** Dinh dang bang theo kieu Pet Shop Pro (header navy, hang cao 32). */
         public static void taoBang(JTable bang, int... cotCanPhai) {
-
             bang.setRowHeight(32);
             bang.setFont(font(Font.PLAIN, 13));
             bang.setShowGrid(false);
@@ -829,29 +1099,25 @@ public class TrangChu extends JFrame {
             header.setPreferredSize(new Dimension(0, 40));
             header.setDefaultRenderer(new DefaultTableCellRenderer() {
                 @Override
-                public Component getTableCellRendererComponent(
-                        JTable t, Object v, boolean sel, boolean foc,
-                        int r, int c) {
+                public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r,
+                        int c) {
                     super.getTableCellRendererComponent(t, v, false, false, r, c);
                     setOpaque(true);
                     setBackground(NAVY);
                     setForeground(Color.WHITE);
                     setFont(font(Font.BOLD, 13));
                     setHorizontalAlignment(SwingConstants.CENTER);
-                    setBorder(new javax.swing.border.MatteBorder(
-                            0, 0, 0, 1, Color.WHITE));
+                    setBorder(new javax.swing.border.MatteBorder(0, 0, 0, 1, Color.WHITE));
                     return this;
                 }
             });
 
             bang.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
                 @Override
-                public Component getTableCellRendererComponent(
-                        JTable t, Object v, boolean sel, boolean foc,
-                        int r, int c) {
+                public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r,
+                        int c) {
                     super.getTableCellRendererComponent(t, v, sel, false, r, c);
                     setBorder(new EmptyBorder(0, 10, 0, 10));
-
                     boolean phai = false;
                     for (int x : cotCanPhai) {
                         if (x == c) {
@@ -859,40 +1125,34 @@ public class TrangChu extends JFrame {
                             break;
                         }
                     }
-                    setHorizontalAlignment(phai ? SwingConstants.RIGHT
-                            : SwingConstants.LEFT);
+                    setHorizontalAlignment(phai ? SwingConstants.RIGHT : SwingConstants.LEFT);
                     return this;
                 }
             });
         }
 
         public static JScrollPane cuon(JTable bang) {
-            JScrollPane sp = new JScrollPane(bang);
-            sp.setBorder(new LineBorder(LINE));
-            sp.getViewport().setBackground(Color.WHITE);
-            return sp;
+            JScrollPane scrHuongDan = new JScrollPane(bang);
+            scrHuongDan.setBorder(new LineBorder(LINE));
+            scrHuongDan.getViewport().setBackground(Color.WHITE);
+            return scrHuongDan;
         }
 
-        public static void thongBao(Component cha, String noiDung) {
-            JOptionPane.showMessageDialog(cha, noiDung, "Pet Shop Pro",
-                    JOptionPane.INFORMATION_MESSAGE);
+        public static void thongBao(Component cha, String strNoiDung) {
+            JOptionPane.showMessageDialog(cha, strNoiDung, "Pet Shop Pro", JOptionPane.INFORMATION_MESSAGE);
         }
 
-        public static void canhBao(Component cha, String noiDung) {
-            JOptionPane.showMessageDialog(cha, noiDung, "Pet Shop Pro",
-                    JOptionPane.WARNING_MESSAGE);
+        public static void canhBao(Component cha, String strNoiDung) {
+            JOptionPane.showMessageDialog(cha, strNoiDung, "Pet Shop Pro", JOptionPane.WARNING_MESSAGE);
         }
 
-        public static boolean xacNhan(Component cha, String noiDung) {
-            return JOptionPane.showConfirmDialog(cha, noiDung, "Pet Shop Pro",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
+        public static boolean xacNhan(Component cha, String strNoiDung) {
+            return JOptionPane.showConfirmDialog(cha, strNoiDung, "Pet Shop Pro",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
         }
 
         public static void loi(Component cha, Exception ex) {
-
             String nd;
-
             if (ex instanceof SQLException sql) {
                 if (sql.getErrorCode() == 547) {
                     nd = "Không thực hiện được vì dữ liệu này đang được dùng ở nơi khác\n"
@@ -907,18 +1167,15 @@ public class TrangChu extends JFrame {
             }
 
             ex.printStackTrace();
-
-            JOptionPane.showMessageDialog(cha, nd, "Pet Shop Pro",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(cha, nd, "Pet Shop Pro", JOptionPane.ERROR_MESSAGE);
         }
 
-        /** Hang nut Huy / Luu o cuoi hop thoai. */
         public static JPanel hangNut(JButton huy, JButton luu) {
-            JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-            p.setOpaque(false);
-            p.add(huy);
-            p.add(luu);
-            return p;
+            JPanel pnlKetQua = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+            pnlKetQua.setOpaque(false);
+            pnlKetQua.add(huy);
+            pnlKetQua.add(luu);
+            return pnlKetQua;
         }
     }
 }
