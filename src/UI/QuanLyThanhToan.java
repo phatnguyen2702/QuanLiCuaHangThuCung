@@ -235,7 +235,7 @@ public class QuanLyThanhToan extends JPanel {
         panel.add(new JLabel("Mã khách hàng"), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.45;
-        txtMaKhachHang.setToolTipText("Mã khách hàng hoặc số điện thoại");
+        txtMaKhachHang.setToolTipText("Mã khách hàng");
         panel.add(txtMaKhachHang, gbc);
         gbc.gridx = 2;
         gbc.weightx = 0;
@@ -248,7 +248,7 @@ public class QuanLyThanhToan extends JPanel {
         panel.add(new JLabel("Số điện thoại"), gbc);
         gbc.gridx = 4;
         gbc.weightx = 0.55;
-        txtSoDienThoai.setToolTipText("Nhập số điện thoại khách hàng");
+        txtSoDienThoai.setEditable(false);
         panel.add(txtSoDienThoai, gbc);
         gbc.gridy = 1;
         gbc.gridx = 0;
@@ -257,7 +257,7 @@ public class QuanLyThanhToan extends JPanel {
         gbc.gridx = 1;
         gbc.gridwidth = 4;
         gbc.weightx = 1;
-        txtTenKhachHang.setToolTipText("Nhập tên khách hàng");
+        txtTenKhachHang.setEditable(false);
         panel.add(txtTenKhachHang, gbc);
         txtKhachHangTomTat.setEditable(false);
         return panel;
