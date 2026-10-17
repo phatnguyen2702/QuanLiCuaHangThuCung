@@ -3,7 +3,6 @@ package UI;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -12,7 +11,6 @@ import java.awt.GridLayout;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.Window;
 //QR
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -28,9 +26,7 @@ import java.nio.file.Path;
 import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -42,7 +38,6 @@ import java.util.zip.DeflaterOutputStream;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
-import javax.swing.JDialog;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -108,7 +103,7 @@ public class QuanLyThanhToan extends JPanel {
     private String maKhachHangDaXacNhan;
     private entity.ThanhToan.PhuongThuc phuongThucHienTai;
     private entity.ThanhToan.Voucher voucher;
-    private LocalDate ngayLap = LocalDate.now();
+    private LocalDateTime ngayLap = LocalDateTime.now();
 
     public QuanLyThanhToan(String maNhanVien) {
         this.maNhanVien = maNhanVien;
@@ -179,13 +174,9 @@ public class QuanLyThanhToan extends JPanel {
         datePanel.add(new JLabel("Ngày lập"));
         txtNgayLap.setEditable(false);
         txtNgayLap.setHorizontalAlignment(SwingConstants.CENTER);
-        txtNgayLap.setPreferredSize(new Dimension(86, txtNgayLap.getPreferredSize().height));
+        txtNgayLap.setPreferredSize(new Dimension(150, txtNgayLap.getPreferredSize().height));
         capNhatNgayLap();
-        JButton btnChonNgay = new JButton("▣");
-        btnChonNgay.setToolTipText("Chọn ngày lập hóa đơn");
-        btnChonNgay.addActionListener(e -> moChonNgay());
         datePanel.add(txtNgayLap);
-        datePanel.add(btnChonNgay);
         JPanel searchLeft = new JPanel(new BorderLayout(6, 0));
         searchLeft.setOpaque(false);
         searchLeft.add(searchField, BorderLayout.CENTER);
@@ -682,11 +673,6 @@ public class QuanLyThanhToan extends JPanel {
             }
         }
 
-        if (ngayLap.isAfter(LocalDate.now())) {
-            hienLoi("Ngày lập hóa đơn không thể ở tương lai.");
-            return;
-        }
-
         if (!chuyenKhoan) {
             int confirm = JOptionPane.showConfirmDialog(
                     this, "Xác nhận thanh toán " + dinhDangTien(tongThanhToan) + "?",
@@ -696,6 +682,8 @@ public class QuanLyThanhToan extends JPanel {
             }
         }
 
+        ngayLap = LocalDateTime.now();
+        capNhatNgayLap();
         String maHoaDon;
         try {
             maHoaDon = dao.taoMaHoaDon(maKhachHang, ngayLap);
@@ -733,7 +721,7 @@ public class QuanLyThanhToan extends JPanel {
             voucher = null;
             txtVoucher.setText("");
             txtTienKhachDua.setText("");
-            ngayLap = LocalDate.now();
+            ngayLap = LocalDateTime.now();
             capNhatNgayLap();
             capNhatTien();
         } catch (Exception e) {
@@ -818,8 +806,8 @@ public class QuanLyThanhToan extends JPanel {
 
     private String taoNoiDungHoaDon(String tenPhuongThuc, BigDecimal tong) {
         StringBuilder text = new StringBuilder();
-        text.append("Ngày: ").append(layNgayLap().format(
-                DateTimeFormatter.ofPattern("dd/MM/yyyy"))).append('\n');
+        text.append("Ngày lập: ").append(layNgayLap().format(
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append('\n');
         text.append("Khách hàng: ").append(txtTenKhachHang.getText())
                 .append(" - ").append(maKhachHang).append('\n');
         text.append("----------------------------------------\n");
@@ -1067,91 +1055,13 @@ public class QuanLyThanhToan extends JPanel {
         return new BigDecimal(raw);
     }
 
-    private LocalDate layNgayLap() {
+    private LocalDateTime layNgayLap() {
         return ngayLap;
     }
 
     private void capNhatNgayLap() {
-        txtNgayLap.setText(ngayLap.format(DateTimeFormatter.ofPattern("d/M/yyyy")));
-    }
-
-    private void moChonNgay() {
-        Window owner = javax.swing.SwingUtilities.getWindowAncestor(this);
-        JDialog dialog = new JDialog(
-                owner, "Chọn ngày lập hóa đơn", Dialog.ModalityType.APPLICATION_MODAL);
-        JPanel calendar = new JPanel(new BorderLayout(8, 8));
-        calendar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        YearMonth[] month = { YearMonth.from(ngayLap) };
-        JLabel monthLabel = new JLabel("", SwingConstants.CENTER);
-        JPanel days = new JPanel(new GridLayout(0, 7, 4, 4));
-
-        JButton previous = new JButton("‹");
-        JButton next = new JButton("›");
-        previous.addActionListener(e -> {
-            month[0] = month[0].minusMonths(1);
-            veLich(days, monthLabel, month, dialog, next);
-        });
-        next.addActionListener(e -> {
-            if (month[0].isBefore(YearMonth.now())) {
-                month[0] = month[0].plusMonths(1);
-                veLich(days, monthLabel, month, dialog, next);
-            }
-        });
-        JPanel monthBar = new JPanel(new BorderLayout());
-        monthBar.add(previous, BorderLayout.WEST);
-        monthBar.add(monthLabel, BorderLayout.CENTER);
-        monthBar.add(next, BorderLayout.EAST);
-        calendar.add(monthBar, BorderLayout.NORTH);
-        calendar.add(days, BorderLayout.CENTER);
-        veLich(days, monthLabel, month, dialog, next);
-
-        dialog.setContentPane(calendar);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-        dialog.setResizable(false);
-        dialog.setVisible(true);
-    }
-
-    private void veLich(
-            JPanel days,
-            JLabel monthLabel,
-            YearMonth[] month,
-            JDialog dialog,
-            JButton next) {
-        DateTimeFormatter monthFormatter = DateTimeFormatter.ofPattern(
-                "MMMM yyyy", Locale.forLanguageTag("vi-VN"));
-        monthLabel.setText(month[0].format(monthFormatter));
-        next.setEnabled(month[0].isBefore(YearMonth.now()));
-        days.removeAll();
-        String[] weekdays = { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
-        for (String weekday : weekdays) {
-            JLabel label = new JLabel(weekday, SwingConstants.CENTER);
-            label.setFont(label.getFont().deriveFont(Font.BOLD));
-            days.add(label);
-        }
-        int offset = month[0].atDay(1).getDayOfWeek().getValue() - DayOfWeek.MONDAY.getValue();
-        for (int i = 0; i < offset; i++) {
-            days.add(new JLabel());
-        }
-        for (int day = 1; day <= month[0].lengthOfMonth(); day++) {
-            LocalDate date = month[0].atDay(day);
-            JButton dayButton = new JButton(Integer.toString(day));
-            dayButton.setFocusPainted(false);
-            if (date.equals(ngayLap)) {
-                dayButton.setBackground(new Color(215, 231, 244));
-            }
-            dayButton.setEnabled(!date.isAfter(LocalDate.now()));
-            dayButton.addActionListener(e -> {
-                if (!date.isAfter(LocalDate.now())) {
-                    ngayLap = date;
-                    capNhatNgayLap();
-                    dialog.dispose();
-                }
-            });
-            days.add(dayButton);
-        }
-        days.revalidate();
-        days.repaint();
+        txtNgayLap.setText(ngayLap.format(
+                DateTimeFormatter.ofPattern("d/M/yyyy")));
     }
 
     private String kiemTraDieuKienVoucher(entity.ThanhToan.Voucher candidate)

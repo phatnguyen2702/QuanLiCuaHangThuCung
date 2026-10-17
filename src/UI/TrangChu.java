@@ -67,6 +67,7 @@ public class TrangChu extends JFrame {
     // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
     private TraCuuHoaDon pnlTraCuuHoaDon;
+    private ThongKeDoanhThu pnlThongKeDoanhThu;
     private final javax.swing.Timer tmrDongHo;
 
     // Thanh phan dong tren trang chu.
@@ -136,6 +137,15 @@ public class TrangChu extends JFrame {
             pnlNoiDung.repaint();
         } catch (RuntimeException ex) {
             baoLoiMoManHinh(TEN_TAB[tab], ex);
+        }
+    }
+
+    private void moThongKeDoanhThu() {
+        boolean daTaoManHinh = pnlThongKeDoanhThu != null;
+        hienManHinh("thongkedoanhthu", "Thống kê doanh thu", btnThongKe,
+                () -> pnlThongKeDoanhThu = new ThongKeDoanhThu());
+        if (daTaoManHinh && pnlThongKeDoanhThu != null) {
+            pnlThongKeDoanhThu.lamMoi();
         }
     }
 
@@ -416,6 +426,7 @@ public class TrangChu extends JFrame {
 
     private JPopupMenu taoMenuThongKe() {
         JPopupMenu p = new JPopupMenu();
+        themMuc(p, "Thống kê doanh thu", btnThongKe, this::moThongKeDoanhThu);
         return p;
     }
 
