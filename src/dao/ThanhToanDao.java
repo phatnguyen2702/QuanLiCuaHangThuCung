@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.sql.Timestamp;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,7 +134,7 @@ public class ThanhToanDao {
         return phuongThucs;
     }
 
-    public String taoMaHoaDon(String maKhachHang, LocalDate ngayLap)
+    public String taoMaHoaDon(String maKhachHang, LocalDateTime ngayLap)
             throws SQLException {
         if (maKhachHang == null || ngayLap == null) {
             throw new IllegalArgumentException("Thiếu mã khách hàng hoặc ngày lập hóa đơn.");
@@ -171,7 +171,7 @@ public class ThanhToanDao {
             String maKhachHang,
             String maVoucher,
             String maPhuongThuc,
-            LocalDate ngayLap,
+            LocalDateTime ngayLap,
             BigDecimal phanTramGiam,
             List<ThanhToan> chiTiet) throws SQLException {
         if (chiTiet == null || chiTiet.isEmpty()) {
@@ -193,7 +193,7 @@ public class ThanhToanDao {
             try {
                 try (PreparedStatement ps = con.prepareStatement(insertHoaDon)) {
                     ps.setString(1, maHoaDon);
-                    ps.setTimestamp(2, Timestamp.valueOf(ngayLap.atStartOfDay()));
+                    ps.setTimestamp(2, Timestamp.valueOf(ngayLap));
                     ps.setString(3, maPhuongThuc);
                     ps.setString(4, maKhachHang);
                     ps.setString(5, maNhanVien);
