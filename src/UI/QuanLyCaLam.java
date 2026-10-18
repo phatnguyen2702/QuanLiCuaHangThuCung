@@ -4,15 +4,9 @@ import dao.CaLamDAO;
 import entity.CaLam;
 
 import javax.swing.*;
-import javax.swing.text.MaskFormatter;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.text.ParseException;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 
 public class QuanLyCaLam extends JPanel {
@@ -26,8 +20,6 @@ public class QuanLyCaLam extends JPanel {
         private final Color GREEN = new Color(72, 196, 62);
         private final Color RED = new Color(210, 70, 70);
         private final Color ORANGE = new Color(230, 150, 50);
-        private static final DateTimeFormatter FORMAT_GIO = DateTimeFormatter.ofPattern("HH:mm")
-                        .withResolverStyle(ResolverStyle.STRICT);
 
         // ==============================
         // FORM
@@ -35,8 +27,8 @@ public class QuanLyCaLam extends JPanel {
 
         private JTextField txtMaCa;
         private JTextField txtTenCa;
-        private JFormattedTextField txtGioBatDau;
-        private JFormattedTextField txtGioKetThuc;
+        private JTextField txtGioBatDau;
+        private JTextField txtGioKetThuc;
 
         private JTextField txtTimKiem;
 
@@ -95,7 +87,7 @@ public class QuanLyCaLam extends JPanel {
                                                 25));
 
                 JLabel title = new JLabel(
-                                "QUẢN LÝ CA LÀM");
+                                "QUAN LY CA LAM");
 
                 title.setFont(
                                 new Font(
@@ -106,7 +98,7 @@ public class QuanLyCaLam extends JPanel {
                 title.setForeground(NAVY);
 
                 JLabel sub = new JLabel(
-                                "Quản lý thông tin ca làm việc");
+                                "Quan ly thong tin ca lam viec");
 
                 sub.setFont(
                                 new Font(
@@ -213,7 +205,7 @@ public class QuanLyCaLam extends JPanel {
                 gbc.weightx = 0;
 
                 panel.add(
-                                createLabel("Mã ca:"),
+                                createLabel("Ma ca:"),
                                 gbc);
 
                 txtMaCa = new JTextField();
@@ -235,7 +227,7 @@ public class QuanLyCaLam extends JPanel {
                 gbc.weightx = 0;
 
                 panel.add(
-                                createLabel("Tên ca:"),
+                                createLabel("Ten ca:"),
                                 gbc);
 
                 txtTenCa = new JTextField();
@@ -258,10 +250,12 @@ public class QuanLyCaLam extends JPanel {
                 gbc.weightx = 0;
 
                 panel.add(
-                                createLabel("Giờ bắt đầu:"),
+                                createLabel("Gio bat dau:"),
                                 gbc);
 
-                txtGioBatDau = taoOChonGio();
+                txtGioBatDau = new JTextField();
+
+                styleTextField(txtGioBatDau);
 
                 gbc.gridx = 1;
                 gbc.weightx = 1;
@@ -278,10 +272,12 @@ public class QuanLyCaLam extends JPanel {
                 gbc.weightx = 0;
 
                 panel.add(
-                                createLabel("Giờ kết thúc:"),
+                                createLabel("Gio ket thuc:"),
                                 gbc);
 
-                txtGioKetThuc = taoOChonGio();
+                txtGioKetThuc = new JTextField();
+
+                styleTextField(txtGioKetThuc);
 
                 gbc.gridx = 3;
                 gbc.weightx = 1;
@@ -350,21 +346,6 @@ public class QuanLyCaLam extends JPanel {
                                                 13));
         }
 
-        /** Ô nhập tự chèn dấu ':' theo mặt nạ HH:mm (ví dụ 06:00). */
-        private JFormattedTextField taoOChonGio() {
-                try {
-                        MaskFormatter mask = new MaskFormatter("##:##");
-                        mask.setPlaceholderCharacter('_');
-                        JFormattedTextField txtGio = new JFormattedTextField(mask);
-                        txtGio.setFocusLostBehavior(JFormattedTextField.PERSIST);
-                        txtGio.setToolTipText("Giờ theo HH:mm (00:00 - 23:59). Ví dụ: 06:00");
-                        styleTextField(txtGio);
-                        return txtGio;
-                } catch (ParseException ex) {
-                        throw new IllegalStateException("Không tạo được ô nhập giờ", ex);
-                }
-        }
-
         // ==============================
         // BUTTON PANEL
         // ==============================
@@ -380,19 +361,19 @@ public class QuanLyCaLam extends JPanel {
                 panel.setBackground(Color.WHITE);
 
                 JButton btnThem = createActionButton(
-                                "Thêm",
+                                "Them",
                                 GREEN);
 
                 JButton btnSua = createActionButton(
-                                "Sửa",
+                                "Sua",
                                 NAVY);
 
                 JButton btnXoa = createActionButton(
-                                "Xóa",
+                                "Xoa",
                                 RED);
 
                 JButton btnLamMoi = createActionButton(
-                                "Làm mới",
+                                "Lam moi",
                                 ORANGE);
 
                 btnThem.addActionListener(
@@ -483,7 +464,7 @@ public class QuanLyCaLam extends JPanel {
                 top.setBackground(Color.WHITE);
 
                 JLabel title = new JLabel(
-                                "DANH SÁCH CA LÀM");
+                                "DANH SACH CA LAM");
 
                 title.setFont(
                                 new Font(
@@ -509,7 +490,7 @@ public class QuanLyCaLam extends JPanel {
 
                 search.setBackground(Color.WHITE);
 
-                JLabel lbSearch = new JLabel("Tìm kiếm:");
+                JLabel lbSearch = new JLabel("Tim kiem:");
 
                 txtTimKiem = new JTextField(18);
 
@@ -519,11 +500,11 @@ public class QuanLyCaLam extends JPanel {
                                                 32));
 
                 JButton btnTim = createSmallButton(
-                                "Tìm",
+                                "Tim",
                                 NAVY);
 
                 JButton btnTatCa = createSmallButton(
-                                "Tất cả",
+                                "Tat ca",
                                 new Color(
                                                 100,
                                                 110,
@@ -554,10 +535,10 @@ public class QuanLyCaLam extends JPanel {
 
                 model = new DefaultTableModel(
                                 new String[] {
-                                                "Mã ca",
-                                                "Tên ca",
-                                                "Giờ bắt đầu",
-                                                "Giờ kết thúc"
+                                                "Ma ca",
+                                                "Ten ca",
+                                                "Gio bat dau",
+                                                "Gio ket thuc"
                                 },
                                 0) {
 
@@ -664,8 +645,8 @@ public class QuanLyCaLam extends JPanel {
                                         new Object[] {
                                                         ca.getMaCa(),
                                                         ca.getTenCa(),
-                                                        dinhDangGio(ca.getGioBatDau()),
-                                                        dinhDangGio(ca.getGioKetThuc())
+                                                        ca.getGioBatDau(),
+                                                        ca.getGioKetThuc()
                                         });
                 }
         }
@@ -729,8 +710,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Thêm ca làm thành công!",
-                                        "Thông báo",
+                                        "Them ca lam thanh cong!",
+                                        "Thong bao",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         loadData();
@@ -741,8 +722,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Thêm ca làm thất bại!",
-                                        "Lỗi",
+                                        "Them ca lam that bai!",
+                                        "Loi",
                                         JOptionPane.ERROR_MESSAGE);
                 }
         }
@@ -757,8 +738,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Vui lòng chọn ca cần sửa!",
-                                        "Thông báo",
+                                        "Vui long chon ca can sua!",
+                                        "Thong bao",
                                         JOptionPane.WARNING_MESSAGE);
 
                         return;
@@ -774,8 +755,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Cập nhật ca làm thành công!",
-                                        "Thông báo",
+                                        "Cap nhat ca lam thanh cong!",
+                                        "Thong bao",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         loadData();
@@ -786,8 +767,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Cập nhật ca làm thất bại!",
-                                        "Lỗi",
+                                        "Cap nhat ca lam that bai!",
+                                        "Loi",
                                         JOptionPane.ERROR_MESSAGE);
                 }
         }
@@ -805,8 +786,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Vui lòng chọn ca cần xóa!",
-                                        "Thông báo",
+                                        "Vui long chon ca can xoa!",
+                                        "Thong bao",
                                         JOptionPane.WARNING_MESSAGE);
 
                         return;
@@ -816,10 +797,10 @@ public class QuanLyCaLam extends JPanel {
 
                 int result = JOptionPane.showConfirmDialog(
                                 this,
-                                "Bạn có chắc muốn xóa ca "
+                                "Ban co chac muon xoa ca "
                                                 + maCa
                                                 + "?",
-                                "Xác nhận",
+                                "Xac nhan",
                                 JOptionPane.YES_NO_OPTION);
 
                 if (result != JOptionPane.YES_OPTION) {
@@ -830,8 +811,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Xóa ca làm thành công!",
-                                        "Thông báo",
+                                        "Xoa ca lam thanh cong!",
+                                        "Thong bao",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         loadData();
@@ -842,8 +823,8 @@ public class QuanLyCaLam extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Xóa ca làm thất bại!",
-                                        "Lỗi",
+                                        "Xoa ca lam that bai!",
+                                        "Loi",
                                         JOptionPane.ERROR_MESSAGE);
                 }
         }
@@ -889,8 +870,8 @@ public class QuanLyCaLam extends JPanel {
                                                 new Object[] {
                                                                 ca.getMaCa(),
                                                                 ca.getTenCa(),
-                                                                dinhDangGio(ca.getGioBatDau()),
-                                                                dinhDangGio(ca.getGioKetThuc())
+                                                                ca.getGioBatDau(),
+                                                                ca.getGioKetThuc()
                                                 });
                         }
                 }
@@ -913,8 +894,8 @@ public class QuanLyCaLam extends JPanel {
 
                 txtMaCa.setText("");
                 txtTenCa.setText("");
-                txtGioBatDau.setValue(null);
-                txtGioKetThuc.setValue(null);
+                txtGioBatDau.setText("");
+                txtGioKetThuc.setText("");
 
                 txtTimKiem.setText("");
 
@@ -928,60 +909,60 @@ public class QuanLyCaLam extends JPanel {
         // ==============================
 
         private boolean kiemTraDuLieu() {
+
                 String maCa = txtMaCa.getText().trim();
+
                 String tenCa = txtTenCa.getText().trim();
+
                 String gioBatDau = txtGioBatDau.getText().trim();
+
                 String gioKetThuc = txtGioKetThuc.getText().trim();
 
-                if (!maCa.matches("CA\\d{3}")) {
-                        return baoLoiTruong(txtMaCa,
-                                        "Mã ca phải có dạng CA001 (CA và đúng 3 chữ số).");
-                }
-                if (tenCa.length() < 3 || tenCa.length() > 50
-                                || !tenCa.matches("[\\p{L}0-9 ]+")) {
-                        return baoLoiTruong(txtTenCa,
-                                        "Tên ca từ 3–50 ký tự, chỉ gồm chữ, số và khoảng trắng.");
-                }
-                if (!kiemTraGio(gioBatDau, txtGioBatDau, "Giờ bắt đầu")
-                                || !kiemTraGio(gioKetThuc, txtGioKetThuc, "Giờ kết thúc")) {
+                if (maCa.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap ma ca!");
+
+                        txtMaCa.requestFocus();
+
                         return false;
                 }
-                LocalTime batDau = LocalTime.parse(gioBatDau, FORMAT_GIO);
-                LocalTime ketThuc = LocalTime.parse(gioKetThuc, FORMAT_GIO);
-                if (batDau.equals(ketThuc)) {
-                        return baoLoiTruong(txtGioKetThuc,
-                                        "Giờ bắt đầu và kết thúc không được trùng nhau.");
+
+                if (tenCa.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap ten ca!");
+
+                        txtTenCa.requestFocus();
+
+                        return false;
                 }
-                // Ca qua dem (VD 22:00–06:00) duoc chap nhan.
+
+                if (gioBatDau.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap gio bat dau!");
+
+                        txtGioBatDau.requestFocus();
+
+                        return false;
+                }
+
+                if (gioKetThuc.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap gio ket thuc!");
+
+                        txtGioKetThuc.requestFocus();
+
+                        return false;
+                }
+
                 return true;
-        }
-
-        private boolean baoLoiTruong(JComponent truong, String thongBao) {
-                JOptionPane.showMessageDialog(this, thongBao,
-                                "Dữ liệu ca làm không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                truong.requestFocusInWindow();
-                return false;
-        }
-
-        /** Kiểm tra giờ nhập đủ 5 ký tự HH:mm, giờ 00-23 và phút 00-59. */
-        private boolean kiemTraGio(String giaTri, JFormattedTextField txtGio, String tenTruong) {
-                if (!giaTri.matches("\\d{2}:\\d{2}")) {
-                        JOptionPane.showMessageDialog(this,
-                                        tenTruong + " phải có định dạng HH:mm, ví dụ 06:00.",
-                                        "Giờ không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                        txtGio.requestFocusInWindow();
-                        return false;
-                }
-                try {
-                        LocalTime.parse(giaTri, FORMAT_GIO);
-                        return true;
-                } catch (DateTimeParseException ex) {
-                        JOptionPane.showMessageDialog(this,
-                                        tenTruong + " không hợp lệ. Giờ phải từ 00 đến 23, phút từ 00 đến 59.",
-                                        "Giờ không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                        txtGio.requestFocusInWindow();
-                        return false;
-                }
         }
 
         // ==============================
@@ -996,13 +977,4 @@ public class QuanLyCaLam extends JPanel {
                                 txtGioBatDau.getText().trim(),
                                 txtGioKetThuc.getText().trim());
         }
-
-        /** Chỉ hiển thị HH:mm, giữ nguyên dữ liệu thời gian trong CSDL. */
-        private String dinhDangGio(String gio) {
-                if (gio == null)
-                        return "";
-                String s = gio.trim();
-                return s.length() >= 5 ? s.substring(0, 5) : s;
-        }
-
 }

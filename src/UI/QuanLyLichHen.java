@@ -74,7 +74,6 @@ public class QuanLyLichHen extends JPanel {
         btnDatLich.setFocusPainted(false);
         btnDatLich.setBorderPainted(false);
         btnDatLich.setPreferredSize(new Dimension(140, 38));
-        // Gọi form đặt lịch với thông số là null (Chế độ Thêm mới)
         btnDatLich.addActionListener(e -> hienFormDatLich(null));
         titleRow.add(btnDatLich, BorderLayout.EAST);
 
@@ -87,10 +86,12 @@ public class QuanLyLichHen extends JPanel {
 
         filterRow.add(createFilterLabel("Từ"));
         txtTuNgay = new JTextField(8);
+        txtTuNgay.setToolTipText("dd/MM/yyyy");
         filterRow.add(txtTuNgay);
 
         filterRow.add(createFilterLabel("Đến"));
         txtDenNgay = new JTextField(8);
+        txtDenNgay.setToolTipText("dd/MM/yyyy");
         filterRow.add(txtDenNgay);
 
         filterRow.add(createFilterLabel("Nhân viên"));
@@ -105,12 +106,20 @@ public class QuanLyLichHen extends JPanel {
 
         filterRow.add(createFilterLabel("Tìm kiếm"));
         txtTimKiem = new JTextField(15);
+        txtTimKiem.setToolTipText("Mã lịch, tên KH, thú cưng...");
         filterRow.add(txtTimKiem);
 
         JButton btnTimKiem = new JButton("Lọc");
         btnTimKiem.setBackground(NAVY);
         btnTimKiem.setForeground(Color.WHITE);
         filterRow.add(btnTimKiem);
+
+        btnTimKiem.addActionListener(e -> locDuLieu());
+        txtTimKiem.addActionListener(e -> locDuLieu());
+        txtTuNgay.addActionListener(e -> locDuLieu());
+        txtDenNgay.addActionListener(e -> locDuLieu());
+        cboNhanVien.addActionListener(e -> locDuLieu());
+        cboTrangThai.addActionListener(e -> locDuLieu());
 
         panel.add(filterRow, BorderLayout.CENTER);
         return panel;
@@ -136,7 +145,6 @@ public class QuanLyLichHen extends JPanel {
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // CHỈ CHO PHÉP CỘT 7 (Thao tác) ĐƯỢC CLICK ĐỂ BẤM NÚT
                 return column == 7;
             }
         };
@@ -154,7 +162,6 @@ public class QuanLyLichHen extends JPanel {
         table.getColumnModel().getColumn(1).setCellRenderer(center);
         table.getColumnModel().getColumn(5).setCellRenderer(new StatusCellRenderer());
 
-        // THIẾT LẬP RENDERER VÀ EDITOR ĐỂ HIỂN THỊ NÚT CHO CỘT THAO TÁC
         table.getColumnModel().getColumn(7).setCellRenderer(new ActionButtonRenderer());
         table.getColumnModel().getColumn(7).setCellEditor(new ActionButtonEditor());
 
@@ -164,9 +171,6 @@ public class QuanLyLichHen extends JPanel {
         return panel;
     }
 
-    // =========================================================
-    // DATA HANDLING
-    // =========================================================
     private void loadComboBox() {
         cboNhanVien.removeAllItems();
         cboNhanVien.addItem("Tất cả");
@@ -176,16 +180,80 @@ public class QuanLyLichHen extends JPanel {
     }
 
     public void loadData() {
+        locDuLieu();
+    }
+
+    private void locDuLieu() {
+        if (cboNhanVien == null || cboTrangThai == null)
+            return;
+
+        String tuNgayStr = txtTuNgay.getText().trim();
+        String denNgayStr = txtDenNgay.getText().trim();
+        String nhanVienLoc = cboNhanVien.getSelectedItem().toString();
+        String trangThaiLoc = cboTrangThai.getSelectedItem().toString();
+        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate tuNgay = null;
+        LocalDate denNgay = null;
+
+        try {
+            if (!tuNgayStr.isEmpty())
+                tuNgay = LocalDate.parse(tuNgayStr, formatter);
+            if (!denNgayStr.isEmpty())
+                denNgay = LocalDate.parse(denNgayStr, formatter);
+        } catch (DateTimeParseException e) {
+            JOptionPane.showMessageDialog(this, "Ngày lọc phải có định dạng dd/MM/yyyy (Ví dụ: 07/10/2026)", "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         tableModel.setRowCount(0);
+
         for (LichHen lh : dao.getAll()) {
-            tableModel.addRow(new Object[] {
-                    lh.getMaLichHen(), lh.getNgayGioHenFormat(), lh.getTenKhachHang(),
-                    lh.getTenThuCung(), lh.getTenNhanVien(), lh.getTrangThai(), lh.getGhiChu(), ""
-            });
+            boolean isMatch = true;
+
+            if (lh.getNgayGioHen() != null) {
+                LocalDate ngayHen = lh.getNgayGioHen().toLocalDate();
+                if (tuNgay != null && ngayHen.isBefore(tuNgay))
+                    isMatch = false;
+                if (denNgay != null && ngayHen.isAfter(denNgay))
+                    isMatch = false;
+            }
+
+            if (!nhanVienLoc.equals("Tất cả")) {
+                if (lh.getTenNhanVien() == null || !lh.getTenNhanVien().equals(nhanVienLoc)) {
+                    isMatch = false;
+                }
+            }
+
+            if (!trangThaiLoc.equals("Tất cả")) {
+                if (lh.getTrangThai() == null || !lh.getTrangThai().equals(trangThaiLoc)) {
+                    isMatch = false;
+                }
+            }
+
+            if (!tuKhoa.isEmpty()) {
+                String maLH = lh.getMaLichHen() != null ? lh.getMaLichHen().toLowerCase() : "";
+                String tenKH = lh.getTenKhachHang() != null ? lh.getTenKhachHang().toLowerCase() : "";
+                String tenTC = lh.getTenThuCung() != null ? lh.getTenThuCung().toLowerCase() : "";
+                String ghiChu = lh.getGhiChu() != null ? lh.getGhiChu().toLowerCase() : "";
+
+                if (!maLH.contains(tuKhoa) && !tenKH.contains(tuKhoa) && !tenTC.contains(tuKhoa)
+                        && !ghiChu.contains(tuKhoa)) {
+                    isMatch = false;
+                }
+            }
+
+            if (isMatch) {
+                tableModel.addRow(new Object[] {
+                        lh.getMaLichHen(), lh.getNgayGioHenFormat(), lh.getTenKhachHang(),
+                        lh.getTenThuCung(), lh.getTenNhanVien(), lh.getTrangThai(), lh.getGhiChu(), ""
+                });
+            }
         }
     }
 
-    // Hàm tiện ích: Lấy toàn bộ thông tin của 1 Lịch Hẹn từ CSDL dựa trên mã
     private LichHen getLichHenByMa(String maLichHen) {
         for (LichHen lh : dao.getAll()) {
             if (lh.getMaLichHen().equals(maLichHen)) {
@@ -204,7 +272,6 @@ public class QuanLyLichHen extends JPanel {
         }
     }
 
-    // Mở Form Đặt Lịch (truyền vào LichHen nếu muốn Sửa, truyền null nếu Thêm mới)
     private void hienFormDatLich(LichHen lhEdit) {
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         DatLichDialog dialog = new DatLichDialog(parentFrame, this, dao, lhEdit);
@@ -285,24 +352,22 @@ public class QuanLyLichHen extends JPanel {
             btnSua.setForeground(Color.WHITE);
             btnSua.setPreferredSize(new Dimension(60, 30));
             btnSua.addActionListener(e -> {
-                fireEditingStopped(); // Dừng edit mode để bảng không bị đơ
-
-                // Lấy đối tượng lịch hẹn từ database thông qua mã
+                fireEditingStopped();
                 LichHen lhEdit = getLichHenByMa(currentMaLich);
                 if (lhEdit != null) {
-                    hienFormDatLich(lhEdit); // Gọi form Sửa với dữ liệu
+                    hienFormDatLich(lhEdit);
                 } else {
                     JOptionPane.showMessageDialog(panel, "Không tìm thấy lịch hẹn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             });
 
             btnXoa = new JButton("Xóa");
-            btnXoa.setBackground(new Color(220, 53, 69)); // Màu đỏ
+            btnXoa.setBackground(new Color(220, 53, 69));
             btnXoa.setForeground(Color.WHITE);
             btnXoa.setPreferredSize(new Dimension(60, 30));
             btnXoa.addActionListener(e -> {
                 fireEditingStopped();
-                xoaLichHen(currentMaLich); // Gọi hàm xóa đã viết sẵn
+                xoaLichHen(currentMaLich);
             });
 
             panel.add(btnSua);
@@ -312,7 +377,7 @@ public class QuanLyLichHen extends JPanel {
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
                 int column) {
-            currentMaLich = table.getValueAt(row, 0).toString(); // Lấy mã lịch hẹn ở dòng hiện tại
+            currentMaLich = table.getValueAt(row, 0).toString();
             panel.setBackground(table.getSelectionBackground());
             return panel;
         }
@@ -329,10 +394,13 @@ public class QuanLyLichHen extends JPanel {
     class DatLichDialog extends JDialog {
         private JTextField txtNgayDat, txtGioHen;
         private JComboBox<String> cboKhachHang, cboThuCung, cboNhanVienSpa, cboFormTrangThai;
-        private JTextArea txtGhiChu;
+
+        // THAY ĐỔI: Chuyển txtGhiChu thành cboGhiChu
+        private JComboBox<String> cboGhiChu;
+
         private LichHenDAO lichHenDAO;
         private QuanLyLichHen parentPanel;
-        private LichHen lhEdit; // Lưu đối tượng đang sửa (nếu là null thì là chức năng Thêm Mới)
+        private LichHen lhEdit;
 
         public DatLichDialog(JFrame parent, QuanLyLichHen panel, LichHenDAO dao, LichHen lhEdit) {
             super(parent, lhEdit == null ? "Đặt Lịch Mới" : "Sửa Lịch Hẹn - " + lhEdit.getMaLichHen(), true);
@@ -340,7 +408,7 @@ public class QuanLyLichHen extends JPanel {
             this.parentPanel = panel;
             this.lhEdit = lhEdit;
 
-            setSize(750, 580);
+            setSize(750, 500); // Điều chỉnh lại chiều cao form cho cân đối
             setLocationRelativeTo(parent);
             setResizable(false);
             setLayout(new BorderLayout());
@@ -409,7 +477,7 @@ public class QuanLyLichHen extends JPanel {
             pnlForm.add(taoLabel("Trạng thái:"), gbc);
 
             cboNhanVienSpa = new JComboBox<>();
-            cboFormTrangThai = new JComboBox<>(new String[] { "Xác nhận", "Chờ xác nhận" });
+            cboFormTrangThai = new JComboBox<>(new String[] { "Xác nhận", "Chờ xác nhận", "Đã hủy" });
             styleCombo(cboNhanVienSpa);
             styleCombo(cboFormTrangThai);
             gbc.gridy = 7;
@@ -418,17 +486,18 @@ public class QuanLyLichHen extends JPanel {
             gbc.gridx = 1;
             pnlForm.add(cboFormTrangThai, gbc);
 
-            // 4. Ghi chú
+            // 4. Ghi chú / Dịch vụ (Đã đổi sang ComboBox)
             gbc.gridx = 0;
             gbc.gridy = 8;
             gbc.gridwidth = 2;
-            pnlForm.add(taoLabel("Ghi chú:"), gbc);
+            pnlForm.add(taoLabel("Dịch vụ / Ghi chú:"), gbc);
 
-            txtGhiChu = new JTextArea(4, 20);
-            txtGhiChu.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            txtGhiChu.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+            cboGhiChu = new JComboBox<>();
+            cboGhiChu.setEditable(true); // Cho phép người dùng tự gõ thêm chữ nếu muốn
+            styleCombo(cboGhiChu);
+
             gbc.gridy = 9;
-            pnlForm.add(new JScrollPane(txtGhiChu), gbc);
+            pnlForm.add(cboGhiChu, gbc);
 
             add(pnlForm, BorderLayout.CENTER);
 
@@ -441,7 +510,7 @@ public class QuanLyLichHen extends JPanel {
             btnHuy.setForeground(Color.WHITE);
             btnHuy.setFont(new Font("Segoe UI", Font.BOLD, 14));
             btnHuy.setPreferredSize(new Dimension(100, 35));
-            btnHuy.addActionListener(e -> dispose()); // Đóng form
+            btnHuy.addActionListener(e -> dispose());
 
             JButton btnLuu = new JButton(lhEdit == null ? "Thêm mới" : "Cập nhật");
             btnLuu.setBackground(DARK_BLUE);
@@ -466,6 +535,12 @@ public class QuanLyLichHen extends JPanel {
                 cboThuCung.addItem(tc[0] + " - " + tc[1]);
             for (String[] nv : lichHenDAO.getDanhSachNhanVienSpa())
                 cboNhanVienSpa.addItem(nv[0] + " - " + nv[1]);
+
+            // Nạp danh sách Dịch Vụ vào ComboBox Ghi chú
+            cboGhiChu.addItem(""); // Tuỳ chọn trống ban đầu
+            for (String dv : lichHenDAO.getDanhSachDichVu()) {
+                cboGhiChu.addItem(dv);
+            }
         }
 
         // ===============================================
@@ -473,21 +548,25 @@ public class QuanLyLichHen extends JPanel {
         // ===============================================
         private void dienDuLieuSua() {
             if (lhEdit == null)
-                return; // Nếu là Thêm mới thì bỏ qua
+                return;
 
-            // Điền ngày giờ
             if (lhEdit.getNgayGioHen() != null) {
                 txtNgayDat.setText(lhEdit.getNgayGioHen().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
                 txtGioHen.setText(lhEdit.getNgayGioHen().format(DateTimeFormatter.ofPattern("HH:mm")));
             }
 
-            // Chọn đúng Khách hàng, Thú cưng, Nhân viên trong Combobox
             setComboSelectedById(cboKhachHang, lhEdit.getMaKhachHang());
             setComboSelectedById(cboThuCung, lhEdit.getMaThuCung());
             setComboSelectedById(cboNhanVienSpa, lhEdit.getMaNhanVien());
 
-            // Điền ghi chú
-            txtGhiChu.setText(lhEdit.getGhiChu());
+            if (lhEdit.getTrangThai() != null) {
+                cboFormTrangThai.setSelectedItem(lhEdit.getTrangThai());
+            }
+
+            // Điền ghi chú (Dịch vụ)
+            if (lhEdit.getGhiChu() != null) {
+                cboGhiChu.setSelectedItem(lhEdit.getGhiChu());
+            }
         }
 
         private void setComboSelectedById(JComboBox<String> cbo, String id) {
@@ -506,36 +585,36 @@ public class QuanLyLichHen extends JPanel {
         // ===============================================
         private void xuLyLuuDuLieu() {
             try {
-                // Parse Ngày Giờ
                 String ngayStr = txtNgayDat.getText().trim();
                 String gioStr = txtGioHen.getText().trim();
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
                 LocalDateTime ngayGioHen = LocalDateTime.parse(ngayStr + " " + gioStr, formatter);
 
-                // Lấy ID từ ComboBox
                 String maKH = extractId(cboKhachHang.getSelectedItem().toString());
                 String maTC = extractId(cboThuCung.getSelectedItem().toString());
                 String maNV = extractId(cboNhanVienSpa.getSelectedItem().toString());
-                String ghiChu = txtGhiChu.getText().trim();
+                String trangThai = cboFormTrangThai.getSelectedItem().toString();
 
-                // Dựa vào việc có lhEdit hay không để Thêm mới hay Cập nhật
+                // Lấy nội dung ghi chú/dịch vụ từ ComboBox
+                String ghiChu = cboGhiChu.getSelectedItem() != null ? cboGhiChu.getSelectedItem().toString().trim()
+                        : "";
+
                 String maLH = (lhEdit == null) ? taoMaLichHenTuDong() : lhEdit.getMaLichHen();
                 LichHen lh = new LichHen(maLH, ngayGioHen, ghiChu, maKH, maNV, maTC);
+                lh.setTrangThai(trangThai);
 
                 boolean thanhCong;
                 if (lhEdit == null) {
-                    // Chế độ THÊM MỚI
                     thanhCong = lichHenDAO.them(lh);
                 } else {
-                    // Chế độ SỬA
                     thanhCong = lichHenDAO.sua(lh);
                 }
 
                 if (thanhCong) {
                     JOptionPane.showMessageDialog(this,
                             lhEdit == null ? "Đã thêm lịch hẹn mới!" : "Đã cập nhật lịch hẹn!");
-                    parentPanel.loadData(); // Cập nhật lại bảng
-                    dispose(); // Đóng form
+                    parentPanel.loadData();
+                    dispose();
                 } else {
                     JOptionPane.showMessageDialog(this, "Thao tác thất bại. Vui lòng kiểm tra lại!", "Lỗi",
                             JOptionPane.ERROR_MESSAGE);
@@ -571,7 +650,6 @@ public class QuanLyLichHen extends JPanel {
             return String.format("LH%03d", max + 1);
         }
 
-        // Helper methods để tạo giao diện Form
         private JLabel taoLabel(String text) {
             JLabel lbl = new JLabel(text);
             lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));

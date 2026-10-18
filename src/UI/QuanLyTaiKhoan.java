@@ -93,7 +93,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                                 25));
 
                 JLabel title = new JLabel(
-                                "QUẢN LÝ TÀI KHOẢN");
+                                "QUAN LY TAI KHOAN");
 
                 title.setFont(
                                 new Font(
@@ -105,7 +105,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                 NAVY);
 
                 JLabel sub = new JLabel(
-                                "Quản lý thông tin tài khoản nhân viên");
+                                "Quan ly thong tin tai khoan nhan vien");
 
                 sub.setFont(
                                 new Font(
@@ -216,7 +216,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 panel.add(
                                 createLabel(
-                                                "Mã nhân viên:"),
+                                                "Ma nhan vien:"),
                                 gbc);
 
                 txtMaNV = new JTextField();
@@ -240,7 +240,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 panel.add(
                                 createLabel(
-                                                "Họ tên:"),
+                                                "Ho ten:"),
                                 gbc);
 
                 txtHoTen = new JTextField();
@@ -265,7 +265,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 panel.add(
                                 createLabel(
-                                                "Số điện thoại:"),
+                                                "So dien thoai:"),
                                 gbc);
 
                 txtSoDienThoai = new JTextField();
@@ -314,7 +314,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 panel.add(
                                 createLabel(
-                                                "Mật khẩu:"),
+                                                "Mat khau:"),
                                 gbc);
 
                 txtMatKhau = new JPasswordField();
@@ -338,26 +338,18 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 panel.add(
                                 createLabel(
-                                                "Giới tính:"),
+                                                "Gioi tinh:"),
                                 gbc);
 
                 cboGioiTinh = new JComboBox<>(
                                 new String[] {
                                                 "Nam",
-                                                "Nu"
+                                                "Nu",
+                                                "Khac"
                                 });
 
                 styleComboBox(
                                 cboGioiTinh);
-                cboGioiTinh.setRenderer(new DefaultListCellRenderer() {
-                        @Override
-                        public Component getListCellRendererComponent(JList<?> list, Object value,
-                                        int index, boolean selected, boolean focused) {
-                                super.getListCellRendererComponent(list, value, index, selected, focused);
-                                setText(hienThiGioiTinh(value == null ? "" : value.toString()));
-                                return this;
-                        }
-                });
 
                 gbc.gridx = 3;
                 gbc.weightx = 1;
@@ -376,7 +368,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 panel.add(
                                 createLabel(
-                                                "Vai trò:"),
+                                                "Vai tro:"),
                                 gbc);
 
                 cboVaiTro = new JComboBox<>(
@@ -389,15 +381,6 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 styleComboBox(
                                 cboVaiTro);
-                cboVaiTro.setRenderer(new DefaultListCellRenderer() {
-                        @Override
-                        public Component getListCellRendererComponent(JList<?> list, Object value,
-                                        int index, boolean selected, boolean focused) {
-                                super.getListCellRendererComponent(list, value, index, selected, focused);
-                                setText(hienThiVaiTro(value == null ? "" : value.toString()));
-                                return this;
-                        }
-                });
 
                 gbc.gridx = 1;
                 gbc.weightx = 1;
@@ -502,19 +485,19 @@ public class QuanLyTaiKhoan extends JPanel {
                                 Color.WHITE);
 
                 JButton btnThem = createActionButton(
-                                "Thêm",
+                                "Them",
                                 GREEN);
 
                 JButton btnSua = createActionButton(
-                                "Sửa",
+                                "Sua",
                                 NAVY);
 
                 JButton btnXoa = createActionButton(
-                                "Xóa",
+                                "Xoa",
                                 RED);
 
                 JButton btnLamMoi = createActionButton(
-                                "Làm mới",
+                                "Lam moi",
                                 ORANGE);
 
                 btnThem.addActionListener(
@@ -608,7 +591,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                 Color.WHITE);
 
                 JLabel title = new JLabel(
-                                "DANH SÁCH TÀI KHOẢN");
+                                "DANH SACH TAI KHOAN");
 
                 title.setFont(
                                 new Font(
@@ -633,7 +616,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                 Color.WHITE);
 
                 JLabel lbSearch = new JLabel(
-                                "Tìm kiếm:");
+                                "Tim kiem:");
 
                 txtTimKiem = new JTextField(18);
 
@@ -643,11 +626,11 @@ public class QuanLyTaiKhoan extends JPanel {
                                                 32));
 
                 JButton btnTim = createSmallButton(
-                                "Tìm",
+                                "Tim",
                                 NAVY);
 
                 JButton btnTatCa = createSmallButton(
-                                "Tất cả",
+                                "Tat ca",
                                 new Color(
                                                 100,
                                                 110,
@@ -678,13 +661,13 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 model = new DefaultTableModel(
                                 new String[] {
-                                                "Mã NV",
-                                                "Họ tên",
-                                                "Số điện thoại",
+                                                "Ma NV",
+                                                "Ho ten",
+                                                "So dien thoai",
                                                 "Email",
-                                                "Mật khẩu",
-                                                "Giới tính",
-                                                "Vai trò"
+                                                "Mat khau",
+                                                "Gioi tinh",
+                                                "Vai tro"
                                 },
                                 0) {
 
@@ -798,8 +781,8 @@ public class QuanLyTaiKhoan extends JPanel {
                                                         tk.getSoDienThoai(),
                                                         tk.getEmail(),
                                                         tk.getMatKhau(),
-                                                        hienThiGioiTinh(tk.getGioiTinh()),
-                                                        hienThiVaiTro(tk.getVaiTro())
+                                                        tk.getGioiTinh(),
+                                                        tk.getVaiTro()
                                         });
                 }
         }
@@ -835,10 +818,10 @@ public class QuanLyTaiKhoan extends JPanel {
                                 valueAt(row, 4));
 
                 cboGioiTinh.setSelectedItem(
-                                maGioiTinh(valueAt(row, 5)));
+                                valueAt(row, 5));
 
                 cboVaiTro.setSelectedItem(
-                                maVaiTro(valueAt(row, 6)));
+                                valueAt(row, 6));
 
                 // Khong cho sua ma nhan vien
                 txtMaNV.setEnabled(false);
@@ -877,8 +860,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Thêm tài khoản thành công!",
-                                        "Thông báo",
+                                        "Them tai khoan thanh cong!",
+                                        "Thong bao",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         loadData();
@@ -889,8 +872,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Thêm tài khoản thất bại!",
-                                        "Lỗi",
+                                        "Them tai khoan that bai!",
+                                        "Loi",
                                         JOptionPane.ERROR_MESSAGE);
                 }
         }
@@ -909,8 +892,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Vui lòng chọn tài khoản cần sửa!",
-                                        "Thông báo",
+                                        "Vui long chon tai khoan can sua!",
+                                        "Thong bao",
                                         JOptionPane.WARNING_MESSAGE);
 
                         return;
@@ -922,8 +905,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Cập nhật tài khoản thành công!",
-                                        "Thông báo",
+                                        "Cap nhat tai khoan thanh cong!",
+                                        "Thong bao",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         loadData();
@@ -934,8 +917,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Cập nhật tài khoản thất bại!",
-                                        "Lỗi",
+                                        "Cap nhat tai khoan that bai!",
+                                        "Loi",
                                         JOptionPane.ERROR_MESSAGE);
                 }
         }
@@ -953,8 +936,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Vui lòng chọn tài khoản cần xóa!",
-                                        "Thông báo",
+                                        "Vui long chon tai khoan can xoa!",
+                                        "Thong bao",
                                         JOptionPane.WARNING_MESSAGE);
 
                         return;
@@ -965,10 +948,10 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 int result = JOptionPane.showConfirmDialog(
                                 this,
-                                "Bạn có chắc muốn xóa tài khoản "
+                                "Ban co chac muon xoa tai khoan "
                                                 + ma
                                                 + "?",
-                                "Xác nhận",
+                                "Xac nhan",
                                 JOptionPane.YES_NO_OPTION);
 
                 if (result != JOptionPane.YES_OPTION) {
@@ -979,8 +962,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Xóa tài khoản thành công!",
-                                        "Thông báo",
+                                        "Xoa tai khoan thanh cong!",
+                                        "Thong bao",
                                         JOptionPane.INFORMATION_MESSAGE);
 
                         loadData();
@@ -991,8 +974,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Xóa tài khoản thất bại!",
-                                        "Lỗi",
+                                        "Xoa tai khoan that bai!",
+                                        "Loi",
                                         JOptionPane.ERROR_MESSAGE);
                 }
         }
@@ -1035,7 +1018,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                         || safe(tk.getGioiTinh())
                                                         .contains(keyword)
 
-                                        || safe(hienThiVaiTro(tk.getVaiTro()))
+                                        || safe(tk.getVaiTro())
                                                         .contains(keyword);
 
                         if (match) {
@@ -1047,8 +1030,8 @@ public class QuanLyTaiKhoan extends JPanel {
                                                                 tk.getSoDienThoai(),
                                                                 tk.getEmail(),
                                                                 tk.getMatKhau(),
-                                                                hienThiGioiTinh(tk.getGioiTinh()),
-                                                                hienThiVaiTro(tk.getVaiTro())
+                                                                tk.getGioiTinh(),
+                                                                tk.getVaiTro()
                                                 });
                         }
                 }
@@ -1095,49 +1078,109 @@ public class QuanLyTaiKhoan extends JPanel {
         // =========================================================
 
         private boolean kiemTraDuLieu() {
-                String ma = txtMaNV.getText().trim();
-                String hoTen = txtHoTen.getText().trim();
-                String sdt = txtSoDienThoai.getText().trim();
-                String email = txtEmail.getText().trim();
-                String matKhau = new String(txtMatKhau.getPassword());
 
-                if (!ma.matches("NV\\d{3}")) {
-                        return baoLoiTruong(txtMaNV,
-                                        "Mã nhân viên phải có dạng NV001 (NV và đúng 3 chữ số).");
-                }
-                if (hoTen.length() < 2 || hoTen.length() > 100
-                                || !hoTen.matches("[\\p{L} ]+")) {
-                        return baoLoiTruong(txtHoTen,
-                                        "Họ tên từ 2–100 ký tự, chỉ chứa chữ cái (có dấu) và dấu cách.");
-                }
-                if (!sdt.matches("0\\d{9}")) {
-                        return baoLoiTruong(txtSoDienThoai,
-                                        "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.");
-                }
-                if (email.length() > 254 || !email.matches(
-                                "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-                        return baoLoiTruong(txtEmail, "Email không hợp lệ. Ví dụ: ten@gmail.com.");
-                }
-                if (matKhau.length() < 6) {
-                        return baoLoiTruong(txtMatKhau,
-                                        "Mật khẩu phải có ít nhất 6 ký tự (không giới hạn loại ký tự).");
-                }
-                if (cboGioiTinh.getSelectedItem() == null
-                                || !("Nam".equals(cboGioiTinh.getSelectedItem())
-                                                || "Nu".equals(cboGioiTinh.getSelectedItem()))
-                                || cboVaiTro.getSelectedItem() == null) {
-                        JOptionPane.showMessageDialog(this, "Giới tính chỉ được chọn Nam/Nữ và phải chọn vai trò.",
-                                        "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                String ma = txtMaNV.getText()
+                                .trim();
+
+                String hoTen = txtHoTen.getText()
+                                .trim();
+
+                String sdt = txtSoDienThoai.getText()
+                                .trim();
+
+                String email = txtEmail.getText()
+                                .trim();
+
+                String matKhau = new String(
+                                txtMatKhau.getPassword());
+
+                // Ma NV
+                if (ma.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap ma nhan vien!");
+
+                        txtMaNV.requestFocus();
+
                         return false;
                 }
-                return true;
-        }
 
-        private boolean baoLoiTruong(JComponent truong, String thongBao) {
-                JOptionPane.showMessageDialog(this, thongBao,
-                                "Dữ liệu nhân viên không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                truong.requestFocusInWindow();
-                return false;
+                if (ma.length() > 10) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Ma nhan vien toi da 10 ky tu!");
+
+                        txtMaNV.requestFocus();
+
+                        return false;
+                }
+
+                // Ho ten
+                if (hoTen.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap ho ten!");
+
+                        txtHoTen.requestFocus();
+
+                        return false;
+                }
+
+                // SDT
+                if (!sdt.isEmpty()
+                                && !sdt.matches(
+                                                "\\d{10,15}")) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "So dien thoai phai gom 10-15 chu so!");
+
+                        txtSoDienThoai.requestFocus();
+
+                        return false;
+                }
+
+                // Email
+                if (!email.isEmpty()
+                                && !email.matches(
+                                                "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Email khong hop le!");
+
+                        txtEmail.requestFocus();
+
+                        return false;
+                }
+
+                // Mat khau
+                if (matKhau.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui long nhap mat khau!");
+
+                        txtMatKhau.requestFocus();
+
+                        return false;
+                }
+
+                if (matKhau.length() > 25) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Mat khau toi da 25 ky tu!");
+
+                        txtMatKhau.requestFocus();
+
+                        return false;
+                }
+
+                return true;
         }
 
         // =========================================================
@@ -1158,46 +1201,4 @@ public class QuanLyTaiKhoan extends JPanel {
                                 cboVaiTro.getSelectedItem()
                                                 .toString());
         }
-
-        // Chỉ đổi tên hiển thị, KHÔNG thay giá trị dùng để lưu trong CSDL.
-        private String hienThiGioiTinh(String s) {
-                if (s == null)
-                        return "";
-                return switch (s.trim().toLowerCase(java.util.Locale.ROOT)) {
-                        case "nu", "nữ" -> "Nữ";
-                        case "nam" -> "Nam";
-                        default -> s;
-                };
-        }
-
-        private String maGioiTinh(String s) {
-                return switch (hienThiGioiTinh(s)) {
-                        case "Nữ" -> "Nu";
-                        default -> "Nam";
-                };
-        }
-
-        private String hienThiVaiTro(String s) {
-                if (s == null)
-                        return "";
-                String vaiTro = s.trim().toLowerCase(java.util.Locale.ROOT);
-                return switch (vaiTro) {
-                        case "quan ly", "quản lý" -> "Quản lý";
-                        case "thu ngan", "thu ngân" -> "Thu ngân";
-                        case "nhan vien kho", "nhân viên kho" -> "Nhân viên kho";
-                        case "nhan vien spa", "nhân viên spa" -> "Nhân viên Spa";
-                        default -> s;
-                };
-        }
-
-        private String maVaiTro(String s) {
-                return switch (hienThiVaiTro(s)) {
-                        case "Quản lý" -> "Quan ly";
-                        case "Thu ngân" -> "Thu ngan";
-                        case "Nhân viên kho" -> "Nhan vien kho";
-                        case "Nhân viên Spa" -> "Nhan vien Spa";
-                        default -> s;
-                };
-        }
-
 }

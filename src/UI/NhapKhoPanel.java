@@ -148,11 +148,8 @@ public class NhapKhoPanel extends JPanel {
         thanhCongCu.add(btnXoaDong);
 
         JButton btnNhap = UIStyle.nutPhu("Phiếu nháp đã lưu");
-        JButton btnPdf = UIStyle.nutPhu("Xuất file PDF");
-        btnPdf.addActionListener(e -> UIStyle.xuatPdf(this, "Phieu_nhap_kho", bang));
         btnNhap.addActionListener(e -> moPhieuNhap());
         thanhCongCu.add(btnNhap);
-        thanhCongCu.add(btnPdf);
 
         UIStyle.taoBang(bang, 2, 3, 4);
 
@@ -356,10 +353,6 @@ public class NhapKhoPanel extends JPanel {
             // Cung 1 san pham: cong don so luong (khoa chinh la ma phieu + ma SP)
             for (ChiTietPhieuNhap ct : dong) {
                 if (ct.getMaSanPham().equals(moi.getMaSanPham())) {
-                    if (!java.util.Objects.equals(ct.getHanSuDung(), moi.getHanSuDung())) {
-                        UIStyle.canhBao(this, "Mỗi sản phẩm trong một phiếu chỉ nhận một hạn sử dụng. Tạo phiếu riêng cho lô hạn khác.");
-                        return;
-                    }
                     ct.setSoLuongNhap(ct.getSoLuongNhap() + moi.getSoLuongNhap());
                     ct.setDonGiaNhap(moi.getDonGiaNhap());
                     veLaiBang();
@@ -576,7 +569,6 @@ public class NhapKhoPanel extends JPanel {
         private final JSpinner spnSoLuong =
                 new JSpinner(new SpinnerNumberModel(1, 1, 1_000_000, 1));
         private final JTextField txtDonGia = UIStyle.o(22);
-        private final JTextField txtHanSuDung = UIStyle.o(12);
 
         private ChiTietPhieuNhap ketQua = null;
 
@@ -605,7 +597,6 @@ public class NhapKhoPanel extends JPanel {
             UIStyle.hang(form, 0, "Sản phẩm", cboSanPham, false);
             UIStyle.hang(form, 1, "Số lượng nhập", spnSoLuong, false);
             UIStyle.hang(form, 2, "Đơn giá nhập", txtDonGia, false);
-            UIStyle.hang(form, 3, "Hạn sử dụng (dd/MM/yyyy, tùy chọn)", txtHanSuDung, false);
 
             if (cboSanPham.getItemCount() > 0) {
                 cboSanPham.setSelectedIndex(0);
@@ -656,12 +647,7 @@ public class NhapKhoPanel extends JPanel {
                 return;
             }
 
-            java.time.LocalDate han = null;
-            try { if (!txtHanSuDung.getText().trim().isEmpty()) han = java.time.LocalDate.parse(txtHanSuDung.getText().trim(), java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu")); }
-            catch (java.time.format.DateTimeParseException e) { UIStyle.canhBao(this, "Hạn sử dụng phải theo định dạng dd/MM/yyyy."); return; }
-            if (han != null && han.isBefore(java.time.LocalDate.now())) { UIStyle.canhBao(this, "Hạn sử dụng không thể ở quá khứ."); return; }
             ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
-            ct.setHanSuDung(han);
             ct.setMaSanPham(sp.getMaSanPham());
             ct.setTenSanPham(sp.getTenSanPham());
             ct.setSoLuongNhap((Integer) spnSoLuong.getValue());

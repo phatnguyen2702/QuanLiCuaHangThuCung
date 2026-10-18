@@ -16,18 +16,18 @@ public class QuanLyPhieuDichVu extends JPanel {
 
     private final Color NAVY = new Color(18, 48, 82);
     private final Color LIGHT_BLUE = new Color(229, 241, 252);
-    private final Color DARK_BTN = new Color(11, 43, 64); // Nút + Tạo phiếu mới
+    private final Color DARK_BTN = new Color(11, 43, 64);
     private final Color GRAY_BTN = new Color(136, 142, 148);
     private final Color STATUS_GREEN = new Color(115, 214, 137);
     private final Color STATUS_GRAY = new Color(200, 200, 200);
 
-    private JTextField txtTuNgay, txtDenNgay, txtTimKiem;
+    private JTextField txtTimKiem;
     private JComboBox<String> cboNhanVien, cboTrangThai;
     private JTable table;
     private DefaultTableModel tableModel;
 
     private PhieuDichVuDAO dao;
-    private LichHenDAO lichHenDAO; // Dùng để load cb Khách hàng, Thú cưng
+    private LichHenDAO lichHenDAO;
 
     public QuanLyPhieuDichVu() {
         dao = new PhieuDichVuDAO();
@@ -71,14 +71,6 @@ public class QuanLyPhieuDichVu extends JPanel {
         filterRow.setBackground(Color.WHITE);
         filterRow.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 230)));
 
-        filterRow.add(createFilterLabel("Từ"));
-        txtTuNgay = new JTextField(8);
-        filterRow.add(txtTuNgay);
-
-        filterRow.add(createFilterLabel("Đến"));
-        txtDenNgay = new JTextField(8);
-        filterRow.add(txtDenNgay);
-
         filterRow.add(createFilterLabel("Nhân viên"));
         cboNhanVien = new JComboBox<>();
         cboNhanVien.setPreferredSize(new Dimension(150, 30));
@@ -91,11 +83,19 @@ public class QuanLyPhieuDichVu extends JPanel {
 
         filterRow.add(createFilterLabel("Tìm kiếm"));
         txtTimKiem = new JTextField(15);
+        txtTimKiem.setToolTipText("Mã phiếu, Mã lịch hẹn, Tên thú cưng...");
         filterRow.add(txtTimKiem);
 
         JButton btnTimKiem = new JButton("Lọc");
         btnTimKiem.setBackground(NAVY);
         btnTimKiem.setForeground(Color.WHITE);
+
+        // Gắn sự kiện lọc
+        btnTimKiem.addActionListener(e -> locDuLieu());
+        txtTimKiem.addActionListener(e -> locDuLieu());
+        cboNhanVien.addActionListener(e -> locDuLieu());
+        cboTrangThai.addActionListener(e -> locDuLieu());
+
         filterRow.add(btnTimKiem);
 
         panel.add(filterRow, BorderLayout.CENTER);
@@ -118,7 +118,7 @@ public class QuanLyPhieuDichVu extends JPanel {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 5;
-            } // Chỉ cột Thao tác
+            }
         };
 
         table = new JTable(tableModel);
@@ -128,7 +128,6 @@ public class QuanLyPhieuDichVu extends JPanel {
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         table.getTableHeader().setPreferredSize(new Dimension(100, 40));
 
-        // Custom viền xanh theo thiết kế
         table.setBorder(BorderFactory.createLineBorder(new Color(51, 153, 255), 1));
 
         DefaultTableCellRenderer center = new DefaultTableCellRenderer();
@@ -156,11 +155,56 @@ public class QuanLyPhieuDichVu extends JPanel {
     }
 
     public void loadData() {
+        locDuLieu(); // Dùng hàm lọc để load dữ liệu
+    }
+
+    // =========================================================
+    // HÀM LỌC DỮ LIỆU
+    // =========================================================
+    private void locDuLieu() {
+        if (cboNhanVien == null || cboTrangThai == null)
+            return;
+
+        String nhanVienLoc = cboNhanVien.getSelectedItem().toString();
+        String trangThaiLoc = cboTrangThai.getSelectedItem().toString();
+        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
+
         tableModel.setRowCount(0);
-        for (PhieuDichVu p : dao.getAll()) {
-            tableModel.addRow(new Object[] {
-                    p.getMaPhieuDichVu(), p.getMaLichHen(), p.getTenThuCung(), p.getTenNhanVien(), p.getTrangThai(), ""
-            });
+
+        for (PhieuDichVu pdv : dao.getAll()) {
+            boolean isMatch = true;
+
+            // 1. Lọc theo Nhân Viên
+            if (!nhanVienLoc.equals("Tất cả")) {
+                if (pdv.getTenNhanVien() == null || !pdv.getTenNhanVien().equals(nhanVienLoc)) {
+                    isMatch = false;
+                }
+            }
+
+            // 2. Lọc theo Trạng Thái
+            if (!trangThaiLoc.equals("Tất cả")) {
+                if (pdv.getTrangThai() == null || !pdv.getTrangThai().equals(trangThaiLoc)) {
+                    isMatch = false;
+                }
+            }
+
+            // 3. Lọc theo Từ Khóa (Mã phiếu, Mã Lịch Hẹn, Tên thú cưng)
+            if (!tuKhoa.isEmpty()) {
+                String maPhieu = pdv.getMaPhieuDichVu() != null ? pdv.getMaPhieuDichVu().toLowerCase() : "";
+                String maLH = pdv.getMaLichHen() != null ? pdv.getMaLichHen().toLowerCase() : "";
+                String tenTC = pdv.getTenThuCung() != null ? pdv.getTenThuCung().toLowerCase() : "";
+
+                if (!maPhieu.contains(tuKhoa) && !maLH.contains(tuKhoa) && !tenTC.contains(tuKhoa)) {
+                    isMatch = false;
+                }
+            }
+
+            if (isMatch) {
+                tableModel.addRow(new Object[] {
+                        pdv.getMaPhieuDichVu(), pdv.getMaLichHen(), pdv.getTenThuCung(), pdv.getTenNhanVien(),
+                        pdv.getTrangThai(), ""
+                });
+            }
         }
     }
 

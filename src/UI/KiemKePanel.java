@@ -77,8 +77,6 @@ public class KiemKePanel extends JPanel {
 
         JButton btnPhieuMoi = UIStyle.nutPhu("Phiếu mới");
         JButton btnChot = UIStyle.nutXanh("Chốt kiểm kê");
-        JButton btnPdf = UIStyle.nutPhu("Xuất file PDF");
-        btnPdf.addActionListener(e -> UIStyle.xuatPdf(this, "Kiem_ke_kho", bang));
         btnPhieuMoi.addActionListener(e -> hoiPhieuMoi());
         btnChot.addActionListener(e -> chot());
 
@@ -86,7 +84,6 @@ public class KiemKePanel extends JPanel {
         nut.setOpaque(false);
         nut.add(btnPhieuMoi);
         nut.add(btnChot);
-        nut.add(btnPdf);
 
         JPanel hang = new JPanel(new BorderLayout());
         hang.setOpaque(false);
