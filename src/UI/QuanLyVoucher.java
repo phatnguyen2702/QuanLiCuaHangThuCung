@@ -1,15 +1,14 @@
 package UI;
 
+import UI.TrangChu.UIStyle;
 import dao.VoucherDAO;
 import entity.Voucher;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
-import java.time.LocalDateTime;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
@@ -18,19 +17,29 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Locale;
 
+// Man Ma giam gia va Voucher: tim kiem, tao / sua / xoa, kich hoat / huy, lam moi,
+// chon 1 dong de xem thong tin voucher
 public class QuanLyVoucher extends JPanel {
 
         private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        private static final String[] COLS = { "Ma", "Ten chuong trinh", "Dieu kien",
-                        "Muc giam", "Da dung", "Hieu luc", "Trang thai" };
+        private static final String[] COLS = { "Mã", "Tên chương trình", "Điều kiện",
+                        "Mức giảm", "Đã dùng", "Hiệu lực", "Trạng thái" };
+
+        private static final String[] LOC_HIEN_THI = { "Tất cả trạng thái", "Đang chạy", "Sắp chạy",
+                        "Hết hạn", "Hết lượt", "Đã hủy" };
+
+        // mã trạng thái do Voucher.getTrangThaiText() trả về
+        private static final String[] LOC_MA = { "Tat ca", "Dang chay", "Sap chay",
+                        "Het han", "Het luot", "Da huy" };
 
         private final VoucherDAO voucherDAO = new VoucherDAO();
 
-        private final JTextField txtTim = new JTextField(28);
+        private final JTextField txtTim = UIStyle.o(16);
+        private final JComboBox<String> cboTt = new JComboBox<>(LOC_HIEN_THI);
+        private final JLabel lblDem = UIStyle.nhan("0 voucher");
 
-        private final JComboBox<String> cboTt = new JComboBox<>(
-                        new String[] { "Tat ca", "Dang chay", "Sap chay", "Het han", "Het luot", "Da huy" });
+        private final JButton btnKichHoat = UIStyle.nutPhu("Kích hoạt / Hủy");
 
         private final DefaultTableModel model = new DefaultTableModel(COLS, 0) {
                 @Override
@@ -40,160 +49,291 @@ public class QuanLyVoucher extends JPanel {
         };
 
         private final JTable table = new JTable(model);
-        private final JPanel stats = new JPanel(new GridLayout(1, 4, 12, 0));
 
-        private final JPanel danhSach = new JPanel(new BorderLayout());
-
-        // form tao / sua voucher hien thanh cua so popup (JDialog) giong "Dat lich moi"
-        private VoucherForm form;
-        private JDialog dlgForm;
-
-        // dong i cua bang <-> dsHienThi.get(i)
+        // dòng i của bảng <-> dsHienThi.get(i)
         private ArrayList<Voucher> dsHienThi = new ArrayList<>();
+
+        // ----- khung thông tin chi tiết (hiện khi chọn 1 dòng) -----
+        private final CardLayout cardCT = new CardLayout();
+        private final JPanel khungCT = new JPanel(cardCT);
+
+        private final JLabel vMa = giaTri();
+        private final JLabel vTen = giaTri();
+        private final JLabel vGiam = giaTri();
+        private final JLabel vTrangThai = giaTri();
+        private final JLabel vTu = giaTri();
+        private final JLabel vDen = giaTri();
+        private final JLabel vDaDung = giaTri();
+        private final JLabel vConLai = giaTri();
+        private final JLabel vDieuKien = new JLabel();
 
         public QuanLyVoucher() {
 
-                setLayout(new BorderLayout());
+                setLayout(new BorderLayout(0, 14));
+                setBackground(UIStyle.LIGHT_BLUE);
+                setBorder(new EmptyBorder(18, 24, 18, 24));
 
-                setBackground(UiKit.LIGHT_BLUE);
+                // ---------------- tiêu đề + nút Tạo ----------------
+                JLabel tieuDe = new JLabel("Mã giảm giá và Voucher");
 
-                danhSach.setBackground(UiKit.LIGHT_BLUE);
+                tieuDe.setFont(UIStyle.font(Font.BOLD, 26));
+                tieuDe.setForeground(new Color(40, 40, 40));
 
-                JButton btnTao = UiKit.button("Tao voucher", UiKit.GREEN, Color.WHITE);
+                JButton btnTao = UIStyle.nutXanh("+  Tạo voucher");
 
-                btnTao.addActionListener(e -> moForm(null));
+                btnTao.addActionListener(e -> moDialog(null));
 
-                danhSach.add(UiKit.titleBar("MA GIAM GIA VA VOUCHER", btnTao), BorderLayout.NORTH);
+                JPanel dau = new JPanel(new BorderLayout());
 
-                stats.setOpaque(false);
+                dau.setOpaque(false);
+                dau.add(tieuDe, BorderLayout.WEST);
+                dau.add(btnTao, BorderLayout.EAST);
 
-                // ---------------- the tra cuu ----------------
-                JPanel search = UiKit.card(new FlowLayout(FlowLayout.LEFT, 12, 0));
+                // ---------------- hàng tìm kiếm + nút ----------------
+                cboTt.setFont(UIStyle.font(Font.PLAIN, 13));
 
-                UiKit.field(txtTim);
+                JButton btnTim = UIStyle.nutChinh("Tìm kiếm");
+                JButton btnSua = UIStyle.nutPhu("Sửa");
+                JButton btnXoa = UIStyle.nutXoa("Xóa");
+                JButton btnLamMoi = UIStyle.nutPhu("Làm mới");
 
-                cboTt.setFont(UiKit.F);
+                btnTim.addActionListener(e -> taiLai(maDangChon()));
+                txtTim.addActionListener(e -> taiLai(maDangChon()));
+                cboTt.addActionListener(e -> taiLai(maDangChon()));
+                btnSua.addActionListener(e -> sua());
+                btnXoa.addActionListener(e -> xoa());
+                btnKichHoat.addActionListener(e -> kichHoatHuy());
+                btnLamMoi.addActionListener(e -> lamMoiTatCa());
 
-                JButton btnTra = UiKit.button("Tra cuu", UiKit.NAVY, Color.WHITE);
-                JButton btnXoaLoc = UiKit.button("Xoa bo loc", Color.WHITE, UiKit.NAVY);
+                JPanel loc = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
 
-                btnTra.addActionListener(e -> taiLai());
-                txtTim.addActionListener(e -> taiLai());
+                loc.setOpaque(false);
+                loc.add(UIStyle.nhan("Mã / tên:"));
+                loc.add(txtTim);
+                loc.add(cboTt);
+                loc.add(btnTim);
+                loc.add(btnSua);
+                loc.add(btnXoa);
+                loc.add(btnKichHoat);
+                loc.add(btnLamMoi);
 
-                btnXoaLoc.addActionListener(e -> {
-                        txtTim.setText("");
-                        cboTt.setSelectedIndex(0);
-                        taiLai();
-                });
+                JPanel hangTren = new JPanel(new BorderLayout(0, 8));
 
-                JPanel nut = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+                hangTren.setOpaque(false);
+                hangTren.add(loc, BorderLayout.NORTH);
+                hangTren.add(lblDem, BorderLayout.SOUTH);
 
-                nut.setOpaque(false);
-                nut.setBorder(new EmptyBorder(16, 0, 0, 0));
-                nut.add(btnTra);
-                nut.add(btnXoaLoc);
+                // ---------------- bảng ----------------
+                UIStyle.taoBang(table, 3, 4);
 
-                search.add(UiKit.captioned("Tim ma voucher (ma hoac ten chuong trinh)", txtTim));
-                search.add(UiKit.captioned("Trang thai", cboTt));
-                search.add(nut);
+                table.getColumnModel().getColumn(6).setCellRenderer(new TrangThaiRenderer());
 
-                // ---------------- bang ----------------
-                UiKit.styleTable(table);
-
-                table.getColumnModel().getColumn(6).setCellRenderer(new UiKit.TrangThaiRenderer());
-
-                int[] w = { 60, 200, 230, 80, 100, 190, 100 };
+                int[] w = { 60, 170, 230, 80, 80, 190, 110 };
 
                 for (int i = 0; i < w.length; i++) {
                         table.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
                 }
 
-                JScrollPane sp = new JScrollPane(table);
+                table.getSelectionModel().addListSelectionListener(e -> {
+                        if (!e.getValueIsAdjusting()) {
+                                hienThongTin();
+                        }
+                });
 
-                sp.setBorder(BorderFactory.createLineBorder(UiKit.BORDER));
+                table.addMouseListener(new java.awt.event.MouseAdapter() {
+                        @Override
+                        public void mouseClicked(java.awt.event.MouseEvent e) {
+                                if (e.getClickCount() == 2 && dongDangChon() != null) {
+                                        sua();
+                                }
+                        }
+                });
 
-                sp.getViewport().setBackground(Color.WHITE);
+                // ---------------- khung thông tin chi tiết ----------------
+                khungCT.setOpaque(false);
 
-                // ---------------- thao tac ----------------
-                JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+                JLabel goiY = new JLabel("Chọn một voucher trong bảng để xem thông tin chi tiết.");
 
-                actions.setOpaque(false);
+                goiY.setFont(UIStyle.font(Font.PLAIN, 13));
+                goiY.setForeground(Color.GRAY);
 
-                JButton btnSua = UiKit.button("Sua", UiKit.NAVY, Color.WHITE);
-                JButton btnHuy = UiKit.button("Huy / Kich hoat", UiKit.GREEN, Color.WHITE);
-                JButton btnXoa = UiKit.button("Xoa", Color.WHITE, UiKit.RED);
+                JPanel trong = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
 
-                btnSua.addActionListener(e -> sua());
-                btnHuy.addActionListener(e -> huyKichHoat());
-                btnXoa.addActionListener(e -> xoa());
+                trong.setOpaque(false);
+                trong.add(goiY);
 
-                actions.add(btnSua);
-                actions.add(btnHuy);
-                actions.add(btnXoa);
+                khungCT.add(trong, "TRONG");
+                khungCT.add(taoNoiDungChiTiet(), "CO");
+                khungCT.setPreferredSize(new Dimension(100, 130));
 
-                JPanel top = new JPanel();
+                JPanel chiTiet = new JPanel(new BorderLayout(0, 6));
 
-                top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
+                chiTiet.setOpaque(false);
+                chiTiet.setBorder(new javax.swing.border.MatteBorder(1, 0, 0, 0, UIStyle.LINE));
 
-                top.setOpaque(false);
+                JLabel tdCT = UIStyle.nhan("Thông tin voucher");
 
-                top.add(stats);
-                top.add(Box.createVerticalStrut(8));
-                top.add(search);
+                tdCT.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-                JPanel center = new JPanel(new BorderLayout(0, 8));
+                chiTiet.add(tdCT, BorderLayout.NORTH);
+                chiTiet.add(khungCT, BorderLayout.CENTER);
 
-                center.setOpaque(false);
+                // ---------------- thẻ trắng chứa tất cả ----------------
+                JPanel the = UIStyle.the();
 
-                center.setBorder(new EmptyBorder(12, 25, 15, 25));
+                the.setLayout(new BorderLayout(0, 10));
 
-                center.add(top, BorderLayout.NORTH);
-                center.add(sp, BorderLayout.CENTER);
-                center.add(actions, BorderLayout.SOUTH);
+                the.add(hangTren, BorderLayout.NORTH);
+                the.add(UIStyle.cuon(table), BorderLayout.CENTER);
+                the.add(chiTiet, BorderLayout.SOUTH);
 
-                form = new VoucherForm(
-                                () -> {
-                                        dongPopup();
-                                        taiLai();
-                                });
+                add(dau, BorderLayout.NORTH);
+                add(the, BorderLayout.CENTER);
 
-                danhSach.add(center, BorderLayout.CENTER);
-
-                add(danhSach, BorderLayout.CENTER);
-
-                taiLai();
+                taiLai(null);
         }
 
-        // Goi khi mo man hinh
-        public void lamMoi() {
+        // =========================================================
+        // GIAO DIỆN PHỤ
+        // =========================================================
 
-                dongPopup();
+        private static JLabel giaTri() {
 
-                taiLai();
+                JLabel l = new JLabel("-");
+
+                l.setFont(UIStyle.font(Font.BOLD, 13));
+
+                return l;
         }
 
-        private void dongPopup() {
+        private static JPanel cap(String tieuDe, JLabel gt) {
 
-                if (dlgForm != null) {
+                JPanel p = new JPanel();
 
-                        dlgForm.dispose();
+                p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+                p.setOpaque(false);
 
-                        dlgForm = null;
+                JLabel l = new JLabel(tieuDe);
+
+                l.setFont(UIStyle.font(Font.PLAIN, 12));
+                l.setForeground(Color.GRAY);
+                l.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                gt.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                p.add(l);
+                p.add(Box.createVerticalStrut(2));
+                p.add(gt);
+
+                return p;
+        }
+
+        private JPanel taoNoiDungChiTiet() {
+
+                JPanel luoi = new JPanel(new GridLayout(2, 4, 18, 8));
+
+                luoi.setOpaque(false);
+
+                luoi.add(cap("Mã voucher", vMa));
+                luoi.add(cap("Tên chương trình", vTen));
+                luoi.add(cap("Mức giảm", vGiam));
+                luoi.add(cap("Trạng thái", vTrangThai));
+                luoi.add(cap("Từ ngày", vTu));
+                luoi.add(cap("Đến ngày", vDen));
+                luoi.add(cap("Đã dùng", vDaDung));
+                luoi.add(cap("Còn lại", vConLai));
+
+                vDieuKien.setFont(UIStyle.font(Font.PLAIN, 13));
+
+                JPanel dk = new JPanel(new BorderLayout(0, 2));
+
+                dk.setOpaque(false);
+
+                JLabel l = new JLabel("Điều kiện áp dụng");
+
+                l.setFont(UIStyle.font(Font.PLAIN, 12));
+                l.setForeground(Color.GRAY);
+
+                dk.add(l, BorderLayout.NORTH);
+                dk.add(vDieuKien, BorderLayout.CENTER);
+
+                JPanel p = new JPanel(new BorderLayout(0, 8));
+
+                p.setOpaque(false);
+                p.add(luoi, BorderLayout.NORTH);
+                p.add(dk, BorderLayout.CENTER);
+
+                return p;
+        }
+
+        // Tô màu ô trạng thái
+        private static class TrangThaiRenderer extends DefaultTableCellRenderer {
+
+                @Override
+                public Component getTableCellRendererComponent(
+                                JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+
+                        JLabel l = (JLabel) super.getTableCellRendererComponent(t, v, false, false, r, c);
+
+                        Color nen;
+                        Color chu;
+
+                        switch (String.valueOf(v)) {
+                                case "Đang chạy":
+                                        nen = new Color(217, 245, 229);
+                                        chu = new Color(12, 107, 64);
+                                        break;
+                                case "Sắp chạy":
+                                        nen = new Color(230, 232, 236);
+                                        chu = new Color(51, 51, 51);
+                                        break;
+                                case "Hết hạn":
+                                case "Hết lượt":
+                                        nen = new Color(255, 240, 205);
+                                        chu = new Color(146, 90, 0);
+                                        break;
+                                case "Đã hủy":
+                                        nen = new Color(255, 217, 217);
+                                        chu = new Color(180, 35, 24);
+                                        break;
+                                default:
+                                        nen = Color.WHITE;
+                                        chu = Color.BLACK;
+                        }
+
+                        l.setOpaque(true);
+                        l.setBackground(nen);
+                        l.setForeground(chu);
+                        l.setHorizontalAlignment(SwingConstants.CENTER);
+
+                        return l;
                 }
         }
 
         // =========================================================
-        // DANH SACH
+        // DỮ LIỆU
         // =========================================================
 
-        private JPanel theThongKe(String title, String value) {
+        private static String phanTram(double v) {
 
-                JPanel p = UiKit.card(new GridLayout(2, 1));
+                return (v == Math.floor(v) ? String.valueOf((long) v) : String.format(Locale.US, "%.2f", v)) + "%";
+        }
 
-                p.add(UiKit.label(title, UiKit.F, UiKit.MUTED));
-                p.add(UiKit.label(value, UiKit.BIG, UiKit.NAVY));
+        // đổi mã trạng thái (không dấu) sang chữ hiển thị
+        private static String tenTrangThai(String ma) {
 
-                return p;
+                switch (ma) {
+                        case "Dang chay":
+                                return "Đang chạy";
+                        case "Sap chay":
+                                return "Sắp chạy";
+                        case "Het han":
+                                return "Hết hạn";
+                        case "Het luot":
+                                return "Hết lượt";
+                        default:
+                                return "Đã hủy";
+                }
         }
 
         private static String hieuLuc(Voucher v) {
@@ -202,57 +342,70 @@ public class QuanLyVoucher extends JPanel {
                 LocalDate kt = v.getNgayKetThuc();
 
                 if (bd == null && kt == null) {
-                        return "Khong gioi han";
+                        return "Không giới hạn";
                 }
 
                 if (bd == null) {
-                        return "Den " + kt.format(D);
+                        return "Đến " + kt.format(D);
                 }
 
                 if (kt == null) {
-                        return "Tu " + bd.format(D);
+                        return "Từ " + bd.format(D);
                 }
 
                 return bd.format(D) + " - " + kt.format(D);
         }
 
-        private static String phanTram(double v) {
+        private Voucher dongDangChon() {
 
-                return (v == Math.floor(v) ? String.valueOf((long) v) : String.format(Locale.US, "%.2f", v)) + "%";
-        }
+                int row = table.getSelectedRow();
 
-        public void taiLai() {
-
-                // ---- thong ke (tren toan bo voucher) ----
-                int dangChay = 0;
-
-                for (Voucher v : voucherDAO.getAll("")) {
-
-                        if (v.getTrangThaiText().equals("Dang chay")) {
-                                dangChay++;
-                        }
+                if (row < 0 || row >= dsHienThi.size()) {
+                        return null;
                 }
 
-                double[] hd = voucherDAO.thongKeHoaDon();
+                return dsHienThi.get(row);
+        }
 
-                stats.removeAll();
+        private String maDangChon() {
 
-                stats.add(theThongKe("Dang hoat dong", String.valueOf(dangChay)));
-                stats.add(theThongKe("Luot su dung thang", UiKit.tien((long) hd[0])));
-                stats.add(theThongKe("Tong gia tri uu dai", UiKit.tien((long) hd[1]) + " d"));
-                stats.add(theThongKe("Hoa don dung voucher", String.format(Locale.US, "%.1f%%", hd[2])));
+                Voucher v = dongDangChon();
 
-                stats.revalidate();
-                stats.repaint();
+                return v == null ? null : v.getMaVoucher();
+        }
 
-                // ---- bang ----
-                String loc = (String) cboTt.getSelectedItem();
+        // Gọi khi mở màn hình (TrangChu): nạp lại dữ liệu, giữ dòng đang chọn
+        public void lamMoi() {
 
-                model.setRowCount(0);
+                taiLai(maDangChon());
+        }
+
+        // Nút "Làm mới": xóa bộ lọc, bỏ chọn, nạp lại từ CSDL
+        private void lamMoiTatCa() {
+
+                txtTim.setText("");
+
+                cboTt.setSelectedIndex(0);
+
+                table.clearSelection();
+
+                taiLai(null);
+        }
+
+        // Nạp bảng theo bộ lọc; chonMa != null thì chọn lại dòng đó nếu còn
+        public void taiLai(String chonMa) {
+
+                String loc = LOC_MA[cboTt.getSelectedIndex()];
+
+                ArrayList<Voucher> tatCa = voucherDAO.getAll(txtTim.getText());
 
                 dsHienThi = new ArrayList<>();
 
-                for (Voucher v : voucherDAO.getAll(txtTim.getText())) {
+                table.clearSelection();
+
+                model.setRowCount(0);
+
+                for (Voucher v : tatCa) {
 
                         String tt = v.getTrangThaiText();
 
@@ -273,61 +426,84 @@ public class QuanLyVoucher extends JPanel {
                                         phanTram(v.getPhanTramGiam()),
                                         daDung,
                                         hieuLuc(v),
-                                        tt });
-                }
-        }
-
-        private Voucher dongDangChon() {
-
-                int row = table.getSelectedRow();
-
-                if (row < 0 || row >= dsHienThi.size()) {
-
-                        JOptionPane.showMessageDialog(this, "Hay chon 1 voucher trong bang.");
-
-                        return null;
+                                        tenTrangThai(tt) });
                 }
 
-                return dsHienThi.get(row);
+                lblDem.setText(dsHienThi.size() + " voucher");
+
+                if (chonMa != null) {
+
+                        for (int i = 0; i < dsHienThi.size(); i++) {
+
+                                if (dsHienThi.get(i).getMaVoucher().equals(chonMa)) {
+
+                                        table.setRowSelectionInterval(i, i);
+
+                                        table.scrollRectToVisible(table.getCellRect(i, 0, true));
+
+                                        break;
+                                }
+                        }
+                }
+
+                hienThongTin();
         }
+
+        // Hiện thông tin của dòng đang chọn ở khung bên dưới bảng + đổi chữ nút Kích hoạt / Hủy
+        private void hienThongTin() {
+
+                Voucher v = dongDangChon();
+
+                if (v == null) {
+
+                        btnKichHoat.setText("Kích hoạt / Hủy");
+
+                        cardCT.show(khungCT, "TRONG");
+
+                        return;
+                }
+
+                btnKichHoat.setText(v.isTrangThai() ? "Hủy voucher" : "Kích hoạt");
+
+                vMa.setText(v.getMaVoucher());
+                vTen.setText(v.getTenVoucher());
+                vGiam.setText(phanTram(v.getPhanTramGiam()));
+                vTrangThai.setText(tenTrangThai(v.getTrangThaiText()));
+                vTu.setText(v.getNgayBatDau() == null ? "Không giới hạn" : v.getNgayBatDau().format(D));
+                vDen.setText(v.getNgayKetThuc() == null ? "Không giới hạn" : v.getNgayKetThuc().format(D));
+                vDaDung.setText(v.getDaDung() + " lượt");
+
+                vConLai.setText(v.getSoLuongToiDa() == null
+                                ? "Không giới hạn"
+                                : Math.max(0, v.getSoLuongToiDa() - v.getDaDung()) + " lượt");
+
+                String dk = v.getDieuKien() == null || v.getDieuKien().trim().isEmpty()
+                                ? "Không có điều kiện."
+                                : v.getDieuKien();
+
+                vDieuKien.setText("<html><body style='width:760px'>" + dk
+                                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                                + "</body></html>");
+
+                cardCT.show(khungCT, "CO");
+        }
+
+        // =========================================================
+        // TẠO / SỬA / XÓA / KÍCH HOẠT
+        // =========================================================
 
         private void sua() {
 
                 Voucher v = dongDangChon();
 
-                if (v != null) {
-                        moForm(v);
-                }
-        }
-
-        private void huyKichHoat() {
-
-                Voucher v = dongDangChon();
-
                 if (v == null) {
-                        return;
-                }
 
-                boolean hoatDong = v.isTrangThai();
-
-                String hoi = hoatDong
-                                ? "Huy voucher " + v.getMaVoucher() + "? (Van giu trong danh sach)"
-                                : "Kich hoat lai voucher " + v.getMaVoucher() + "?";
-
-                if (JOptionPane.showConfirmDialog(this, hoi, "Xac nhan",
-                                JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
-                        return;
-                }
-
-                if (!voucherDAO.doiTrangThai(v.getMaVoucher(), !hoatDong)) {
-
-                        JOptionPane.showMessageDialog(this, "Cap nhat that bai.", "Loi",
-                                        JOptionPane.ERROR_MESSAGE);
+                        UIStyle.canhBao(this, "Hãy chọn một voucher trong bảng để sửa.");
 
                         return;
                 }
 
-                taiLai();
+                moDialog(v);
         }
 
         private void xoa() {
@@ -335,13 +511,13 @@ public class QuanLyVoucher extends JPanel {
                 Voucher v = dongDangChon();
 
                 if (v == null) {
+
+                        UIStyle.canhBao(this, "Hãy chọn một voucher trong bảng để xóa.");
+
                         return;
                 }
 
-                if (JOptionPane.showConfirmDialog(this,
-                                "Xoa han voucher " + v.getMaVoucher() + " - " + v.getTenVoucher() + "?",
-                                "Xac nhan xoa", JOptionPane.YES_NO_OPTION,
-                                JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+                if (!UIStyle.xacNhan(this, "Xóa hẳn voucher " + v.getMaVoucher() + " - " + v.getTenVoucher() + "?")) {
                         return;
                 }
 
@@ -349,199 +525,326 @@ public class QuanLyVoucher extends JPanel {
 
                 if (loi != null) {
 
-                        JOptionPane.showMessageDialog(this, loi, "Khong xoa duoc",
-                                        JOptionPane.WARNING_MESSAGE);
+                        UIStyle.canhBao(this, loi);
 
                         return;
                 }
 
-                taiLai();
+                taiLai(null);
+        }
+
+        // Voucher đang hoạt động -> Hủy; đã hủy -> Kích hoạt (chuyển sang "Đang chạy")
+        private void kichHoatHuy() {
+
+                Voucher v = dongDangChon();
+
+                if (v == null) {
+
+                        UIStyle.canhBao(this, "Hãy chọn một voucher trong bảng.");
+
+                        return;
+                }
+
+                boolean hoatDong = v.isTrangThai();
+
+                // ---------- HỦY ----------
+                if (hoatDong) {
+
+                        if (!UIStyle.xacNhan(this, "Hủy voucher " + v.getMaVoucher()
+                                        + "? (Vẫn giữ trong danh sách, có thể kích hoạt lại)")) {
+                                return;
+                        }
+
+                        if (!voucherDAO.doiTrangThai(v.getMaVoucher(), false)) {
+
+                                UIStyle.canhBao(this, "Cập nhật thất bại. Xem lỗi chi tiết trong Console.");
+
+                                return;
+                        }
+
+                        taiLai(v.getMaVoucher());
+
+                        return;
+                }
+
+                // ---------- KÍCH HOẠT ----------
+                LocalDate homNay = LocalDate.now();
+
+                // hết hạn hoặc hết lượt thì kích hoạt cũng không chạy được -> mời người dùng sửa
+                boolean hetHan = v.getNgayKetThuc() != null && v.getNgayKetThuc().isBefore(homNay);
+                boolean hetLuot = v.getSoLuongToiDa() != null && v.getDaDung() >= v.getSoLuongToiDa();
+
+                if (hetHan || hetLuot) {
+
+                        String lyDo = hetHan
+                                        ? "đã quá ngày kết thúc (" + v.getNgayKetThuc().format(D) + ")"
+                                        : "đã dùng hết lượt (" + v.getDaDung() + "/" + v.getSoLuongToiDa() + ")";
+
+                        if (UIStyle.xacNhan(this, "Voucher " + v.getMaVoucher() + " " + lyDo
+                                        + " nên chưa thể chạy.\nBạn có muốn mở form sửa để gia hạn / tăng lượt không?")) {
+                                moDialog(v);
+                        }
+
+                        return;
+                }
+
+                boolean chuaToiNgay = v.getNgayBatDau() != null && v.getNgayBatDau().isAfter(homNay);
+
+                String hoi = "Kích hoạt voucher " + v.getMaVoucher() + "?";
+
+                if (chuaToiNgay) {
+                        hoi += "\nVoucher bắt đầu từ " + v.getNgayBatDau().format(D)
+                                        + ", ngày bắt đầu sẽ được đổi thành hôm nay (" + homNay.format(D)
+                                        + ") để chạy ngay.";
+                }
+
+                if (!UIStyle.xacNhan(this, hoi)) {
+                        return;
+                }
+
+                boolean ok;
+
+                if (chuaToiNgay) {
+
+                        // dời ngày bắt đầu về hôm nay + bật trạng thái trong cùng một lần cập nhật
+                        Voucher moi = new Voucher(
+                                        v.getMaVoucher(), v.getTenVoucher(), v.getPhanTramGiam(),
+                                        v.getDieuKien(), true, homNay, v.getNgayKetThuc(), v.getSoLuongToiDa());
+
+                        ok = voucherDAO.sua(moi);
+
+                } else {
+
+                        ok = voucherDAO.doiTrangThai(v.getMaVoucher(), true);
+                }
+
+                if (!ok) {
+
+                        UIStyle.canhBao(this, "Cập nhật thất bại. Xem lỗi chi tiết trong Console.");
+
+                        return;
+                }
+
+                taiLai(v.getMaVoucher());
+        }
+
+        // goc = null -> tạo mới; goc != null -> sửa voucher đó
+        private void moDialog(Voucher goc) {
+
+                VoucherDialog dlg = new VoucherDialog(SwingUtilities.getWindowAncestor(this), goc, voucherDAO);
+
+                dlg.setVisible(true);
+
+                if (dlg.isDaLuu()) {
+                        taiLai(dlg.getMaDaLuu());
+                }
         }
 
         // =========================================================
-        // MO MAN HINH TAO / SUA
+        // HỘP THOẠI TẠO / SỬA VOUCHER (class lồng)
         // =========================================================
 
-        private void moForm(Voucher goc) {
+        public static class VoucherDialog extends JDialog {
 
-                form.mo(goc);
+                private static final Color VIEN = new Color(110, 130, 160);
+                private static final Color XAM = new Color(110, 120, 135);
+                private static final Font F14 = new Font("Segoe UI", Font.PLAIN, 14);
+                private static final Font NHAN = new Font("Segoe UI", Font.BOLD, 12);
 
-                Window owner = SwingUtilities.getWindowAncestor(this);
+                private final VoucherDAO voucherDAO;
+                private final Voucher goc;
 
-                String tieuDe = goc == null ? "T\u1ea1o Voucher" : "S\u1eeda Voucher";
-
-                dlgForm = new JDialog(owner, tieuDe, Dialog.ModalityType.APPLICATION_MODAL);
-
-                dlgForm.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
-                JPanel content = new JPanel(new BorderLayout());
-
-                content.setBackground(UiKit.LIGHT_BLUE);
-
-                content.setBorder(new EmptyBorder(14, 14, 14, 14));
-
-                form.setPreferredSize(new Dimension(540, 560));
-
-                content.add(form, BorderLayout.CENTER);
-
-                dlgForm.setContentPane(content);
-
-                // nhan ESC de dong popup
-                dlgForm.getRootPane().registerKeyboardAction(
-                                e -> dongPopup(),
-                                KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
-                                JComponent.WHEN_IN_FOCUSED_WINDOW);
-
-                dlgForm.pack();
-
-                dlgForm.setLocationRelativeTo(owner);
-
-                dlgForm.setVisible(true);
-        }
-
-        // =========================================================
-        // FORM TAO / SUA VOUCHER (class long, hien trong popup)
-        // =========================================================
-
-        // Form tao / sua voucher: hien trong cua so popup tren man Quan ly voucher
-        public static class VoucherForm extends JPanel {
-
-                private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-                private final VoucherDAO voucherDAO = new VoucherDAO();
-
-                private final Runnable dong;
-
-                // null = dang tao moi, khac null = dang sua voucher nay
-                private Voucher goc = null;
-
-                private final JLabel lblTieuDe = UiKit.label("Tao voucher", new Font("Segoe UI", Font.BOLD, 16),
-                                UiKit.NAVY);
-                private final JLabel lblMa = UiKit.label(" ", UiKit.F, UiKit.MUTED);
+                private boolean daLuu = false;
+                private String maDaLuu = null;
 
                 private final JTextField txtTen = new JTextField();
                 private final JTextField txtPt = new JTextField();
                 private final JTextField txtBd = new JTextField();
                 private final JTextField txtKt = new JTextField();
                 private final JTextField txtSl = new JTextField();
-                private final JTextArea txtDk = new JTextArea(3, 20);
-                private final JCheckBox chkHoatDong = new JCheckBox("Dang kich hoat", true);
+                private final JComboBox<String> cboTt = new JComboBox<>(new String[] { "Đang kích hoạt", "Đã hủy" });
+                private final JTextArea txtDk = new JTextArea(3, 30);
 
-                // dong: chay khi bam Dong / Huy / sau khi luu thanh cong (dong popup, nap lai
-                // bang)
-                public VoucherForm(Runnable dong) {
+                public VoucherDialog(Window owner, Voucher goc, VoucherDAO voucherDAO) {
 
-                        this.dong = dong;
+                        super(owner, goc == null ? "Tạo Voucher" : "Sửa Voucher",
+                                        Dialog.ModalityType.APPLICATION_MODAL);
 
-                        setLayout(new BorderLayout(0, 8));
+                        this.goc = goc;
+                        this.voucherDAO = voucherDAO;
 
-                        setBackground(Color.WHITE);
+                        setSize(760, 600);
+                        setResizable(false);
+                        setLocationRelativeTo(owner);
 
-                        setBorder(new javax.swing.border.CompoundBorder(
-                                        new javax.swing.border.LineBorder(UiKit.BORDER, 1, true),
-                                        new EmptyBorder(12, 14, 12, 14)));
+                        kieu(txtTen);
+                        kieu(txtPt);
+                        kieu(txtBd);
+                        kieu(txtKt);
+                        kieu(txtSl);
 
-                        setPreferredSize(new Dimension(380, 100));
+                        cboTt.setFont(F14);
+                        cboTt.setBackground(Color.WHITE);
+                        cboTt.setPreferredSize(new Dimension(100, 36));
 
-                        // ---------------- tieu de ----------------
-                        JPanel tieuDe = new JPanel(new GridLayout(2, 1));
-
-                        tieuDe.setOpaque(false);
-
-                        tieuDe.add(lblTieuDe);
-                        tieuDe.add(lblMa);
-
-                        JButton btnDong = UiKit.button("Dong", Color.WHITE, UiKit.NAVY);
-
-                        btnDong.addActionListener(e -> dong.run());
-
-                        JPanel head = new JPanel(new BorderLayout());
-
-                        head.setOpaque(false);
-
-                        head.add(tieuDe, BorderLayout.WEST);
-                        head.add(btnDong, BorderLayout.EAST);
-
-                        // ---------------- noi dung ----------------
-                        UiKit.field(txtTen);
-                        UiKit.field(txtPt);
-                        UiKit.field(txtBd);
-                        UiKit.field(txtKt);
-                        UiKit.field(txtSl);
-
-                        txtDk.setFont(UiKit.F);
+                        txtDk.setFont(F14);
                         txtDk.setLineWrap(true);
                         txtDk.setWrapStyleWord(true);
+                        txtDk.setBorder(new EmptyBorder(6, 10, 6, 10));
 
                         JScrollPane dk = new JScrollPane(txtDk);
 
-                        dk.setBorder(BorderFactory.createLineBorder(UiKit.BORDER));
+                        dk.setBorder(new LineBorder(VIEN, 1));
+                        dk.setPreferredSize(new Dimension(100, 80));
 
-                        chkHoatDong.setOpaque(false);
-                        chkHoatDong.setFont(UiKit.F);
+                        JLabel ghiChu = new JLabel("Để trống ngày / số lượt = không giới hạn.");
 
-                        JPanel ngay = new JPanel(new GridLayout(1, 2, 10, 0));
-
-                        ngay.setOpaque(false);
-
-                        ngay.add(UiKit.captioned("Tu ngay (dd/MM/yyyy)", txtBd));
-                        ngay.add(UiKit.captioned("Den ngay (dd/MM/yyyy)", txtKt));
-
-                        JPanel giam = new JPanel(new GridLayout(1, 2, 10, 0));
-
-                        giam.setOpaque(false);
-
-                        giam.add(UiKit.captioned("Muc giam (%) *", txtPt));
-                        giam.add(UiKit.captioned("So luot toi da", txtSl));
+                        ghiChu.setFont(NHAN);
+                        ghiChu.setForeground(XAM);
 
                         JPanel body = new JPanel();
 
                         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-
                         body.setOpaque(false);
+                        body.setBorder(new EmptyBorder(24, 40, 10, 40));
 
-                        them(body, UiKit.captioned("Ten chuong trinh *", txtTen));
+                        them(body, muc(goc == null ? "Thông tin Voucher"
+                                        : "Thông tin Voucher (" + goc.getMaVoucher() + ")"));
                         them(body, Box.createVerticalStrut(8));
-                        them(body, giam);
+                        them(body, hai(cot("Tên chương trình: *", txtTen), cot("Mức giảm (%): *", txtPt)));
                         them(body, Box.createVerticalStrut(8));
-                        them(body, UiKit.captioned("Dieu kien ap dung", dk));
+                        them(body, cot("Điều kiện áp dụng:", dk));
+                        them(body, Box.createVerticalStrut(14));
+                        them(body, muc("Hiệu lực & Giới hạn"));
                         them(body, Box.createVerticalStrut(8));
-                        them(body, ngay);
-                        them(body, Box.createVerticalStrut(4));
-                        them(body, UiKit.label("De trong ngay / so luot = khong gioi han.", UiKit.F, UiKit.MUTED));
+                        them(body, hai(cot("Từ ngày: (dd/MM/yyyy)", txtBd), cot("Đến ngày: (dd/MM/yyyy)", txtKt)));
                         them(body, Box.createVerticalStrut(8));
-                        them(body, chkHoatDong);
+                        them(body, hai(cot("Số lượt tối đa:", txtSl), cot("Trạng thái:", cboTt)));
+                        them(body, Box.createVerticalStrut(6));
+                        them(body, ghiChu);
 
-                        // body nam o phia tren de cac o khong bi gian chieu cao
-                        JPanel wrap = new JPanel(new BorderLayout());
+                        JPanel top = new JPanel(new BorderLayout());
 
-                        wrap.setOpaque(false);
+                        top.setOpaque(false);
+                        top.add(body, BorderLayout.NORTH);
 
-                        wrap.add(body, BorderLayout.NORTH);
+                        // ---------------- nút ----------------
+                        JButton btnHuy = nut("Hủy", new Color(138, 144, 153));
+                        JButton btnLuu = nut(goc == null ? "Thêm mới" : "Lưu thay đổi", new Color(15, 42, 68));
 
-                        JScrollPane sp = new JScrollPane(wrap);
-
-                        sp.setBorder(null);
-
-                        sp.getViewport().setBackground(Color.WHITE);
-
-                        // ---------------- nut ----------------
-                        JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-
-                        nut.setOpaque(false);
-
-                        JButton btnHuy = UiKit.button("Huy", Color.WHITE, UiKit.NAVY);
-                        JButton btnLuu = UiKit.button("Luu voucher", UiKit.GREEN, Color.WHITE);
-
-                        btnHuy.addActionListener(e -> dong.run());
+                        btnHuy.addActionListener(e -> dispose());
                         btnLuu.addActionListener(e -> luu());
 
-                        nut.add(btnHuy);
-                        nut.add(btnLuu);
+                        JPanel hangNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 
-                        add(head, BorderLayout.NORTH);
-                        add(sp, BorderLayout.CENTER);
-                        add(nut, BorderLayout.SOUTH);
+                        hangNut.setOpaque(false);
+                        hangNut.setBorder(new EmptyBorder(6, 40, 24, 40));
+                        hangNut.add(btnHuy);
+                        hangNut.add(btnLuu);
+
+                        JPanel root = new JPanel(new BorderLayout());
+
+                        root.setBackground(Color.WHITE);
+                        root.add(top, BorderLayout.CENTER);
+                        root.add(hangNut, BorderLayout.SOUTH);
+
+                        setContentPane(root);
+
+                        // ---- đổ dữ liệu khi sửa ----
+                        if (goc != null) {
+
+                                txtTen.setText(goc.getTenVoucher());
+
+                                txtPt.setText(phanTram(goc.getPhanTramGiam()).replace("%", ""));
+
+                                txtDk.setText(goc.getDieuKien() == null ? "" : goc.getDieuKien());
+
+                                txtBd.setText(goc.getNgayBatDau() == null ? "" : goc.getNgayBatDau().format(D));
+
+                                txtKt.setText(goc.getNgayKetThuc() == null ? "" : goc.getNgayKetThuc().format(D));
+
+                                txtSl.setText(goc.getSoLuongToiDa() == null ? "" : String.valueOf(goc.getSoLuongToiDa()));
+
+                                cboTt.setSelectedIndex(goc.isTrangThai() ? 0 : 1);
+                        }
+                }
+
+                public boolean isDaLuu() {
+
+                        return daLuu;
+                }
+
+                public String getMaDaLuu() {
+
+                        return maDaLuu;
+                }
+
+                // ---------------- thành phần giao diện ----------------
+
+                private static JPanel cot(String nhan, JComponent c) {
+
+                        JPanel p = new JPanel(new BorderLayout(0, 4));
+
+                        p.setOpaque(false);
+
+                        JLabel l = new JLabel(nhan);
+
+                        l.setFont(NHAN);
+                        l.setForeground(XAM);
+
+                        p.add(l, BorderLayout.NORTH);
+                        p.add(c, BorderLayout.CENTER);
+
+                        return p;
+                }
+
+                private static JPanel hai(JComponent a, JComponent b) {
+
+                        JPanel p = new JPanel(new GridLayout(1, 2, 20, 0));
+
+                        p.setOpaque(false);
+
+                        p.add(a);
+                        p.add(b);
+
+                        return p;
+                }
+
+                private static JLabel muc(String text) {
+
+                        JLabel l = new JLabel(text);
+
+                        l.setFont(new Font("Segoe UI", Font.BOLD, 15));
+                        l.setForeground(new Color(20, 30, 45));
+
+                        return l;
+                }
+
+                private static void kieu(JTextField t) {
+
+                        t.setFont(F14);
+
+                        t.setBorder(new CompoundBorder(
+                                        new LineBorder(VIEN, 1),
+                                        new EmptyBorder(6, 10, 6, 10)));
+
+                        t.setPreferredSize(new Dimension(100, 36));
+                }
+
+                private static JButton nut(String text, Color nen) {
+
+                        JButton b = new JButton(text);
+
+                        b.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                        b.setForeground(Color.WHITE);
+                        b.setBackground(nen);
+                        b.setOpaque(true);
+                        b.setBorderPainted(false);
+                        b.setFocusPainted(false);
+                        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                        b.setPreferredSize(new Dimension(Math.max(110, b.getPreferredSize().width + 10), 38));
+
+                        return b;
                 }
 
                 private static void them(JPanel p, Component c) {
@@ -553,52 +856,11 @@ public class QuanLyVoucher extends JPanel {
                         p.add(c);
                 }
 
-                // Mo form: goc = null -> tao moi (de trong); goc != null -> do du lieu de sua
-                public void mo(Voucher goc) {
-
-                        this.goc = goc;
-
-                        lblTieuDe.setText(goc == null ? "Tao voucher" : "Sua voucher");
-
-                        lblMa.setText(goc == null ? "Ma se tu dong sinh (VC001, VC002...)"
-                                        : "Ma: " + goc.getMaVoucher());
-
-                        if (goc == null) {
-
-                                txtTen.setText("");
-                                txtPt.setText("");
-                                txtDk.setText("");
-                                txtBd.setText("");
-                                txtKt.setText("");
-                                txtSl.setText("");
-
-                                chkHoatDong.setSelected(true);
-
-                                return;
-                        }
-
-                        txtTen.setText(goc.getTenVoucher());
-
-                        txtPt.setText(phanTram(goc.getPhanTramGiam()).replace("%", ""));
-
-                        txtDk.setText(goc.getDieuKien() == null ? "" : goc.getDieuKien());
-
-                        txtBd.setText(goc.getNgayBatDau() == null ? "" : goc.getNgayBatDau().format(D));
-
-                        txtKt.setText(goc.getNgayKetThuc() == null ? "" : goc.getNgayKetThuc().format(D));
-
-                        txtSl.setText(goc.getSoLuongToiDa() == null ? "" : String.valueOf(goc.getSoLuongToiDa()));
-
-                        chkHoatDong.setSelected(goc.isTrangThai());
-                }
-
-                // =========================================================
-                // LUU
-                // =========================================================
+                // ---------------- lưu ----------------
 
                 private void canhBao(String msg) {
 
-                        JOptionPane.showMessageDialog(this, msg, "Du lieu chua hop le",
+                        JOptionPane.showMessageDialog(this, msg, "Dữ liệu chưa hợp lệ",
                                         JOptionPane.WARNING_MESSAGE);
                 }
 
@@ -607,7 +869,7 @@ public class QuanLyVoucher extends JPanel {
                         String ten = txtTen.getText().trim();
 
                         if (ten.isEmpty() || ten.length() > 50) {
-                                canhBao("Ten chuong trinh bat buoc nhap (toi da 50 ky tu).");
+                                canhBao("Tên chương trình bắt buộc nhập (tối đa 50 ký tự).");
                                 return;
                         }
 
@@ -616,12 +878,12 @@ public class QuanLyVoucher extends JPanel {
                         try {
                                 pt = Double.parseDouble(txtPt.getText().trim().replace(',', '.'));
                         } catch (NumberFormatException ex) {
-                                canhBao("Muc giam phai la so, vi du 10 hoac 12.5");
+                                canhBao("Mức giảm phải là số, ví dụ 10 hoặc 12.5");
                                 return;
                         }
 
                         if (pt <= 0 || pt > 100) {
-                                canhBao("Muc giam phai lon hon 0 va khong qua 100 (%).");
+                                canhBao("Mức giảm phải lớn hơn 0 và không quá 100 (%).");
                                 return;
                         }
 
@@ -630,7 +892,7 @@ public class QuanLyVoucher extends JPanel {
                         String dk = txtDk.getText().trim();
 
                         if (dk.length() > 255) {
-                                canhBao("Dieu kien toi da 255 ky tu.");
+                                canhBao("Điều kiện tối đa 255 ký tự.");
                                 return;
                         }
 
@@ -647,13 +909,13 @@ public class QuanLyVoucher extends JPanel {
 
                         } catch (DateTimeParseException ex) {
 
-                                canhBao("Ngay phai dang dd/MM/yyyy, vi du 01/11/2026.");
+                                canhBao("Ngày phải có dạng dd/MM/yyyy, ví dụ 01/11/2026.");
 
                                 return;
                         }
 
                         if (bd != null && kt != null && kt.isBefore(bd)) {
-                                canhBao("Ngay ket thuc phai sau ngay bat dau.");
+                                canhBao("Ngày kết thúc phải sau ngày bắt đầu.");
                                 return;
                         }
 
@@ -666,18 +928,18 @@ public class QuanLyVoucher extends JPanel {
                                 try {
                                         sl = Integer.parseInt(s);
                                 } catch (NumberFormatException ex) {
-                                        canhBao("So luot toi da phai la so nguyen.");
+                                        canhBao("Số lượt tối đa phải là số nguyên.");
                                         return;
                                 }
 
                                 if (sl <= 0) {
-                                        canhBao("So luot toi da phai lon hon 0.");
+                                        canhBao("Số lượt tối đa phải lớn hơn 0.");
                                         return;
                                 }
 
                                 if (goc != null && sl < goc.getDaDung()) {
-                                        canhBao("Voucher da dung " + goc.getDaDung()
-                                                        + " luot, so luot toi da khong the nho hon.");
+                                        canhBao("Voucher đã dùng " + goc.getDaDung()
+                                                        + " lượt, số lượt tối đa không thể nhỏ hơn.");
                                         return;
                                 }
                         }
@@ -685,7 +947,7 @@ public class QuanLyVoucher extends JPanel {
                         Voucher v = new Voucher(
                                         goc == null ? null : goc.getMaVoucher(),
                                         ten, pt, dk.isEmpty() ? null : dk,
-                                        chkHoatDong.isSelected(), bd, kt, sl);
+                                        cboTt.getSelectedIndex() == 0, bd, kt, sl);
 
                         if (goc == null) {
 
@@ -694,244 +956,35 @@ public class QuanLyVoucher extends JPanel {
                                 if (ma == null) {
 
                                         JOptionPane.showMessageDialog(this,
-                                                        "Luu that bai. Xem loi chi tiet trong Console.",
-                                                        "Loi", JOptionPane.ERROR_MESSAGE);
+                                                        "Lưu thất bại. Xem lỗi chi tiết trong Console.",
+                                                        "Lỗi", JOptionPane.ERROR_MESSAGE);
 
                                         return;
                                 }
 
-                                JOptionPane.showMessageDialog(this, "Da tao voucher " + ma + ".");
+                                JOptionPane.showMessageDialog(this, "Đã tạo voucher " + ma + ".");
+
+                                maDaLuu = ma;
 
                         } else {
 
                                 if (!voucherDAO.sua(v)) {
 
                                         JOptionPane.showMessageDialog(this,
-                                                        "Luu that bai. Xem loi chi tiet trong Console.",
-                                                        "Loi", JOptionPane.ERROR_MESSAGE);
+                                                        "Lưu thất bại. Xem lỗi chi tiết trong Console.",
+                                                        "Lỗi", JOptionPane.ERROR_MESSAGE);
 
                                         return;
                                 }
 
-                                JOptionPane.showMessageDialog(this, "Da cap nhat voucher " + goc.getMaVoucher() + ".");
+                                JOptionPane.showMessageDialog(this, "Đã cập nhật voucher " + goc.getMaVoucher() + ".");
+
+                                maDaLuu = goc.getMaVoucher();
                         }
 
-                        dong.run();
-                }
-        }
+                        daLuu = true;
 
-        // =========================================================
-        // UiKit: mau, nut, bang dung chung (gop ngay trong file nay)
-        // =========================================================
-
-        static class UiKit {
-
-                public static final Color NAVY = new Color(18, 48, 82);
-                public static final Color LIGHT_BLUE = new Color(229, 241, 252);
-                public static final Color GREEN = new Color(72, 196, 62);
-                public static final Color RED = new Color(210, 70, 70);
-                public static final Color BORDER = new Color(219, 228, 239);
-                public static final Color MUTED = new Color(107, 124, 147);
-
-                public static final Font F = new Font("Segoe UI", Font.PLAIN, 12);
-                public static final Font FB = new Font("Segoe UI", Font.BOLD, 12);
-                public static final Font BIG = new Font("Segoe UI", Font.BOLD, 20);
-
-                public static JPanel card(LayoutManager lm) {
-
-                        JPanel p = new JPanel(lm);
-
-                        p.setBackground(Color.WHITE);
-
-                        p.setBorder(new CompoundBorder(
-                                        new LineBorder(BORDER, 1, true),
-                                        new EmptyBorder(10, 14, 10, 14)));
-
-                        return p;
-                }
-
-                public static JLabel label(String text, Font font, Color color) {
-
-                        JLabel l = new JLabel(text);
-
-                        l.setFont(font);
-
-                        l.setForeground(color);
-
-                        return l;
-                }
-
-                public static JButton button(String text, Color bg, Color fg) {
-
-                        JButton b = new JButton(text);
-
-                        b.setFont(FB);
-                        b.setBackground(bg);
-                        b.setForeground(fg);
-                        b.setOpaque(true);
-                        b.setFocusPainted(false);
-                        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-                        b.setBorder(new CompoundBorder(
-                                        new LineBorder(bg.equals(Color.WHITE) ? BORDER : bg, 1, true),
-                                        new EmptyBorder(7, 16, 7, 16)));
-
-                        return b;
-                }
-
-                public static void field(JTextField t) {
-
-                        t.setFont(F);
-
-                        t.setBorder(new CompoundBorder(
-                                        new LineBorder(BORDER, 1, true),
-                                        new EmptyBorder(6, 8, 6, 8)));
-                }
-
-                // nhan nho phia tren 1 o nhap
-                public static JPanel captioned(String caption, JComponent c) {
-
-                        JPanel p = new JPanel(new BorderLayout(0, 3));
-
-                        p.setOpaque(false);
-
-                        p.add(label(caption, FB, NAVY), BorderLayout.NORTH);
-
-                        p.add(c, BorderLayout.CENTER);
-
-                        return p;
-                }
-
-                // 12345 -> 12.345
-                public static String tien(long v) {
-
-                        return String.format(Locale.US, "%,d", v).replace(',', '.');
-                }
-
-                // thanh tieu de: ngay gio (trai), ten man hinh (giua), nut (phai)
-                public static JPanel titleBar(String title, JComponent east) {
-
-                        JPanel panel = new JPanel(new BorderLayout());
-
-                        panel.setBackground(new Color(247, 249, 251));
-
-                        panel.setBorder(new EmptyBorder(10, 25, 10, 25));
-
-                        JLabel date = new JLabel();
-
-                        date.setFont(FB);
-
-                        Timer timer = new Timer(1000, e -> date.setText(
-                                        LocalDateTime.now().format(
-                                                        DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy"))));
-
-                        timer.setInitialDelay(0);
-
-                        timer.start();
-
-                        JLabel lb = new JLabel(title, SwingConstants.CENTER);
-
-                        lb.setFont(new Font("Segoe UI", Font.BOLD, 25));
-
-                        lb.setForeground(NAVY);
-
-                        JPanel west = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-
-                        west.setOpaque(false);
-
-                        west.setPreferredSize(new Dimension(220, 30));
-
-                        west.add(date);
-
-                        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-
-                        right.setOpaque(false);
-
-                        right.setPreferredSize(new Dimension(220, 30));
-
-                        if (east != null) {
-                                right.add(east);
-                        }
-
-                        panel.add(west, BorderLayout.WEST);
-                        panel.add(lb, BorderLayout.CENTER);
-                        panel.add(right, BorderLayout.EAST);
-
-                        return panel;
-                }
-
-                public static void styleTable(JTable t) {
-
-                        t.setFont(F);
-                        t.setRowHeight(32);
-                        t.setShowVerticalLines(false);
-                        t.setGridColor(BORDER);
-                        t.setSelectionBackground(new Color(227, 238, 251));
-                        t.setSelectionForeground(NAVY);
-                        t.setFillsViewportHeight(true);
-
-                        JTableHeader h = t.getTableHeader();
-
-                        h.setFont(FB);
-                        h.setBackground(NAVY);
-                        h.setForeground(Color.WHITE);
-                        h.setReorderingAllowed(false);
-                }
-
-                // To mau o trang thai lich hen
-                public static class TrangThaiRenderer extends DefaultTableCellRenderer {
-
-                        @Override
-                        public Component getTableCellRendererComponent(
-                                        JTable t, Object v, boolean sel, boolean foc, int r, int c) {
-
-                                JLabel l = (JLabel) super.getTableCellRendererComponent(t, v, false, false, r, c);
-
-                                Color bg;
-                                Color fg;
-
-                                switch (String.valueOf(v)) {
-                                        case "Da xac nhan":
-                                                bg = new Color(217, 245, 229);
-                                                fg = new Color(12, 107, 64);
-                                                break;
-                                        case "Cho xac nhan":
-                                                bg = new Color(230, 232, 236);
-                                                fg = new Color(51, 51, 51);
-                                                break;
-                                        case "Hoan thanh":
-                                                bg = new Color(220, 235, 255);
-                                                fg = new Color(31, 95, 191);
-                                                break;
-                                        case "Da huy":
-                                                bg = new Color(255, 217, 217);
-                                                fg = new Color(180, 35, 24);
-                                                break;
-                                        case "Dang chay":
-                                                bg = new Color(217, 245, 229);
-                                                fg = new Color(12, 107, 64);
-                                                break;
-                                        case "Sap chay":
-                                                bg = new Color(230, 232, 236);
-                                                fg = new Color(51, 51, 51);
-                                                break;
-                                        case "Het han":
-                                        case "Het luot":
-                                                bg = new Color(255, 240, 205);
-                                                fg = new Color(146, 90, 0);
-                                                break;
-                                        default:
-                                                bg = Color.WHITE;
-                                                fg = NAVY;
-                                }
-
-                                l.setOpaque(true);
-                                l.setBackground(bg);
-                                l.setForeground(fg);
-                                l.setHorizontalAlignment(SwingConstants.CENTER);
-
-                                return l;
-                        }
+                        dispose();
                 }
         }
 }
