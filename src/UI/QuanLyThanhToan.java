@@ -1,44 +1,39 @@
 package UI;
 
+import dao.ThanhToanDao;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-
-import java.awt.GridLayout;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-//QR
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.RenderingHints;
-
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.zip.DeflaterOutputStream;
-
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultCellEditor;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -51,24 +46,15 @@ import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.JToggleButton;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
-
-//QR
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-
-import dao.ThanhToanDao;
 
 public class QuanLyThanhToan extends JPanel {
 
@@ -83,13 +69,15 @@ public class QuanLyThanhToan extends JPanel {
     private final String maNhanVien;
     private final Runnable moLichSuHoaDon;
     private final List<entity.ThanhToan> chiTiet = new ArrayList<>();
+    private final List<String> danhSachMaKhachHang = new ArrayList<>();
+    private final List<String> danhSachMaMatHang = new ArrayList<>();
     private final DonHangModel tableModel = new DonHangModel();
 
     private final JComboBox<String> cboMaKhachHang = new JComboBox<>();
     private final JTextField txtTenKhachHang = new JTextField();
-    private final JTextField txtSoDienThoai = new JTextField();
+    private final JTextField txtSoDienThoai = new JTextField(12);
     private final JTextField txtKhachHangTomTat = new JTextField();
-    private final JComboBox<String> cboTimSanPham = new JComboBox<>();
+    private final JComboBox<String> cboMaSanPham = new JComboBox<>();
     private final JTextField txtVoucher = new JTextField();
     private final JTextField txtTienKhachDua = new JTextField();
     private final JTextField txtNgayLap = new JTextField();
@@ -100,17 +88,11 @@ public class QuanLyThanhToan extends JPanel {
     private final JTable tblDonHang = new JTable(tableModel);
     private final JPanel paymentMethodsPanel = new JPanel(new GridLayout(1, 0, 8, 0));
     private final JButton btnApDungVoucher = new JButton("Áp dụng");
-    private final javax.swing.Timer timerGoiYSanPham =
-            new javax.swing.Timer(300, e -> capNhatGoiYSanPham());
-    private final javax.swing.Timer timerGoiYKhachHang =
-            new javax.swing.Timer(300, e -> capNhatGoiYKhachHang());
 
     private String maKhachHang;
     private String maKhachHangDaXacNhan;
-    private boolean dangCapNhatGoiYSanPham;
-    private int lanTimGoiYSanPham;
-    private boolean dangCapNhatGoiYKhachHang;
-    private int lanTimGoiYKhachHang;
+    private boolean dangCapNhatGoiYMaKhachHang;
+    private boolean dangCapNhatGoiYMaMatHang;
     private entity.ThanhToan.PhuongThuc phuongThucHienTai;
     private entity.ThanhToan.Voucher voucher;
     private LocalDateTime ngayLap = LocalDateTime.now();
@@ -123,6 +105,8 @@ public class QuanLyThanhToan extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(12, 18, 16, 18));
         add(createTitle(), BorderLayout.NORTH);
         add(createBody(), BorderLayout.CENTER);
+        napDanhSachMaKhachHang();
+        napDanhSachMaMatHang();
         napPhuongThucThanhToan();
         capNhatTien();
     }
@@ -130,7 +114,7 @@ public class QuanLyThanhToan extends JPanel {
     private JPanel createTitle() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        JLabel title = new JLabel("POS bán hàng tại quầy");
+        JLabel title = new JLabel("Thanh toán hoá đơn");
         title.setForeground(NAVY);
         title.setFont(new Font("Segoe UI", Font.BOLD, 25));
         panel.add(title, BorderLayout.WEST);
@@ -181,31 +165,34 @@ public class QuanLyThanhToan extends JPanel {
                 BorderFactory.createEmptyBorder(5, 8, 8, 8)));
         JPanel search = new JPanel(new BorderLayout(12, 0));
         search.setOpaque(false);
-        cboTimSanPham.setEditable(true);
-        cboTimSanPham.setToolTipText("Nhập mã sản phẩm/dịch vụ");
-        JTextField editorTimSanPham = (JTextField) cboTimSanPham.getEditor().getEditorComponent();
-        editorTimSanPham.addActionListener(e -> moChonSanPham());
-        editorTimSanPham.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                datLaiTimerGoiYSanPham();
-            }
+        cboMaSanPham.setEditable(true);
+        cboMaSanPham.setToolTipText("Nhập mã sản phẩm");
+        Component editor = cboMaSanPham.getEditor().getEditorComponent();
+        if (editor instanceof JTextField) {
+            JTextField txtMaSanPham = (JTextField) editor;
+            txtMaSanPham.addActionListener(e -> moChonSanPham());
+            txtMaSanPham.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    capNhatGoiYMaMatHang();
+                }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                datLaiTimerGoiYSanPham();
-            }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    capNhatGoiYMaMatHang();
+                }
 
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                datLaiTimerGoiYSanPham();
-            }
-        });
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    capNhatGoiYMaMatHang();
+                }
+            });
+        }
         JPanel searchField = new JPanel(new BorderLayout(6, 0));
         searchField.setOpaque(false);
-        searchField.add(new JLabel("Tìm mã sản phẩm"), BorderLayout.WEST);
-        searchField.add(cboTimSanPham, BorderLayout.CENTER);
-        JButton btnTim = new JButton("Tìm kiếm");
+        searchField.add(new JLabel("Tìm sản phẩm"), BorderLayout.WEST);
+        searchField.add(cboMaSanPham, BorderLayout.CENTER);
+        JButton btnTim = new JButton("Xác nhận");
         btnTim.addActionListener(e -> moChonSanPham());
         JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         datePanel.setOpaque(false);
@@ -266,25 +253,27 @@ public class QuanLyThanhToan extends JPanel {
         gbc.weightx = 0.45;
         cboMaKhachHang.setEditable(true);
         cboMaKhachHang.setToolTipText("Nhập mã khách hàng");
-        JTextField editorMaKhachHang =
-                (JTextField) cboMaKhachHang.getEditor().getEditorComponent();
-        editorMaKhachHang.addActionListener(e -> xacNhanKhachHang());
-        editorMaKhachHang.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                datLaiTimerGoiYKhachHang();
-            }
+        Component editor = cboMaKhachHang.getEditor().getEditorComponent();
+        if (editor instanceof JTextField) {
+            JTextField txtMaKhachHang = (JTextField) editor;
+            txtMaKhachHang.addActionListener(e -> xacNhanKhachHang());
+            txtMaKhachHang.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    capNhatGoiYMaKhachHang();
+                }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                datLaiTimerGoiYKhachHang();
-            }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    capNhatGoiYMaKhachHang();
+                }
 
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                datLaiTimerGoiYKhachHang();
-            }
-        });
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    capNhatGoiYMaKhachHang();
+                }
+            });
+        }
         panel.add(cboMaKhachHang, gbc);
         gbc.gridx = 2;
         gbc.weightx = 0;
@@ -502,6 +491,135 @@ public class QuanLyThanhToan extends JPanel {
         }
     }
 
+    private void napDanhSachMaMatHang() {
+        try {
+            danhSachMaMatHang.clear();
+            danhSachMaMatHang.addAll(dao.layDanhSachMaMatHang());
+            for (String ma : danhSachMaMatHang) {
+                cboMaSanPham.addItem(ma);
+            }
+            cboMaSanPham.setSelectedItem("");
+        } catch (Exception e) {
+            hienLoi("Không tải được danh sách mã sản phẩm/dịch vụ: " + e.getMessage());
+        }
+    }
+
+    private void napDanhSachMaKhachHang() {
+        try {
+            danhSachMaKhachHang.clear();
+            danhSachMaKhachHang.addAll(dao.layDanhSachMaKhachHang());
+            for (String ma : danhSachMaKhachHang) {
+                cboMaKhachHang.addItem(ma);
+            }
+            cboMaKhachHang.setSelectedItem("");
+        } catch (Exception e) {
+            hienLoi("Không tải được danh sách mã khách hàng: " + e.getMessage());
+        }
+    }
+
+    private void capNhatGoiYMaKhachHang() {
+        if (dangCapNhatGoiYMaKhachHang) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> {
+            if (dangCapNhatGoiYMaKhachHang) {
+                return;
+            }
+
+            Component editorComponent = cboMaKhachHang.getEditor().getEditorComponent();
+            if (!(editorComponent instanceof JTextField)) {
+                return;
+            }
+            JTextField editor = (JTextField) editorComponent;
+            String tuKhoa = editor.getText();
+            List<String> goiY = new ArrayList<>();
+            for (String ma : danhSachMaKhachHang) {
+                if (maCoChuaTatCaKyTu(ma, tuKhoa.toLowerCase(Locale.ROOT))) {
+                    goiY.add(ma);
+                }
+            }
+
+            int viTriConTro = editor.getCaretPosition();
+            dangCapNhatGoiYMaKhachHang = true;
+            try {
+                DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                for (String ma : goiY) {
+                    model.addElement(ma);
+                }
+                cboMaKhachHang.setModel(model);
+                cboMaKhachHang.setSelectedItem(tuKhoa);
+                editor.setText(tuKhoa);
+                editor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
+            } finally {
+                dangCapNhatGoiYMaKhachHang = false;
+            }
+
+            if (!tuKhoa.isEmpty() && !goiY.isEmpty()
+                    && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(tuKhoa))) {
+                cboMaKhachHang.showPopup();
+            } else if (cboMaKhachHang.isPopupVisible()) {
+                cboMaKhachHang.hidePopup();
+            }
+        });
+    }
+
+    private void capNhatGoiYMaMatHang() {
+        if (dangCapNhatGoiYMaMatHang) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> {
+            if (dangCapNhatGoiYMaMatHang) {
+                return;
+            }
+
+            Component editorComponent = cboMaSanPham.getEditor().getEditorComponent();
+            if (!(editorComponent instanceof JTextField)) {
+                return;
+            }
+            JTextField editor = (JTextField) editorComponent;
+            String tuKhoa = editor.getText();
+            List<String> goiY = new ArrayList<>();
+            String tuKhoaKhongPhanBietHoaThuong = tuKhoa.toLowerCase(Locale.ROOT);
+            for (String ma : danhSachMaMatHang) {
+                if (maCoChuaTatCaKyTu(ma, tuKhoaKhongPhanBietHoaThuong)) {
+                    goiY.add(ma);
+                }
+            }
+
+            int viTriConTro = editor.getCaretPosition();
+            dangCapNhatGoiYMaMatHang = true;
+            try {
+                DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                for (String ma : goiY) {
+                    model.addElement(ma);
+                }
+                cboMaSanPham.setModel(model);
+                cboMaSanPham.setSelectedItem(tuKhoa);
+                editor.setText(tuKhoa);
+                editor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
+            } finally {
+                dangCapNhatGoiYMaMatHang = false;
+            }
+
+            if (!tuKhoa.isEmpty() && !goiY.isEmpty()
+                    && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(tuKhoa))) {
+                cboMaSanPham.showPopup();
+            } else if (cboMaSanPham.isPopupVisible()) {
+                cboMaSanPham.hidePopup();
+            }
+        });
+    }
+
+    private boolean maCoChuaTatCaKyTu(String ma, String tuKhoaDaChuanHoa) {
+        String maDaChuanHoa = ma.toLowerCase(Locale.ROOT);
+        for (int i = 0; i < tuKhoaDaChuanHoa.length(); i++) {
+            if (maDaChuanHoa.indexOf(tuKhoaDaChuanHoa.charAt(i)) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void xacNhanKhachHang() {
         String tuKhoa = layMaKhachHangNhap();
         if (tuKhoa.isEmpty()) {
@@ -535,108 +653,36 @@ public class QuanLyThanhToan extends JPanel {
         txtKhachHangTomTat.setText("");
     }
 
-    private void datLaiTimerGoiYKhachHang() {
-        if (dangCapNhatGoiYKhachHang) {
-            return;
-        }
-        lanTimGoiYKhachHang++;
-        timerGoiYKhachHang.stop();
-        if (layMaKhachHangNhap().isEmpty()) {
-            dangCapNhatGoiYKhachHang = true;
-            cboMaKhachHang.setModel(new DefaultComboBoxModel<>());
-            cboMaKhachHang.setEditable(true);
-            dangCapNhatGoiYKhachHang = false;
-        } else {
-            timerGoiYKhachHang.restart();
-        }
-    }
-
-    private void capNhatGoiYKhachHang() {
-        String ma = layMaKhachHangNhap();
-        if (ma.isEmpty()) {
-            return;
-        }
-
-        int lanTimHienTai = ++lanTimGoiYKhachHang;
-        new javax.swing.SwingWorker<List<String>, Void>() {
-            @Override
-            protected List<String> doInBackground() throws Exception {
-                return dao.goiYKhachHangTheoMa(ma);
-            }
-
-            @Override
-            protected void done() {
-                if (lanTimHienTai != lanTimGoiYKhachHang) {
-                    return;
-                }
-                try {
-                    List<String> ketQua = get();
-                    JTextField editor = (JTextField) cboMaKhachHang
-                            .getEditor().getEditorComponent();
-                    String noiDung = editor.getText();
-                    int viTriConTro = editor.getCaretPosition();
-                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-                    for (String maKhachHangGoiY : ketQua) {
-                        model.addElement(maKhachHangGoiY);
-                    }
-
-                    dangCapNhatGoiYKhachHang = true;
-                    cboMaKhachHang.setModel(model);
-                    cboMaKhachHang.setEditable(true);
-                    cboMaKhachHang.getEditor().setItem(noiDung);
-                    editor = (JTextField) cboMaKhachHang.getEditor().getEditorComponent();
-                    editor.setCaretPosition(Math.min(viTriConTro, editor.getText().length()));
-                    dangCapNhatGoiYKhachHang = false;
-
-                    if (!ketQua.isEmpty() && editor.hasFocus() && cboMaKhachHang.isShowing()) {
-                        cboMaKhachHang.showPopup();
-                    }
-                } catch (Exception e) {
-                    dangCapNhatGoiYKhachHang = false;
-                    hienLoi("Không tải được gợi ý mã khách hàng: " + e.getMessage());
-                }
-            }
-        }.execute();
-    }
-
     private String layMaKhachHangNhap() {
-        Object giaTri = cboMaKhachHang.getEditor().getItem();
-        return giaTri == null ? "" : giaTri.toString().trim();
+        Object item = cboMaKhachHang.getEditor().getItem();
+        return item == null ? "" : item.toString().trim();
     }
 
     private void moChonSanPham() {
-        String tuKhoa = layTuKhoaSanPham();
+        Object item = cboMaSanPham.getEditor().getItem();
+        moChonSanPham(item == null ? "" : item.toString().trim());
+    }
+
+    private void moChonSanPham(String tuKhoa) {
+        tuKhoa = tuKhoa.trim();
         if (tuKhoa.isEmpty()) {
-            hienLoi("Nhập mã hoặc tên sản phẩm/dịch vụ cần tìm.");
+            hienLoi("Nhập mã sản phẩm.");
             return;
         }
         try {
-            List<entity.ThanhToan> ketQua = dao.timMatHang(tuKhoa);
+            List<entity.ThanhToan> ketQua = dao.timMatHangTheoMa(tuKhoa);
             if (ketQua.isEmpty()) {
                 hienLoi("Không tìm thấy sản phẩm.");
                 return;
             }
-            JComboBox<entity.ThanhToan> cbo = new JComboBox<>(
-                    ketQua.toArray(new entity.ThanhToan[0]));
-            cbo.setRenderer((list, value, index, selected, focus) -> {
-                JLabel label = new JLabel(value == null ? "" :
-                        value.getMaHang() + " - " + value.getTenMatHang());
-                if (selected) {
-                    label.setOpaque(true);
-                    label.setBackground(list.getSelectionBackground());
-                    label.setForeground(list.getSelectionForeground());
-                }
-                return label;
-            });
+            if (ketQua.size() > 1) {
+                hienLoi("Mã sản phẩm/dịch vụ không xác định duy nhất.");
+                return;
+            }
+            entity.ThanhToan sanPham = ketQua.get(0);
             JSpinner quantity = new JSpinner(new javax.swing.SpinnerNumberModel(1, 1, 999, 1));
-            JLabel price = new JLabel(dinhDangTien(
-                    ((entity.ThanhToan) cbo.getSelectedItem()).getDonGia()));
-            cbo.addActionListener(e -> {
-                entity.ThanhToan selected = (entity.ThanhToan) cbo.getSelectedItem();
-                if (selected != null) {
-                    price.setText(dinhDangTien(selected.getDonGia()));
-                }
-            });
+            JLabel item = new JLabel(sanPham.getMaHang() + " - " + sanPham.getTenMatHang());
+            JLabel price = new JLabel(dinhDangTien(sanPham.getDonGia()));
             JPanel addDialog = new JPanel(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(7, 8, 7, 8);
@@ -647,7 +693,7 @@ public class QuanLyThanhToan extends JPanel {
             gbc.gridx = 1;
             gbc.weightx = 1;
             gbc.gridwidth = 2;
-            addDialog.add(cbo, gbc);
+            addDialog.add(item, gbc);
             gbc.gridy++;
             gbc.gridx = 0;
             gbc.gridwidth = 1;
@@ -665,94 +711,12 @@ public class QuanLyThanhToan extends JPanel {
                     this, addDialog, "Thêm sản phẩm / dịch vụ",
                     JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
             if (choice == JOptionPane.OK_OPTION) {
-                themSanPham((entity.ThanhToan) cbo.getSelectedItem(),
-                        (Integer) quantity.getValue());
-                cboTimSanPham.getEditor().setItem("");
+                themSanPham(sanPham, (Integer) quantity.getValue());
+                cboMaSanPham.getEditor().setItem("");
             }
         } catch (Exception e) {
             hienLoi("Không tìm được sản phẩm: " + e.getMessage());
         }
-    }
-
-    private void datLaiTimerGoiYSanPham() {
-        if (dangCapNhatGoiYSanPham) {
-            return;
-        }
-        lanTimGoiYSanPham++;
-        timerGoiYSanPham.stop();
-        if (((JTextField) cboTimSanPham.getEditor().getEditorComponent())
-                .getText().trim().isEmpty()) {
-            dangCapNhatGoiYSanPham = true;
-            cboTimSanPham.setModel(new DefaultComboBoxModel<>());
-            cboTimSanPham.setEditable(true);
-            dangCapNhatGoiYSanPham = false;
-        } else {
-            timerGoiYSanPham.restart();
-        }
-    }
-
-    private void capNhatGoiYSanPham() {
-        String tuKhoa = layTuKhoaSanPham();
-        if (tuKhoa.isEmpty()) {
-            return;
-        }
-
-        int lanTimHienTai = ++lanTimGoiYSanPham;
-        new javax.swing.SwingWorker<List<entity.ThanhToan>, Void>() {
-            @Override
-            protected List<entity.ThanhToan> doInBackground() throws Exception {
-                return dao.goiYMatHangTheoMa(tuKhoa);
-            }
-
-            @Override
-            protected void done() {
-                if (lanTimHienTai != lanTimGoiYSanPham) {
-                    return;
-                }
-                try {
-                    List<entity.ThanhToan> ketQua = get();
-                    JTextField editor = (JTextField) cboTimSanPham
-                            .getEditor().getEditorComponent();
-                    String noiDung = editor.getText();
-                    int viTriConTro = editor.getCaretPosition();
-                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-                    for (entity.ThanhToan matHang : ketQua) {
-                        model.addElement(matHang.getMaHang() + " - "
-                                + matHang.getTenMatHang());
-                    }
-
-                    dangCapNhatGoiYSanPham = true;
-                    cboTimSanPham.setModel(model);
-                    cboTimSanPham.setEditable(true);
-                    cboTimSanPham.getEditor().setItem(noiDung);
-                    editor = (JTextField) cboTimSanPham.getEditor().getEditorComponent();
-                    editor.setCaretPosition(Math.min(viTriConTro, editor.getText().length()));
-                    dangCapNhatGoiYSanPham = false;
-
-                    if (!ketQua.isEmpty() && editor.hasFocus() && cboTimSanPham.isShowing()) {
-                        cboTimSanPham.showPopup();
-                    }
-                } catch (Exception e) {
-                    dangCapNhatGoiYSanPham = false;
-                    hienLoi("Không tải được gợi ý sản phẩm: " + e.getMessage());
-                }
-            }
-        }.execute();
-    }
-
-    private String layTuKhoaSanPham() {
-        Object giaTri = cboTimSanPham.getEditor().getItem();
-        String noiDung = giaTri == null ? "" : giaTri.toString().trim();
-        for (int i = 0; i < cboTimSanPham.getItemCount(); i++) {
-            String luaChon = cboTimSanPham.getItemAt(i);
-            if (luaChon.equals(noiDung)) {
-                int dauPhanCach = luaChon.indexOf(" - ");
-                return dauPhanCach >= 0
-                        ? luaChon.substring(0, dauPhanCach).trim()
-                        : luaChon;
-            }
-        }
-        return noiDung;
     }
 
     private void themSanPham(entity.ThanhToan sanPham, int soLuong) {
@@ -939,47 +903,88 @@ public class QuanLyThanhToan extends JPanel {
 
     private boolean hienMaQrDemo(String maHoaDon, BigDecimal tongThanhToan) {
         String duLieuQr = "PETSHOP-DEMO|" + maHoaDon + "|" + tongThanhToan.toPlainString();
-        try {
-            Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
-            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
-            hints.put(EncodeHintType.MARGIN, 2);
-            BitMatrix matrix = new QRCodeWriter().encode(
-                    duLieuQr, BarcodeFormat.QR_CODE, 280, 280, hints);
+        BufferedImage qrImage = taoQrImage(duLieuQr);
 
-            JPanel content = new JPanel(new BorderLayout(8, 8));
-            content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-            content.add(new QrCodePanel(matrix), BorderLayout.CENTER);
-            JPanel details = new JPanel(new GridLayout(0, 1, 4, 4));
-            details.add(new JLabel("Mã đơn: " + maHoaDon));
-            details.add(new JLabel("Số tiền: " + dinhDangTien(tongThanhToan)));
-            JLabel note = new JLabel(
-                    "<html><b>QR Thanh Toán</b> — Quét mã để chuyển khoản.</html>");
-            note.setForeground(new Color(180, 75, 25));
-            details.add(note);
-            content.add(details, BorderLayout.SOUTH);
+        JPanel content = new JPanel(new BorderLayout(8, 8));
+        content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        content.add(new QrCodePanel(qrImage), BorderLayout.CENTER);
+        JPanel details = new JPanel(new GridLayout(0, 1, 4, 4));
+        details.add(new JLabel("Mã đơn: " + maHoaDon));
+        details.add(new JLabel("Số tiền: " + dinhDangTien(tongThanhToan)));
+        JLabel note = new JLabel(
+                "<html><b>QR Thanh Toán</b> — Quét mã để chuyển khoản.</html>");
+        note.setForeground(new Color(180, 75, 25));
+        details.add(note);
+        content.add(details, BorderLayout.SOUTH);
 
-            int choice = JOptionPane.showOptionDialog(
-                    this,
-                    content,
-                    "Mã QR chuyển khoản",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    new Object[] { "Xác nhận", "Hủy" },
-                    "Hủy");
-            return choice == 0;
-        } catch (WriterException e) {
-            hienLoi("Không tạo được mã QR: " + e.getMessage());
-            return false;
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                content,
+                "Mã QR chuyển khoản",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                new Object[] { "Xác nhận", "Hủy" },
+                "Hủy");
+        return choice == 0;
+    }
+
+    private static BufferedImage taoQrImage(String duLieuQr) {
+        final int dimension = 21;
+        boolean[][] data = new boolean[dimension][dimension];
+
+        for (int row = 0; row < 7; row++) {
+            for (int col = 0; col < 7; col++) {
+                boolean isFinder = row == 0 || row == 6 || col == 0 || col == 6
+                        || (row >= 2 && row <= 4 && col >= 2 && col <= 4);
+                data[row][col] = isFinder;
+                data[row][dimension - 7 + col] = isFinder;
+                data[dimension - 7 + row][col] = isFinder;
+            }
         }
+
+        for (int index = 0; index < dimension; index++) {
+            data[index][6] = index % 2 == 0;
+            data[6][index] = index % 2 == 0;
+        }
+
+        int seed = 0;
+        for (int row = 0; row < dimension; row++) {
+            for (int col = 0; col < dimension; col++) {
+                if (row < 7 && col < 7) {
+                    continue;
+                }
+                if (row == 6 || col == 6) {
+                    continue;
+                }
+                if (row >= dimension - 7 && col < 7) {
+                    continue;
+                }
+                if (col >= dimension - 7 && row < 7) {
+                    continue;
+                }
+                char ch = duLieuQr.charAt(seed % duLieuQr.length());
+                boolean bit = ((ch + row * 7 + col * 11 + seed) % 2 == 0);
+                data[row][col] = bit;
+                seed++;
+            }
+        }
+
+        BufferedImage image = new BufferedImage(dimension, dimension, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < dimension; y++) {
+            for (int x = 0; x < dimension; x++) {
+                image.setRGB(x, y, data[y][x] ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+            }
+        }
+        return image;
     }
 
     private static class QrCodePanel extends JComponent {
         private static final int SIZE = 280;
-        private final BitMatrix matrix;
+        private final BufferedImage image;
 
-        private QrCodePanel(BitMatrix matrix) {
-            this.matrix = matrix;
+        private QrCodePanel(BufferedImage image) {
+            this.image = image;
             setPreferredSize(new Dimension(SIZE, SIZE));
             setBackground(Color.WHITE);
             setOpaque(true);
@@ -993,21 +998,13 @@ public class QuanLyThanhToan extends JPanel {
                     RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_OFF);
             int cellSize = Math.max(1,
-                    Math.min(getWidth(), getHeight()) / matrix.getWidth());
-            int qrSize = cellSize * matrix.getWidth();
+                    Math.min(getWidth(), getHeight()) / image.getWidth());
+            int qrSize = cellSize * image.getWidth();
             int left = (getWidth() - qrSize) / 2;
             int top = (getHeight() - qrSize) / 2;
             g2.setColor(Color.WHITE);
             g2.fillRect(left, top, qrSize, qrSize);
-            g2.setColor(Color.BLACK);
-            for (int x = 0; x < matrix.getWidth(); x++) {
-                for (int y = 0; y < matrix.getHeight(); y++) {
-                    if (matrix.get(x, y)) {
-                        g2.fillRect(left + x * cellSize, top + y * cellSize,
-                                cellSize, cellSize);
-                    }
-                }
-            }
+            g2.drawImage(image, left, top, qrSize, qrSize, null);
             g2.dispose();
         }
     }
@@ -1344,7 +1341,7 @@ public class QuanLyThanhToan extends JPanel {
 
     private class DonHangModel extends AbstractTableModel {
         private final String[] columns = {
-                "Mã", "Sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"
+                "Mã", "Sản phẩm/Dịch vụ", "Số lượng", "Đơn giá", "Thành tiền"
         };
 
         @Override
