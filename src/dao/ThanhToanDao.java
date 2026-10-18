@@ -18,42 +18,20 @@ import entity.ThanhToan;
 
 public class ThanhToanDao {
 
-    public List<ThanhToan> timMatHang(String tuKhoa) throws SQLException {
-        return truyTimMatHang(tuKhoa, true);
-    }
-
-    public List<ThanhToan> goiYMatHangTheoMa(String ma) throws SQLException {
-        return truyTimMatHang(ma, false);
-    }
-
-    private List<ThanhToan> truyTimMatHang(String tuKhoa, boolean timTheoTen)
-            throws SQLException {
-        String dieuKienSanPham = timTheoTen
-                ? "maSanPham = ? OR tenSanPham LIKE ?"
-                : "maSanPham LIKE ?";
-        String dieuKienDichVu = timTheoTen
-                ? "maDichVu = ? OR tenDichVu LIKE ?"
-                : "maDichVu LIKE ?";
-        String sql = "SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, "
+    public List<ThanhToan> timMatHangTheoMa(String ma) throws SQLException {
+        String sql = "SELECT maSanPham AS maHang, tenSanPham AS tenHang, "
                 + "giaBan AS donGia, CAST(0 AS BIT) AS laDichVu "
-                + "FROM SanPham WHERE " + dieuKienSanPham
+                + "FROM SanPham WHERE maSanPham = ?"
                 + " UNION ALL "
-                + "SELECT TOP 30 maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
-                + "FROM DichVu WHERE " + dieuKienDichVu;
+                + "SELECT maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
+                + "FROM DichVu WHERE maDichVu = ?";
         List<ThanhToan> matHangs = new ArrayList<>();
 
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
-            String keyword = tuKhoa.trim();
-            if (timTheoTen) {
-                ps.setString(1, keyword);
-                ps.setString(2, "%" + keyword + "%");
-                ps.setString(3, keyword);
-                ps.setString(4, "%" + keyword + "%");
-            } else {
-                ps.setString(1, keyword + "%");
-                ps.setString(2, keyword + "%");
-            }
+            String keyword = ma.trim();
+            ps.setString(1, keyword);
+            ps.setString(2, keyword);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     BigDecimal donGia = rs.getBigDecimal("donGia");
@@ -72,6 +50,21 @@ public class ThanhToanDao {
             }
         }
         return matHangs;
+    }
+
+    public List<String> layDanhSachMaMatHang() throws SQLException {
+        String sql = "SELECT maSanPham AS maHang FROM SanPham "
+                + "UNION SELECT maDichVu AS maHang FROM DichVu "
+                + "ORDER BY maHang";
+        List<String> maMatHangs = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                maMatHangs.add(rs.getString("maHang"));
+            }
+        }
+        return maMatHangs;
     }
 
     public ThanhToan.KhachHang timKhachHang(String maHoacSoDienThoai)
@@ -95,17 +88,14 @@ public class ThanhToanDao {
         }
     }
 
-    public List<String> goiYKhachHangTheoMa(String ma) throws SQLException {
-        String sql = "SELECT TOP 30 maKhachHang FROM KhachHang "
-                + "WHERE maKhachHang LIKE ? ORDER BY maKhachHang";
+    public List<String> layDanhSachMaKhachHang() throws SQLException {
+        String sql = "SELECT maKhachHang FROM KhachHang ORDER BY maKhachHang";
         List<String> maKhachHangs = new ArrayList<>();
         try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, ma.trim() + "%");
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    maKhachHangs.add(rs.getString("maKhachHang"));
-                }
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                maKhachHangs.add(rs.getString("maKhachHang"));
             }
         }
         return maKhachHangs;

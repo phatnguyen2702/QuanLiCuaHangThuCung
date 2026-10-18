@@ -41,9 +41,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
-import javax.swing.SwingWorker;
-import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -76,8 +75,8 @@ public class TraCuuLichSuHoaDon extends JPanel {
     private final JPanel screens = new JPanel(cardLayout);
     private final InvoiceTableModel invoiceTableModel = new InvoiceTableModel();
     private final DetailTableModel detailTableModel = new DetailTableModel();
-    private final JComboBox<String> cboTimKiem = new JComboBox<>();
-    private final Timer timerGoiY = new Timer(300, e -> capNhatGoiY());
+    private final JComboBox<String> cboMaHoaDon = new JComboBox<>();
+    private final List<String> danhSachMaHoaDon = new ArrayList<>();
     private final JTable tblHoaDon = new JTable(invoiceTableModel);
     private final JTable tblChiTiet = new JTable(detailTableModel);
     private final JLabel lblHoaDonHomNay = new JLabel("0");
@@ -95,8 +94,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
     private final JLabel lblTongTien = new JLabel();
     private final JLabel lblPhuongThuc = new JLabel();
     private HoaDon hoaDonDangXem;
-    private boolean dangCapNhatGoiY;
-    private int lanTimGoiY;
+    private boolean dangCapNhatGoiYMaHoaDon;
 
     public TraCuuLichSuHoaDon(Runnable quayLai) {
         this.quayLai = quayLai;
@@ -184,124 +182,48 @@ public class TraCuuLichSuHoaDon extends JPanel {
         panel.setOpaque(false);
         JPanel search = new JPanel(new BorderLayout(6, 0));
         search.setOpaque(false);
-        JLabel hint = new JLabel("Tìm hóa đơn / Khách hàng:");
-        cboTimKiem.setEditable(true);
-        cboTimKiem.setToolTipText(
-                "Nhập mã hóa đơn hoặc tên khách hàng để xem gợi ý");
-        JTextField editorTimKiem =
-                (JTextField) cboTimKiem.getEditor().getEditorComponent();
-        editorTimKiem.addActionListener(e -> timKiem());
-        editorTimKiem.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                datLaiTimerGoiY();
-            }
+        cboMaHoaDon.setEditable(true);
+        cboMaHoaDon.setToolTipText("Nhập mã hóa đơn hoặc tên khách hàng");
+        Component editor = cboMaHoaDon.getEditor().getEditorComponent();
+        if (editor instanceof JTextField) {
+            JTextField txtMaHoaDon = (JTextField) editor;
+            txtMaHoaDon.addActionListener(e -> timKiem());
+            txtMaHoaDon.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    capNhatGoiYMaHoaDon();
+                }
 
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                datLaiTimerGoiY();
-            }
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    capNhatGoiYMaHoaDon();
+                }
 
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                datLaiTimerGoiY();
-            }
-        });
-        search.add(hint, BorderLayout.WEST);
-        search.add(cboTimKiem, BorderLayout.CENTER);
-        JButton btnTimKiem = new JButton("Tra cứu");
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    capNhatGoiYMaHoaDon();
+                }
+            });
+        }
+        search.add(new JLabel("Tìm hóa đơn:"), BorderLayout.WEST);
+        search.add(cboMaHoaDon, BorderLayout.CENTER);
+        JButton btnTimKiem = new JButton("Xác nhận");
         btnTimKiem.addActionListener(e -> timKiem());
         search.add(btnTimKiem, BorderLayout.EAST);
         panel.add(search, BorderLayout.CENTER);
 
         JButton btnLamMoi = new JButton("Làm mới");
         btnLamMoi.addActionListener(e -> {
-            cboTimKiem.getEditor().setItem("");
+            cboMaHoaDon.getEditor().setItem("");
             napDanhSach();
         });
         panel.add(btnLamMoi, BorderLayout.EAST);
         return panel;
     }
 
-    private void datLaiTimerGoiY() {
-        if (dangCapNhatGoiY) {
-            return;
-        }
-        lanTimGoiY++;
-        timerGoiY.stop();
-        if (layTuKhoa().isEmpty()) {
-            dangCapNhatGoiY = true;
-            cboTimKiem.setModel(new DefaultComboBoxModel<>());
-            cboTimKiem.setEditable(true);
-            dangCapNhatGoiY = false;
-        } else {
-            timerGoiY.restart();
-        }
-    }
-
-    private void capNhatGoiY() {
-        String tuKhoa = layTuKhoa();
-        if (tuKhoa.isEmpty()) {
-            return;
-        }
-
-        int lanTimHienTai = ++lanTimGoiY;
-        new SwingWorker<List<String>, Void>() {
-            @Override
-            protected List<String> doInBackground() throws Exception {
-                return dao.goiYTimHoaDon(tuKhoa);
-            }
-
-            @Override
-            protected void done() {
-                if (lanTimHienTai != lanTimGoiY) {
-                    return;
-                }
-                try {
-                    List<String> ketQua = get();
-                    JTextField editor = (JTextField) cboTimKiem
-                            .getEditor().getEditorComponent();
-                    String noiDung = editor.getText();
-                    int viTriConTro = editor.getCaretPosition();
-                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-                    for (String goiY : ketQua) {
-                        model.addElement(goiY);
-                    }
-
-                    dangCapNhatGoiY = true;
-                    try {
-                        cboTimKiem.setModel(model);
-                        cboTimKiem.setEditable(true);
-                        cboTimKiem.getEditor().setItem(noiDung);
-                        editor = (JTextField) cboTimKiem.getEditor().getEditorComponent();
-                        editor.setCaretPosition(Math.min(viTriConTro, editor.getText().length()));
-                    } finally {
-                        dangCapNhatGoiY = false;
-                    }
-
-                    if (!ketQua.isEmpty() && editor.hasFocus() && cboTimKiem.isShowing()) {
-                        cboTimKiem.showPopup();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    hienLoiGoiY("Tải gợi ý tìm kiếm bị gián đoạn.");
-                } catch (java.util.concurrent.ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    hienLoiGoiY("Không tải được gợi ý tìm kiếm: "
-                            + (cause == null ? e.getMessage() : cause.getMessage()));
-                }
-            }
-        }.execute();
-    }
-
-    private void hienLoiGoiY(String message) {
-        JOptionPane.showMessageDialog(
-                this, message, "Lỗi tra cứu hóa đơn", JOptionPane.ERROR_MESSAGE);
-    }
-
     private String layTuKhoa() {
-        Object giaTri = cboTimKiem.getEditor().getItem();
-        return giaTri == null ? "" : giaTri.toString().trim();
+        Object item = cboMaHoaDon.getEditor().getItem();
+        return item == null ? "" : item.toString().trim();
     }
 
     private void configureInvoiceTable() {
@@ -429,10 +351,74 @@ public class TraCuuLichSuHoaDon extends JPanel {
         napDanhSach();
     }
 
+    private void capNhatGoiYMaHoaDon() {
+        if (dangCapNhatGoiYMaHoaDon) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> {
+            if (dangCapNhatGoiYMaHoaDon) {
+                return;
+            }
+
+            Component editorComponent = cboMaHoaDon.getEditor().getEditorComponent();
+            if (!(editorComponent instanceof JTextField)) {
+                return;
+            }
+            JTextField editor = (JTextField) editorComponent;
+            String tuKhoa = editor.getText();
+            List<String> goiY = new ArrayList<>();
+            String tuKhoaChuanHoa = tuKhoa.toLowerCase(Locale.ROOT);
+            for (String ma : danhSachMaHoaDon) {
+                if (maCoChuaTatCaKyTu(ma, tuKhoaChuanHoa)) {
+                    goiY.add(ma);
+                }
+            }
+
+            int viTriConTro = editor.getCaretPosition();
+            dangCapNhatGoiYMaHoaDon = true;
+            try {
+                DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                for (String ma : goiY) {
+                    model.addElement(ma);
+                }
+                cboMaHoaDon.setModel(model);
+                cboMaHoaDon.setSelectedItem(tuKhoa);
+                editor.setText(tuKhoa);
+                editor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
+            } finally {
+                dangCapNhatGoiYMaHoaDon = false;
+            }
+
+            if (!tuKhoa.isEmpty() && !goiY.isEmpty()
+                    && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(tuKhoa))) {
+                cboMaHoaDon.showPopup();
+            } else if (cboMaHoaDon.isPopupVisible()) {
+                cboMaHoaDon.hidePopup();
+            }
+        });
+    }
+
+    private boolean maCoChuaTatCaKyTu(String ma, String tuKhoaChuanHoa) {
+        String maChuanHoa = ma.toLowerCase(Locale.ROOT);
+        for (int i = 0; i < tuKhoaChuanHoa.length(); i++) {
+            if (maChuanHoa.indexOf(tuKhoaChuanHoa.charAt(i)) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void napDanhSach() {
         try {
             HoaDonDAO.ThongKe thongKe = dao.layThongKe();
-            List<HoaDon> hoaDons = dao.timHoaDon(layTuKhoa());
+            String tuKhoa = layTuKhoa();
+            List<HoaDon> hoaDons = dao.timHoaDon(tuKhoa);
+            if (tuKhoa.isEmpty()) {
+                danhSachMaHoaDon.clear();
+                for (HoaDon hoaDon : hoaDons) {
+                    danhSachMaHoaDon.add(hoaDon.getMaHoaDon());
+                }
+            }
             invoiceTableModel.setInvoices(hoaDons);
             capNhatThongKe(thongKe);
         } catch (SQLException e) {
