@@ -4,6 +4,7 @@ import ConnectDB.connectDB;
 import dao.HoaDonDAO;
 import dao.LichHenDAO;
 import entity.LichHen;
+import dao.TaiKhoanDAO;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -23,6 +24,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -342,7 +345,7 @@ public class TrangChu extends JFrame {
         btnNhanVien.setOpaque(true);
         btnNhanVien.setBorder(new EmptyBorder(8, 6, 8, 6));
         btnNhanVien.setPreferredSize(new Dimension(170, 38));
-        btnNhanVien.setToolTipText("Thông tin nhân viên / Đăng xuất");
+        btnNhanVien.setToolTipText("Thông tin nhân viên / Đổi mật khẩu / Đăng xuất");
         btnNhanVien.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnNhanVien.addActionListener(e -> hienThongTinNhanVien(btnNhanVien));
         header.add(btnNhanVien, BorderLayout.EAST);
@@ -441,11 +444,199 @@ public class TrangChu extends JFrame {
         themThongTin(pnlThongTin, "Trạng thái", "Đang hoạt động");
         popMenu.add(pnlThongTin);
         popMenu.addSeparator();
-        JMenuItem dangXuat = new JMenuItem("Đăng xuất");
-        dangXuat.addActionListener(e -> dangXuat());
-        popMenu.add(dangXuat);
+        JMenuItem mniDoiMatKhau = new JMenuItem("Đổi mật khẩu");
+        mniDoiMatKhau.setFont(UIStyle.font(Font.PLAIN, 13));
+        mniDoiMatKhau.setBorder(new EmptyBorder(9, 14, 9, 14));
+        mniDoiMatKhau.addActionListener(e -> moDlgDoiMatKhau());
+        popMenu.add(mniDoiMatKhau);
+
+        JMenuItem mniDangXuat = new JMenuItem("Đăng xuất");
+        mniDangXuat.setFont(UIStyle.font(Font.PLAIN, 13));
+        mniDangXuat.setBorder(new EmptyBorder(9, 14, 9, 14));
+        mniDangXuat.addActionListener(e -> dangXuat());
+        popMenu.add(mniDangXuat);
         popMenu.show(nguon,
                 -popMenu.getPreferredSize().width + nguon.getWidth(), nguon.getHeight());
+    }
+
+    /**
+     * Cho phep moi nhan vien da dang nhap doi mat khau cua CHINH MINH.
+     * Khong hien mat khau cu, khong yeu cau quyen quan ly.
+     */
+    private void moDlgDoiMatKhau() {
+        if (maNV == null || maNV.isBlank()) {
+            JOptionPane.showMessageDialog(this, "Không xác định được phiên đăng nhập hiện tại.",
+                    "Đổi mật khẩu", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JDialog dlgDoiMatKhau = new JDialog(this, "Pet Shop Pro - Đổi mật khẩu", true);
+        dlgDoiMatKhau.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dlgDoiMatKhau.setSize(460, 405);
+        dlgDoiMatKhau.setMinimumSize(new Dimension(420, 385));
+        dlgDoiMatKhau.setLocationRelativeTo(this);
+        dlgDoiMatKhau.setLayout(new BorderLayout());
+
+        JPanel pnlTieuDe = new JPanel(new BorderLayout(0, 5));
+        pnlTieuDe.setBackground(UIStyle.NAVY);
+        pnlTieuDe.setBorder(new EmptyBorder(16, 22, 16, 22));
+        JLabel lblTieuDe = new JLabel("ĐỔI MẬT KHẨU");
+        lblTieuDe.setForeground(Color.WHITE);
+        lblTieuDe.setFont(UIStyle.font(Font.BOLD, 19));
+        JLabel lblTaiKhoan = new JLabel("Tài khoản: " + maNV + " - " + (hoTen == null ? "" : hoTen));
+        lblTaiKhoan.setForeground(new Color(215, 230, 245));
+        lblTaiKhoan.setFont(UIStyle.font(Font.PLAIN, 12));
+        pnlTieuDe.add(lblTieuDe, BorderLayout.NORTH);
+        pnlTieuDe.add(lblTaiKhoan, BorderLayout.SOUTH);
+        dlgDoiMatKhau.add(pnlTieuDe, BorderLayout.NORTH);
+
+        JPasswordField txtMatKhauCu = new JPasswordField(21);
+        JPasswordField txtMatKhauMoi = new JPasswordField(21);
+        JPasswordField txtXacNhanMatKhau = new JPasswordField(21);
+        JPasswordField[] arrMatKhau = { txtMatKhauCu, txtMatKhauMoi, txtXacNhanMatKhau };
+        for (JPasswordField txtMatKhau : arrMatKhau) {
+            txtMatKhau.setFont(UIStyle.font(Font.PLAIN, 14));
+            txtMatKhau.setPreferredSize(new Dimension(280, 35));
+        }
+
+        JPanel pnlForm = new JPanel(new GridBagLayout());
+        pnlForm.setBackground(Color.WHITE);
+        pnlForm.setBorder(new EmptyBorder(16, 22, 8, 22));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(3, 0, 5, 0);
+
+        themTruongMatKhau(pnlForm, gbc, 0, "Mật khẩu hiện tại", txtMatKhauCu);
+        themTruongMatKhau(pnlForm, gbc, 2, "Mật khẩu mới", txtMatKhauMoi);
+        themTruongMatKhau(pnlForm, gbc, 4, "Xác nhận mật khẩu mới", txtXacNhanMatKhau);
+
+        JCheckBox chkHienMatKhau = new JCheckBox("Hiện mật khẩu");
+        chkHienMatKhau.setOpaque(false);
+        chkHienMatKhau.setFont(UIStyle.font(Font.PLAIN, 12));
+        char charEcho = txtMatKhauCu.getEchoChar();
+        chkHienMatKhau.addActionListener(e -> {
+            for (JPasswordField txtMatKhau : arrMatKhau) {
+                txtMatKhau.setEchoChar(chkHienMatKhau.isSelected() ? (char) 0 : charEcho);
+            }
+        });
+        gbc.gridy = 6;
+        gbc.insets = new Insets(1, 0, 0, 0);
+        pnlForm.add(chkHienMatKhau, gbc);
+
+        JLabel lblTrangThai = new JLabel("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        lblTrangThai.setForeground(new Color(100, 108, 120));
+        lblTrangThai.setFont(UIStyle.font(Font.PLAIN, 12));
+        gbc.gridy = 7;
+        gbc.insets = new Insets(5, 0, 0, 0);
+        pnlForm.add(lblTrangThai, gbc);
+
+        dlgDoiMatKhau.add(pnlForm, BorderLayout.CENTER);
+
+        JButton btnHuy = UIStyle.nutPhu("Hủy");
+        JButton btnLuuMatKhau = UIStyle.nutChinh("Lưu mật khẩu");
+        btnHuy.addActionListener(e -> dlgDoiMatKhau.dispose());
+        btnLuuMatKhau.addActionListener(e -> {
+            char[] arrMatKhauCu = txtMatKhauCu.getPassword();
+            char[] arrMatKhauMoi = txtMatKhauMoi.getPassword();
+            char[] arrXacNhan = txtXacNhanMatKhau.getPassword();
+            try {
+                if (arrMatKhauCu.length == 0 || arrMatKhauMoi.length == 0 || arrXacNhan.length == 0) {
+                    JOptionPane.showMessageDialog(dlgDoiMatKhau,
+                            "Vui lòng nhập đầy đủ ba ô mật khẩu.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (arrMatKhauMoi.length < 6) {
+                    JOptionPane.showMessageDialog(dlgDoiMatKhau,
+                            "Mật khẩu mới phải có ít nhất 6 ký tự.", "Mật khẩu không hợp lệ",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (Arrays.equals(arrMatKhauCu, arrMatKhauMoi)) {
+                    JOptionPane.showMessageDialog(dlgDoiMatKhau,
+                            "Mật khẩu mới phải khác mật khẩu hiện tại.", "Mật khẩu không hợp lệ",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (!Arrays.equals(arrMatKhauMoi, arrXacNhan)) {
+                    JOptionPane.showMessageDialog(dlgDoiMatKhau,
+                            "Xác nhận mật khẩu mới không khớp.", "Mật khẩu không hợp lệ", JOptionPane.WARNING_MESSAGE);
+                    txtXacNhanMatKhau.setText("");
+                    return;
+                }
+
+                // SQL Server duoc truy van o worker, khong khoa giao dien Swing.
+                String strMatKhauCu = new String(arrMatKhauCu);
+                String strMatKhauMoi = new String(arrMatKhauMoi);
+                btnLuuMatKhau.setEnabled(false);
+                btnHuy.setEnabled(false);
+                lblTrangThai.setForeground(UIStyle.NAVY);
+                lblTrangThai.setText("Đang cập nhật mật khẩu...");
+
+                new SwingWorker<Boolean, Void>() {
+                    @Override
+                    protected Boolean doInBackground() throws Exception {
+                        return new TaiKhoanDAO().doiMatKhau(maNV, strMatKhauCu, strMatKhauMoi);
+                    }
+
+                    @Override
+                    protected void done() {
+                        btnLuuMatKhau.setEnabled(true);
+                        btnHuy.setEnabled(true);
+                        try {
+                            if (get()) {
+                                JOptionPane.showMessageDialog(dlgDoiMatKhau,
+                                        "Đổi mật khẩu thành công!\nHãy sử dụng mật khẩu mới trong lần đăng nhập tiếp theo.",
+                                        "Pet Shop Pro", JOptionPane.INFORMATION_MESSAGE);
+                                for (JPasswordField txtMatKhau : arrMatKhau)
+                                    txtMatKhau.setText("");
+                                dlgDoiMatKhau.dispose();
+                            } else {
+                                lblTrangThai.setForeground(new Color(192, 55, 55));
+                                lblTrangThai.setText("Mật khẩu hiện tại không đúng. Vui lòng thử lại.");
+                                txtMatKhauCu.setText("");
+                                txtMatKhauCu.requestFocusInWindow();
+                            }
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                            lblTrangThai.setForeground(new Color(192, 55, 55));
+                            lblTrangThai.setText("Thao tác bị gián đoạn. Vui lòng thử lại.");
+                        } catch (ExecutionException ex) {
+                            ex.printStackTrace();
+                            lblTrangThai.setForeground(new Color(192, 55, 55));
+                            lblTrangThai.setText("Không cập nhật được. Hãy kiểm tra kết nối SQL Server.");
+                        }
+                    }
+                }.execute();
+            } finally {
+                Arrays.fill(arrMatKhauCu, '\0');
+                Arrays.fill(arrMatKhauMoi, '\0');
+                Arrays.fill(arrXacNhan, '\0');
+            }
+        });
+
+        JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        pnlNut.setBackground(Color.WHITE);
+        pnlNut.setBorder(new EmptyBorder(0, 12, 2, 12));
+        pnlNut.add(btnHuy);
+        pnlNut.add(btnLuuMatKhau);
+        dlgDoiMatKhau.add(pnlNut, BorderLayout.SOUTH);
+        dlgDoiMatKhau.getRootPane().setDefaultButton(btnLuuMatKhau);
+        SwingUtilities.invokeLater(txtMatKhauCu::requestFocusInWindow);
+        dlgDoiMatKhau.setVisible(true);
+    }
+
+    private void themTruongMatKhau(JPanel pnlForm, GridBagConstraints gbc,
+            int intDong, String strNhan, JPasswordField txtMatKhau) {
+        JLabel lblNhan = new JLabel(strNhan);
+        lblNhan.setFont(UIStyle.font(Font.BOLD, 12));
+        gbc.gridy = intDong;
+        gbc.insets = new Insets(3, 0, 4, 0);
+        pnlForm.add(lblNhan, gbc);
+        gbc.gridy = intDong + 1;
+        gbc.insets = new Insets(0, 0, 8, 0);
+        pnlForm.add(txtMatKhau, gbc);
     }
 
     private void themThongTin(JPanel pnlPanel, String lblNhan, String lblGiaTri) {

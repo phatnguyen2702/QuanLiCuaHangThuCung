@@ -91,7 +91,8 @@ public class ThongKeDoanhThuDAO {
             this.tongDoanhThu = tongDoanhThu == null ? BigDecimal.ZERO : tongDoanhThu;
             this.tongHoaDon = tongHoaDon;
             this.doanhThuTrungBinh = doanhThuTrungBinh == null
-                    ? BigDecimal.ZERO : doanhThuTrungBinh;
+                    ? BigDecimal.ZERO
+                    : doanhThuTrungBinh;
             this.bieuDo = Collections.unmodifiableList(new ArrayList<>(bieuDo));
             this.matHangs = Collections.unmodifiableList(new ArrayList<>(matHangs));
         }
