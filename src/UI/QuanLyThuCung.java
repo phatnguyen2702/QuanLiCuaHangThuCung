@@ -80,6 +80,12 @@ public class QuanLyThuCung extends JPanel {
         btnTimKiem.setForeground(Color.WHITE);
         btnTimKiem.setPreferredSize(new Dimension(100, 35));
 
+        // --- GÁN SỰ KIỆN TÌM KIẾM ---
+        btnTimKiem.addActionListener(e -> timKiem());
+        txtTimKiem.addActionListener(e -> timKiem()); // Cho phép ấn Enter ở ô Text
+        cboLocGioiTinh.addActionListener(e -> timKiem()); // Lọc ngay khi đổi tùy chọn
+        cboLocLoai.addActionListener(e -> timKiem());
+
         filterPanel.add(txtTimKiem);
         filterPanel.add(cboLocGioiTinh);
         filterPanel.add(cboLocLoai);
@@ -121,7 +127,14 @@ public class QuanLyThuCung extends JPanel {
         JButton btnLamMoi = new JButton("↻ Làm mới");
         btnLamMoi.setBackground(BLUE_BTN);
         btnLamMoi.setForeground(Color.WHITE);
-        btnLamMoi.addActionListener(e -> resetForm());
+        btnLamMoi.addActionListener(e -> {
+            // Khi bấm Làm Mới, xóa cả bộ lọc và tải lại danh sách gốc
+            txtTimKiem.setText("");
+            cboLocGioiTinh.setSelectedIndex(0);
+            cboLocLoai.setSelectedIndex(0);
+            loadData();
+            resetForm();
+        });
         bottomPanel.add(btnLamMoi);
 
         panel.add(bottomPanel, BorderLayout.SOUTH);
@@ -221,6 +234,36 @@ public class QuanLyThuCung extends JPanel {
     // =========================================================
     // XỬ LÝ DỮ LIỆU
     // =========================================================
+
+    // Hàm thực hiện việc tìm kiếm và lọc
+    private void timKiem() {
+        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
+        String gioiTinhLoc = cboLocGioiTinh.getSelectedItem().toString();
+        String loaiLoc = cboLocLoai.getSelectedItem().toString();
+
+        tableModel.setRowCount(0); // Làm sạch bảng
+
+        for (ThuCung tc : dao.getAll()) {
+            // Lọc mã Thú Cưng (chứa từ khóa tìm kiếm)
+            boolean khopMa = tuKhoa.isEmpty() || tc.getMaThuCung().toLowerCase().contains(tuKhoa);
+
+            // Lọc Giới tính
+            boolean khopGioiTinh = gioiTinhLoc.equals("Giới tính") ||
+                    (tc.getGioiTinh() != null && tc.getGioiTinh().equals(gioiTinhLoc));
+
+            // Lọc Loại thú cưng
+            boolean khopLoai = loaiLoc.equals("Loại") ||
+                    (tc.getLoai() != null && tc.getLoai().equals(loaiLoc));
+
+            // Thỏa mãn toàn bộ điều kiện thì đưa vào bảng
+            if (khopMa && khopGioiTinh && khopLoai) {
+                tableModel.addRow(new Object[] {
+                        tc.getMaThuCung(), tc.getTenThuCung(), tc.getLoai(), tc.getTrangThai(), ""
+                });
+            }
+        }
+    }
+
     private void loadData() {
         tableModel.setRowCount(0);
         for (ThuCung tc : dao.getAll()) {
@@ -289,7 +332,7 @@ public class QuanLyThuCung extends JPanel {
 
             if (success) {
                 JOptionPane.showMessageDialog(this, isEditMode ? "Cập nhật thành công!" : "Thêm mới thành công!");
-                loadData();
+                timKiem(); // Làm mới lại danh sách nhưng vẫn giữ các filter đang chọn
                 resetForm();
             } else {
                 JOptionPane.showMessageDialog(this, "Thao tác thất bại. Hãy kiểm tra Mã Khách Hàng có tồn tại không!",
@@ -308,7 +351,7 @@ public class QuanLyThuCung extends JPanel {
         if (confirm == JOptionPane.YES_OPTION) {
             if (dao.xoa(maTC)) {
                 JOptionPane.showMessageDialog(this, "Đã xóa thú cưng!");
-                loadData();
+                timKiem(); // Gọi tìm kiếm để giữ nguyên trạng thái filter đang áp dụng
                 resetForm();
             } else {
                 JOptionPane.showMessageDialog(this,
