@@ -37,6 +37,7 @@ import java.util.zip.DeflaterOutputStream;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -80,14 +81,15 @@ public class QuanLyThanhToan extends JPanel {
 
     private final ThanhToanDao dao = new ThanhToanDao();
     private final String maNhanVien;
+    private final Runnable moLichSuHoaDon;
     private final List<entity.ThanhToan> chiTiet = new ArrayList<>();
     private final DonHangModel tableModel = new DonHangModel();
 
-    private final JTextField txtMaKhachHang = new JTextField();
+    private final JComboBox<String> cboMaKhachHang = new JComboBox<>();
     private final JTextField txtTenKhachHang = new JTextField();
     private final JTextField txtSoDienThoai = new JTextField();
     private final JTextField txtKhachHangTomTat = new JTextField();
-    private final JTextField txtTimSanPham = new JTextField();
+    private final JComboBox<String> cboTimSanPham = new JComboBox<>();
     private final JTextField txtVoucher = new JTextField();
     private final JTextField txtTienKhachDua = new JTextField();
     private final JTextField txtNgayLap = new JTextField();
@@ -98,15 +100,24 @@ public class QuanLyThanhToan extends JPanel {
     private final JTable tblDonHang = new JTable(tableModel);
     private final JPanel paymentMethodsPanel = new JPanel(new GridLayout(1, 0, 8, 0));
     private final JButton btnApDungVoucher = new JButton("Áp dụng");
+    private final javax.swing.Timer timerGoiYSanPham =
+            new javax.swing.Timer(300, e -> capNhatGoiYSanPham());
+    private final javax.swing.Timer timerGoiYKhachHang =
+            new javax.swing.Timer(300, e -> capNhatGoiYKhachHang());
 
     private String maKhachHang;
     private String maKhachHangDaXacNhan;
+    private boolean dangCapNhatGoiYSanPham;
+    private int lanTimGoiYSanPham;
+    private boolean dangCapNhatGoiYKhachHang;
+    private int lanTimGoiYKhachHang;
     private entity.ThanhToan.PhuongThuc phuongThucHienTai;
     private entity.ThanhToan.Voucher voucher;
     private LocalDateTime ngayLap = LocalDateTime.now();
 
-    public QuanLyThanhToan(String maNhanVien) {
+    public QuanLyThanhToan(String maNhanVien, Runnable moLichSuHoaDon) {
         this.maNhanVien = maNhanVien;
+        this.moLichSuHoaDon = moLichSuHoaDon;
         setLayout(new BorderLayout(10, 12));
         setBackground(LIGHT_BLUE);
         setBorder(BorderFactory.createEmptyBorder(12, 18, 16, 18));
@@ -123,11 +134,20 @@ public class QuanLyThanhToan extends JPanel {
         title.setForeground(NAVY);
         title.setFont(new Font("Segoe UI", Font.BOLD, 25));
         panel.add(title, BorderLayout.WEST);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        actions.setOpaque(false);
+        JButton btnLichSu = new JButton("Lịch sử hóa đơn");
+        btnLichSu.setForeground(NAVY);
+        btnLichSu.setFocusPainted(false);
+        btnLichSu.addActionListener(e -> moLichSuHoaDon.run());
+        actions.add(btnLichSu);
+
         JButton btnHuy = new JButton("Hủy hóa đơn  ×");
         btnHuy.setForeground(NAVY);
         btnHuy.setFocusPainted(false);
         btnHuy.addActionListener(e -> huyHoaDon());
-        panel.add(btnHuy, BorderLayout.EAST);
+        actions.add(btnHuy);
+        panel.add(actions, BorderLayout.EAST);
         return panel;
     }
 
@@ -161,12 +181,30 @@ public class QuanLyThanhToan extends JPanel {
                 BorderFactory.createEmptyBorder(5, 8, 8, 8)));
         JPanel search = new JPanel(new BorderLayout(12, 0));
         search.setOpaque(false);
-        txtTimSanPham.setToolTipText("Nhập mã hoặc tên sản phẩm/dịch vụ rồi nhấn Enter");
-        txtTimSanPham.addActionListener(e -> moChonSanPham());
+        cboTimSanPham.setEditable(true);
+        cboTimSanPham.setToolTipText("Nhập mã sản phẩm/dịch vụ");
+        JTextField editorTimSanPham = (JTextField) cboTimSanPham.getEditor().getEditorComponent();
+        editorTimSanPham.addActionListener(e -> moChonSanPham());
+        editorTimSanPham.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                datLaiTimerGoiYSanPham();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                datLaiTimerGoiYSanPham();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                datLaiTimerGoiYSanPham();
+            }
+        });
         JPanel searchField = new JPanel(new BorderLayout(6, 0));
         searchField.setOpaque(false);
-        searchField.add(new JLabel("Tìm mã / tên"), BorderLayout.WEST);
-        searchField.add(txtTimSanPham, BorderLayout.CENTER);
+        searchField.add(new JLabel("Tìm mã sản phẩm"), BorderLayout.WEST);
+        searchField.add(cboTimSanPham, BorderLayout.CENTER);
         JButton btnTim = new JButton("Tìm kiếm");
         btnTim.addActionListener(e -> moChonSanPham());
         JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
@@ -226,8 +264,28 @@ public class QuanLyThanhToan extends JPanel {
         panel.add(new JLabel("Mã khách hàng"), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.45;
-        txtMaKhachHang.setToolTipText("Mã khách hàng");
-        panel.add(txtMaKhachHang, gbc);
+        cboMaKhachHang.setEditable(true);
+        cboMaKhachHang.setToolTipText("Nhập mã khách hàng");
+        JTextField editorMaKhachHang =
+                (JTextField) cboMaKhachHang.getEditor().getEditorComponent();
+        editorMaKhachHang.addActionListener(e -> xacNhanKhachHang());
+        editorMaKhachHang.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                datLaiTimerGoiYKhachHang();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                datLaiTimerGoiYKhachHang();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                datLaiTimerGoiYKhachHang();
+            }
+        });
+        panel.add(cboMaKhachHang, gbc);
         gbc.gridx = 2;
         gbc.weightx = 0;
         JButton btnXacNhan = new JButton("Xác nhận");
@@ -284,7 +342,7 @@ public class QuanLyThanhToan extends JPanel {
         btnApDungVoucher.addActionListener(e -> apDungVoucher());
         JPanel voucherActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         voucherActions.setOpaque(false);
-        JButton btnXoa = new JButton("Xóa dòng");
+        JButton btnXoa = new JButton("Xóa sản phẩm");
         btnXoa.addActionListener(e -> xoaSanPham());
         voucherActions.add(btnApDungVoucher);
         voucherActions.add(btnXoa);
@@ -445,7 +503,7 @@ public class QuanLyThanhToan extends JPanel {
     }
 
     private void xacNhanKhachHang() {
-        String tuKhoa = txtMaKhachHang.getText().trim();
+        String tuKhoa = layMaKhachHangNhap();
         if (tuKhoa.isEmpty()) {
             hienLoi("Nhập mã khách hàng.");
             return;
@@ -477,8 +535,77 @@ public class QuanLyThanhToan extends JPanel {
         txtKhachHangTomTat.setText("");
     }
 
+    private void datLaiTimerGoiYKhachHang() {
+        if (dangCapNhatGoiYKhachHang) {
+            return;
+        }
+        lanTimGoiYKhachHang++;
+        timerGoiYKhachHang.stop();
+        if (layMaKhachHangNhap().isEmpty()) {
+            dangCapNhatGoiYKhachHang = true;
+            cboMaKhachHang.setModel(new DefaultComboBoxModel<>());
+            cboMaKhachHang.setEditable(true);
+            dangCapNhatGoiYKhachHang = false;
+        } else {
+            timerGoiYKhachHang.restart();
+        }
+    }
+
+    private void capNhatGoiYKhachHang() {
+        String ma = layMaKhachHangNhap();
+        if (ma.isEmpty()) {
+            return;
+        }
+
+        int lanTimHienTai = ++lanTimGoiYKhachHang;
+        new javax.swing.SwingWorker<List<String>, Void>() {
+            @Override
+            protected List<String> doInBackground() throws Exception {
+                return dao.goiYKhachHangTheoMa(ma);
+            }
+
+            @Override
+            protected void done() {
+                if (lanTimHienTai != lanTimGoiYKhachHang) {
+                    return;
+                }
+                try {
+                    List<String> ketQua = get();
+                    JTextField editor = (JTextField) cboMaKhachHang
+                            .getEditor().getEditorComponent();
+                    String noiDung = editor.getText();
+                    int viTriConTro = editor.getCaretPosition();
+                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                    for (String maKhachHangGoiY : ketQua) {
+                        model.addElement(maKhachHangGoiY);
+                    }
+
+                    dangCapNhatGoiYKhachHang = true;
+                    cboMaKhachHang.setModel(model);
+                    cboMaKhachHang.setEditable(true);
+                    cboMaKhachHang.getEditor().setItem(noiDung);
+                    editor = (JTextField) cboMaKhachHang.getEditor().getEditorComponent();
+                    editor.setCaretPosition(Math.min(viTriConTro, editor.getText().length()));
+                    dangCapNhatGoiYKhachHang = false;
+
+                    if (!ketQua.isEmpty() && editor.hasFocus() && cboMaKhachHang.isShowing()) {
+                        cboMaKhachHang.showPopup();
+                    }
+                } catch (Exception e) {
+                    dangCapNhatGoiYKhachHang = false;
+                    hienLoi("Không tải được gợi ý mã khách hàng: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private String layMaKhachHangNhap() {
+        Object giaTri = cboMaKhachHang.getEditor().getItem();
+        return giaTri == null ? "" : giaTri.toString().trim();
+    }
+
     private void moChonSanPham() {
-        String tuKhoa = txtTimSanPham.getText().trim();
+        String tuKhoa = layTuKhoaSanPham();
         if (tuKhoa.isEmpty()) {
             hienLoi("Nhập mã hoặc tên sản phẩm/dịch vụ cần tìm.");
             return;
@@ -540,11 +667,92 @@ public class QuanLyThanhToan extends JPanel {
             if (choice == JOptionPane.OK_OPTION) {
                 themSanPham((entity.ThanhToan) cbo.getSelectedItem(),
                         (Integer) quantity.getValue());
-                txtTimSanPham.setText("");
+                cboTimSanPham.getEditor().setItem("");
             }
         } catch (Exception e) {
             hienLoi("Không tìm được sản phẩm: " + e.getMessage());
         }
+    }
+
+    private void datLaiTimerGoiYSanPham() {
+        if (dangCapNhatGoiYSanPham) {
+            return;
+        }
+        lanTimGoiYSanPham++;
+        timerGoiYSanPham.stop();
+        if (((JTextField) cboTimSanPham.getEditor().getEditorComponent())
+                .getText().trim().isEmpty()) {
+            dangCapNhatGoiYSanPham = true;
+            cboTimSanPham.setModel(new DefaultComboBoxModel<>());
+            cboTimSanPham.setEditable(true);
+            dangCapNhatGoiYSanPham = false;
+        } else {
+            timerGoiYSanPham.restart();
+        }
+    }
+
+    private void capNhatGoiYSanPham() {
+        String tuKhoa = layTuKhoaSanPham();
+        if (tuKhoa.isEmpty()) {
+            return;
+        }
+
+        int lanTimHienTai = ++lanTimGoiYSanPham;
+        new javax.swing.SwingWorker<List<entity.ThanhToan>, Void>() {
+            @Override
+            protected List<entity.ThanhToan> doInBackground() throws Exception {
+                return dao.goiYMatHangTheoMa(tuKhoa);
+            }
+
+            @Override
+            protected void done() {
+                if (lanTimHienTai != lanTimGoiYSanPham) {
+                    return;
+                }
+                try {
+                    List<entity.ThanhToan> ketQua = get();
+                    JTextField editor = (JTextField) cboTimSanPham
+                            .getEditor().getEditorComponent();
+                    String noiDung = editor.getText();
+                    int viTriConTro = editor.getCaretPosition();
+                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                    for (entity.ThanhToan matHang : ketQua) {
+                        model.addElement(matHang.getMaHang() + " - "
+                                + matHang.getTenMatHang());
+                    }
+
+                    dangCapNhatGoiYSanPham = true;
+                    cboTimSanPham.setModel(model);
+                    cboTimSanPham.setEditable(true);
+                    cboTimSanPham.getEditor().setItem(noiDung);
+                    editor = (JTextField) cboTimSanPham.getEditor().getEditorComponent();
+                    editor.setCaretPosition(Math.min(viTriConTro, editor.getText().length()));
+                    dangCapNhatGoiYSanPham = false;
+
+                    if (!ketQua.isEmpty() && editor.hasFocus() && cboTimSanPham.isShowing()) {
+                        cboTimSanPham.showPopup();
+                    }
+                } catch (Exception e) {
+                    dangCapNhatGoiYSanPham = false;
+                    hienLoi("Không tải được gợi ý sản phẩm: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private String layTuKhoaSanPham() {
+        Object giaTri = cboTimSanPham.getEditor().getItem();
+        String noiDung = giaTri == null ? "" : giaTri.toString().trim();
+        for (int i = 0; i < cboTimSanPham.getItemCount(); i++) {
+            String luaChon = cboTimSanPham.getItemAt(i);
+            if (luaChon.equals(noiDung)) {
+                int dauPhanCach = luaChon.indexOf(" - ");
+                return dauPhanCach >= 0
+                        ? luaChon.substring(0, dauPhanCach).trim()
+                        : luaChon;
+            }
+        }
+        return noiDung;
     }
 
     private void themSanPham(entity.ThanhToan sanPham, int soLuong) {
@@ -585,7 +793,7 @@ public class QuanLyThanhToan extends JPanel {
             tableModel.fireTableDataChanged();
             maKhachHang = null;
             maKhachHangDaXacNhan = null;
-            txtMaKhachHang.setText("");
+            cboMaKhachHang.getEditor().setItem("");
             txtTenKhachHang.setText("");
             txtSoDienThoai.setText("");
             voucher = null;
@@ -625,7 +833,7 @@ public class QuanLyThanhToan extends JPanel {
 
     private void thanhToan() {
         if (maKhachHang == null
-                || !txtMaKhachHang.getText().trim().equals(maKhachHangDaXacNhan)) {
+                || !layMaKhachHangNhap().equals(maKhachHangDaXacNhan)) {
             xoaKhachHangDaChon();
             hienLoi("Hãy xác nhận khách hàng trước khi thanh toán.");
             return;
@@ -714,7 +922,7 @@ public class QuanLyThanhToan extends JPanel {
             tableModel.fireTableDataChanged();
             maKhachHang = null;
             maKhachHangDaXacNhan = null;
-            txtMaKhachHang.setText("");
+            cboMaKhachHang.getEditor().setItem("");
             txtTenKhachHang.setText("");
             txtSoDienThoai.setText("");
             txtKhachHangTomTat.setText("");
@@ -1136,7 +1344,7 @@ public class QuanLyThanhToan extends JPanel {
 
     private class DonHangModel extends AbstractTableModel {
         private final String[] columns = {
-                "Mã", "Sản phẩm", "SL", "Đơn giá", "Thành tiền"
+                "Mã", "Sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"
         };
 
         @Override

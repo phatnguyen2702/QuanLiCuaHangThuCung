@@ -439,8 +439,7 @@ INSERT INTO PhuongThucThanhToan
 (maPhuongThuc, tenPhuongThuc, trangThai, ghiChu)
 VALUES
 ('PT001', N'Tiền mặt', 1, N'Thanh toán tiền mặt tại quầy'),
-('PT002', N'Chuyển khoản', 1, N'Chuyển khoản ngân hàng'),
-('PT003', N'Ví điện tử', 1, N'Momo/ZaloPay');
+('PT002', N'Chuyển khoản', 1, N'Chuyển khoản ngân hàng');
 GO
 
 INSERT INTO CaLam

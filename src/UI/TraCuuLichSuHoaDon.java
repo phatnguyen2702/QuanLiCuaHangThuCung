@@ -31,6 +31,8 @@ import java.util.zip.DeflaterOutputStream;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -40,6 +42,10 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -49,7 +55,7 @@ import javax.swing.table.TableCellRenderer;
 import dao.HoaDonDAO;
 import entity.HoaDon;
 
-public class TraCuuHoaDon extends JPanel {
+public class TraCuuLichSuHoaDon extends JPanel {
 
     private static final Color NAVY = new Color(18, 48, 82);
     private static final Color LIGHT_BLUE = new Color(229, 241, 252);
@@ -65,11 +71,13 @@ public class TraCuuHoaDon extends JPanel {
     private static final int ITEMS_PER_PAGE = 18;
 
     private final HoaDonDAO dao = new HoaDonDAO();
+    private final Runnable quayLai;
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel screens = new JPanel(cardLayout);
     private final InvoiceTableModel invoiceTableModel = new InvoiceTableModel();
     private final DetailTableModel detailTableModel = new DetailTableModel();
-    private final JTextField txtTimKiem = new JTextField();
+    private final JComboBox<String> cboTimKiem = new JComboBox<>();
+    private final Timer timerGoiY = new Timer(300, e -> capNhatGoiY());
     private final JTable tblHoaDon = new JTable(invoiceTableModel);
     private final JTable tblChiTiet = new JTable(detailTableModel);
     private final JLabel lblHoaDonHomNay = new JLabel("0");
@@ -87,11 +95,15 @@ public class TraCuuHoaDon extends JPanel {
     private final JLabel lblTongTien = new JLabel();
     private final JLabel lblPhuongThuc = new JLabel();
     private HoaDon hoaDonDangXem;
+    private boolean dangCapNhatGoiY;
+    private int lanTimGoiY;
 
-    public TraCuuHoaDon() {
+    public TraCuuLichSuHoaDon(Runnable quayLai) {
+        this.quayLai = quayLai;
         setLayout(new BorderLayout());
         setBackground(LIGHT_BLUE);
         setBorder(BorderFactory.createEmptyBorder(14, 18, 18, 18));
+        screens.setOpaque(false);
         screens.add(createListScreen(), "LIST");
         screens.add(createDetailScreen(), "DETAIL");
         add(screens, BorderLayout.CENTER);
@@ -105,7 +117,7 @@ public class TraCuuHoaDon extends JPanel {
     private JPanel createListScreen() {
         JPanel screen = new JPanel(new BorderLayout(0, 14));
         screen.setOpaque(false);
-        screen.add(createTitle("Tra cứu hóa đơn"), BorderLayout.NORTH);
+        screen.add(createTitle("Tra cứu lịch sử hóa đơn"), BorderLayout.NORTH);
 
         JPanel content = new JPanel(new BorderLayout(0, 12));
         content.setBackground(Color.WHITE);
@@ -119,6 +131,12 @@ public class TraCuuHoaDon extends JPanel {
         list.add(createSearchBar(), BorderLayout.NORTH);
         configureInvoiceTable();
         list.add(new JScrollPane(tblHoaDon), BorderLayout.CENTER);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
+        actions.setOpaque(false);
+        JButton btnQuayLai = new JButton("Quay lại");
+        btnQuayLai.addActionListener(e -> quayLai.run());
+        actions.add(btnQuayLai);
+        list.add(actions, BorderLayout.SOUTH);
         content.add(list, BorderLayout.CENTER);
         screen.add(content, BorderLayout.CENTER);
         return screen;
@@ -167,10 +185,30 @@ public class TraCuuHoaDon extends JPanel {
         JPanel search = new JPanel(new BorderLayout(6, 0));
         search.setOpaque(false);
         JLabel hint = new JLabel("Tìm hóa đơn / Khách hàng:");
-        txtTimKiem.setToolTipText("Nhập mã hóa đơn, tên khách hàng hoặc số điện thoại");
-        txtTimKiem.addActionListener(e -> timKiem());
+        cboTimKiem.setEditable(true);
+        cboTimKiem.setToolTipText(
+                "Nhập mã hóa đơn hoặc tên khách hàng để xem gợi ý");
+        JTextField editorTimKiem =
+                (JTextField) cboTimKiem.getEditor().getEditorComponent();
+        editorTimKiem.addActionListener(e -> timKiem());
+        editorTimKiem.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                datLaiTimerGoiY();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                datLaiTimerGoiY();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                datLaiTimerGoiY();
+            }
+        });
         search.add(hint, BorderLayout.WEST);
-        search.add(txtTimKiem, BorderLayout.CENTER);
+        search.add(cboTimKiem, BorderLayout.CENTER);
         JButton btnTimKiem = new JButton("Tra cứu");
         btnTimKiem.addActionListener(e -> timKiem());
         search.add(btnTimKiem, BorderLayout.EAST);
@@ -178,11 +216,92 @@ public class TraCuuHoaDon extends JPanel {
 
         JButton btnLamMoi = new JButton("Làm mới");
         btnLamMoi.addActionListener(e -> {
-            txtTimKiem.setText("");
+            cboTimKiem.getEditor().setItem("");
             napDanhSach();
         });
         panel.add(btnLamMoi, BorderLayout.EAST);
         return panel;
+    }
+
+    private void datLaiTimerGoiY() {
+        if (dangCapNhatGoiY) {
+            return;
+        }
+        lanTimGoiY++;
+        timerGoiY.stop();
+        if (layTuKhoa().isEmpty()) {
+            dangCapNhatGoiY = true;
+            cboTimKiem.setModel(new DefaultComboBoxModel<>());
+            cboTimKiem.setEditable(true);
+            dangCapNhatGoiY = false;
+        } else {
+            timerGoiY.restart();
+        }
+    }
+
+    private void capNhatGoiY() {
+        String tuKhoa = layTuKhoa();
+        if (tuKhoa.isEmpty()) {
+            return;
+        }
+
+        int lanTimHienTai = ++lanTimGoiY;
+        new SwingWorker<List<String>, Void>() {
+            @Override
+            protected List<String> doInBackground() throws Exception {
+                return dao.goiYTimHoaDon(tuKhoa);
+            }
+
+            @Override
+            protected void done() {
+                if (lanTimHienTai != lanTimGoiY) {
+                    return;
+                }
+                try {
+                    List<String> ketQua = get();
+                    JTextField editor = (JTextField) cboTimKiem
+                            .getEditor().getEditorComponent();
+                    String noiDung = editor.getText();
+                    int viTriConTro = editor.getCaretPosition();
+                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                    for (String goiY : ketQua) {
+                        model.addElement(goiY);
+                    }
+
+                    dangCapNhatGoiY = true;
+                    try {
+                        cboTimKiem.setModel(model);
+                        cboTimKiem.setEditable(true);
+                        cboTimKiem.getEditor().setItem(noiDung);
+                        editor = (JTextField) cboTimKiem.getEditor().getEditorComponent();
+                        editor.setCaretPosition(Math.min(viTriConTro, editor.getText().length()));
+                    } finally {
+                        dangCapNhatGoiY = false;
+                    }
+
+                    if (!ketQua.isEmpty() && editor.hasFocus() && cboTimKiem.isShowing()) {
+                        cboTimKiem.showPopup();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    hienLoiGoiY("Tải gợi ý tìm kiếm bị gián đoạn.");
+                } catch (java.util.concurrent.ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    hienLoiGoiY("Không tải được gợi ý tìm kiếm: "
+                            + (cause == null ? e.getMessage() : cause.getMessage()));
+                }
+            }
+        }.execute();
+    }
+
+    private void hienLoiGoiY(String message) {
+        JOptionPane.showMessageDialog(
+                this, message, "Lỗi tra cứu hóa đơn", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private String layTuKhoa() {
+        Object giaTri = cboTimKiem.getEditor().getItem();
+        return giaTri == null ? "" : giaTri.toString().trim();
     }
 
     private void configureInvoiceTable() {
@@ -313,7 +432,7 @@ public class TraCuuHoaDon extends JPanel {
     private void napDanhSach() {
         try {
             HoaDonDAO.ThongKe thongKe = dao.layThongKe();
-            List<HoaDon> hoaDons = dao.timHoaDon(txtTimKiem.getText());
+            List<HoaDon> hoaDons = dao.timHoaDon(layTuKhoa());
             invoiceTableModel.setInvoices(hoaDons);
             capNhatThongKe(thongKe);
         } catch (SQLException e) {

@@ -83,8 +83,7 @@ public class HoaDonDAO {
                 + "JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang "
                 + "JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc "
                 + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
-                + "WHERE (? = '' OR hd.maHoaDon LIKE ? OR kh.hoTen LIKE ? "
-                + "OR kh.soDienThoai LIKE ?) "
+                + "WHERE (? = '' OR hd.maHoaDon LIKE ? OR kh.hoTen LIKE ?) "
                 + "GROUP BY hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc "
                 + "ORDER BY hd.ngayLap DESC, hd.maHoaDon DESC";
@@ -95,7 +94,6 @@ public class HoaDonDAO {
             ps.setString(1, keyword);
             ps.setString(2, "%" + keyword + "%");
             ps.setString(3, "%" + keyword + "%");
-            ps.setString(4, "%" + keyword + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Timestamp ngayLap = rs.getTimestamp("ngayLap");
@@ -112,6 +110,30 @@ public class HoaDonDAO {
             }
         }
         return hoaDons;
+    }
+
+    public List<String> goiYTimHoaDon(String tuKhoa) throws SQLException {
+        String sql = "SELECT TOP 30 giaTri FROM ("
+                + "SELECT hd.maHoaDon AS giaTri FROM HoaDon hd "
+                + "WHERE hd.maHoaDon LIKE ? "
+                + "UNION "
+                + "SELECT kh.hoTen AS giaTri FROM KhachHang kh "
+                + "WHERE kh.hoTen LIKE ? AND EXISTS ("
+                + "SELECT 1 FROM HoaDon hd WHERE hd.maKhachHang = kh.maKhachHang) "
+                + ") AS goiY ORDER BY giaTri";
+        String keyword = "%" + tuKhoa.trim() + "%";
+        List<String> goiY = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, keyword);
+            ps.setString(2, keyword);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    goiY.add(rs.getString("giaTri"));
+                }
+            }
+        }
+        return goiY;
     }
 
     public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {

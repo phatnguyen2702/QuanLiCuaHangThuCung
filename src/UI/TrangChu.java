@@ -77,7 +77,7 @@ public class TrangChu extends JFrame {
     private final Runnable[] napLai = new Runnable[TEN_TAB.length];
     // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
-    private TraCuuHoaDon pnlTraCuuHoaDon;
+    private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
     private ThongKeDoanhThu pnlThongKeDoanhThu;
     private final javax.swing.Timer tmrDongHo;
     private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
@@ -249,7 +249,8 @@ public class TrangChu extends JFrame {
 
     private void moTraCuuHoaDon() {
         hienManHinh("hoadon", "Tra cứu hóa đơn", btnTimKiem,
-                () -> pnlTraCuuHoaDon = new TraCuuHoaDon());
+                () -> pnlTraCuuHoaDon = new TraCuuLichSuHoaDon(
+                        () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan)));
         if (pnlTraCuuHoaDon != null) {
             try {
                 pnlTraCuuHoaDon.hienDanhSach();
@@ -261,7 +262,8 @@ public class TrangChu extends JFrame {
 
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnNghiepVu,
-                () -> new QuanLyThanhToan(maNV));
+                () -> new QuanLyThanhToan(maNV,
+                        () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon)));
     }
 
     private void moQuanLyTaiKhoan() {
@@ -441,7 +443,6 @@ public class TrangChu extends JFrame {
 
     private JPopupMenu taoMenuTimKiem() {
         JPopupMenu p = new JPopupMenu();
-        themMuc(p, "Tra cứu hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
         themMuc(p, "Tra cứu khách hàng", btnTimKiem, this::moKhachHang);
         themMuc(p, "Tra cứu thú cưng", btnTimKiem, this::moThuCung);
         themMuc(p, "Tra cứu lịch hẹn", btnTimKiem, this::moLichHen);
