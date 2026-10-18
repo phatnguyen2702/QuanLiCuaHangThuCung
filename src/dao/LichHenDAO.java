@@ -159,4 +159,20 @@ public class LichHenDAO {
         }
         return list;
     }
+
+    // Lấy danh sách tên dịch vụ để đưa vào ComboBox Ghi Chú
+    public ArrayList<String> getDanhSachDichVu() {
+        ArrayList<String> list = new ArrayList<>();
+        String sql = "SELECT tenDichVu FROM DichVu";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
