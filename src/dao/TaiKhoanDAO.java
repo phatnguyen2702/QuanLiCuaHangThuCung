@@ -7,6 +7,30 @@ import java.util.ArrayList;
 
 public class TaiKhoanDAO {
 
+        /** Xác thực bằng tài khoản suy ra từ họ tên + 3 số cuối mã nhân viên. */
+        public TaiKhoan xacThuc(String tenDangNhap, String matKhau) throws SQLException {
+                String sql = "SELECT maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro FROM NhanVien";
+                try (Connection con = ConnectDB.connectDB.getConnection();
+                     PreparedStatement ps = con.prepareStatement(sql);
+                     ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                                String ma = rs.getString("maNhanVien");
+                                String ten = rs.getString("hoTen");
+                                if (ma == null || ten == null || ma.length() < 3) continue;
+                                String normalized = java.text.Normalizer.normalize(ten, java.text.Normalizer.Form.NFD)
+                                        .replaceAll("\\p{M}", "").replace("đ", "d").replace("Đ", "D")
+                                        .toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", "")
+                                        + ma.substring(ma.length() - 3);
+                                if (normalized.equals(tenDangNhap) && rs.getString("matKhau") != null
+                                        && rs.getString("matKhau").equals(matKhau)) {
+                                        return new TaiKhoan(ma, ten, rs.getString("soDienThoai"), rs.getString("email"),
+                                                rs.getString("matKhau"), rs.getString("gioiTinh"), rs.getString("vaiTro"));
+                                }
+                        }
+                }
+                return null;
+        }
+
         // =========================================================
         // LAY TAT CA
         // =========================================================

@@ -17,6 +17,13 @@ import java.util.List;
  */
 public class NhapKhoDAO {
 
+    private void damBaoCotHanSuDung() throws SQLException {
+        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
+            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL " +
+                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
+        }
+    }
+
     public String taoMaMoi() throws SQLException {
         return taoMa("PhieuNhapKho", "maPhieuNhap", "PN", 3);
     }
@@ -24,6 +31,8 @@ public class NhapKhoDAO {
     // Luu phieu + chi tiet trong 1 giao dich: loi o dau thi huy het
     public void luu(PhieuNhapKho phieu,
                     List<ChiTietPhieuNhap> chiTiet) throws SQLException {
+
+        damBaoCotHanSuDung();
 
         String sqlPhieu = """
                 INSERT INTO PhieuNhapKho
@@ -33,8 +42,8 @@ public class NhapKhoDAO {
 
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuNhap
-                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai)
-                VALUES (?, ?, ?, ?, ?)
+                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection con = connectDB.getConnection()) {
@@ -58,6 +67,8 @@ public class NhapKhoDAO {
                         ps.setInt(3, ct.getSoLuongNhap());
                         ps.setDouble(4, ct.getDonGiaNhap());
                         ps.setBoolean(5, phieu.isTrangThai());
+                        if (ct.getHanSuDung() == null) ps.setNull(6, Types.DATE);
+                        else ps.setDate(6, Date.valueOf(ct.getHanSuDung()));
                         ps.addBatch();
                     }
                     ps.executeBatch();

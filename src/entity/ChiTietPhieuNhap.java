@@ -1,5 +1,7 @@
 package entity;
 
+import java.time.LocalDate;
+
 public class ChiTietPhieuNhap {
 
     private String maPhieuNhap;
@@ -7,6 +9,7 @@ public class ChiTietPhieuNhap {
     private int soLuongNhap;
     private double donGiaNhap;
     private boolean trangThai;
+    private LocalDate hanSuDung;
 
     // Chi dung de hien thi
     private String tenSanPham;
@@ -35,6 +38,9 @@ public class ChiTietPhieuNhap {
 
     public double getDonGiaNhap() { return donGiaNhap; }
     public void setDonGiaNhap(double donGiaNhap) { this.donGiaNhap = donGiaNhap; }
+
+    public LocalDate getHanSuDung() { return hanSuDung; }
+    public void setHanSuDung(LocalDate hanSuDung) { this.hanSuDung = hanSuDung; }
 
     public boolean isTrangThai() { return trangThai; }
     public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
