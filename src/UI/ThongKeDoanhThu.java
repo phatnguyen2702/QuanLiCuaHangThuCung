@@ -406,7 +406,7 @@ public class ThongKeDoanhThu extends JPanel {
         g.setColor(NAVY);
         g.setFont(new Font("Segoe UI", Font.BOLD, 11));
         g.drawString("STT", 44, y + 17);
-        g.drawString("Danh mục / Sản phẩm", 90, y + 17);
+        g.drawString("Dịch vụ/Sản phẩm", 90, y + 17);
         g.drawString("Số lượng", 480, y + 17);
         g.drawString("Doanh thu", 585, y + 17);
         g.drawString("Tỷ trọng (%)", 705, y + 17);
