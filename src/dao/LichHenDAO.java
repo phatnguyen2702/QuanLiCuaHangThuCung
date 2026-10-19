@@ -11,18 +11,6 @@ import ConnectDB.connectDB;
 
 public class LichHenDAO {
 
-    public ArrayList<String> getDanhSachDichVu() {
-        ArrayList<String> list = new ArrayList<>();
-        String sql = "SELECT tenDichVu FROM DichVu ORDER BY tenDichVu";
-        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(rs.getString(1));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
     // =========================================================
     // LẤY TẤT CẢ LỊCH HẸN (Kèm thông tin JOIN)
     // =========================================================
@@ -168,6 +156,22 @@ public class LichHenDAO {
                 list.add(new String[] { rs.getString(1), rs.getString(2) });
             }
         } catch (SQLException e) {
+        }
+        return list;
+    }
+
+    // Lấy danh sách tên dịch vụ để đưa vào ComboBox Ghi Chú
+    public ArrayList<String> getDanhSachDichVu() {
+        ArrayList<String> list = new ArrayList<>();
+        String sql = "SELECT tenDichVu FROM DichVu";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return list;
     }
