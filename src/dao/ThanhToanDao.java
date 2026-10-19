@@ -19,49 +19,19 @@ import entity.ThanhToan;
 public class ThanhToanDao {
 
     public List<ThanhToan> timMatHangTheoMa(String ma) throws SQLException {
-        List<ThanhToan> ketQua = new ArrayList<>();
-        for (ThanhToan item : timMatHang(ma)) {
-            if (item.getMaHang().equalsIgnoreCase(ma.trim())) ketQua.add(item);
-        }
-        return ketQua;
-    }
-
-    public List<String> layDanhSachMaMatHang() throws SQLException {
-        List<String> ds = new ArrayList<>();
-        String sql = "SELECT maSanPham AS maHang FROM SanPham UNION SELECT maDichVu FROM DichVu ORDER BY maHang";
-        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) ds.add(rs.getString(1));
-        }
-        return ds;
-    }
-
-    public List<String> layDanhSachMaKhachHang() throws SQLException {
-        List<String> ds = new ArrayList<>();
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement("SELECT maKhachHang FROM KhachHang ORDER BY maKhachHang");
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) ds.add(rs.getString(1));
-        }
-        return ds;
-    }
-
-    public List<ThanhToan> timMatHang(String tuKhoa) throws SQLException {
-        String sql = "SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, "
+        String sql = "SELECT maSanPham AS maHang, tenSanPham AS tenHang, "
                 + "giaBan AS donGia, CAST(0 AS BIT) AS laDichVu "
-                + "FROM SanPham WHERE maSanPham = ? OR tenSanPham LIKE ? "
-                + "UNION ALL "
-                + "SELECT TOP 30 maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
-                + "FROM DichVu WHERE maDichVu = ? OR tenDichVu LIKE ?";
+                + "FROM SanPham WHERE maSanPham = ?"
+                + " UNION ALL "
+                + "SELECT maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
+                + "FROM DichVu WHERE maDichVu = ?";
         List<ThanhToan> matHangs = new ArrayList<>();
 
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
-            String keyword = tuKhoa.trim();
+            String keyword = ma.trim();
             ps.setString(1, keyword);
-            ps.setString(2, "%" + keyword + "%");
-            ps.setString(3, keyword);
-            ps.setString(4, "%" + keyword + "%");
+            ps.setString(2, keyword);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     BigDecimal donGia = rs.getBigDecimal("donGia");
@@ -80,6 +50,21 @@ public class ThanhToanDao {
             }
         }
         return matHangs;
+    }
+
+    public List<String> layDanhSachMaMatHang() throws SQLException {
+        String sql = "SELECT maSanPham AS maHang FROM SanPham "
+                + "UNION SELECT maDichVu AS maHang FROM DichVu "
+                + "ORDER BY maHang";
+        List<String> maMatHangs = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                maMatHangs.add(rs.getString("maHang"));
+            }
+        }
+        return maMatHangs;
     }
 
     public ThanhToan.KhachHang timKhachHang(String maHoacSoDienThoai)
@@ -101,6 +86,19 @@ public class ThanhToanDao {
                         rs.getString("soDienThoai"));
             }
         }
+    }
+
+    public List<String> layDanhSachMaKhachHang() throws SQLException {
+        String sql = "SELECT maKhachHang FROM KhachHang ORDER BY maKhachHang";
+        List<String> maKhachHangs = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                maKhachHangs.add(rs.getString("maKhachHang"));
+            }
+        }
+        return maKhachHangs;
     }
 
     public ThanhToan.Voucher timVoucher(String maHoacTen) throws SQLException {

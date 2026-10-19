@@ -17,19 +17,6 @@ import java.util.List;
  */
 public class NhapKhoDAO {
 
-    private void damBaoCotHanSuDung() throws SQLException {
-        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
-            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL " +
-                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
-            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'maLoHang') IS NULL ALTER TABLE dbo.ChiTietPhieuNhap ADD maLoHang VARCHAR(30) NULL");
-            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'maLo') IS NULL BEGIN " +
-                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD maLo INT IDENTITY(1,1) NOT NULL; " +
-                    "IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name='PK_ChiTietPhieuNhap') " +
-                    "ALTER TABLE dbo.ChiTietPhieuNhap DROP CONSTRAINT PK_ChiTietPhieuNhap; " +
-                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD CONSTRAINT PK_ChiTietPhieuNhap PRIMARY KEY (maLo); END");
-        }
-    }
-
     public String taoMaMoi() throws SQLException {
         return taoMa("PhieuNhapKho", "maPhieuNhap", "PN", 3);
     }
@@ -37,8 +24,6 @@ public class NhapKhoDAO {
     // Luu phieu + chi tiet trong 1 giao dich: loi o dau thi huy het
     public void luu(PhieuNhapKho phieu,
                     List<ChiTietPhieuNhap> chiTiet) throws SQLException {
-
-        damBaoCotHanSuDung();
 
         String sqlPhieu = """
                 INSERT INTO PhieuNhapKho
@@ -48,8 +33,8 @@ public class NhapKhoDAO {
 
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuNhap
-                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung, maLoHang)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai)
+                VALUES (?, ?, ?, ?, ?)
                 """;
 
         try (Connection con = connectDB.getConnection()) {
@@ -57,28 +42,13 @@ public class NhapKhoDAO {
             con.setAutoCommit(false);
 
             try {
-                int daCapNhat;
-                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuNhapKho SET ngayNhap=?, trangThai=?, maNhanVien=?, maNhaCungCap=? WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0")) {
-                    ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayNhap()));
-                    ps.setBoolean(2, phieu.isTrangThai());
-                    ps.setString(3, phieu.getMaNhanVien());
-                    ps.setString(4, phieu.getMaNhaCungCap());
-                    ps.setString(5, phieu.getMaPhieuNhap());
-                    daCapNhat = ps.executeUpdate();
-                }
-                if (daCapNhat > 0) {
-                    try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap=?")) {
-                        ps.setString(1, phieu.getMaPhieuNhap()); ps.executeUpdate();
-                    }
-                } else {
-                    try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
-                        ps.setString(1, phieu.getMaPhieuNhap());
-                        ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayNhap()));
-                        ps.setBoolean(3, phieu.isTrangThai());
-                        ps.setString(4, phieu.getMaNhanVien());
-                        ps.setString(5, phieu.getMaNhaCungCap());
-                        ps.executeUpdate();
-                    }
+                try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
+                    ps.setString(1, phieu.getMaPhieuNhap());
+                    ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayNhap()));
+                    ps.setBoolean(3, phieu.isTrangThai());
+                    ps.setString(4, phieu.getMaNhanVien());
+                    ps.setString(5, phieu.getMaNhaCungCap());
+                    ps.executeUpdate();
                 }
 
                 try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
@@ -88,9 +58,6 @@ public class NhapKhoDAO {
                         ps.setInt(3, ct.getSoLuongNhap());
                         ps.setDouble(4, ct.getDonGiaNhap());
                         ps.setBoolean(5, phieu.isTrangThai());
-                        if (ct.getHanSuDung() == null) ps.setNull(6, Types.DATE);
-                        else ps.setDate(6, Date.valueOf(ct.getHanSuDung()));
-                        ps.setString(7, ct.getMaLoHang());
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -103,22 +70,6 @@ public class NhapKhoDAO {
                 throw e;
             }
         }
-    }
-
-    public ArrayList<ChiTietPhieuNhap> layChiTiet(String maPhieu) throws SQLException {
-        damBaoCotHanSuDung();
-        ArrayList<ChiTietPhieuNhap> ds = new ArrayList<>();
-        String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung,ct.maLoHang FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham WHERE ct.maPhieuNhap=? ORDER BY ct.maLo";
-        try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, maPhieu);
-            try (ResultSet r = p.executeQuery()) { while (r.next()) {
-                ChiTietPhieuNhap ct = new ChiTietPhieuNhap(); ct.setMaPhieuNhap(maPhieu);
-                ct.setMaSanPham(r.getString(1)); ct.setTenSanPham(r.getString(2));
-                ct.setSoLuongNhap(r.getInt(3)); ct.setDonGiaNhap(r.getDouble(4));
-                Date d = r.getDate(5); ct.setHanSuDung(d == null ? null : d.toLocalDate()); ct.setMaLoHang(r.getString(6)); ds.add(ct);
-            }}
-        }
-        return ds;
     }
 
     // =========================================================
