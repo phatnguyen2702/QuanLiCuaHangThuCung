@@ -325,10 +325,6 @@ public class SanPhamPanel extends JPanel {
                 new JSpinner(new SpinnerNumberModel(0, 0, 1_000_000, 1));
         private final JComboBox<DanhMuc> cboDanhMuc = new JComboBox<>();
         private final JComboBox<NhaCungCap> cboNhaCungCap = new JComboBox<>();
-        private final JComboBox<String> cboNhomTuoi = new JComboBox<>(new String[]{
-                "Mọi độ tuổi", "Con non", "Trưởng thành", "Cao tuổi", "Chưa xác định"});
-        private final JComboBox<String> cboKichThuoc = new JComboBox<>(new String[]{
-                "Mọi kích thước", "Nhỏ", "Trung bình", "Lớn", "Chưa xác định"});
 
         private boolean daLuu = false;
 
@@ -351,8 +347,6 @@ public class SanPhamPanel extends JPanel {
 
             cboDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
             cboNhaCungCap.setFont(UIStyle.font(Font.PLAIN, 13));
-            cboNhomTuoi.setFont(UIStyle.font(Font.PLAIN, 13));
-            cboKichThuoc.setFont(UIStyle.font(Font.PLAIN, 13));
 
             JPanel form = new JPanel(new GridBagLayout());
             form.setBorder(new EmptyBorder(20, 25, 10, 25));
@@ -363,11 +357,9 @@ public class SanPhamPanel extends JPanel {
             UIStyle.hang(form, 3, "Giá bán", txtGiaBan, false);
             UIStyle.hang(form, 4, "Danh mục", cboDanhMuc, false);
             UIStyle.hang(form, 5, "Nhà cung cấp", cboNhaCungCap, false);
-            UIStyle.hang(form, 6, "Độ tuổi phù hợp", cboNhomTuoi, false);
-            UIStyle.hang(form, 7, "Kích thước phù hợp", cboKichThuoc, false);
 
             spnThem.setFont(UIStyle.font(Font.PLAIN, 13));
-            int dongTiep = 8;
+            int dongTiep = 6;
             if (sp != null) {
                 UIStyle.hang(form, dongTiep++, "Tồn hiện tại",
                         UIStyle.oChiDoc(String.valueOf(sp.getTonKho())), false);
@@ -384,15 +376,6 @@ public class SanPhamPanel extends JPanel {
                 txtGiaBan.setText(String.valueOf((long) sp.getGiaBan()));
                 chonDanhMuc(sp.getMaDanhMuc());
                 chonNhaCungCap(sp.getMaNhaCungCap());
-                try {
-                    String[] thongTin = dao.layThongTinGoiY(sp.getMaSanPham());
-                    if (thongTin != null) {
-                        chonGiaTri(cboNhomTuoi, thongTin[1]);
-                        chonGiaTri(cboKichThuoc, thongTin[2]);
-                    }
-                } catch (SQLException ex) {
-                    UIStyle.loi(this, ex);
-                }
             } else {
                 txtMa.setText(maMoi);
             }
@@ -429,15 +412,6 @@ public class SanPhamPanel extends JPanel {
             for (int i = 0; i < cboNhaCungCap.getItemCount(); i++) {
                 if (cboNhaCungCap.getItemAt(i).getMaNhaCungCap().equals(ma)) {
                     cboNhaCungCap.setSelectedIndex(i);
-                    return;
-                }
-            }
-        }
-
-        private void chonGiaTri(JComboBox<String> combo, String giaTri) {
-            for (int i = 0; i < combo.getItemCount(); i++) {
-                if (combo.getItemAt(i).equals(giaTri)) {
-                    combo.setSelectedIndex(i);
                     return;
                 }
             }
@@ -503,9 +477,6 @@ public class SanPhamPanel extends JPanel {
                 } else {
                     dao.them(sp);
                 }
-                dao.luuThongTinGoiY(ma, dm.getTenDanhMuc(), ten,
-                        (String) cboNhomTuoi.getSelectedItem(),
-                        (String) cboKichThuoc.getSelectedItem());
 
                 int them = (Integer) spnThem.getValue();
                 if (them > 0) {

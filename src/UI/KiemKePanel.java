@@ -40,8 +40,6 @@ public class KiemKePanel extends JPanel {
     private final JLabel lbDaKiem = new JLabel("0 / 0");
     private final JLabel lbChuaKiem = new JLabel("0");
     private final JLabel lbChenhLech = new JLabel("0 mặt hàng");
-    private final JLabel lbBatDau = new JLabel("Thời điểm kiểm kê: —");
-    private LocalDateTime ngayBatDau = LocalDateTime.now();
 
     // Toan bo san pham cua phieu dang kiem
     private final List<ChiTietPhieuKiemKe> tatCa = new ArrayList<>();
@@ -60,14 +58,6 @@ public class KiemKePanel extends JPanel {
         phanDau.setOpaque(false);
         phanDau.setLayout(new BoxLayout(phanDau, BoxLayout.Y_AXIS));
         phanDau.add(taoHangTieuDe());
-        JPanel mocThoiGian = new JPanel(new GridLayout(1, 2, 18, 0));
-        mocThoiGian.setOpaque(false);
-        mocThoiGian.setAlignmentX(Component.LEFT_ALIGNMENT);
-        mocThoiGian.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        lbBatDau.setFont(UIStyle.font(Font.PLAIN, 13));
-        lbBatDau.setBorder(new EmptyBorder(4, 0, 4, 0));
-        mocThoiGian.add(lbBatDau);
-        phanDau.add(mocThoiGian);
         phanDau.add(Box.createVerticalStrut(12));
         phanDau.add(taoCacTheThongKe());
 
@@ -86,23 +76,14 @@ public class KiemKePanel extends JPanel {
         lbTieuDe.setFont(UIStyle.font(Font.BOLD, 26));
 
         JButton btnPhieuMoi = UIStyle.nutPhu("Phiếu mới");
-        JButton btnLichSu = UIStyle.nutPhu("Lịch sử phiếu");
-        JButton btnLuuNhap = UIStyle.nutPhu("Lưu nháp");
         JButton btnChot = UIStyle.nutXanh("Chốt kiểm kê");
-        JButton btnPdf = UIStyle.nutPhu("Xuất phiếu kiểm kê");
-        btnPdf.addActionListener(e -> UIStyle.xuatPdf(this, "Phiếu kiểm kê kho", bang));
         btnPhieuMoi.addActionListener(e -> hoiPhieuMoi());
-        btnLichSu.addActionListener(e -> xemLichSu());
-        btnLuuNhap.addActionListener(e -> luuNhap());
         btnChot.addActionListener(e -> chot());
 
         JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         nut.setOpaque(false);
         nut.add(btnPhieuMoi);
-        nut.add(btnLichSu);
-        nut.add(btnLuuNhap);
         nut.add(btnChot);
-        nut.add(btnPdf);
 
         JPanel hang = new JPanel(new BorderLayout());
         hang.setOpaque(false);
@@ -211,8 +192,6 @@ public class KiemKePanel extends JPanel {
         try {
             maPhieu = dao.taoMaMoi();
             lbTieuDe.setText("Kiểm kê kho — " + maPhieu);
-            ngayBatDau = LocalDateTime.now();
-            lbBatDau.setText("Thời điểm kiểm kê: " + ngayBatDau.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
 
             tatCa.clear();
 
@@ -355,15 +334,6 @@ public class KiemKePanel extends JPanel {
 
     private void chot() {
 
-        try {
-            java.util.Map<String, Integer> tonMoi = new java.util.HashMap<>();
-            for (SanPham sp : dao.laySanPhamKemTon()) tonMoi.put(sp.getMaSanPham(), sp.getTonKho());
-            for (ChiTietPhieuKiemKe ct : tatCa) {
-                if (ct.daKiem() && tonMoi.containsKey(ct.getMaSanPham())) ct.setSoLuongHeThong(tonMoi.get(ct.getMaSanPham()));
-            }
-            veLaiBang();
-        } catch (SQLException ex) { UIStyle.loi(this, ex); return; }
-
         List<ChiTietPhieuKiemKe> daKiem = new ArrayList<>();
 
         for (ChiTietPhieuKiemKe ct : tatCa) {
@@ -390,23 +360,11 @@ public class KiemKePanel extends JPanel {
             return;
         }
 
-        String lyDo = "";
-        if (daKiem.stream().anyMatch(ct -> ct.getChenhLech() != 0)) {
-            lyDo = JOptionPane.showInputDialog(this, "Ghi lý do chênh lệch (bắt buộc):", "Lý do chênh lệch", JOptionPane.QUESTION_MESSAGE);
-            if (lyDo == null) return;
-            lyDo = lyDo.trim();
-            if (lyDo.isEmpty()) { UIStyle.canhBao(this, "Vui lòng ghi lý do chênh lệch."); return; }
-        }
-        LocalDateTime gioChot = LocalDateTime.now();
         PhieuKiemKe phieu = new PhieuKiemKe(
                 maPhieu,
-                gioChot,
+                LocalDateTime.now(),
                 true,
                 PhienLamViec.maNV);
-        phieu.setNgayBatDau(ngayBatDau);
-        phieu.setNgayChot(gioChot);
-        phieu.setLyDoChenhLech(lyDo);
-        phieu.setMaNhanVienXacNhan(PhienLamViec.maNV);
 
         try {
             dao.luu(phieu, daKiem);
@@ -418,109 +376,5 @@ public class KiemKePanel extends JPanel {
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
         }
-    }
-
-    private void xemLichSu() {
-        try {
-            ArrayList<PhieuKiemKe> ds = dao.dsPhieu();
-            String[] colsPhieu = {"Mã phiếu", "Trạng thái", "Thời điểm kiểm kê", "Người lập", "Người xác nhận", "Lý do chênh lệch"};
-            DefaultTableModel modelPhieu = new DefaultTableModel(colsPhieu, 0) {
-                @Override public boolean isCellEditable(int row, int col) { return false; }
-            };
-            for (PhieuKiemKe p : ds) modelPhieu.addRow(new Object[]{
-                    p.getMaPhieuKiemKe(), p.isTrangThai() ? "Đã chốt" : "Nháp",
-                    dinhDangGio(p.getNgayBatDau()), p.getMaNhanVien(),
-                    p.getMaNhanVienXacNhan() == null ? "—" : p.getMaNhanVienXacNhan(),
-                    p.getLyDoChenhLech() == null || p.getLyDoChenhLech().isBlank() ? "—" : p.getLyDoChenhLech()
-            });
-            JTable bangPhieu = new JTable(modelPhieu);
-            UIStyle.taoBang(bangPhieu, 0);
-            bangPhieu.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-            int[] rongCot = {95, 80, 170, 100, 120, 280};
-            for (int i = 0; i < rongCot.length; i++) bangPhieu.getColumnModel().getColumn(i).setPreferredWidth(rongCot[i]);
-
-            DefaultTableModel modelChiTiet = new DefaultTableModel(
-                    new String[]{"Mã SP", "Tên sản phẩm", "Tồn hệ thống", "Thực tế", "Chênh lệch", "Kết quả"}, 0) {
-                @Override public boolean isCellEditable(int row, int col) { return false; }
-            };
-            JTable bangChiTiet = new JTable(modelChiTiet);
-            UIStyle.taoBang(bangChiTiet, 2, 3, 4);
-            JLabel lbThongTin = new JLabel("Chọn một phiếu để xem chi tiết.");
-            JTextArea txtLyDo = new JTextArea(2, 30);
-            txtLyDo.setLineWrap(true);
-            txtLyDo.setWrapStyleWord(true);
-            txtLyDo.setEditable(false);
-            JButton tiepTuc = UIStyle.nutChinh("Tiếp tục phiếu nháp");
-            tiepTuc.setEnabled(false);
-
-            JPanel chiTiet = new JPanel(new BorderLayout(0, 8));
-            chiTiet.setBorder(new EmptyBorder(8, 8, 8, 8));
-            chiTiet.add(lbThongTin, BorderLayout.NORTH);
-            chiTiet.add(UIStyle.cuon(bangChiTiet), BorderLayout.CENTER);
-            JPanel lyDo = new JPanel(new BorderLayout(0, 4));
-            lyDo.add(UIStyle.nhan("Lý do chênh lệch"), BorderLayout.NORTH);
-            lyDo.add(new JScrollPane(txtLyDo), BorderLayout.CENTER);
-            chiTiet.add(lyDo, BorderLayout.SOUTH);
-
-            JSplitPane noiDung = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                    UIStyle.cuon(bangPhieu), chiTiet);
-            noiDung.setResizeWeight(0.57);
-            JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            controls.add(tiepTuc);
-            JPanel body = new JPanel(new BorderLayout(0, 8));
-            body.setBorder(new EmptyBorder(12, 12, 12, 12));
-            body.add(new JLabel("Lịch sử kiểm kê — chọn phiếu để xem các mặt hàng và kết quả kiểm."), BorderLayout.NORTH);
-            body.add(noiDung, BorderLayout.CENTER);
-            body.add(controls, BorderLayout.SOUTH);
-            JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Lịch sử kiểm kê", Dialog.ModalityType.APPLICATION_MODAL);
-            dlg.setContentPane(body); dlg.setSize(1180, 620); dlg.setLocationRelativeTo(this);
-            bangPhieu.getSelectionModel().addListSelectionListener(e -> {
-                if (e.getValueIsAdjusting()) return;
-                int row = bangPhieu.getSelectedRow();
-                if (row < 0) return;
-                PhieuKiemKe p = ds.get(bangPhieu.convertRowIndexToModel(row));
-                tiepTuc.setEnabled(!p.isTrangThai());
-                try {
-                    lbThongTin.setText("Phiếu " + p.getMaPhieuKiemKe() + " | " + (p.isTrangThai() ? "Đã chốt" : "Nháp")
-                            + " | Thời điểm kiểm kê: " + dinhDangGio(p.getNgayBatDau())
-                            + " | Người lập: " + p.getMaNhanVien() + " | Xác nhận: " + (p.getMaNhanVienXacNhan() == null ? "—" : p.getMaNhanVienXacNhan()));
-                    txtLyDo.setText(p.getLyDoChenhLech() == null ? "—" : p.getLyDoChenhLech());
-                    modelChiTiet.setRowCount(0);
-                    for (ChiTietPhieuKiemKe ct : dao.layChiTiet(p.getMaPhieuKiemKe())) {
-                        Integer tt = ct.getSoLuongThucTe();
-                        modelChiTiet.addRow(new Object[]{ct.getMaSanPham(), ct.getTenSanPham(), ct.getSoLuongHeThong(),
-                                tt == null ? "Chưa kiểm" : tt,
-                                tt == null ? "—" : (ct.getChenhLech() > 0 ? "+" : "") + ct.getChenhLech(),
-                                tt == null ? "Chưa kiểm" : ct.getChenhLech() == 0 ? "Khớp" : "Chênh lệch"});
-                    }
-                } catch (SQLException ex) { UIStyle.loi(this, ex); }
-            });
-            tiepTuc.addActionListener(e -> {
-                int row = bangPhieu.getSelectedRow(); if (row < 0) return;
-                PhieuKiemKe p = ds.get(bangPhieu.convertRowIndexToModel(row));
-                if (p.isTrangThai()) return;
-                if (coDongDaKiem() && !UIStyle.xacNhan(this, "Tiếp tục phiếu nháp sẽ thay phiếu đang kiểm. Tiếp tục?")) return;
-                try {
-                    maPhieu = p.getMaPhieuKiemKe(); lbTieuDe.setText("Kiểm kê kho — " + maPhieu);
-                    LocalDateTime bd = p.getNgayBatDau() == null ? LocalDateTime.now() : p.getNgayBatDau();
-                    ngayBatDau = bd;
-                    lbBatDau.setText("Thời điểm kiểm kê: " + bd.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
-                    tatCa.clear(); tatCa.addAll(dao.layChiTiet(maPhieu)); veLaiBang(); dlg.dispose();
-                } catch (SQLException ex) { UIStyle.loi(this, ex); }
-            });
-            dlg.setVisible(true);
-        } catch (SQLException ex) { UIStyle.loi(this, ex); }
-    }
-
-    private String dinhDangGio(LocalDateTime thoiDiem) {
-        return thoiDiem == null ? "—" : thoiDiem.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-    }
-
-    private void luuNhap() {
-        try {
-            PhieuKiemKe p = new PhieuKiemKe(maPhieu, ngayBatDau, false, PhienLamViec.maNV); p.setNgayBatDau(ngayBatDau);
-            dao.luuNhap(p, tatCa);
-            UIStyle.thongBao(this, "Đã lưu nháp phiếu " + maPhieu + ".");
-        } catch (SQLException ex) { UIStyle.loi(this, ex); }
     }
 }
