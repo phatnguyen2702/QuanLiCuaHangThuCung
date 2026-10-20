@@ -76,12 +76,10 @@ public class KhachHangChiTietDAO {
         }
 
         // =========================================================
-        // SUA KHACH HANG (+ doi hang the neu hangThe != null)
-        // - Khach da co the: cap nhat hang cua the moi nhat.
-        // - Khach chua co the: tao the moi (ghi nhan vien dang dang nhap).
+        // SUA THONG TIN KHACH HANG
         // =========================================================
 
-        public boolean sua(KhachHang kh, String hangThe, String maNhanVien) {
+        public boolean sua(KhachHang kh) {
 
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
@@ -90,67 +88,18 @@ public class KhachHangChiTietDAO {
                         try {
 
                                 try (PreparedStatement ps = con.prepareStatement(
-                                                "UPDATE KhachHang SET hoTen = ?, soDienThoai = ?, email = ?, "
-                                                                + "diaChi = ?, diemTichLuy = ? WHERE maKhachHang = ?")) {
+                                                "UPDATE KhachHang SET hoTen = ?, soDienThoai = ? "
+                                                                + "WHERE maKhachHang = ?")) {
 
                                         ps.setString(1, kh.getHoTen());
                                         ps.setString(2, kh.getSoDienThoai());
-                                        ps.setString(3, kh.getEmail());
-                                        ps.setString(4, kh.getDiaChi());
-                                        ps.setInt(5, kh.getDiemTichLuy());
-                                        ps.setString(6, kh.getMaKhachHang());
+                                        ps.setString(3, kh.getMaKhachHang());
 
                                         if (ps.executeUpdate() == 0) {
 
                                                 con.rollback();
 
                                                 return false;
-                                        }
-                                }
-
-                                if (hangThe != null) {
-
-                                        String maThe = null;
-
-                                        try (PreparedStatement ps = con.prepareStatement(
-                                                        "SELECT TOP 1 maThe FROM TheThanhVien WHERE maKhachHang = ? "
-                                                                        + "ORDER BY ngayCap DESC, maThe DESC")) {
-
-                                                ps.setString(1, kh.getMaKhachHang());
-
-                                                try (ResultSet rs = ps.executeQuery()) {
-                                                        if (rs.next()) {
-                                                                maThe = rs.getString(1);
-                                                        }
-                                                }
-                                        }
-
-                                        if (maThe != null) {
-
-                                                try (PreparedStatement ps = con.prepareStatement(
-                                                                "UPDATE TheThanhVien SET hangThe = ?, "
-                                                                                + "chietKhauPhanTram = ? WHERE maThe = ?")) {
-
-                                                        ps.setString(1, hangThe);
-                                                        ps.setDouble(2, chietKhau(hangThe));
-                                                        ps.setString(3, maThe);
-                                                        ps.executeUpdate();
-                                                }
-
-                                        } else {
-
-                                                try (PreparedStatement ps = con.prepareStatement(
-                                                                "INSERT INTO TheThanhVien "
-                                                                                + "(maThe, hangThe, chietKhauPhanTram, ngayCap, maKhachHang, maNhanVien) "
-                                                                                + "VALUES (?, ?, ?, CAST(GETDATE() AS DATE), ?, ?)")) {
-
-                                                        ps.setString(1, maTheMoi(con));
-                                                        ps.setString(2, hangThe);
-                                                        ps.setDouble(3, chietKhau(hangThe));
-                                                        ps.setString(4, kh.getMaKhachHang());
-                                                        ps.setString(5, maNhanVien);
-                                                        ps.executeUpdate();
-                                                }
                                         }
                                 }
 
@@ -173,40 +122,4 @@ public class KhachHangChiTietDAO {
                 }
         }
 
-        // =========================================================
-        // HAM PHU
-        // =========================================================
-
-        private static double chietKhau(String hangThe) {
-
-                switch (hangThe) {
-                        case "Platinum":
-                                return 15;
-                        case "Gold":
-                                return 10;
-                        default:
-                                return 5;
-                }
-        }
-
-        private static String maTheMoi(Connection con) throws SQLException {
-
-                try (PreparedStatement ps = con.prepareStatement(
-                                "SELECT MAX(maThe) FROM TheThanhVien WHERE maThe LIKE 'THE%'");
-                                ResultSet rs = ps.executeQuery()) {
-
-                        int n = 0;
-
-                        if (rs.next() && rs.getString(1) != null) {
-
-                                try {
-                                        n = Integer.parseInt(rs.getString(1).substring(3));
-                                } catch (NumberFormatException e) {
-                                        n = 0;
-                                }
-                        }
-
-                        return "THE" + String.format("%03d", n + 1);
-                }
-        }
 }
