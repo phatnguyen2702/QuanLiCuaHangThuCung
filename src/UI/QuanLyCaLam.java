@@ -1,6 +1,8 @@
 package UI;
 
 import dao.CaLamDAO;
+import dao.MaTuDongDAO;
+import java.sql.SQLException;
 import entity.CaLam;
 
 import javax.swing.*;
@@ -74,6 +76,7 @@ public class QuanLyCaLam extends JPanel {
                                 BorderLayout.CENTER);
 
                 loadData();
+                lamMoi();
         }
 
         // ==============================
@@ -219,6 +222,8 @@ public class QuanLyCaLam extends JPanel {
                 txtMaCa = new JTextField();
 
                 styleTextField(txtMaCa);
+                txtMaCa.setEditable(false);
+                txtMaCa.setToolTipText("Mã CA được hệ thống tự sinh khi lưu");
 
                 gbc.gridx = 1;
                 gbc.weightx = 1;
@@ -697,7 +702,7 @@ public class QuanLyCaLam extends JPanel {
                 txtGioKetThuc.setText(
                                 valueAt(row, 3));
 
-                txtMaCa.setEnabled(false);
+                txtMaCa.setEditable(false);
         }
 
         private String valueAt(
@@ -718,32 +723,26 @@ public class QuanLyCaLam extends JPanel {
         // ==============================
 
         private void them() {
-
-                if (!kiemTraDuLieu()) {
+                if (table.getSelectedRow() >= 0) {
+                        JOptionPane.showMessageDialog(this,
+                                        "Đang chọn ca cũ. Nhấn Làm mới để thêm ca mới.");
                         return;
                 }
-
+                if (!kiemTraDuLieu())
+                        return;
                 CaLam ca = getCaLamFromForm();
-
-                if (caLamDAO.them(ca)) {
-
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Thêm ca làm thành công!",
-                                        "Thông báo",
-                                        JOptionPane.INFORMATION_MESSAGE);
-
-                        loadData();
-
-                        lamMoi();
-
-                } else {
-
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Thêm ca làm thất bại!",
-                                        "Lỗi",
-                                        JOptionPane.ERROR_MESSAGE);
+                try {
+                        if (caLamDAO.them(ca)) {
+                                JOptionPane.showMessageDialog(this,
+                                                "Thêm ca làm thành công! Mã ca: " + ca.getMaCa());
+                                loadData();
+                                lamMoi();
+                        } else {
+                                JOptionPane.showMessageDialog(this, "Không thể thêm ca làm.");
+                        }
+                } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(this, "Lỗi thêm ca làm: " + ex.getMessage(),
+                                        "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
                 }
         }
 
@@ -753,7 +752,7 @@ public class QuanLyCaLam extends JPanel {
 
         private void sua() {
 
-                if (txtMaCa.isEnabled()) {
+                if (table.getSelectedRow() < 0) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -798,10 +797,7 @@ public class QuanLyCaLam extends JPanel {
 
         private void xoa() {
 
-                if (txtMaCa.isEnabled()
-                                || txtMaCa.getText()
-                                                .trim()
-                                                .isEmpty()) {
+                if (table.getSelectedRow() < 0) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -911,14 +907,14 @@ public class QuanLyCaLam extends JPanel {
 
         private void lamMoi() {
 
-                txtMaCa.setText("");
+                txtMaCa.setText(MaTuDongDAO.goiY(MaTuDongDAO.Loai.CA_LAM));
                 txtTenCa.setText("");
                 txtGioBatDau.setValue(null);
                 txtGioKetThuc.setValue(null);
 
                 txtTimKiem.setText("");
 
-                txtMaCa.setEnabled(true);
+                txtMaCa.setEditable(false);
 
                 table.clearSelection();
         }
@@ -928,15 +924,10 @@ public class QuanLyCaLam extends JPanel {
         // ==============================
 
         private boolean kiemTraDuLieu() {
-                String maCa = txtMaCa.getText().trim();
                 String tenCa = txtTenCa.getText().trim();
                 String gioBatDau = txtGioBatDau.getText().trim();
                 String gioKetThuc = txtGioKetThuc.getText().trim();
 
-                if (!maCa.matches("CA\\d{3}")) {
-                        return baoLoiTruong(txtMaCa,
-                                        "Mã ca phải có dạng CA001 (CA và đúng 3 chữ số).");
-                }
                 if (tenCa.length() < 3 || tenCa.length() > 50
                                 || !tenCa.matches("[\\p{L}0-9 ]+")) {
                         return baoLoiTruong(txtTenCa,
