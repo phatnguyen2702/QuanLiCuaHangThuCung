@@ -9,7 +9,7 @@
    6. MigrationGoiYThucAn.sql
 
    LUU Y:
-   - Script TAO MOI tren database 'ptudpetshop'. Khong xoa du lieu dang co.
+   - Script TAO MOI tren database [00]. Khong xoa du lieu dang co.
    - Neu database da co bang du lieu, script se TU CHOI chay de tranh
      ghi de/chen them du lieu mau. Dung file migration rieng de nang cap.
    - KhachHang chi co: maKhachHang, hoTen, soDienThoai.
@@ -19,8 +19,8 @@
    - Ngay het han PN001 duoc tao theo ngay chay (du lieu demo).
    ===================================================================== */
 
-IF DB_ID(N'ptudpetshop') IS NULL
-    EXEC(N'CREATE DATABASE [ptudpetshop]');
+IF DB_ID(N'00') IS NULL
+    EXEC(N'CREATE DATABASE [00]');
 GO
 USE [00];
 GO
@@ -32,7 +32,7 @@ IF EXISTS (
     SELECT 1 FROM sys.tables t
     WHERE t.is_ms_shipped = 0 AND SCHEMA_NAME(t.schema_id) = N'dbo'
 )
-    THROW 51001, N'Database ptudpetshop da co bang. Hay sao luu va dung script nang cap DB hien co, khong chay script tao moi.', 1;
+    THROW 51001, N'Database [00] da co bang. Hay sao luu va dung script nang cap DB hien co, khong chay script tao moi.', 1;
 
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -390,7 +390,14 @@ VALUES
 ('SP005', N'Sữa tắm chó mèo', 80000, 145000, 'DM005', 'NCC003'),
 ('SP006', N'Cát vệ sinh cho mèo', 95000, 150000, 'DM005', 'NCC003'),
 ('SP007', N'Dây dắt thú cưng', 60000, 99000, 'DM004', 'NCC002'),
-('SP008', N'Pate mèo cá ngừ', 25000, 39000, 'DM002', 'NCC001');
+('SP008', N'Pate mèo cá ngừ', 25000, 39000, 'DM002', 'NCC001'),
+('SP009', N'Royal Canin Mini Puppy cho chó con', 320000, 420000, 'DM001', 'NCC001'),
+('SP010', N'Pedigree Puppy gà, gạo và rau củ', 115000, 155000, 'DM001', 'NCC001'),
+('SP011', N'Pedigree Adult gà và rau củ', 125000, 169000, 'DM001', 'NCC001'),
+('SP012', N'Royal Canin Maxi Adult cho chó lớn', 390000, 510000, 'DM001', 'NCC001'),
+('SP013', N'WHISKAS Kitten cá biển và sữa', 95000, 129000, 'DM002', 'NCC001'),
+('SP014', N'WHISKAS Kitten vị cá thu', 95000, 129000, 'DM002', 'NCC001'),
+('SP015', N'Royal Canin Indoor 27 cho mèo trưởng thành', 340000, 450000, 'DM002', 'NCC001');
 INSERT INTO KhachHang
 (maKhachHang, hoTen, soDienThoai)
 VALUES
@@ -508,18 +515,26 @@ INSERT INTO PhieuNhapKho
 VALUES
 ('PN001', '2026-10-01 08:00:00', 1, 'NV003', 'NCC001'),
 ('PN002', '2026-10-03 09:00:00', 1, 'NV003', 'NCC002'),
-('PN003', '2026-10-05 10:00:00', 1, 'NV003', 'NCC003');
+('PN003', '2026-10-05 10:00:00', 1, 'NV003', 'NCC003'),
+('PN004', GETDATE(), 1, 'NV003', 'NCC001');
 INSERT INTO ChiTietPhieuNhap
-(maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai)
+(maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung)
 VALUES
-('PN001', 'SP001', 30, 180000, 1),
-('PN001', 'SP002', 40, 90000, 1),
-('PN001', 'SP008', 50, 25000, 1),
-('PN002', 'SP003', 20, 35000, 1),
-('PN002', 'SP004', 15, 70000, 1),
-('PN002', 'SP007', 20, 60000, 1),
-('PN003', 'SP005', 12, 80000, 1),
-('PN003', 'SP006', 18, 95000, 1);
+('PN001', 'SP001', 30, 180000, 1, DATEADD(day, 12, CAST(GETDATE() AS date))),
+('PN001', 'SP002', 40, 90000, 1, DATEADD(day, -5, CAST(GETDATE() AS date))),
+('PN001', 'SP008', 50, 25000, 1, DATEADD(day, 75, CAST(GETDATE() AS date))),
+('PN002', 'SP003', 20, 35000, 1, NULL),
+('PN002', 'SP004', 15, 70000, 1, NULL),
+('PN002', 'SP007', 20, 60000, 1, NULL),
+('PN003', 'SP005', 12, 80000, 1, NULL),
+('PN003', 'SP006', 18, 95000, 1, NULL),
+('PN004', 'SP009', 20, 320000, 1, DATEADD(day, 5, CAST(GETDATE() AS date))),
+('PN004', 'SP010', 20, 115000, 1, DATEADD(day, 10, CAST(GETDATE() AS date))),
+('PN004', 'SP011', 20, 125000, 1, DATEADD(day, 15, CAST(GETDATE() AS date))),
+('PN004', 'SP012', 20, 390000, 1, DATEADD(day, 20, CAST(GETDATE() AS date))),
+('PN004', 'SP013', 20, 95000, 1, DATEADD(day, -2, CAST(GETDATE() AS date))),
+('PN004', 'SP014', 20, 95000, 1, DATEADD(day, 25, CAST(GETDATE() AS date))),
+('PN004', 'SP015', 20, 340000, 1, DATEADD(day, 30, CAST(GETDATE() AS date)));
 INSERT INTO PhieuKiemKe
 (maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien)
 VALUES
@@ -534,37 +549,19 @@ VALUES
 ('KK001', 'SP005', 11, 10, 0),
 ('KK001', 'SP006', 17, 17, 1);
 
-/* Dùng chính sản phẩm đang có. Chỉ phân loại tuổi/cỡ khi tên ghi rõ; còn lại để nhóm tổng quát. */
+/* Phan loai ro 5 san pham cho va 5 san pham meo cho man hinh goi y. */
 INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu)
-SELECT sp.maSanPham,
-       CASE WHEN dm.tenDanhMuc LIKE N'%chó%' OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%dog%' THEN N'Chó'
-            WHEN dm.tenDanhMuc LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%cat%' THEN N'Mèo' END,
-       CASE WHEN sp.tenSanPham LIKE N'%puppy%' OR sp.tenSanPham LIKE N'%kitten%' OR sp.tenSanPham LIKE N'%con non%' THEN N'Con non'
-            WHEN sp.tenSanPham LIKE N'%senior%' OR sp.tenSanPham LIKE N'%ageing%' OR sp.tenSanPham LIKE N'%aging%' OR sp.tenSanPham LIKE N'%cao tuổi%' THEN N'Cao tuổi'
-            WHEN sp.tenSanPham LIKE N'%adult%' OR sp.tenSanPham LIKE N'%trưởng thành%' THEN N'Trưởng thành'
-            ELSE N'Chưa xác định' END,
-       CASE WHEN sp.tenSanPham LIKE N'%mini%' OR sp.tenSanPham LIKE N'%small%' OR sp.tenSanPham LIKE N'%nhỏ%' THEN N'Nhỏ'
-            WHEN sp.tenSanPham LIKE N'%medium%' OR sp.tenSanPham LIKE N'%trung bình%' THEN N'Trung bình'
-            WHEN sp.tenSanPham LIKE N'%maxi%' OR sp.tenSanPham LIKE N'%large%' OR sp.tenSanPham LIKE N'%giant%' OR sp.tenSanPham LIKE N'%lớn%' THEN N'Lớn'
-            ELSE N'Chưa xác định' END,
-       N'Phân nhóm tự động từ tên/danh mục; đối chiếu bao bì khi tên không ghi đủ.'
-FROM dbo.SanPham sp JOIN dbo.DanhMuc dm ON dm.maDanhMuc = sp.maDanhMuc
-WHERE (dm.tenDanhMuc LIKE N'%thức ăn%' OR dm.tenDanhMuc LIKE N'%thuc an%')
-  AND (dm.tenDanhMuc LIKE N'%chó%' OR dm.tenDanhMuc LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%dog%' OR sp.tenSanPham LIKE N'%cat%'
-       OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%mèo%')
-  AND NOT EXISTS (SELECT 1 FROM dbo.GoiYThucAn gy WHERE gy.maSanPham = sp.maSanPham);
-
-/* Ngày hết hạn demo: giá trị tương đối theo ngày chạy. */
-UPDATE dbo.ChiTietPhieuNhap
-SET hanSuDung = CASE maSanPham
-    WHEN 'SP001' THEN DATEADD(day, 12, CAST(GETDATE() AS date))
-    WHEN 'SP002' THEN DATEADD(day, -5, CAST(GETDATE() AS date))
-    WHEN 'SP008' THEN DATEADD(day, 75, CAST(GETDATE() AS date))
-    ELSE hanSuDung
-END
-WHERE maPhieuNhap = 'PN001'
-  AND maSanPham IN ('SP001', 'SP002', 'SP008')
-  AND hanSuDung IS NULL;
+VALUES
+('SP001', N'Chó', N'Mọi độ tuổi', N'Mọi kích thước', N'Thức ăn chó; xem hướng dẫn độ tuổi trên bao bì.'),
+('SP009', N'Chó', N'Con non', N'Nhỏ', N'Royal Canin Mini Puppy; tên dòng tham khảo từ hãng.'),
+('SP010', N'Chó', N'Con non', N'Mọi kích thước', N'Pedigree Puppy; tên dòng tham khảo từ hãng.'),
+('SP011', N'Chó', N'Trưởng thành', N'Mọi kích thước', N'Pedigree Adult; tên dòng tham khảo từ hãng.'),
+('SP012', N'Chó', N'Trưởng thành', N'Lớn', N'Royal Canin Maxi Adult; tên dòng tham khảo từ hãng.'),
+('SP002', N'Mèo', N'Mọi độ tuổi', N'Mọi kích thước', N'Thức ăn mèo; xem hướng dẫn độ tuổi trên bao bì.'),
+('SP008', N'Mèo', N'Mọi độ tuổi', N'Mọi kích thước', N'Pate mèo; kiểm tra hướng dẫn trên bao bì.'),
+('SP013', N'Mèo', N'Con non', N'Mọi kích thước', N'WHISKAS Kitten Ocean Fish with Milk; tên dòng tham khảo từ hãng.'),
+('SP014', N'Mèo', N'Con non', N'Mọi kích thước', N'WHISKAS Kitten Mackerel; tên dòng tham khảo từ hãng.'),
+('SP015', N'Mèo', N'Trưởng thành', N'Mọi kích thước', N'Royal Canin Indoor 27; sản phẩm mèo trưởng thành trong nhà.');
 
     COMMIT TRANSACTION;
     PRINT N'Tao database Pet Shop Pro va nap du lieu mau thanh cong.';

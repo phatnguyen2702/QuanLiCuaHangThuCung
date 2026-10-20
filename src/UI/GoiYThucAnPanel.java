@@ -10,23 +10,21 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
+import java.math.BigDecimal;
 import java.text.Normalizer;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
 public class GoiYThucAnPanel extends JPanel {
-    private final JComboBox<String> pet = new JComboBox<>(new String[]{"Chó", "Mèo", "Khác"});
-    private final JComboBox<String> age = new JComboBox<>(new String[]{"Mọi độ tuổi", "Con non", "Trưởng thành", "Cao tuổi"});
-    private final JComboBox<String> size = new JComboBox<>(new String[]{"Mọi kích thước", "Nhỏ", "Trung bình", "Lớn"});
+    private final JComboBox<String> pet = new JComboBox<>(new String[]{"Chó", "Mèo"});
+    private final JComboBox<String> age = new JComboBox<>(new String[]{"Tất cả độ tuổi", "Con non", "Trưởng thành", "Cao tuổi"});
+    private final JComboBox<String> size = new JComboBox<>(new String[]{"Tất cả kích thước", "Nhỏ", "Trung bình", "Lớn"});
     private final JTextField search = new JTextField(15);
     private final JPanel cards = new JPanel(new GridLayout(0, 3, 12, 12));
     private final JLabel note = new JLabel("Chọn loại thú cưng để xem thức ăn còn hàng.");
-    private final JButton selectedButton = UIStyle.nutPhu("Danh sách đã chọn (0)");
+    private final JButton selectedButton = UIStyle.nutPhu("Giỏ hàng (0)");
     private final SanPhamDAO dao = new SanPhamDAO();
-    private final Map<String, SanPham> selected = new LinkedHashMap<>();
     private List<SanPham> products = List.of();
 
     public GoiYThucAnPanel() {
@@ -84,12 +82,12 @@ public class GoiYThucAnPanel extends JPanel {
     public void napLai() {
         cards.removeAll();
         try {
-            products = dao.getAll();
             String kind = (String) pet.getSelectedItem();
+            products = dao.goiYThucAn(kind, (String) age.getSelectedItem(), (String) size.getSelectedItem());
             String keyword = search.getText().trim().toLowerCase(Locale.ROOT);
             int count = 0;
             for (SanPham product : products) {
-                if (product.getTonKho() <= 0 || !isFood(product) || !matchesPet(product, kind)) continue;
+                if (product.getTonKho() <= 0) continue;
                 String name = product.getTenSanPham() == null ? "" : product.getTenSanPham().toLowerCase(Locale.ROOT);
                 if (!keyword.isEmpty() && !name.contains(keyword)) continue;
                 cards.add(taoTheSanPham(product));
@@ -101,7 +99,7 @@ public class GoiYThucAnPanel extends JPanel {
         } catch (Exception ex) {
             note.setText("Không tải được sản phẩm: " + ex.getMessage());
         }
-        selectedButton.setText("Danh sách đã chọn (" + selected.size() + ")");
+        selectedButton.setText("Giỏ hàng (" + tongSoLuongTrongGio() + ")");
         cards.revalidate();
         cards.repaint();
     }
@@ -112,19 +110,6 @@ public class GoiYThucAnPanel extends JPanel {
         return category.contains("thuc an") || category.contains("thuc-an")
                 || name.contains("thuc an") || name.contains("hat ")
                 || name.contains("pate") || name.contains("snack");
-    }
-
-    private boolean matchesPet(SanPham product, String selectedPet) {
-        if ("Khác".equals(selectedPet)) return true;
-        String category = normalize(product.getTenDanhMuc());
-        String name = normalize(product.getTenSanPham());
-        String text = category + " " + name;
-        boolean dog = text.contains("cho cho") || text.contains("dog") || text.contains("puppy")
-                || name.contains("cho ") || name.endsWith("cho");
-        boolean cat = text.contains("cho meo") || text.contains("cat") || text.contains("kitten")
-                || name.contains("meo");
-        if (dog && cat) return true;
-        return "Chó".equals(selectedPet) ? dog : cat;
     }
 
     private String normalize(String value) {
@@ -153,14 +138,40 @@ public class GoiYThucAnPanel extends JPanel {
         description.setFont(UIStyle.font(Font.PLAIN, 13));
         card.add(description, BorderLayout.CENTER);
 
-        JButton add = UIStyle.nutXanh(selected.containsKey(product.getMaSanPham()) ? "Đã chọn" : "Thêm vào danh sách");
-        add.setEnabled(!selected.containsKey(product.getMaSanPham()));
-        add.addActionListener(e -> {
-            selected.put(product.getMaSanPham(), product);
-            napLai();
-        });
+        entity.ThanhToan daThem = timTrongGio(product.getMaSanPham());
+        JButton add = UIStyle.nutXanh(daThem == null ? "Thêm vào giỏ hàng"
+                : "Đã thêm · SL " + daThem.getSoLuong() + " · thêm tiếp");
+        add.addActionListener(e -> themVaoGio(product));
         card.add(add, BorderLayout.SOUTH);
         return card;
+    }
+
+    private entity.ThanhToan timTrongGio(String maSanPham) {
+        for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
+            if (maSanPham.equals(item.getMaSanPham())) return item;
+        }
+        return null;
+    }
+
+    private int tongSoLuongTrongGio() {
+        return UI.PhienLamViec.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
+    }
+
+    private void themVaoGio(SanPham product) {
+        entity.ThanhToan item = timTrongGio(product.getMaSanPham());
+        if (item != null) {
+            if (item.getSoLuong() >= product.getTonKho()) {
+                JOptionPane.showMessageDialog(this, "Số lượng trong giỏ đã bằng tồn kho hiện có.",
+                        "Không đủ tồn kho", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            item.setSoLuong(item.getSoLuong() + 1);
+        } else {
+            if (product.getTonKho() < 1) return;
+            UI.PhienLamViec.gioHang().add(entity.ThanhToan.sanPham(
+                    product.getMaSanPham(), product.getTenSanPham(), BigDecimal.valueOf(product.getGiaBan())));
+        }
+        napLai();
     }
 
     private Icon anhSanPham(SanPham product) {
@@ -181,31 +192,83 @@ public class GoiYThucAnPanel extends JPanel {
     }
 
     private void moDanhSachDaChon() {
-        DefaultTableModel model = new DefaultTableModel(new String[]{"Mã SP", "Tên sản phẩm", "Danh mục", "Giá bán", "Tồn kho"}, 0) {
-            @Override public boolean isCellEditable(int row, int column) { return false; }
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return column == 2; }
+
+            @Override public void setValueAt(Object value, int row, int column) {
+                if (column != 2) {
+                    super.setValueAt(value, row, column);
+                    return;
+                }
+                final int quantity;
+                try {
+                    quantity = Integer.parseInt(String.valueOf(value).trim());
+                    if (quantity < 1) throw new NumberFormatException();
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
+                            "Số lượng phải là số nguyên lớn hơn 0.", "Số lượng không hợp lệ",
+                            JOptionPane.WARNING_MESSAGE);
+                    fireTableCellUpdated(row, column);
+                    return;
+                }
+
+                String code = String.valueOf(getValueAt(row, 0));
+                for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
+                    if (code.equals(item.getMaSanPham())) {
+                        item.setSoLuong(quantity);
+                        super.setValueAt(quantity, row, column);
+                        super.setValueAt(String.format("%,.0f đ", item.getThanhTien()), row, 4);
+                        selectedButton.setText("Giỏ hàng (" + tongSoLuongTrongGio() + ")");
+                        napLai();
+                        return;
+                    }
+                }
+                fireTableCellUpdated(row, column);
+            }
         };
-        for (SanPham product : selected.values()) {
-            model.addRow(new Object[]{product.getMaSanPham(), product.getTenSanPham(), product.getTenDanhMuc(),
-                    String.format("%,.0f đ", product.getGiaBan()), product.getTonKho()});
+        for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
+            model.addRow(new Object[]{item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
+                    String.format("%,.0f đ", item.getDonGia()), String.format("%,.0f đ", item.getThanhTien())});
         }
         JTable table = new JTable(model);
+        table.setToolTipText("Bấm đúp vào ô trong cột Số lượng để chỉnh sửa.");
         UIStyle.taoBang(table, 1, 2, 3);
-        JButton remove = UIStyle.nutXoa("Xóa sản phẩm đã chọn");
+        JButton remove = UIStyle.nutXoa("Xóa sản phẩm khỏi giỏ");
+        JButton checkout = UIStyle.nutXanh("Chuyển sang thanh toán");
+        checkout.setEnabled(!UI.PhienLamViec.gioHang().isEmpty());
         JButton close = UIStyle.nutPhu("Đóng");
-        JPanel actions = UIStyle.hangNut(remove, close);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actions.add(remove);
+        actions.add(checkout);
+        actions.add(close);
         JPanel content = new JPanel(new BorderLayout(8, 8));
-        content.setPreferredSize(new Dimension(700, 340));
+        content.setPreferredSize(new Dimension(760, 340));
+        content.add(new JLabel("Bấm đúp vào cột Số lượng để nhập số lượng mới."), BorderLayout.NORTH);
         content.add(new JScrollPane(table), BorderLayout.CENTER);
         content.add(actions, BorderLayout.SOUTH);
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Danh sách sản phẩm đã chọn", Dialog.ModalityType.APPLICATION_MODAL);
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dialog = new JDialog(owner, "Giỏ hàng", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setContentPane(content);
         remove.addActionListener(e -> {
+            if (table.isEditing() && !table.getCellEditor().stopCellEditing()) return;
             int row = table.getSelectedRow();
             if (row < 0) return;
-            selected.remove(String.valueOf(model.getValueAt(row, 0)));
-            dialog.dispose();
+            String maSanPham = String.valueOf(model.getValueAt(table.convertRowIndexToModel(row), 0));
+            UI.PhienLamViec.gioHang().removeIf(item -> maSanPham.equals(item.getMaSanPham()));
+            model.removeRow(table.convertRowIndexToModel(row));
+            checkout.setEnabled(!UI.PhienLamViec.gioHang().isEmpty());
             napLai();
-            moDanhSachDaChon();
+        });
+        checkout.addActionListener(e -> {
+            if (table.isEditing() && !table.getCellEditor().stopCellEditing()) return;
+            dialog.dispose();
+            if (owner instanceof TrangChu) {
+                ((TrangChu) owner).moThanhToanTuGioHang();
+            } else {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy màn hình thanh toán.",
+                        "Giỏ hàng", JOptionPane.ERROR_MESSAGE);
+            }
         });
         close.addActionListener(e -> dialog.dispose());
         dialog.pack();

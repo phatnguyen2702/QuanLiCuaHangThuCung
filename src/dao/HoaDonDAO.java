@@ -75,8 +75,7 @@ public class HoaDonDAO {
     }
 
     public List<HoaDon> timHoaDon(String tuKhoa) throws SQLException {
-        StringBuilder sql = new StringBuilder(
-                "SELECT hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
+        String sql = "SELECT hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
                 + "COALESCE(SUM(ct.soLuong * ct.donGia * "
                 + " (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
@@ -84,31 +83,19 @@ public class HoaDonDAO {
                 + "JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang "
                 + "JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc "
                 + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
-                + "WHERE 1 = 1 ");
-        String keyword = tuKhoa == null ? "" : tuKhoa.trim();
-        if (!keyword.isEmpty()) {
-            sql.append("AND ((");
-            for (int i = 0; i < keyword.length(); i++) {
-                sql.append("CHARINDEX(UPPER(?), UPPER(hd.maHoaDon)) > 0");
-                if (i < keyword.length() - 1) {
-                    sql.append(" AND ");
-                }
-            }
-            sql.append(") OR UPPER(kh.hoTen) LIKE UPPER(?)) ");
-        }
-        sql.append(
-                "GROUP BY hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
+                + "WHERE (? = '' OR hd.maHoaDon LIKE ? OR kh.hoTen LIKE ? "
+                + "OR kh.soDienThoai LIKE ?) "
+                + "GROUP BY hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc "
-                + "ORDER BY hd.ngayLap DESC, hd.maHoaDon DESC");
+                + "ORDER BY hd.ngayLap DESC, hd.maHoaDon DESC";
+        String keyword = tuKhoa == null ? "" : tuKhoa.trim();
         List<HoaDon> hoaDons = new ArrayList<>();
         try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql.toString())) {
-            for (int i = 0; i < keyword.length(); i++) {
-                ps.setString(i + 1, String.valueOf(keyword.charAt(i)));
-            }
-            if (!keyword.isEmpty()) {
-                ps.setString(keyword.length() + 1, "%" + keyword + "%");
-            }
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, keyword);
+            ps.setString(2, "%" + keyword + "%");
+            ps.setString(3, "%" + keyword + "%");
+            ps.setString(4, "%" + keyword + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Timestamp ngayLap = rs.getTimestamp("ngayLap");
