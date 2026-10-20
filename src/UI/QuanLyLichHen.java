@@ -5,6 +5,7 @@ import entity.LichHen;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
@@ -12,6 +13,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -32,7 +34,7 @@ public class QuanLyLichHen extends JPanel {
     // =========================================================
     // COMPONENTS
     // =========================================================
-    private JTextField txtTuNgay, txtDenNgay, txtTimKiem;
+    private JTextField txtNgay, txtTimKiem;
     private JComboBox<String> cboNhanVien, cboTrangThai;
     private JTable table;
     private DefaultTableModel tableModel;
@@ -80,44 +82,72 @@ public class QuanLyLichHen extends JPanel {
         panel.add(titleRow, BorderLayout.NORTH);
 
         // 2. Dòng Bộ lọc
-        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JPanel filterRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         filterRow.setBackground(Color.WHITE);
         filterRow.setBorder(BorderFactory.createLineBorder(new Color(220, 225, 230)));
 
-        filterRow.add(createFilterLabel("Từ"));
-        txtTuNgay = new JTextField(8);
-        txtTuNgay.setToolTipText("dd/MM/yyyy");
-        filterRow.add(txtTuNgay);
+        filterRow.add(createFilterLabel("Ngày"));
+        txtNgay = new JTextField(8);
+        txtNgay.setToolTipText("dd/MM/yyyy");
+        filterRow.add(txtNgay);
 
-        filterRow.add(createFilterLabel("Đến"));
-        txtDenNgay = new JTextField(8);
-        txtDenNgay.setToolTipText("dd/MM/yyyy");
-        filterRow.add(txtDenNgay);
+        // Nút chọn Lịch
+        JButton btnLich = new JButton("Lịch");
+        btnLich.setBackground(NAVY);
+        btnLich.setForeground(Color.WHITE);
+        btnLich.setFocusPainted(false);
+        btnLich.setPreferredSize(new Dimension(60, 25));
+        btnLich.addActionListener(e -> {
+            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+            DatePickerDialog picker = new DatePickerDialog(parentFrame);
+            picker.setLocationRelativeTo(btnLich);
+            picker.setVisible(true);
+            if (picker.getSelectedDate() != null) {
+                txtNgay.setText(picker.getSelectedDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                locDuLieu();
+            }
+        });
+        filterRow.add(btnLich);
+
+        // Nút Xóa Ngày
+        JButton btnXoaNgay = new JButton("x");
+        btnXoaNgay.setBackground(Color.GRAY);
+        btnXoaNgay.setForeground(Color.WHITE);
+        btnXoaNgay.setFocusPainted(false);
+        btnXoaNgay.setPreferredSize(new Dimension(40, 25));
+        btnXoaNgay.addActionListener(e -> {
+            txtNgay.setText("");
+            locDuLieu();
+        });
+        filterRow.add(btnXoaNgay);
+
+        filterRow.add(Box.createHorizontalStrut(5));
 
         filterRow.add(createFilterLabel("Nhân viên"));
         cboNhanVien = new JComboBox<>();
-        cboNhanVien.setPreferredSize(new Dimension(150, 30));
+        cboNhanVien.setPreferredSize(new Dimension(140, 30));
         filterRow.add(cboNhanVien);
 
         filterRow.add(createFilterLabel("Trạng thái"));
         cboTrangThai = new JComboBox<>(new String[] { "Tất cả", "Xác nhận", "Chờ xác nhận", "Đã hủy" });
-        cboTrangThai.setPreferredSize(new Dimension(120, 30));
+        cboTrangThai.setPreferredSize(new Dimension(110, 30));
         filterRow.add(cboTrangThai);
 
         filterRow.add(createFilterLabel("Tìm kiếm"));
-        txtTimKiem = new JTextField(15);
+        txtTimKiem = new JTextField(12);
         txtTimKiem.setToolTipText("Mã lịch, tên KH, thú cưng...");
         filterRow.add(txtTimKiem);
 
         JButton btnTimKiem = new JButton("Lọc");
-        btnTimKiem.setBackground(NAVY);
+        btnTimKiem.setBackground(STATUS_GREEN);
         btnTimKiem.setForeground(Color.WHITE);
+        btnTimKiem.setFocusPainted(false);
         filterRow.add(btnTimKiem);
 
+        // GÁN SỰ KIỆN CHO CÁC THÀNH PHẦN LỌC
         btnTimKiem.addActionListener(e -> locDuLieu());
         txtTimKiem.addActionListener(e -> locDuLieu());
-        txtTuNgay.addActionListener(e -> locDuLieu());
-        txtDenNgay.addActionListener(e -> locDuLieu());
+        txtNgay.addActionListener(e -> locDuLieu());
         cboNhanVien.addActionListener(e -> locDuLieu());
         cboTrangThai.addActionListener(e -> locDuLieu());
 
@@ -171,6 +201,9 @@ public class QuanLyLichHen extends JPanel {
         return panel;
     }
 
+    // =========================================================
+    // DATA HANDLING & FILTERING
+    // =========================================================
     private void loadComboBox() {
         cboNhanVien.removeAllItems();
         cboNhanVien.addItem("Tất cả");
@@ -187,23 +220,19 @@ public class QuanLyLichHen extends JPanel {
         if (cboNhanVien == null || cboTrangThai == null)
             return;
 
-        String tuNgayStr = txtTuNgay.getText().trim();
-        String denNgayStr = txtDenNgay.getText().trim();
+        String ngayStr = txtNgay.getText().trim();
         String nhanVienLoc = cboNhanVien.getSelectedItem().toString();
         String trangThaiLoc = cboTrangThai.getSelectedItem().toString();
         String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate tuNgay = null;
-        LocalDate denNgay = null;
+        LocalDate ngayLoc = null;
 
         try {
-            if (!tuNgayStr.isEmpty())
-                tuNgay = LocalDate.parse(tuNgayStr, formatter);
-            if (!denNgayStr.isEmpty())
-                denNgay = LocalDate.parse(denNgayStr, formatter);
+            if (!ngayStr.isEmpty())
+                ngayLoc = LocalDate.parse(ngayStr, formatter);
         } catch (DateTimeParseException e) {
-            JOptionPane.showMessageDialog(this, "Ngày lọc phải có định dạng dd/MM/yyyy (Ví dụ: 07/10/2026)", "Lỗi",
+            JOptionPane.showMessageDialog(this, "Ngày lọc phải có định dạng dd/MM/yyyy", "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -213,26 +242,28 @@ public class QuanLyLichHen extends JPanel {
         for (LichHen lh : dao.getAll()) {
             boolean isMatch = true;
 
-            if (lh.getNgayGioHen() != null) {
-                LocalDate ngayHen = lh.getNgayGioHen().toLocalDate();
-                if (tuNgay != null && ngayHen.isBefore(tuNgay))
+            // 1. Lọc theo Ngày chính xác
+            if (ngayLoc != null) {
+                if (lh.getNgayGioHen() == null || !lh.getNgayGioHen().toLocalDate().equals(ngayLoc)) {
                     isMatch = false;
-                if (denNgay != null && ngayHen.isAfter(denNgay))
-                    isMatch = false;
+                }
             }
 
+            // 2. Lọc theo Nhân Viên
             if (!nhanVienLoc.equals("Tất cả")) {
                 if (lh.getTenNhanVien() == null || !lh.getTenNhanVien().equals(nhanVienLoc)) {
                     isMatch = false;
                 }
             }
 
+            // 3. Lọc theo Trạng Thái
             if (!trangThaiLoc.equals("Tất cả")) {
                 if (lh.getTrangThai() == null || !lh.getTrangThai().equals(trangThaiLoc)) {
                     isMatch = false;
                 }
             }
 
+            // 4. Lọc theo Từ Khóa (Tìm kiếm đa trường)
             if (!tuKhoa.isEmpty()) {
                 String maLH = lh.getMaLichHen() != null ? lh.getMaLichHen().toLowerCase() : "";
                 String tenKH = lh.getTenKhachHang() != null ? lh.getTenKhachHang().toLowerCase() : "";
@@ -301,7 +332,7 @@ public class QuanLyLichHen extends JPanel {
     }
 
     // =========================================================
-    // LỚP VẼ NÚT SỬA/XÓA TRONG BẢNG (RENDERER)
+    // LỚP VẼ NÚT SỬA/XÓA TRONG BẢNG
     // =========================================================
     private class ActionButtonRenderer extends JPanel implements TableCellRenderer {
         private JButton btnSua, btnXoa;
@@ -326,28 +357,20 @@ public class QuanLyLichHen extends JPanel {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                 int row, int column) {
-            if (isSelected) {
-                setBackground(table.getSelectionBackground());
-            } else {
-                setBackground(Color.WHITE);
-            }
+            setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
             return this;
         }
     }
 
-    // =========================================================
-    // LỚP XỬ LÝ CLICK NÚT SỬA/XÓA TRONG BẢNG (EDITOR)
-    // =========================================================
     private class ActionButtonEditor extends AbstractCellEditor implements TableCellEditor {
         private JPanel panel;
-        private JButton btnSua, btnXoa;
         private String currentMaLich;
 
         public ActionButtonEditor() {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
             panel.setBackground(Color.WHITE);
 
-            btnSua = new JButton("Sửa");
+            JButton btnSua = new JButton("Sửa");
             btnSua.setBackground(NAVY);
             btnSua.setForeground(Color.WHITE);
             btnSua.setPreferredSize(new Dimension(60, 30));
@@ -356,12 +379,10 @@ public class QuanLyLichHen extends JPanel {
                 LichHen lhEdit = getLichHenByMa(currentMaLich);
                 if (lhEdit != null) {
                     hienFormDatLich(lhEdit);
-                } else {
-                    JOptionPane.showMessageDialog(panel, "Không tìm thấy lịch hẹn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             });
 
-            btnXoa = new JButton("Xóa");
+            JButton btnXoa = new JButton("Xóa");
             btnXoa.setBackground(new Color(220, 53, 69));
             btnXoa.setForeground(Color.WHITE);
             btnXoa.setPreferredSize(new Dimension(60, 30));
@@ -389,13 +410,137 @@ public class QuanLyLichHen extends JPanel {
     }
 
     // =========================================================================
+    // =================== COMPONENT TỰ VIẾT BỘ CHỌN LỊCH (DATE PICKER) ========
+    // =========================================================================
+    public static class DatePickerDialog extends JDialog {
+        private LocalDate selectedDate = null;
+        private YearMonth currentMonth = YearMonth.now();
+        private JPanel pnlDays;
+        private JLabel lblMonthYear;
+
+        public DatePickerDialog(Frame parent) {
+            super(parent, "Chọn ngày", true);
+            setSize(320, 280);
+            setLayout(new BorderLayout());
+            setResizable(false);
+            getContentPane().setBackground(Color.WHITE);
+
+            // --- HEADER ---
+            JPanel pnlHeader = new JPanel(new BorderLayout());
+            pnlHeader.setBackground(Color.WHITE);
+            pnlHeader.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+            JButton btnPrev = new JButton("◄");
+            btnPrev.setFocusPainted(false);
+            btnPrev.setBackground(new Color(229, 241, 252));
+            btnPrev.addActionListener(e -> {
+                currentMonth = currentMonth.minusMonths(1);
+                updateCalendar();
+            });
+
+            lblMonthYear = new JLabel("", SwingConstants.CENTER);
+            lblMonthYear.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            lblMonthYear.setForeground(new Color(18, 48, 82));
+
+            JButton btnNext = new JButton("►");
+            btnNext.setFocusPainted(false);
+            btnNext.setBackground(new Color(229, 241, 252));
+            btnNext.addActionListener(e -> {
+                currentMonth = currentMonth.plusMonths(1);
+                updateCalendar();
+            });
+
+            pnlHeader.add(btnPrev, BorderLayout.WEST);
+            pnlHeader.add(lblMonthYear, BorderLayout.CENTER);
+            pnlHeader.add(btnNext, BorderLayout.EAST);
+
+            add(pnlHeader, BorderLayout.NORTH);
+
+            // --- DAYS GRID ---
+            pnlDays = new JPanel(new GridLayout(0, 7, 2, 2));
+            pnlDays.setBackground(Color.WHITE);
+            pnlDays.setBorder(new EmptyBorder(0, 10, 10, 10));
+            add(pnlDays, BorderLayout.CENTER);
+
+            // --- FOOTER ---
+            JPanel pnlFooter = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            pnlFooter.setBackground(Color.WHITE);
+
+            JButton btnToday = new JButton("Hôm nay");
+            btnToday.setBackground(new Color(229, 241, 252));
+            btnToday.setFocusPainted(false);
+            btnToday.addActionListener(e -> {
+                selectedDate = LocalDate.now();
+                dispose();
+            });
+
+            JButton btnCancel = new JButton("Hủy");
+            btnCancel.setBackground(new Color(229, 241, 252));
+            btnCancel.setFocusPainted(false);
+            btnCancel.addActionListener(e -> dispose());
+
+            pnlFooter.add(btnToday);
+            pnlFooter.add(btnCancel);
+            add(pnlFooter, BorderLayout.SOUTH);
+
+            updateCalendar();
+        }
+
+        private void updateCalendar() {
+            pnlDays.removeAll();
+            lblMonthYear.setText("Tháng " + currentMonth.getMonthValue() + " / " + currentMonth.getYear());
+
+            String[] daysOfWeek = { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
+            for (String day : daysOfWeek) {
+                JLabel lbl = new JLabel(day, SwingConstants.CENTER);
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                lbl.setForeground(new Color(18, 48, 82));
+                pnlDays.add(lbl);
+            }
+
+            LocalDate firstDayOfMonth = currentMonth.atDay(1);
+            int dayOfWeekValue = firstDayOfMonth.getDayOfWeek().getValue();
+            int daysInMonth = currentMonth.lengthOfMonth();
+
+            for (int i = 1; i < dayOfWeekValue; i++) {
+                pnlDays.add(new JLabel(""));
+            }
+
+            for (int i = 1; i <= daysInMonth; i++) {
+                JButton btnDay = new JButton(String.valueOf(i));
+                btnDay.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                btnDay.setFocusPainted(false);
+                btnDay.setBackground(Color.WHITE);
+                btnDay.setBorder(new LineBorder(new Color(200, 200, 200)));
+
+                LocalDate dateOfButton = currentMonth.atDay(i);
+                if (dateOfButton.equals(LocalDate.now())) {
+                    btnDay.setBackground(new Color(229, 241, 252));
+                    btnDay.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                }
+
+                btnDay.addActionListener(e -> {
+                    selectedDate = dateOfButton;
+                    dispose();
+                });
+                pnlDays.add(btnDay);
+            }
+
+            pnlDays.revalidate();
+            pnlDays.repaint();
+        }
+
+        public LocalDate getSelectedDate() {
+            return selectedDate;
+        }
+    }
+
+    // =========================================================================
     // =================== LỚP DIALOG ĐẶT/SỬA LỊCH (INNER CLASS) ===============
     // =========================================================================
     class DatLichDialog extends JDialog {
         private JTextField txtNgayDat, txtGioHen;
         private JComboBox<String> cboKhachHang, cboThuCung, cboNhanVienSpa, cboFormTrangThai;
-
-        // THAY ĐỔI: Chuyển txtGhiChu thành cboGhiChu
         private JComboBox<String> cboGhiChu;
 
         private LichHenDAO lichHenDAO;
@@ -408,7 +553,7 @@ public class QuanLyLichHen extends JPanel {
             this.parentPanel = panel;
             this.lhEdit = lhEdit;
 
-            setSize(750, 500); // Điều chỉnh lại chiều cao form cho cân đối
+            setSize(750, 500);
             setLocationRelativeTo(parent);
             setResizable(false);
             setLayout(new BorderLayout());
@@ -430,11 +575,30 @@ public class QuanLyLichHen extends JPanel {
             gbc.gridx = 1;
             pnlForm.add(taoLabel("Giờ hẹn: (HH:mm)"), gbc);
 
+            JPanel pnlNgay = new JPanel(new BorderLayout());
+            pnlNgay.setOpaque(false);
             txtNgayDat = taoTextField(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            pnlNgay.add(txtNgayDat, BorderLayout.CENTER);
+
+            // Nút chọn Lịch trong Form Đặt lịch
+            JButton btnLichForm = new JButton("Lịch");
+            btnLichForm.setBackground(NAVY);
+            btnLichForm.setForeground(Color.WHITE);
+            btnLichForm.setFocusPainted(false);
+            btnLichForm.addActionListener(e -> {
+                DatePickerDialog picker = new DatePickerDialog((JFrame) SwingUtilities.getWindowAncestor(this));
+                picker.setLocationRelativeTo(btnLichForm);
+                picker.setVisible(true);
+                if (picker.getSelectedDate() != null) {
+                    txtNgayDat.setText(picker.getSelectedDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                }
+            });
+            pnlNgay.add(btnLichForm, BorderLayout.EAST);
+
             txtGioHen = taoTextField("09:00");
             gbc.gridy = 1;
             gbc.gridx = 0;
-            pnlForm.add(txtNgayDat, gbc);
+            pnlForm.add(pnlNgay, gbc);
             gbc.gridx = 1;
             pnlForm.add(txtGioHen, gbc);
 
@@ -486,14 +650,14 @@ public class QuanLyLichHen extends JPanel {
             gbc.gridx = 1;
             pnlForm.add(cboFormTrangThai, gbc);
 
-            // 4. Ghi chú / Dịch vụ (Đã đổi sang ComboBox)
+            // 4. Ghi chú / Dịch vụ
             gbc.gridx = 0;
             gbc.gridy = 8;
             gbc.gridwidth = 2;
             pnlForm.add(taoLabel("Dịch vụ / Ghi chú:"), gbc);
 
             cboGhiChu = new JComboBox<>();
-            cboGhiChu.setEditable(true); // Cho phép người dùng tự gõ thêm chữ nếu muốn
+            cboGhiChu.setEditable(true);
             styleCombo(cboGhiChu);
 
             gbc.gridy = 9;
@@ -536,16 +700,12 @@ public class QuanLyLichHen extends JPanel {
             for (String[] nv : lichHenDAO.getDanhSachNhanVienSpa())
                 cboNhanVienSpa.addItem(nv[0] + " - " + nv[1]);
 
-            // Nạp danh sách Dịch Vụ vào ComboBox Ghi chú
-            cboGhiChu.addItem(""); // Tuỳ chọn trống ban đầu
+            cboGhiChu.addItem("");
             for (String dv : lichHenDAO.getDanhSachDichVu()) {
                 cboGhiChu.addItem(dv);
             }
         }
 
-        // ===============================================
-        // ĐIỀN DỮ LIỆU CŨ VÀO FORM KHI BẤM SỬA
-        // ===============================================
         private void dienDuLieuSua() {
             if (lhEdit == null)
                 return;
@@ -563,7 +723,6 @@ public class QuanLyLichHen extends JPanel {
                 cboFormTrangThai.setSelectedItem(lhEdit.getTrangThai());
             }
 
-            // Điền ghi chú (Dịch vụ)
             if (lhEdit.getGhiChu() != null) {
                 cboGhiChu.setSelectedItem(lhEdit.getGhiChu());
             }
@@ -580,9 +739,6 @@ public class QuanLyLichHen extends JPanel {
             }
         }
 
-        // ===============================================
-        // XỬ LÝ LƯU (CẢ THÊM MỚI VÀ SỬA)
-        // ===============================================
         private void xuLyLuuDuLieu() {
             try {
                 String ngayStr = txtNgayDat.getText().trim();
@@ -594,8 +750,6 @@ public class QuanLyLichHen extends JPanel {
                 String maTC = extractId(cboThuCung.getSelectedItem().toString());
                 String maNV = extractId(cboNhanVienSpa.getSelectedItem().toString());
                 String trangThai = cboFormTrangThai.getSelectedItem().toString();
-
-                // Lấy nội dung ghi chú/dịch vụ từ ComboBox
                 String ghiChu = cboGhiChu.getSelectedItem() != null ? cboGhiChu.getSelectedItem().toString().trim()
                         : "";
 
