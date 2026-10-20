@@ -31,16 +31,12 @@ public class KhachHangDAO {
         }
 
         // =========================================================
-        // CAU SELECT CHUNG (kem thu cung, hang the, tong chi, gan nhat)
+        // CAU SELECT CHUNG (kem thu cung, tong chi, gan nhat)
         // Can SQL Server 2017 tro len (STRING_AGG)
         // =========================================================
 
-        private static final String BASE_SELECT = "SELECT k.maKhachHang, k.hoTen, k.soDienThoai, k.email, k.diaChi, "
-                        + "ISNULL(k.diemTichLuy, 0) AS diem, "
-                        + "(SELECT STRING_AGG(t.tenThuCung + ' - ' + ISNULL(t.giong, ''), ', ') "
-                        + "   FROM ThuCung t WHERE t.maKhachHang = k.maKhachHang) AS thuCung, "
-                        + "(SELECT TOP 1 tv.hangThe FROM TheThanhVien tv "
-                        + "   WHERE tv.maKhachHang = k.maKhachHang ORDER BY tv.ngayCap DESC) AS hang, "
+        private static final String BASE_SELECT = "SELECT k.maKhachHang, k.hoTen, k.soDienThoai, "
+                        + "(SELECT COUNT(*) FROM ThuCung t WHERE t.maKhachHang = k.maKhachHang) AS thuCung, "
                         + "(SELECT ISNULL(SUM(ct.soLuong * ct.donGia * (1 - ISNULL(ct.phanTramGiam, 0) / 100.0)), 0) "
                         + "   FROM HoaDon h JOIN ChiTietHoaDon ct ON ct.maHoaDon = h.maHoaDon "
                         + "   WHERE h.maKhachHang = k.maKhachHang) AS tongChi, "
@@ -53,12 +49,11 @@ public class KhachHangDAO {
                                 rs.getString("maKhachHang"),
                                 rs.getString("hoTen"),
                                 rs.getString("soDienThoai"),
-                                rs.getString("email"),
-                                rs.getString("diaChi"),
-                                rs.getInt("diem"));
+                                null, // email: CSDL khong co cot nay
+                                null, // diaChi: CSDL khong co cot nay
+                                0); // diemTichLuy: CSDL khong co cot nay
 
                 kh.setThuCung(rs.getString("thuCung"));
-                kh.setHangThe(rs.getString("hang"));
                 kh.setTongChi(rs.getLong("tongChi"));
 
                 Timestamp ts = rs.getTimestamp("ganNhat");
@@ -71,29 +66,16 @@ public class KhachHangDAO {
         }
 
         // =========================================================
-        // TIM KIEM (ten / SDT / ma) + LOC THEO HANG
-        // hang: "Tat ca hang" | "Khong co the" | Silver | Gold | Platinum
+        // TIM KIEM (ten / SDT / ma)
         // =========================================================
 
-        public ArrayList<KhachHang> timKiem(String tuKhoa, String hang) {
+        public ArrayList<KhachHang> timKiem(String tuKhoa) {
 
                 ArrayList<KhachHang> list = new ArrayList<>();
 
                 StringBuilder sql = new StringBuilder(BASE_SELECT);
 
                 sql.append("WHERE (k.hoTen LIKE ? OR k.soDienThoai LIKE ? OR k.maKhachHang LIKE ?) ");
-
-                boolean theoHang = hang != null
-                                && !hang.equals("Tat ca hang")
-                                && !hang.equals("Khong co the");
-
-                if (hang != null && hang.equals("Khong co the")) {
-                        sql.append("AND NOT EXISTS (SELECT 1 FROM TheThanhVien tv "
-                                        + "WHERE tv.maKhachHang = k.maKhachHang) ");
-                } else if (theoHang) {
-                        sql.append("AND EXISTS (SELECT 1 FROM TheThanhVien tv "
-                                        + "WHERE tv.maKhachHang = k.maKhachHang AND tv.hangThe = ?) ");
-                }
 
                 sql.append("ORDER BY k.maKhachHang");
 
@@ -106,10 +88,6 @@ public class KhachHangDAO {
                         ps.setString(1, kw);
                         ps.setString(2, kw);
                         ps.setString(3, kw);
-
-                        if (theoHang) {
-                                ps.setString(4, hang);
-                        }
 
                         try (ResultSet rs = ps.executeQuery()) {
                                 while (rs.next()) {
@@ -180,7 +158,7 @@ public class KhachHangDAO {
         }
 
         // =========================================================
-        // THONG KE: {tong khach, khach co the, tong diem, khach mua thang nay}
+        // THONG KE: {tong khach, so khach co the (0), tong diem (0), khach mua thang nay}
         // =========================================================
 
         public long[] thongKe() {
@@ -189,8 +167,8 @@ public class KhachHangDAO {
 
                 String sql = "SELECT "
                                 + "(SELECT COUNT(*) FROM KhachHang), "
-                                + "(SELECT COUNT(DISTINCT maKhachHang) FROM TheThanhVien), "
-                                + "(SELECT ISNULL(SUM(diemTichLuy), 0) FROM KhachHang), "
+                                + "(SELECT 0), "
+                                + "(SELECT 0), "
                                 + "(SELECT COUNT(DISTINCT maKhachHang) FROM HoaDon "
                                 + "   WHERE YEAR(ngayLap) = YEAR(GETDATE()) AND MONTH(ngayLap) = MONTH(GETDATE()))";
 
@@ -214,15 +192,13 @@ public class KhachHangDAO {
         }
 
         // =========================================================
-        // THEM KHACH HANG + THE THANH VIEN + THU CUNG (1 giao dich)
-        // hangThe = null neu khong cap the. Tra ve ma khach moi, null neu loi.
+        // THEM KHACH HANG + THU CUNG (1 giao dich)
+        // Tra ve ma khach moi, null neu loi.
         // =========================================================
 
         public String them(
                         KhachHang kh,
-                        ArrayList<ThuCungMoi> thuCungs,
-                        String hangThe,
-                        String maNhanVien) {
+                        ArrayList<ThuCungMoi> thuCungs) {
 
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
@@ -235,35 +211,13 @@ public class KhachHangDAO {
                                 // ---- khach hang ----
                                 try (PreparedStatement ps = con.prepareStatement(
                                                 "INSERT INTO KhachHang "
-                                                                + "(maKhachHang, hoTen, soDienThoai, email, diaChi, diemTichLuy) "
-                                                                + "VALUES (?, ?, ?, ?, ?, ?)")) {
+                                                                + "(maKhachHang, hoTen, soDienThoai) "
+                                                                + "VALUES (?, ?, ?)")) {
 
                                         ps.setString(1, maKH);
                                         ps.setString(2, kh.getHoTen());
                                         ps.setString(3, kh.getSoDienThoai());
-                                        ps.setString(4, kh.getEmail());
-                                        ps.setString(5, kh.getDiaChi());
-                                        ps.setInt(6, kh.getDiemTichLuy());
                                         ps.executeUpdate();
-                                }
-
-                                // ---- the thanh vien ----
-                                if (hangThe != null) {
-
-                                        String maThe = nextCode(con, "TheThanhVien", "maThe", "THE", 3);
-
-                                        try (PreparedStatement ps = con.prepareStatement(
-                                                        "INSERT INTO TheThanhVien "
-                                                                        + "(maThe, hangThe, chietKhauPhanTram, ngayCap, maKhachHang, maNhanVien) "
-                                                                        + "VALUES (?, ?, ?, CAST(GETDATE() AS DATE), ?, ?)")) {
-
-                                                ps.setString(1, maThe);
-                                                ps.setString(2, hangThe);
-                                                ps.setDouble(3, chietKhau(hangThe));
-                                                ps.setString(4, maKH);
-                                                ps.setString(5, maNhanVien);
-                                                ps.executeUpdate();
-                                        }
                                 }
 
                                 // ---- thu cung ----
@@ -349,7 +303,6 @@ public class KhachHangDAO {
 
                         try {
 
-                                chay(con, "DELETE FROM TheThanhVien WHERE maKhachHang = ?", maKhachHang);
                                 chay(con, "DELETE FROM ThuCung WHERE maKhachHang = ?", maKhachHang);
                                 chay(con, "DELETE FROM KhachHang WHERE maKhachHang = ?", maKhachHang);
 
@@ -385,18 +338,6 @@ public class KhachHangDAO {
         // =========================================================
         // HAM PHU
         // =========================================================
-
-        private static double chietKhau(String hangThe) {
-
-                switch (hangThe) {
-                        case "Platinum":
-                                return 15;
-                        case "Gold":
-                                return 10;
-                        default:
-                                return 5;
-                }
-        }
 
         private static String nextCode(
                         Connection con,
