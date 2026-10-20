@@ -12,7 +12,7 @@ import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Cảnh báo hạn sử dụng theo lô nhập còn tồn. */
+/** Cảnh báo một dòng cho mỗi sản phẩm, dựa trên lô còn tồn gần hết hạn nhất. */
 public class CanhBaoHanSuDungPanel extends JPanel {
     private final DefaultTableModel model = new DefaultTableModel(
             new String[]{"Mã SP", "Tên SP", "Danh mục", "Ngày nhập", "Hạn sử dụng", "Còn lại", "Trạng thái"}, 0) {
@@ -109,12 +109,21 @@ public class CanhBaoHanSuDungPanel extends JPanel {
               JOIN SanPham sp ON sp.maSanPham = ct.maSanPham
               JOIN DanhMuc dm ON dm.maDanhMuc = sp.maDanhMuc
               WHERE pn.trangThai = 1 AND ISNULL(ct.trangThai, 1) = 1 AND ct.hanSuDung IS NOT NULL
+            ), RemainingLots AS (
+              SELECT maSanPham, tenSanPham, tenDanhMuc, maPhieuNhap, ngayNhap, hanSuDung,
+                     CASE WHEN sold <= prevQty THEN soLuongNhap WHEN sold >= cumQty THEN 0 ELSE cumQty - sold END AS conLai,
+                     DATEDIFF(day, CAST(GETDATE() AS date), hanSuDung) AS ngayCon
+              FROM Lots
+            ), AlertLots AS (
+              SELECT *, ROW_NUMBER() OVER(
+                       PARTITION BY maSanPham ORDER BY hanSuDung, ngayNhap, maPhieuNhap) AS stt
+              FROM RemainingLots
+              WHERE conLai > 0
+                AND hanSuDung <= DATEADD(day, 30, CAST(GETDATE() AS date))
             )
-            SELECT maSanPham, tenSanPham, tenDanhMuc, ngayNhap, hanSuDung,
-                   CASE WHEN sold <= prevQty THEN soLuongNhap WHEN sold >= cumQty THEN 0 ELSE cumQty - sold END AS conLai,
-                   DATEDIFF(day, CAST(GETDATE() AS date), hanSuDung) AS ngayCon
-            FROM Lots
-            WHERE hanSuDung <= DATEADD(day, 30, CAST(GETDATE() AS date))
+            SELECT maSanPham, tenSanPham, tenDanhMuc, ngayNhap, hanSuDung, conLai, ngayCon
+            FROM AlertLots
+            WHERE stt = 1
             ORDER BY hanSuDung, tenSanPham
             """;
 

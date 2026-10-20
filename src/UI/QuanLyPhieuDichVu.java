@@ -309,9 +309,7 @@ public class QuanLyPhieuDichVu extends JPanel {
     // ================== DIALOG THÊM / SỬA (INNER CLASS) ==================
     class PhieuDichVuDialog extends JDialog {
         private JTextField txtMaPhieu;
-        private JComboBox<String> cboLichHen, cboKhachHang, cboThuCung, cboNhanVien;
-        private JTextField txtFormTrangThai; // Đổi sang JTextField (chỉ đọc) để vô hiệu hoá sửa tay
-
+        private JComboBox<String> cboLichHen, cboKhachHang, cboThuCung, cboNhanVien, cboTrangThai;
         private PhieuDichVuDAO pDao;
         private LichHenDAO lhDao;
         private QuanLyPhieuDichVu parentPanel;
@@ -363,15 +361,8 @@ public class QuanLyPhieuDichVu extends JPanel {
             pnlForm.add(cboNhanVien);
 
             pnlForm.add(new JLabel("Trạng Thái:"));
-
-            // Xử lý mặc định chỉ đọc cho Trạng thái
-            String trangThaiHienTai = (pEdit == null) ? "Đang xử lý" : pEdit.getTrangThai();
-            txtFormTrangThai = new JTextField(trangThaiHienTai);
-            txtFormTrangThai.setEditable(false);
-            txtFormTrangThai.setBackground(new Color(240, 240, 240)); // Màu xám nhạt để nhận biết là ko sửa được
-            txtFormTrangThai
-                    .setToolTipText("Trạng thái sẽ được chuyển sang 'Hoàn thành' khi khách thanh toán hóa đơn.");
-            pnlForm.add(txtFormTrangThai);
+            cboTrangThai = new JComboBox<>(new String[] { "Đang xử lý", "Hoàn thành" });
+            pnlForm.add(cboTrangThai);
 
             add(pnlForm, BorderLayout.CENTER);
 
@@ -391,6 +382,7 @@ public class QuanLyPhieuDichVu extends JPanel {
 
             if (pEdit != null) {
                 cboLichHen.setSelectedItem(pEdit.getMaLichHen());
+                cboTrangThai.setSelectedItem(pEdit.getTrangThai());
                 setCombo(cboKhachHang, pEdit.getMaKhachHang());
                 setCombo(cboThuCung, pEdit.getMaThuCung());
                 setCombo(cboNhanVien, pEdit.getMaNhanVien());
@@ -411,7 +403,7 @@ public class QuanLyPhieuDichVu extends JPanel {
             String tc = cboThuCung.getSelectedItem().toString().split(" - ")[0];
             String nv = cboNhanVien.getSelectedItem().toString().split(" - ")[0];
 
-            PhieuDichVu p = new PhieuDichVu(txtMaPhieu.getText(), txtFormTrangThai.getText(), kh, tc, nv,
+            PhieuDichVu p = new PhieuDichVu(txtMaPhieu.getText(), cboTrangThai.getSelectedItem().toString(), kh, tc, nv,
                     cboLichHen.getSelectedItem().toString());
             boolean success = (pEdit == null) ? pDao.them(p) : pDao.sua(p);
 

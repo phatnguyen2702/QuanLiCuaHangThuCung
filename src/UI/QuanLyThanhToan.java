@@ -15,6 +15,7 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.zip.DeflaterOutputStream;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
@@ -66,7 +68,7 @@ public class QuanLyThanhToan extends JPanel {
     private final ThanhToanDao dao = new ThanhToanDao();
     private final String maNhanVien;
     private final Runnable moLichSuHoaDon;
-    private final List<entity.ThanhToan> chiTiet = new ArrayList<>();
+    private final List<entity.ThanhToan> chiTiet = UI.PhienLamViec.gioHang();
     private final List<String> danhSachMaKhachHang = new ArrayList<>();
     private final List<String> danhSachMaMatHang = new ArrayList<>();
     private final DonHangModel tableModel = new DonHangModel();
@@ -106,6 +108,12 @@ public class QuanLyThanhToan extends JPanel {
         napDanhSachMaKhachHang();
         napDanhSachMaMatHang();
         napPhuongThucThanhToan();
+        capNhatTien();
+    }
+
+    /** Đồng bộ bảng và tổng tiền khi quay lại thanh toán sau khi sửa giỏ hàng. */
+    public void napGioHang() {
+        tableModel.fireTableDataChanged();
         capNhatTien();
     }
 
@@ -876,7 +884,9 @@ public class QuanLyThanhToan extends JPanel {
                     voucher == null ? BigDecimal.ZERO : voucher.getPhanTramGiam(),
                     chiTiet);
             String noiDungHoaDon = taoNoiDungHoaDon(
-                    phuongThuc.getTenPhuongThuc(), tongThanhToan, maHoaDonDaLuu);
+                    phuongThuc.getTenPhuongThuc(), tongThanhToan);
+            noiDungHoaDon = "PET SHOP PRO\nHÓA ĐƠN: " + maHoaDonDaLuu + "\n"
+                    + noiDungHoaDon;
             hienXacNhanHoaDon(noiDungHoaDon, maHoaDonDaLuu);
             chiTiet.clear();
             tableModel.fireTableDataChanged();
@@ -1005,12 +1015,8 @@ public class QuanLyThanhToan extends JPanel {
         }
     }
 
-    private String taoNoiDungHoaDon(
-            String tenPhuongThuc, BigDecimal tong, String maHoaDon) {
+    private String taoNoiDungHoaDon(String tenPhuongThuc, BigDecimal tong) {
         StringBuilder text = new StringBuilder();
-        text.append("PET SHOP PRO\n");
-        text.append("HÓA ĐƠN THANH TOÁN\n");
-        text.append("Mã hóa đơn: ").append(maHoaDon).append('\n');
         text.append("Ngày lập: ").append(layNgayLap().format(
                 DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append('\n');
         text.append("Khách hàng: ").append(txtTenKhachHang.getText())
@@ -1038,18 +1044,18 @@ public class QuanLyThanhToan extends JPanel {
         return text.toString();
     }
 
-    private void xuatHoaDonTxt(String noiDung, String maHoaDon) {
+    private void xuatHoaDonPdf(String noiDung, String maHoaDon) {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu hóa đơn TXT");
-        chooser.setSelectedFile(new java.io.File("HoaDon-" + maHoaDon + ".txt"));
-        chooser.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
+        chooser.setDialogTitle("Lưu hóa đơn PDF");
+        chooser.setSelectedFile(new java.io.File("HoaDon-" + maHoaDon + ".pdf"));
+        chooser.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
         if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
         Path file = chooser.getSelectedFile().toPath();
-        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".txt")) {
-            file = file.resolveSibling(file.getFileName() + ".txt");
+        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+            file = file.resolveSibling(file.getFileName() + ".pdf");
         }
         if (Files.exists(file)
                 && JOptionPane.showConfirmDialog(
@@ -1061,14 +1067,14 @@ public class QuanLyThanhToan extends JPanel {
             return;
         }
         try {
-            Files.write(file, noiDung.getBytes(StandardCharsets.UTF_8));
+            Files.write(file, taoPdf(noiDung));
             JOptionPane.showMessageDialog(
                     this,
-                    "Đã lưu hóa đơn:\n" + file.toAbsolutePath(),
+                    "Đã lưu hóa đơn PDF:\n" + file.toAbsolutePath(),
                     "Xuất hóa đơn thành công",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
-            hienLoi("Không thể lưu hóa đơn: " + e.getMessage());
+            hienLoi("Hóa đơn đã lưu nhưng không thể xuất PDF: " + e.getMessage());
         }
     }
 
@@ -1085,11 +1091,163 @@ public class QuanLyThanhToan extends JPanel {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
                 null,
-                new Object[] { "Xuất hóa đơn", "Đóng" },
-                "Xuất hóa đơn");
+                new Object[] { "Xuất hóa đơn PDF", "Đóng" },
+                "Xuất hóa đơn PDF");
         if (action == 0) {
-            xuatHoaDonTxt(noiDung, maHoaDon);
+            xuatHoaDonPdf(noiDung, maHoaDon);
         }
+    }
+
+    private byte[] taoPdf(String noiDung) throws IOException {
+        final int pageWidth = 595;
+        final int pageHeight = 842;
+        final int scale = 2;
+        final int lineHeight = 25;
+        final int firstLineY = 72;
+        List<String> lines = wrapNoiDung(noiDung, 470);
+        int linesPerPage = (pageHeight - firstLineY - 50) / lineHeight;
+        int pageCount = Math.max(1, (lines.size() + linesPerPage - 1) / linesPerPage);
+        List<byte[]> objects = new ArrayList<>();
+        objects.add(null);
+        objects.add(null);
+        StringBuilder pageReferences = new StringBuilder();
+
+        for (int page = 0; page < pageCount; page++) {
+            int pageObject = 3 + page * 3;
+            int contentObject = pageObject + 1;
+            int imageObject = pageObject + 2;
+            pageReferences.append(pageObject).append(" 0 R ");
+            BufferedImage image = new BufferedImage(
+                    pageWidth * scale, pageHeight * scale, BufferedImage.TYPE_INT_RGB);
+            Graphics2D graphics = image.createGraphics();
+            try {
+                graphics.scale(scale, scale);
+                graphics.setColor(Color.WHITE);
+                graphics.fillRect(0, 0, pageWidth, pageHeight);
+                graphics.setColor(NAVY);
+                graphics.setFont(new Font("Segoe UI", Font.BOLD, 18));
+                graphics.drawString("PET SHOP PRO", 55, 42);
+                graphics.setColor(Color.DARK_GRAY);
+                graphics.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                int firstLine = page * linesPerPage;
+                int lastLine = Math.min(firstLine + linesPerPage, lines.size());
+                for (int line = firstLine; line < lastLine; line++) {
+                    graphics.drawString(
+                            lines.get(line),
+                            55,
+                            firstLineY + (line - firstLine) * lineHeight);
+                }
+            } finally {
+                graphics.dispose();
+            }
+
+            byte[] compressedImage = nenAnhRgb(image);
+            byte[] content = ascii("q\n"
+                    + pageWidth + " 0 0 " + pageHeight + " 0 0 cm\n"
+                    + "/Im0 Do\nQ\n");
+            objects.add(ascii(pageObject + " 0 obj\n"
+                    + "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
+                    + pageWidth + " " + pageHeight + "] "
+                    + "/Resources << /XObject << /Im0 " + imageObject + " 0 R >> >> "
+                    + "/Contents " + contentObject + " 0 R >>\nendobj\n"));
+            objects.add(streamObject(contentObject, "<<", content));
+            objects.add(streamObject(
+                    imageObject,
+                    "<< /Type /XObject /Subtype /Image /Width " + image.getWidth()
+                            + " /Height " + image.getHeight()
+                            + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode",
+                    compressedImage));
+        }
+
+        objects.set(0, ascii("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"));
+        objects.set(1, ascii("2 0 obj\n<< /Type /Pages /Kids ["
+                + pageReferences + "] /Count " + pageCount + " >>\nendobj\n"));
+        return assemblePdf(objects);
+    }
+
+    private List<String> wrapNoiDung(String text, int maxWidth) {
+        List<String> lines = new ArrayList<>();
+        Font font = new Font("Segoe UI", Font.PLAIN, 11);
+        BufferedImage measureImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = measureImage.createGraphics();
+        try {
+            graphics.setFont(font);
+            java.awt.FontMetrics metrics = graphics.getFontMetrics();
+            for (String sourceLine : text.split("\\R", -1)) {
+                String remaining = sourceLine;
+                while (!remaining.isEmpty() && metrics.stringWidth(remaining) > maxWidth) {
+                    int breakAt = remaining.length();
+                    while (breakAt > 1
+                            && metrics.stringWidth(remaining.substring(0, breakAt)) > maxWidth) {
+                        breakAt--;
+                    }
+                    int space = remaining.lastIndexOf(' ', breakAt);
+                    if (space > 0) {
+                        breakAt = space;
+                    }
+                    lines.add(remaining.substring(0, breakAt));
+                    remaining = remaining.substring(breakAt).trim();
+                }
+                lines.add(remaining);
+            }
+        } finally {
+            graphics.dispose();
+        }
+        return lines;
+    }
+
+    private byte[] nenAnhRgb(BufferedImage image) throws IOException {
+        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+        try (DeflaterOutputStream deflater = new DeflaterOutputStream(compressed)) {
+            int[] pixels = new int[image.getWidth()];
+            byte[] row = new byte[image.getWidth() * 3];
+            for (int y = 0; y < image.getHeight(); y++) {
+                image.getRGB(0, y, image.getWidth(), 1, pixels, 0, image.getWidth());
+                for (int x = 0; x < pixels.length; x++) {
+                    int rgb = pixels[x];
+                    int offset = x * 3;
+                    row[offset] = (byte) (rgb >> 16);
+                    row[offset + 1] = (byte) (rgb >> 8);
+                    row[offset + 2] = (byte) rgb;
+                }
+                deflater.write(row);
+            }
+        }
+        return compressed.toByteArray();
+    }
+
+    private byte[] streamObject(int objectNumber, String dictionary, byte[] data)
+            throws IOException {
+        ByteArrayOutputStream object = new ByteArrayOutputStream();
+        object.write(ascii(objectNumber + " 0 obj\n" + dictionary
+                + " /Length " + data.length + " >>\nstream\n"));
+        object.write(data);
+        object.write(ascii("\nendstream\nendobj\n"));
+        return object.toByteArray();
+    }
+
+    private byte[] assemblePdf(List<byte[]> objects) throws IOException {
+        ByteArrayOutputStream pdf = new ByteArrayOutputStream();
+        pdf.write(ascii("%PDF-1.4\n"));
+        List<Integer> offsets = new ArrayList<>();
+        offsets.add(0);
+        for (byte[] object : objects) {
+            offsets.add(pdf.size());
+            pdf.write(object);
+        }
+        int xrefOffset = pdf.size();
+        pdf.write(ascii("xref\n0 " + offsets.size() + "\n"));
+        pdf.write(ascii("0000000000 65535 f \n"));
+        for (int index = 1; index < offsets.size(); index++) {
+            pdf.write(ascii(String.format(Locale.ROOT, "%010d 00000 n \n", offsets.get(index))));
+        }
+        pdf.write(ascii("trailer\n<< /Size " + offsets.size()
+                + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF\n"));
+        return pdf.toByteArray();
+    }
+
+    private byte[] ascii(String text) {
+        return text.getBytes(StandardCharsets.ISO_8859_1);
     }
 
     private BigDecimal tinhTongHang() {

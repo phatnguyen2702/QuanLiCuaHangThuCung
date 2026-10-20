@@ -71,7 +71,10 @@ public class TrangChu extends JFrame {
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
     private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
     private ThongKeDoanhThu pnlThongKeDoanhThu;
+    private QuanLyThanhToan pnlThanhToan;
     private final javax.swing.Timer tmrDongHo;
+    private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
+    private GoiYThucAnPanel pnlGoiYThucAn;
 
     // Thanh phan dong tren trang chu.
     private JPanel pnlLichSpaNoiDung;
@@ -242,8 +245,21 @@ public class TrangChu extends JFrame {
 
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnNghiepVu,
-                () -> new QuanLyThanhToan(maNV,
+                () -> pnlThanhToan = new QuanLyThanhToan(maNV,
                         () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon)));
+        if (pnlThanhToan != null) {
+            pnlThanhToan.napGioHang();
+        }
+    }
+
+    /** Mở màn hình thanh toán với các mặt hàng đang có trong giỏ gợi ý. */
+    public void moThanhToanTuGioHang() {
+        if (UI.PhienLamViec.gioHang().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.", "Giỏ hàng",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        chuyenTuNhom(btnNghiepVu, this::moThanhToan);
     }
 
     private void moQuanLyTaiKhoan() {
@@ -851,9 +867,6 @@ public class TrangChu extends JFrame {
         lblTam.setForeground(new Color(38, 45, 57));
         return lblTam;
     }
-
-    private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
-    private GoiYThucAnPanel pnlGoiYThucAn;
 
     private void moCanhBaoHanSuDung() {
         hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu,
