@@ -228,14 +228,14 @@ public class TrangChu extends JFrame {
     }
 
     private void moTraCuuHoaDon() {
-        hienManHinh("hoadon", "Tra cứu hóa đơn", btnTimKiem,
+        hienManHinh("hoadon", "Tra cứu lịch sử hóa đơn", btnTimKiem,
                 () -> pnlTraCuuHoaDon = new TraCuuLichSuHoaDon(
                         () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan)));
         if (pnlTraCuuHoaDon != null) {
             try {
                 pnlTraCuuHoaDon.hienDanhSach();
             } catch (RuntimeException ex) {
-                baoLoiMoManHinh("Tra cứu hóa đơn", ex);
+                baoLoiMoManHinh("Tra cứu lịch sử hóa đơn", ex);
             }
         }
     }
@@ -412,20 +412,24 @@ public class TrangChu extends JFrame {
         p.addSeparator();
         themMuc(p, "Lịch hẹn Spa", btnNghiepVu, this::moLichHen);
         themMuc(p, "Phiếu dịch vụ", btnNghiepVu, this::moPhieuDichVu);
+        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn",
+                btnNghiepVu, this::moCanhBaoHanSuDung);
+        themMuc(p, "Gợi ý thức ăn theo loại thú cưng",
+                btnNghiepVu, this::moGoiYThucAn);
         p.addSeparator();
         themMuc(p, "Thanh toán hóa đơn", btnNghiepVu, this::moThanhToan);
 
         p.addSeparator();
         themMuc(p, "Phân ca nhân viên", btnNghiepVu, this::moQuanLyPhanCa);
+
         return p;
     }
 
     private JPopupMenu taoMenuTimKiem() {
         JPopupMenu p = new JPopupMenu();
-        themMuc(p, "Tra cứu khách hàng", btnTimKiem, this::moKhachHang);
-        themMuc(p, "Tra cứu sản phẩm", btnTimKiem, () -> chuyenKho(1));
-        themMuc(p, "Tra cứu thú cưng", btnTimKiem, this::moThuCung);
-        themMuc(p, "Tra cứu lịch hẹn", btnTimKiem, this::moLichHen);
+        // Menu Tìm kiếm chỉ dành cho tra cứu lịch sử hóa đơn.
+        // Các màn hình khách hàng/sản phẩm/thú cưng/lịch hẹn vẫn ở Danh mục và Xử lý.
+        themMuc(p, "Tra cứu lịch sử hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
         return p;
     }
 
@@ -648,6 +652,9 @@ public class TrangChu extends JFrame {
     }
 
     private void dangXuat() {
+        // Xóa phiên dùng chung trước khi về màn hình đăng nhập.
+        UI.PhienLamViec.dat(null, null, null);
+        PhienLamViec.dat(null, null, null);
         dispose();
         new DangNhap().setVisible(true);
     }
@@ -768,14 +775,14 @@ public class TrangChu extends JFrame {
         pnlPanel.add(title);
         pnlPanel.add(Box.createVerticalStrut(15));
 
-        themBtnTruyCapNhanh(pnlPanel, "Thanh toán", "F4",
-                () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan));
-        themBtnTruyCapNhanh(pnlPanel, "Quản lý lịch hẹn Spa", "F5",
-                () -> chuyenTuNhom(btnNghiepVu, this::moLichHen));
-        themBtnTruyCapNhanh(pnlPanel, "Quản lý sản phẩm", "F6",
-                () -> chuyenTuNhom(btnDanhMuc, () -> chuyenKho(1)));
-        themBtnTruyCapNhanh(pnlPanel, "Quản lý khách hàng", "F7",
+        themBtnTruyCapNhanh(pnlPanel, "Quản lý khách hàng", "F4",
                 () -> chuyenTuNhom(btnDanhMuc, this::moKhachHang));
+        themBtnTruyCapNhanh(pnlPanel, "Quản lý lịch hẹn", "F5",
+                () -> chuyenTuNhom(btnNghiepVu, this::moLichHen));
+        themBtnTruyCapNhanh(pnlPanel, "Phiếu dịch vụ", "F6",
+                () -> chuyenTuNhom(btnNghiepVu, this::moPhieuDichVu));
+        themBtnTruyCapNhanh(pnlPanel, "Thanh toán", "F7",
+                () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan));
         themBtnTruyCapNhanh(pnlPanel, "Tra cứu hóa đơn", "F8",
                 () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon));
 
@@ -843,6 +850,25 @@ public class TrangChu extends JFrame {
         lblTam.setFont(UIStyle.font(Font.BOLD, 23));
         lblTam.setForeground(new Color(38, 45, 57));
         return lblTam;
+    }
+
+    private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
+    private GoiYThucAnPanel pnlGoiYThucAn;
+
+    private void moCanhBaoHanSuDung() {
+        hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu,
+                () -> pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel());
+        if (pnlCanhBaoHanSuDung != null) {
+            pnlCanhBaoHanSuDung.napLai();
+        }
+    }
+
+    private void moGoiYThucAn() {
+        hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnNghiepVu,
+                () -> pnlGoiYThucAn = new GoiYThucAnPanel());
+        if (pnlGoiYThucAn != null) {
+            pnlGoiYThucAn.napLai();
+        }
     }
 
     private void napTongQuanHomNay() {
@@ -1054,7 +1080,7 @@ public class TrangChu extends JFrame {
                           <li><b>Hệ thống:</b> quản lý tài khoản nhân viên, quản lý ca làm, đăng xuất và quay về trang chủ.</li>
                           <li><b>Danh mục:</b> quản lý danh mục sản phẩm, sản phẩm, khách hàng và thú cưng.</li>
                           <li><b>Nghiệp vụ:</b> các thao tác vận hành cửa hàng như nhập kho, kiểm kê, lịch hẹn Spa, phiếu dịch vụ, thanh toán, voucher và phân ca nhân viên.</li>
-                          <li><b>Tìm kiếm:</b> tra cứu hóa đơn, khách hàng, sản phẩm, thú cưng và lịch hẹn.</li>
+                          <li><b>Tìm kiếm:</b> chỉ tra cứu lịch sử hóa đơn (xem chi tiết, tìm theo mã hóa đơn hoặc thông tin khách hàng và xuất hóa đơn).</li>
                           <li><b>Thống kê:</b> thống kê doanh thu và thống kê lượt mua từ dữ liệu hóa đơn.</li>
                         </ul>
                         <h3 style='color:#123052;'>Khu vực trong trang chủ</h3>
@@ -1129,9 +1155,9 @@ public class TrangChu extends JFrame {
     // =========================================================
 
     public static final class PhienLamViec {
-        public static String maNV = "NV001";
-        public static String hoTen = "Đặng Đình An";
-        public static String vaiTro = "Quản lý";
+        public static String maNV;
+        public static String hoTen;
+        public static String vaiTro;
 
         private PhienLamViec() {
         }
