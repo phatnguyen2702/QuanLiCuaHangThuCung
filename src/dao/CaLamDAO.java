@@ -38,22 +38,29 @@ public class CaLamDAO {
         return list;
     }
 
-    // THEM
-    public boolean them(CaLam ca) {
-        String sql = "INSERT INTO CaLam " +
-                "(maCa, tenCa, gioBatDau, gioKetThuc) " +
-                "VALUES (?, ?, ?, ?)";
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, ca.getMaCa());
-            ps.setString(2, ca.getTenCa());
-            ps.setString(3, ca.getGioBatDau());
-            ps.setString(4, ca.getGioKetThuc());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+    // Mã ca được sinh tự động cùng giao dịch INSERT, không dùng mã người dùng nhập.
+    public boolean them(CaLam ca) throws SQLException {
+        String sql = "INSERT INTO CaLam (maCa, tenCa, gioBatDau, gioKetThuc) "
+                + "VALUES (?, ?, ?, ?)";
+        try (Connection con = connectDB.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                String maMoi = MaTuDongDAO.taoMaTrongGiaoDich(con, MaTuDongDAO.Loai.CA_LAM);
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setString(1, maMoi);
+                    ps.setString(2, ca.getTenCa());
+                    ps.setString(3, ca.getGioBatDau());
+                    ps.setString(4, ca.getGioKetThuc());
+                    if (ps.executeUpdate() != 1)
+                        throw new SQLException("Không thể thêm ca làm.");
+                }
+                con.commit();
+                ca.setMaCa(maMoi);
+                return true;
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            }
         }
     }
 

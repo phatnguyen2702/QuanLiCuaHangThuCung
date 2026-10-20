@@ -1,6 +1,8 @@
 package UI;
 
 import dao.TaiKhoanDAO;
+import dao.MaTuDongDAO;
+import java.sql.SQLException;
 import entity.TaiKhoan;
 
 import javax.swing.*;
@@ -71,6 +73,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                 BorderLayout.CENTER);
 
                 loadData();
+                lamMoi();
         }
 
         // =========================================================
@@ -223,6 +226,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 styleTextField(
                                 txtMaNV);
+                txtMaNV.setEditable(false);
+                txtMaNV.setToolTipText("Mã NV được hệ thống tự sinh khi lưu");
 
                 gbc.gridx = 1;
                 gbc.weightx = 1;
@@ -841,7 +846,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                 maVaiTro(valueAt(row, 6)));
 
                 // Khong cho sua ma nhan vien
-                txtMaNV.setEnabled(false);
+                txtMaNV.setEditable(false);
         }
 
         // =========================================================
@@ -866,32 +871,27 @@ public class QuanLyTaiKhoan extends JPanel {
         // =========================================================
 
         private void them() {
-
-                if (!kiemTraDuLieu()) {
+                if (table.getSelectedRow() >= 0) {
+                        JOptionPane.showMessageDialog(this,
+                                        "Đang chọn nhân viên cũ. Nhấn Làm mới để thêm nhân viên mới.");
                         return;
                 }
-
+                if (!kiemTraDuLieu())
+                        return;
                 TaiKhoan tk = getTaiKhoanFromForm();
-
-                if (taiKhoanDAO.them(tk)) {
-
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Thêm tài khoản thành công!",
-                                        "Thông báo",
-                                        JOptionPane.INFORMATION_MESSAGE);
-
-                        loadData();
-
-                        lamMoi();
-
-                } else {
-
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Thêm tài khoản thất bại!",
-                                        "Lỗi",
-                                        JOptionPane.ERROR_MESSAGE);
+                try {
+                        if (taiKhoanDAO.them(tk)) {
+                                JOptionPane.showMessageDialog(this,
+                                                "Thêm nhân viên thành công! Mã nhân viên: " + tk.getMaNhanVien());
+                                loadData();
+                                lamMoi();
+                        } else {
+                                JOptionPane.showMessageDialog(this, "Không thể thêm nhân viên.");
+                        }
+                } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(this,
+                                        "Lỗi thêm nhân viên: " + ex.getMessage(),
+                                        "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
                 }
         }
 
@@ -905,7 +905,7 @@ public class QuanLyTaiKhoan extends JPanel {
                         return;
                 }
 
-                if (txtMaNV.isEnabled()) {
+                if (table.getSelectedRow() < 0) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -946,10 +946,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
         private void xoa() {
 
-                if (txtMaNV.isEnabled()
-                                || txtMaNV.getText()
-                                                .trim()
-                                                .isEmpty()) {
+                if (table.getSelectedRow() < 0) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -1074,7 +1071,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
         private void lamMoi() {
 
-                txtMaNV.setText("");
+                txtMaNV.setText(MaTuDongDAO.goiY(MaTuDongDAO.Loai.NHAN_VIEN));
                 txtHoTen.setText("");
                 txtSoDienThoai.setText("");
                 txtEmail.setText("");
@@ -1085,7 +1082,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 txtTimKiem.setText("");
 
-                txtMaNV.setEnabled(true);
+                txtMaNV.setEditable(false);
 
                 table.clearSelection();
         }
@@ -1095,16 +1092,11 @@ public class QuanLyTaiKhoan extends JPanel {
         // =========================================================
 
         private boolean kiemTraDuLieu() {
-                String ma = txtMaNV.getText().trim();
                 String hoTen = txtHoTen.getText().trim();
                 String sdt = txtSoDienThoai.getText().trim();
                 String email = txtEmail.getText().trim();
                 String matKhau = new String(txtMatKhau.getPassword());
 
-                if (!ma.matches("NV\\d{3}")) {
-                        return baoLoiTruong(txtMaNV,
-                                        "Mã nhân viên phải có dạng NV001 (NV và đúng 3 chữ số).");
-                }
                 if (hoTen.length() < 2 || hoTen.length() > 100
                                 || !hoTen.matches("[\\p{L} ]+")) {
                         return baoLoiTruong(txtHoTen,

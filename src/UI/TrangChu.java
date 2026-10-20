@@ -401,7 +401,7 @@ public class TrangChu extends JFrame {
         themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
-        themMuc(p, "Voucher / Mã giảm giá", btnNghiepVu, this::moVoucher);
+        themMuc(p, "Mã giảm giá", btnNghiepVu, this::moVoucher);
         return p;
     }
 
@@ -454,7 +454,7 @@ public class TrangChu extends JFrame {
         mniDoiMatKhau.setBorder(new EmptyBorder(9, 14, 9, 14));
         mniDoiMatKhau.addActionListener(e -> moDlgDoiMatKhau());
         popMenu.add(mniDoiMatKhau);
-
+        popMenu.addSeparator();
         JMenuItem mniDangXuat = new JMenuItem("Đăng xuất");
         mniDangXuat.setFont(UIStyle.font(Font.PLAIN, 13));
         mniDangXuat.setBorder(new EmptyBorder(9, 14, 9, 14));
