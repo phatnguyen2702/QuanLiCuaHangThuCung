@@ -307,12 +307,12 @@ public class TrangChu extends JFrame {
         JPanel pnlMenu = new JPanel(new GridLayout(1, 6, 2, 0));
         pnlMenu.setOpaque(false);
 
-        btnTrangChu = taoBtnNhom("Trang chủ", "/img/trangchulogo.png");
+        btnTrangChu = taoBtnNhom("TRANG CHỦ", "/img/trangchulogo.png");
         btnTrangChu.addActionListener(e -> hienTrangChu());
 
         btnHeThong = taoBtnNhom("HỆ THỐNG", "/img/caidatlogo.png");
         btnDanhMuc = taoBtnNhom("DANH MỤC", "/img/danhmuclogo.png");
-        btnNghiepVu = taoBtnNhom("NGHIỆP VỤ", "/img/nghiepvulogo.png");
+        btnNghiepVu = taoBtnNhom("XỬ LÝ", "/img/nghiepvulogo.png");
         btnTimKiem = taoBtnNhom("TÌM KIẾM", "/img/timkiemlogo.png");
         btnThongKe = taoBtnNhom("THỐNG KÊ", "/img/thongkelogo.png");
 
@@ -401,6 +401,7 @@ public class TrangChu extends JFrame {
         themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
+        themMuc(p, "Voucher / Mã giảm giá", btnNghiepVu, this::moVoucher);
         return p;
     }
 
@@ -413,7 +414,7 @@ public class TrangChu extends JFrame {
         themMuc(p, "Phiếu dịch vụ", btnNghiepVu, this::moPhieuDichVu);
         p.addSeparator();
         themMuc(p, "Thanh toán hóa đơn", btnNghiepVu, this::moThanhToan);
-        themMuc(p, "Voucher / Mã giảm giá", btnNghiepVu, this::moVoucher);
+
         p.addSeparator();
         themMuc(p, "Phân ca nhân viên", btnNghiepVu, this::moQuanLyPhanCa);
         return p;
