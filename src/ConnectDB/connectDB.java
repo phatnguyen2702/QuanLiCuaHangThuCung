@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class connectDB {
 
     private static final String URL = "jdbc:sqlserver://localhost:1433;"
-            + "databaseName=ptudpetshop;"
+            + "databaseName=00;"
             + "encrypt=true;"
             + "trustServerCertificate=true";
 
