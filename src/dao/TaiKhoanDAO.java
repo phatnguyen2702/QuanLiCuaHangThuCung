@@ -3,23 +3,11 @@ package dao;
 import entity.TaiKhoan;
 
 import java.sql.*;
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class TaiKhoanDAO {
-
-        public boolean doiMatKhau(String maNhanVien, String matKhauCu, String matKhauMoi) throws SQLException {
-                if (maNhanVien == null || maNhanVien.trim().isEmpty() || matKhauCu == null
-                                || matKhauMoi == null || matKhauMoi.length() < 6 || matKhauCu.equals(matKhauMoi)) {
-                        return false;
-                }
-                String sql = "UPDATE NhanVien SET matKhau = ? WHERE maNhanVien = ? AND matKhau COLLATE Latin1_General_100_BIN2 = ?";
-                try (Connection con = ConnectDB.connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-                        ps.setString(1, matKhauMoi);
-                        ps.setString(2, maNhanVien.trim());
-                        ps.setString(3, matKhauCu);
-                        return ps.executeUpdate() == 1;
-                }
-        }
 
         /** Xác thực bằng tài khoản suy ra từ họ tên + 3 số cuối mã nhân viên. */
         public TaiKhoan xacThuc(String tenDangNhap, String matKhau) throws SQLException {
