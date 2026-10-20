@@ -8,12 +8,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.zip.DeflaterOutputStream;
 
 import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
@@ -64,11 +59,6 @@ public class TraCuuLichSuHoaDon extends JPanel {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final NumberFormat MONEY =
             NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
-    private static final int PDF_PAGE_WIDTH = 595;
-    private static final int PDF_PAGE_HEIGHT = 842;
-    private static final int PDF_IMAGE_SCALE = 2;
-    private static final int ITEMS_PER_PAGE = 18;
-
     private final HoaDonDAO dao = new HoaDonDAO();
     private final Runnable quayLai;
     private final CardLayout cardLayout = new CardLayout();
@@ -492,16 +482,16 @@ public class TraCuuLichSuHoaDon extends JPanel {
             return;
         }
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu hóa đơn PDF");
-        chooser.setSelectedFile(new java.io.File(hoaDonDangXem.getMaHoaDon() + ".pdf"));
-        chooser.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
+        chooser.setDialogTitle("Lưu hóa đơn TXT");
+        chooser.setSelectedFile(new java.io.File(hoaDonDangXem.getMaHoaDon() + ".txt"));
+        chooser.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
         if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
         Path file = chooser.getSelectedFile().toPath();
-        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            file = file.resolveSibling(file.getFileName() + ".pdf");
+        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".txt")) {
+            file = file.resolveSibling(file.getFileName() + ".txt");
         }
         if (Files.exists(file)
                 && JOptionPane.showConfirmDialog(
@@ -514,210 +504,53 @@ public class TraCuuLichSuHoaDon extends JPanel {
         }
 
         try {
-            Files.write(file, taoPdfHoaDon(hoaDonDangXem));
+            Files.write(
+                    file,
+                    taoNoiDungHoaDon(hoaDonDangXem).getBytes(StandardCharsets.UTF_8));
             JOptionPane.showMessageDialog(
                     this,
-                    "Đã lưu hóa đơn PDF:\n" + file.toAbsolutePath(),
+                    "Đã lưu hóa đơn TXT:\n" + file.toAbsolutePath(),
                     "Xuất hóa đơn thành công",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Không thể lưu hóa đơn PDF.\n" + e.getMessage(),
-                    "Lỗi xuất PDF",
+                    "Không thể lưu hóa đơn TXT.\n" + e.getMessage(),
+                    "Lỗi xuất hóa đơn",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private byte[] taoPdfHoaDon(HoaDon invoice) throws IOException {
-        int pageCount = Math.max(
-                1,
-                (invoice.getChiTiet().size() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE);
-        List<byte[]> objects = new ArrayList<>();
-        objects.add(null);
-        objects.add(null);
-
-        StringBuilder pageReferences = new StringBuilder();
-        for (int page = 0; page < pageCount; page++) {
-            int pageObject = 3 + page * 3;
-            int contentObject = pageObject + 1;
-            int imageObject = pageObject + 2;
-            pageReferences.append(pageObject).append(" 0 R ");
-
-            byte[] content = ascii("q\n"
-                    + PDF_PAGE_WIDTH + " 0 0 " + PDF_PAGE_HEIGHT + " 0 0 cm\n"
-                    + "/Im0 Do\nQ\n");
-            BufferedImage image = taoTrangHoaDon(invoice, page);
-            byte[] compressedImage = nenAnhRgb(image);
-
-            objects.add(ascii(pageObject + " 0 obj\n"
-                    + "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
-                    + PDF_PAGE_WIDTH + " " + PDF_PAGE_HEIGHT + "] "
-                    + "/Resources << /XObject << /Im0 " + imageObject + " 0 R >> >> "
-                    + "/Contents " + contentObject + " 0 R >>\nendobj\n"));
-            objects.add(streamObject(contentObject, "<<", content));
-            objects.add(streamObject(
-                    imageObject,
-                    "<< /Type /XObject /Subtype /Image /Width "
-                            + image.getWidth() + " /Height " + image.getHeight()
-                            + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode",
-                    compressedImage));
+    private String taoNoiDungHoaDon(HoaDon invoice) {
+        StringBuilder text = new StringBuilder();
+        text.append("PET SHOP PRO\n");
+        text.append("HÓA ĐƠN THANH TOÁN\n");
+        text.append("Mã hóa đơn: ").append(safe(invoice.getMaHoaDon())).append('\n');
+        text.append("Ngày lập: ").append(formatDate(invoice.getNgayLap())).append('\n');
+        text.append("Khách hàng: ").append(safe(invoice.getTenKhachHang())).append('\n');
+        text.append("Mã khách hàng: ").append(safe(invoice.getMaKhachHang())).append('\n');
+        text.append("Số điện thoại: ").append(safe(invoice.getSoDienThoai())).append('\n');
+        text.append("Thú cưng: ").append(layTenThuCung(invoice)).append('\n');
+        text.append("Thanh toán: ").append(safe(invoice.getTenPhuongThuc())).append('\n');
+        text.append("------------------------------------------------------------\n");
+        text.append("STT | Mã hàng | Loại | Tên hàng | SL | Đơn giá | Thành tiền\n");
+        text.append("------------------------------------------------------------\n");
+        List<HoaDon.ChiTiet> details = invoice.getChiTiet();
+        for (int index = 0; index < details.size(); index++) {
+            HoaDon.ChiTiet item = details.get(index);
+            text.append(index + 1).append(" | ")
+                    .append(safe(item.getMaHang())).append(" | ")
+                    .append(safe(item.getLoaiHang())).append(" | ")
+                    .append(safe(item.getTenHang())).append(" | ")
+                    .append(item.getSoLuong()).append(" | ")
+                    .append(formatMoney(item.getDonGia())).append(" ₫ | ")
+                    .append(formatMoney(item.getThanhTien())).append(" ₫\n");
         }
-
-        objects.set(0, ascii("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"));
-        objects.set(1, ascii("2 0 obj\n<< /Type /Pages /Kids ["
-                + pageReferences + "] /Count " + pageCount + " >>\nendobj\n"));
-        return assemblePdf(objects);
-    }
-
-    private BufferedImage taoTrangHoaDon(HoaDon invoice, int page) {
-        int width = PDF_PAGE_WIDTH * PDF_IMAGE_SCALE;
-        int height = PDF_PAGE_HEIGHT * PDF_IMAGE_SCALE;
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D graphics = image.createGraphics();
-        try {
-            graphics.scale(PDF_IMAGE_SCALE, PDF_IMAGE_SCALE);
-            graphics.setColor(Color.WHITE);
-            graphics.fillRect(0, 0, PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT);
-            graphics.setRenderingHint(
-                    RenderingHints.KEY_TEXT_ANTIALIASING,
-                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            graphics.setRenderingHint(
-                    RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-
-            int left = 44;
-            graphics.setColor(NAVY);
-            graphics.setFont(new Font("Segoe UI", Font.BOLD, 23));
-            graphics.drawString("PET SHOP PRO", left, 54);
-            graphics.setFont(new Font("Segoe UI", Font.BOLD, 15));
-            graphics.drawString("HÓA ĐƠN THANH TOÁN", left, 80);
-            graphics.setColor(Color.DARK_GRAY);
-            graphics.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            graphics.drawString("Mã hóa đơn: " + safe(invoice.getMaHoaDon()), left, 115);
-            graphics.drawString("Ngày lập: " + formatDate(invoice.getNgayLap()), left, 137);
-            graphics.drawString("Khách hàng: " + safe(invoice.getTenKhachHang()), left, 159);
-            graphics.drawString("Mã khách hàng: " + safe(invoice.getMaKhachHang()), left, 181);
-            graphics.drawString("Số điện thoại: " + safe(invoice.getSoDienThoai()), left, 203);
-            graphics.drawString("Thú cưng: " + layTenThuCung(invoice), left, 225);
-            graphics.drawString("Thanh toán: " + safe(invoice.getTenPhuongThuc()), left, 247);
-
-            int tableTop = 278;
-            int rowHeight = 24;
-            int tableBottom = tableTop + rowHeight * (ITEMS_PER_PAGE + 1);
-            graphics.setColor(NAVY);
-            graphics.fillRect(left, tableTop, PDF_PAGE_WIDTH - left * 2, rowHeight);
-            graphics.setColor(Color.WHITE);
-            graphics.setFont(new Font("Segoe UI", Font.BOLD, 9));
-            graphics.drawString("STT", left + 7, tableTop + 16);
-            graphics.drawString("MÃ", left + 43, tableTop + 16);
-            graphics.drawString("SẢN PHẨM / DỊCH VỤ", left + 105, tableTop + 16);
-            graphics.drawString("SL", left + 340, tableTop + 16);
-            graphics.drawString("ĐƠN GIÁ", left + 378, tableTop + 16);
-            graphics.drawString("THÀNH TIỀN", left + 464, tableTop + 16);
-
-            List<HoaDon.ChiTiet> details = invoice.getChiTiet();
-            int firstItem = page * ITEMS_PER_PAGE;
-            int lastItem = Math.min(firstItem + ITEMS_PER_PAGE, details.size());
-            for (int index = firstItem; index < lastItem; index++) {
-                int row = index - firstItem;
-                int y = tableTop + rowHeight * (row + 1);
-                graphics.setColor(row % 2 == 0 ? new Color(246, 249, 252) : Color.WHITE);
-                graphics.fillRect(left, y, PDF_PAGE_WIDTH - left * 2, rowHeight);
-                graphics.setColor(BORDER);
-                graphics.drawLine(left, y + rowHeight, PDF_PAGE_WIDTH - left, y + rowHeight);
-                HoaDon.ChiTiet item = details.get(index);
-                graphics.setColor(Color.DARK_GRAY);
-                graphics.setFont(new Font("Segoe UI", Font.PLAIN, 9));
-                graphics.drawString(Integer.toString(index + 1), left + 9, y + 16);
-                graphics.drawString(safe(item.getMaHang()), left + 43, y + 16);
-                drawClippedText(graphics, safe(item.getTenHang()), left + 105, y + 16, 225);
-                graphics.drawString(Integer.toString(item.getSoLuong()), left + 343, y + 16);
-                graphics.drawString(formatMoney(item.getDonGia()), left + 378, y + 16);
-                graphics.drawString(formatMoney(item.getThanhTien()), left + 464, y + 16);
-            }
-
-            graphics.setColor(BORDER);
-            graphics.drawRect(left, tableTop, PDF_PAGE_WIDTH - left * 2, tableBottom - tableTop);
-            if (page == pageCount(invoice) - 1) {
-                int totalY = tableBottom + 38;
-                graphics.setColor(NAVY);
-                graphics.setFont(new Font("Segoe UI", Font.BOLD, 14));
-                graphics.drawString("TỔNG CỘNG:", left + 315, totalY);
-                graphics.drawString(formatMoney(invoice.getTongTien()) + " ₫", left + 420, totalY);
-                graphics.setColor(Color.GRAY);
-                graphics.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-                graphics.drawString("Cảm ơn quý khách đã mua hàng!", left + 145, totalY + 42);
-            }
-        } finally {
-            graphics.dispose();
-        }
-        return image;
-    }
-
-    private int pageCount(HoaDon invoice) {
-        return Math.max(1, (invoice.getChiTiet().size() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE);
-    }
-
-    private void drawClippedText(Graphics2D graphics, String text, int x, int y, int maxWidth) {
-        java.awt.Shape originalClip = graphics.getClip();
-        graphics.clipRect(x, y - 13, maxWidth, 18);
-        graphics.drawString(text, x, y);
-        graphics.setClip(originalClip);
-    }
-
-    private byte[] nenAnhRgb(BufferedImage image) throws IOException {
-        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
-        try (DeflaterOutputStream deflater = new DeflaterOutputStream(compressed)) {
-            int[] pixels = new int[image.getWidth()];
-            byte[] row = new byte[image.getWidth() * 3];
-            for (int y = 0; y < image.getHeight(); y++) {
-                image.getRGB(0, y, image.getWidth(), 1, pixels, 0, image.getWidth());
-                for (int x = 0; x < pixels.length; x++) {
-                    int rgb = pixels[x];
-                    int offset = x * 3;
-                    row[offset] = (byte) (rgb >> 16);
-                    row[offset + 1] = (byte) (rgb >> 8);
-                    row[offset + 2] = (byte) rgb;
-                }
-                deflater.write(row);
-            }
-        }
-        return compressed.toByteArray();
-    }
-
-    private byte[] streamObject(int objectNumber, String dictionary, byte[] data)
-            throws IOException {
-        ByteArrayOutputStream object = new ByteArrayOutputStream();
-        object.write(ascii(objectNumber + " 0 obj\n" + dictionary
-                + " /Length " + data.length + " >>\nstream\n"));
-        object.write(data);
-        object.write(ascii("\nendstream\nendobj\n"));
-        return object.toByteArray();
-    }
-
-    private byte[] assemblePdf(List<byte[]> objects) throws IOException {
-        ByteArrayOutputStream pdf = new ByteArrayOutputStream();
-        pdf.write(ascii("%PDF-1.4\n"));
-        List<Integer> offsets = new ArrayList<>();
-        offsets.add(0);
-        for (byte[] object : objects) {
-            offsets.add(pdf.size());
-            pdf.write(object);
-        }
-        int xrefOffset = pdf.size();
-        pdf.write(ascii("xref\n0 " + offsets.size() + "\n"));
-        pdf.write(ascii("0000000000 65535 f \n"));
-        for (int index = 1; index < offsets.size(); index++) {
-            pdf.write(ascii(String.format(Locale.ROOT, "%010d 00000 n \n", offsets.get(index))));
-        }
-        pdf.write(ascii("trailer\n<< /Size " + offsets.size()
-                + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF\n"));
-        return pdf.toByteArray();
-    }
-
-    private byte[] ascii(String text) {
-        return text.getBytes(StandardCharsets.ISO_8859_1);
+        text.append("------------------------------------------------------------\n");
+        text.append("TỔNG CỘNG: ")
+                .append(formatMoney(invoice.getTongTien())).append(" ₫\n\n");
+        text.append("Cảm ơn quý khách đã mua hàng!");
+        return text.toString();
     }
 
     private String safe(String value) {
