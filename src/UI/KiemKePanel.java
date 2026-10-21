@@ -23,6 +23,7 @@ import java.util.List;
 public class KiemKePanel extends JPanel {
 
     private final KiemKeDAO dao = new KiemKeDAO();
+    private final Runnable moTraCuu;
 
     private final DefaultTableModel model = new DefaultTableModel(
             new String[] { "Mã SP", "Tên sản phẩm", "Tồn hệ thống",
@@ -52,6 +53,11 @@ public class KiemKePanel extends JPanel {
     private String maPhieu = "";
 
     public KiemKePanel() {
+        this(() -> { });
+    }
+
+    public KiemKePanel(Runnable moTraCuu) {
+        this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
         setBackground(UIStyle.LIGHT_BLUE);
@@ -89,21 +95,21 @@ public class KiemKePanel extends JPanel {
         JButton btnPhieuMoi = UIStyle.nutPhu("Phiếu mới");
         JButton btnLichSu = UIStyle.nutPhu("Lịch sử phiếu");
         JButton btnLuuNhap = UIStyle.nutPhu("Lưu nháp");
-        JButton btnChot = UIStyle.nutXanh("Chốt kiểm kê");
         JButton btnPdf = UIStyle.nutPhu("Xuất phiếu kiểm kê");
+        JButton btnTraCuu = UIStyle.nutPhu("Tra cứu kiểm kê");
         btnPdf.addActionListener(e -> UIStyle.xuatPdf(this, "Phiếu kiểm kê kho", bang));
+        btnTraCuu.addActionListener(e -> moTraCuu.run());
         btnPhieuMoi.addActionListener(e -> hoiPhieuMoi());
         btnLichSu.addActionListener(e -> xemLichSu());
         btnLuuNhap.addActionListener(e -> luuNhap());
-        btnChot.addActionListener(e -> chot());
 
         JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         nut.setOpaque(false);
         nut.add(btnPhieuMoi);
         nut.add(btnLichSu);
         nut.add(btnLuuNhap);
-        nut.add(btnChot);
         nut.add(btnPdf);
+        nut.add(btnTraCuu);
 
         JPanel hang = new JPanel(new BorderLayout());
         hang.setOpaque(false);
@@ -135,9 +141,11 @@ public class KiemKePanel extends JPanel {
 
         JButton btnTim = UIStyle.nutChinh("Tìm");
         JButton btnNhap = UIStyle.nutChinh("Nhập số liệu kiểm");
+        JButton btnChot = UIStyle.nutXanh("Chốt kiểm kê");
         btnTim.addActionListener(e -> veLaiBang());
         txtTim.addActionListener(e -> veLaiBang());
         btnNhap.addActionListener(e -> nhapSoLieu());
+        btnChot.addActionListener(e -> chot());
 
         JPanel thanhCongCu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         thanhCongCu.setOpaque(false);
@@ -183,6 +191,10 @@ public class KiemKePanel extends JPanel {
 
         the.add(thanhCongCu, BorderLayout.NORTH);
         the.add(UIStyle.cuon(bang), BorderLayout.CENTER);
+        JPanel hanhDongCuoi = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 2));
+        hanhDongCuoi.setOpaque(false);
+        hanhDongCuoi.add(btnChot);
+        the.add(hanhDongCuoi, BorderLayout.SOUTH);
 
         return the;
     }
