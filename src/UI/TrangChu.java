@@ -431,7 +431,7 @@ public class TrangChu extends JFrame {
         themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
-        themMuc(p, "Quản lý dịch vụ Spa", btnDanhMuc, this::moDichVu);
+        themMuc(p, "Dịch vụ", btnDanhMuc, this::moDichVu);
         themMuc(p, "Mã giảm giá", btnNghiepVu, this::moVoucher);
         return p;
     }
@@ -443,10 +443,9 @@ public class TrangChu extends JFrame {
         p.addSeparator();
         themMuc(p, "Lịch hẹn Spa", btnNghiepVu, this::moLichHen);
         themMuc(p, "Phiếu dịch vụ", btnNghiepVu, this::moPhieuDichVu);
-        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn",
-                btnNghiepVu, this::moCanhBaoHanSuDung);
-        themMuc(p, "Gợi ý thức ăn theo loại thú cưng",
-                btnNghiepVu, this::moGoiYThucAn);
+        p.addSeparator();
+        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu, this::moCanhBaoHanSuDung);
+        themMuc(p, "Gợi ý thức ăn theo loại thú cưng", btnNghiepVu, this::moGoiYThucAn);
         p.addSeparator();
         themMuc(p, "Thanh toán hóa đơn", btnNghiepVu, this::moThanhToan);
 
