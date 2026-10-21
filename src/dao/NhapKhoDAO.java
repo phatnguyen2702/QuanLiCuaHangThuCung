@@ -21,6 +21,12 @@ public class NhapKhoDAO {
         try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
             st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL " +
                     "ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
+            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'maLoHang') IS NULL ALTER TABLE dbo.ChiTietPhieuNhap ADD maLoHang VARCHAR(30) NULL");
+            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'maLo') IS NULL BEGIN " +
+                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD maLo INT IDENTITY(1,1) NOT NULL; " +
+                    "IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name='PK_ChiTietPhieuNhap') " +
+                    "ALTER TABLE dbo.ChiTietPhieuNhap DROP CONSTRAINT PK_ChiTietPhieuNhap; " +
+                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD CONSTRAINT PK_ChiTietPhieuNhap PRIMARY KEY (maLo); END");
         }
     }
 
@@ -42,8 +48,8 @@ public class NhapKhoDAO {
 
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuNhap
-                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung, maLoHang)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection con = connectDB.getConnection()) {
@@ -84,6 +90,7 @@ public class NhapKhoDAO {
                         ps.setBoolean(5, phieu.isTrangThai());
                         if (ct.getHanSuDung() == null) ps.setNull(6, Types.DATE);
                         else ps.setDate(6, Date.valueOf(ct.getHanSuDung()));
+                        ps.setString(7, ct.getMaLoHang());
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -101,14 +108,14 @@ public class NhapKhoDAO {
     public ArrayList<ChiTietPhieuNhap> layChiTiet(String maPhieu) throws SQLException {
         damBaoCotHanSuDung();
         ArrayList<ChiTietPhieuNhap> ds = new ArrayList<>();
-        String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham WHERE ct.maPhieuNhap=? ORDER BY ct.maSanPham";
+        String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung,ct.maLoHang FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham WHERE ct.maPhieuNhap=? ORDER BY ct.maLo";
         try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, maPhieu);
             try (ResultSet r = p.executeQuery()) { while (r.next()) {
                 ChiTietPhieuNhap ct = new ChiTietPhieuNhap(); ct.setMaPhieuNhap(maPhieu);
                 ct.setMaSanPham(r.getString(1)); ct.setTenSanPham(r.getString(2));
                 ct.setSoLuongNhap(r.getInt(3)); ct.setDonGiaNhap(r.getDouble(4));
-                Date d = r.getDate(5); ct.setHanSuDung(d == null ? null : d.toLocalDate()); ds.add(ct);
+                Date d = r.getDate(5); ct.setHanSuDung(d == null ? null : d.toLocalDate()); ct.setMaLoHang(r.getString(6)); ds.add(ct);
             }}
         }
         return ds;

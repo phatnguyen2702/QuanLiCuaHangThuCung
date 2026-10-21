@@ -26,7 +26,6 @@ import java.util.List;
 public class NhapKhoPanel extends JPanel {
 
     private final NhapKhoDAO dao = new NhapKhoDAO();
-    private final Runnable moTraCuu;
 
     private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -39,7 +38,7 @@ public class NhapKhoPanel extends JPanel {
     // ---- chi tiet ----
     private final DefaultTableModel model = new DefaultTableModel(
             new String[] { "Mã SP", "Tên mặt hàng", "Số lượng",
-                    "Đơn giá nhập", "Hạn sử dụng", "Thành tiền" },
+                    "Đơn giá nhập", "Mã lô", "Hạn sử dụng", "Thành tiền" },
             0) {
         @Override
         public boolean isCellEditable(int row, int col) {
@@ -57,11 +56,6 @@ public class NhapKhoPanel extends JPanel {
     private boolean dangNapCombo = false;
 
     public NhapKhoPanel() {
-        this(() -> { });
-    }
-
-    public NhapKhoPanel(Runnable moTraCuu) {
-        this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
         setBackground(UIStyle.LIGHT_BLUE);
@@ -151,14 +145,11 @@ public class NhapKhoPanel extends JPanel {
 
         JButton btnNhap = UIStyle.nutPhu("Phiếu nháp đã lưu");
         btnNhap.addActionListener(e -> moPhieuNhap());
-        JButton btnTraCuu = UIStyle.nutPhu("Tra cứu nhập kho");
-        btnTraCuu.addActionListener(e -> moTraCuu.run());
         JPanel nhomTrai = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         nhomTrai.setOpaque(false);
         nhomTrai.add(btnThem);
         nhomTrai.add(btnXoaDong);
         nhomTrai.add(btnNhap);
-        nhomTrai.add(btnTraCuu);
 
         UIStyle.taoBang(bang, 2, 3, 4);
 
@@ -271,6 +262,7 @@ public class NhapKhoPanel extends JPanel {
                     ct.getTenSanPham(),
                     ct.getSoLuongNhap(),
                     UIStyle.tien(ct.getDonGiaNhap()),
+                    ct.getMaLoHang() == null ? "—" : ct.getMaLoHang(),
                     ct.getHanSuDung() == null ? "—"
                             : ct.getHanSuDung().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     UIStyle.tien(ct.getThanhTien())
@@ -376,7 +368,8 @@ public class NhapKhoPanel extends JPanel {
             // Cung 1 san pham: cong don so luong (khoa chinh la ma phieu + ma SP)
             for (ChiTietPhieuNhap ct : dong) {
                 if (ct.getMaSanPham().equals(moi.getMaSanPham())
-                        && java.util.Objects.equals(ct.getHanSuDung(), moi.getHanSuDung())) {
+                        && java.util.Objects.equals(ct.getHanSuDung(), moi.getHanSuDung())
+                        && java.util.Objects.equals(ct.getMaLoHang(), moi.getMaLoHang())) {
                     ct.setSoLuongNhap(ct.getSoLuongNhap() + moi.getSoLuongNhap());
                     ct.setDonGiaNhap(moi.getDonGiaNhap());
                     veLaiBang();
@@ -613,6 +606,7 @@ public class NhapKhoPanel extends JPanel {
         private final JSpinner spnSoLuong = new JSpinner(new SpinnerNumberModel(1, 1, 1_000_000, 1));
         private final JTextField txtDonGia = UIStyle.o(22);
         private final JTextField txtHanSuDung = UIStyle.o(12);
+        private final JTextField txtMaLo = UIStyle.o(12);
 
         private ChiTietPhieuNhap ketQua = null;
 
@@ -642,6 +636,7 @@ public class NhapKhoPanel extends JPanel {
             UIStyle.hang(form, 1, "Số lượng nhập", spnSoLuong, false);
             UIStyle.hang(form, 2, "Đơn giá nhập", txtDonGia, false);
             UIStyle.hang(form, 3, "Hạn sử dụng (dd/MM/yyyy, tùy chọn)", txtHanSuDung, false);
+            UIStyle.hang(form, 4, "Mã lô nhà cung cấp (tùy chọn)", txtMaLo, false);
 
             if (cboSanPham.getItemCount() > 0) {
                 cboSanPham.setSelectedIndex(0);
@@ -691,6 +686,12 @@ public class NhapKhoPanel extends JPanel {
                 UIStyle.canhBao(this, "Đơn giá nhập phải lớn hơn 0.");
                 return;
             }
+            String maLo = txtMaLo.getText().trim();
+            if (maLo.length() > 30) {
+                UIStyle.canhBao(this, "Mã lô tối đa 30 ký tự.");
+                return;
+            }
+
             java.time.LocalDate han = null;
             try {
                 if (!txtHanSuDung.getText().trim().isEmpty())
@@ -706,6 +707,7 @@ public class NhapKhoPanel extends JPanel {
             }
             ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
             ct.setHanSuDung(han);
+            ct.setMaLoHang(maLo.isEmpty() ? null : maLo);
             ct.setMaSanPham(sp.getMaSanPham());
             ct.setTenSanPham(sp.getTenSanPham());
             ct.setSoLuongNhap((Integer) spnSoLuong.getValue());
