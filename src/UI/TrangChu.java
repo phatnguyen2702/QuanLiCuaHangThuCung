@@ -283,6 +283,14 @@ public class TrangChu extends JFrame {
                 QuanLyCaLam::new);
     }
 
+    private void moDichVu() {
+        hienManHinh("dichvu", "Quản lý dịch vụ", btnDanhMuc, QuanLyDichVu::new);
+        Component manHinh = mapManHinhKhac.get("dichvu");
+        if (manHinh instanceof QuanLyDichVu) {
+            ((QuanLyDichVu) manHinh).lamMoi();
+        }
+    }
+
     private void chuyenTuNhom(JButton nhom, Runnable hanhDong) {
         btnNhomDaChon = nhom;
         hanhDong.run();
@@ -423,6 +431,7 @@ public class TrangChu extends JFrame {
         themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
+        themMuc(p, "Quản lý dịch vụ Spa", btnDanhMuc, this::moDichVu);
         themMuc(p, "Mã giảm giá", btnNghiepVu, this::moVoucher);
         return p;
     }

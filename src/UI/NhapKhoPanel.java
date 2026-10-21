@@ -20,14 +20,14 @@ import java.util.List;
 
 /**
  * Man hinh "Nhap kho" - Lap phieu nhap hang (nam trong khung TrangChu).
- * Cac form phu (nha cung cap, chi tiet nhap, phieu nhap nhap) la lop long o cuoi file.
+ * Cac form phu (nha cung cap, chi tiet nhap, phieu nhap nhap) la lop long o
+ * cuoi file.
  */
 public class NhapKhoPanel extends JPanel {
 
     private final NhapKhoDAO dao = new NhapKhoDAO();
 
-    private static final DateTimeFormatter DINH_DANG_NGAY =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ---- thong tin phieu ----
     private final JTextField txtMaPhieu = UIStyle.oChiDoc("");
@@ -37,8 +37,9 @@ public class NhapKhoPanel extends JPanel {
 
     // ---- chi tiet ----
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[]{"Mã SP", "Tên mặt hàng", "Số lượng",
-                    "Đơn giá nhập", "Mã lô", "Hạn sử dụng", "Thành tiền"}, 0) {
+            new String[] { "Mã SP", "Tên mặt hàng", "Số lượng",
+                    "Đơn giá nhập", "Mã lô", "Hạn sử dụng", "Thành tiền" },
+            0) {
         @Override
         public boolean isCellEditable(int row, int col) {
             return false;
@@ -104,7 +105,7 @@ public class NhapKhoPanel extends JPanel {
     }
 
     private void themHang(JPanel the, int dong, String nhan1, JComponent c1,
-                          String nhan2, JComponent c2) {
+            String nhan2, JComponent c2) {
 
         GridBagConstraints g = new GridBagConstraints();
         g.gridy = dong;
@@ -256,13 +257,14 @@ public class NhapKhoPanel extends JPanel {
         double tong = 0;
 
         for (ChiTietPhieuNhap ct : dong) {
-            model.addRow(new Object[]{
+            model.addRow(new Object[] {
                     ct.getMaSanPham(),
                     ct.getTenSanPham(),
                     ct.getSoLuongNhap(),
                     UIStyle.tien(ct.getDonGiaNhap()),
                     ct.getMaLoHang() == null ? "—" : ct.getMaLoHang(),
-                    ct.getHanSuDung() == null ? "—" : ct.getHanSuDung().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    ct.getHanSuDung() == null ? "—"
+                            : ct.getHanSuDung().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     UIStyle.tien(ct.getThanhTien())
             });
             tong += ct.getThanhTien();
@@ -405,7 +407,8 @@ public class NhapKhoPanel extends JPanel {
 
         PhieuNhapKho canSua = dlg.getPhieuSua();
         if (canSua != null) {
-            if (!dong.isEmpty() && !UIStyle.xacNhan(this, "Nạp phiếu nháp sẽ thay nội dung đang nhập. Tiếp tục?")) return;
+            if (!dong.isEmpty() && !UIStyle.xacNhan(this, "Nạp phiếu nháp sẽ thay nội dung đang nhập. Tiếp tục?"))
+                return;
             try {
                 napNhaCungCap(canSua.getMaNhaCungCap());
                 txtMaPhieu.setText(canSua.getMaPhieuNhap());
@@ -416,7 +419,9 @@ public class NhapKhoPanel extends JPanel {
                 dong.addAll(dao.layChiTiet(canSua.getMaPhieuNhap()));
                 veLaiBang();
                 return;
-            } catch (SQLException ex) { UIStyle.loi(this, ex); }
+            } catch (SQLException ex) {
+                UIStyle.loi(this, ex);
+            }
         }
 
         // Ma phieu moi co the bi doi (phieu nhap bi xoa / hoan tat)
@@ -592,12 +597,13 @@ public class NhapKhoPanel extends JPanel {
     // FORM THEM MAT HANG VAO PHIEU NHAP
     // =========================================================
 
-    /** Form "Them mat hang vao phieu nhap": san pham, so luong nhap, don gia nhap. */
+    /**
+     * Form "Them mat hang vao phieu nhap": san pham, so luong nhap, don gia nhap.
+     */
     private static class ChiTietNhapDialog extends JDialog {
 
         private final JComboBox<SanPham> cboSanPham = new JComboBox<>();
-        private final JSpinner spnSoLuong =
-                new JSpinner(new SpinnerNumberModel(1, 1, 1_000_000, 1));
+        private final JSpinner spnSoLuong = new JSpinner(new SpinnerNumberModel(1, 1, 1_000_000, 1));
         private final JTextField txtDonGia = UIStyle.o(22);
         private final JTextField txtHanSuDung = UIStyle.o(12);
         private final JTextField txtMaLo = UIStyle.o(12);
@@ -681,12 +687,24 @@ public class NhapKhoPanel extends JPanel {
                 return;
             }
             String maLo = txtMaLo.getText().trim();
-            if (maLo.length() > 30) { UIStyle.canhBao(this, "Mã lô tối đa 30 ký tự."); return; }
+            if (maLo.length() > 30) {
+                UIStyle.canhBao(this, "Mã lô tối đa 30 ký tự.");
+                return;
+            }
 
             java.time.LocalDate han = null;
-            try { if (!txtHanSuDung.getText().trim().isEmpty()) han = java.time.LocalDate.parse(txtHanSuDung.getText().trim(), java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu")); }
-            catch (java.time.format.DateTimeParseException e) { UIStyle.canhBao(this, "Hạn sử dụng phải theo định dạng dd/MM/yyyy."); return; }
-            if (han != null && han.isBefore(java.time.LocalDate.now())) { UIStyle.canhBao(this, "Hạn sử dụng không thể ở quá khứ."); return; }
+            try {
+                if (!txtHanSuDung.getText().trim().isEmpty())
+                    han = java.time.LocalDate.parse(txtHanSuDung.getText().trim(),
+                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu"));
+            } catch (java.time.format.DateTimeParseException e) {
+                UIStyle.canhBao(this, "Hạn sử dụng phải theo định dạng dd/MM/yyyy.");
+                return;
+            }
+            if (han != null && han.isBefore(java.time.LocalDate.now())) {
+                UIStyle.canhBao(this, "Hạn sử dụng không thể ở quá khứ.");
+                return;
+            }
             ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
             ct.setHanSuDung(han);
             ct.setMaLoHang(maLo.isEmpty() ? null : maLo);
@@ -715,14 +733,14 @@ public class NhapKhoPanel extends JPanel {
      */
     private static class PhieuNhapNhapDialog extends JDialog {
 
-        private static final DateTimeFormatter NGAY =
-                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        private static final DateTimeFormatter NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         private final NhapKhoDAO dao = new NhapKhoDAO();
 
         private final DefaultTableModel model = new DefaultTableModel(
-                new String[]{"Mã phiếu", "Ngày lập", "Nhà cung cấp",
-                        "Số mặt hàng", "Tổng tiền"}, 0) {
+                new String[] { "Mã phiếu", "Ngày lập", "Nhà cung cấp",
+                        "Số mặt hàng", "Tổng tiền" },
+                0) {
             @Override
             public boolean isCellEditable(int row, int col) {
                 return false;
@@ -780,7 +798,7 @@ public class NhapKhoPanel extends JPanel {
 
                 model.setRowCount(0);
                 for (PhieuNhapKho p : ds) {
-                    model.addRow(new Object[]{
+                    model.addRow(new Object[] {
                             p.getMaPhieuNhap(),
                             p.getNgayNhap() == null ? "" : p.getNgayNhap().format(NGAY),
                             p.getTenNhaCungCap(),
@@ -835,7 +853,8 @@ public class NhapKhoPanel extends JPanel {
 
         private void sua() {
             PhieuNhapKho p = dangChon();
-            if (p == null) return;
+            if (p == null)
+                return;
             phieuSua = p;
             dispose();
         }
@@ -866,6 +885,8 @@ public class NhapKhoPanel extends JPanel {
             return coThayDoi;
         }
 
-        public PhieuNhapKho getPhieuSua() { return phieuSua; }
+        public PhieuNhapKho getPhieuSua() {
+            return phieuSua;
+        }
     }
 }

@@ -17,9 +17,11 @@ import java.util.Locale;
 
 /** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
 public class GoiYThucAnPanel extends JPanel {
-    private final JComboBox<String> pet = new JComboBox<>(new String[]{"Chó", "Mèo"});
-    private final JComboBox<String> age = new JComboBox<>(new String[]{"Tất cả độ tuổi", "Con non", "Trưởng thành", "Cao tuổi"});
-    private final JComboBox<String> size = new JComboBox<>(new String[]{"Tất cả kích thước", "Nhỏ", "Trung bình", "Lớn"});
+    private final JComboBox<String> pet = new JComboBox<>(new String[] { "Chó", "Mèo" });
+    private final JComboBox<String> age = new JComboBox<>(
+            new String[] { "Tất cả độ tuổi", "Con non", "Trưởng thành", "Cao tuổi" });
+    private final JComboBox<String> size = new JComboBox<>(
+            new String[] { "Tất cả kích thước", "Nhỏ", "Trung bình", "Lớn" });
     private final JTextField search = new JTextField(15);
     private final JPanel cards = new JPanel(new GridLayout(0, 3, 12, 12));
     private final JLabel note = new JLabel("Chọn loại thú cưng để xem thức ăn còn hàng.");
@@ -87,9 +89,11 @@ public class GoiYThucAnPanel extends JPanel {
             String keyword = search.getText().trim().toLowerCase(Locale.ROOT);
             int count = 0;
             for (SanPham product : products) {
-                if (product.getTonKho() <= 0) continue;
+                if (product.getTonKho() <= 0)
+                    continue;
                 String name = product.getTenSanPham() == null ? "" : product.getTenSanPham().toLowerCase(Locale.ROOT);
-                if (!keyword.isEmpty() && !name.contains(keyword)) continue;
+                if (!keyword.isEmpty() && !name.contains(keyword))
+                    continue;
                 cards.add(taoTheSanPham(product));
                 count++;
             }
@@ -113,7 +117,8 @@ public class GoiYThucAnPanel extends JPanel {
     }
 
     private String normalize(String value) {
-        if (value == null) return "";
+        if (value == null)
+            return "";
         return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
                 .replace('đ', 'd').replace('Đ', 'D').toLowerCase(Locale.ROOT);
     }
@@ -148,7 +153,8 @@ public class GoiYThucAnPanel extends JPanel {
 
     private entity.ThanhToan timTrongGio(String maSanPham) {
         for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
-            if (maSanPham.equals(item.getMaSanPham())) return item;
+            if (maSanPham.equals(item.getMaSanPham()))
+                return item;
         }
         return null;
     }
@@ -167,7 +173,8 @@ public class GoiYThucAnPanel extends JPanel {
             }
             item.setSoLuong(item.getSoLuong() + 1);
         } else {
-            if (product.getTonKho() < 1) return;
+            if (product.getTonKho() < 1)
+                return;
             UI.PhienLamViec.gioHang().add(entity.ThanhToan.sanPham(
                     product.getMaSanPham(), product.getTenSanPham(), BigDecimal.valueOf(product.getGiaBan())));
         }
@@ -176,7 +183,7 @@ public class GoiYThucAnPanel extends JPanel {
 
     private Icon anhSanPham(SanPham product) {
         String root = "src/img/products/" + product.getMaSanPham();
-        for (String extension : new String[]{".jpg", ".jpeg", ".png"}) {
+        for (String extension : new String[] { ".jpg", ".jpeg", ".png" }) {
             File imageFile = new File(root + extension);
             if (imageFile.isFile()) {
                 ImageIcon source = new ImageIcon(imageFile.getPath());
@@ -193,10 +200,14 @@ public class GoiYThucAnPanel extends JPanel {
 
     private void moDanhSachDaChon() {
         DefaultTableModel model = new DefaultTableModel(
-                new String[]{"Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền"}, 0) {
-            @Override public boolean isCellEditable(int row, int column) { return column == 2; }
+                new String[] { "Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền" }, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 2;
+            }
 
-            @Override public void setValueAt(Object value, int row, int column) {
+            @Override
+            public void setValueAt(Object value, int row, int column) {
                 if (column != 2) {
                     super.setValueAt(value, row, column);
                     return;
@@ -204,7 +215,8 @@ public class GoiYThucAnPanel extends JPanel {
                 final int quantity;
                 try {
                     quantity = Integer.parseInt(String.valueOf(value).trim());
-                    if (quantity < 1) throw new NumberFormatException();
+                    if (quantity < 1)
+                        throw new NumberFormatException();
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
                             "Số lượng phải là số nguyên lớn hơn 0.", "Số lượng không hợp lệ",
@@ -228,8 +240,8 @@ public class GoiYThucAnPanel extends JPanel {
             }
         };
         for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
-            model.addRow(new Object[]{item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
-                    String.format("%,.0f đ", item.getDonGia()), String.format("%,.0f đ", item.getThanhTien())});
+            model.addRow(new Object[] { item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
+                    String.format("%,.0f đ", item.getDonGia()), String.format("%,.0f đ", item.getThanhTien()) });
         }
         JTable table = new JTable(model);
         table.setToolTipText("Bấm đúp vào ô trong cột Số lượng để chỉnh sửa.");
@@ -251,9 +263,11 @@ public class GoiYThucAnPanel extends JPanel {
         JDialog dialog = new JDialog(owner, "Giỏ hàng", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setContentPane(content);
         remove.addActionListener(e -> {
-            if (table.isEditing() && !table.getCellEditor().stopCellEditing()) return;
+            if (table.isEditing() && !table.getCellEditor().stopCellEditing())
+                return;
             int row = table.getSelectedRow();
-            if (row < 0) return;
+            if (row < 0)
+                return;
             String maSanPham = String.valueOf(model.getValueAt(table.convertRowIndexToModel(row), 0));
             UI.PhienLamViec.gioHang().removeIf(item -> maSanPham.equals(item.getMaSanPham()));
             model.removeRow(table.convertRowIndexToModel(row));
@@ -261,7 +275,8 @@ public class GoiYThucAnPanel extends JPanel {
             napLai();
         });
         checkout.addActionListener(e -> {
-            if (table.isEditing() && !table.getCellEditor().stopCellEditing()) return;
+            if (table.isEditing() && !table.getCellEditor().stopCellEditing())
+                return;
             dialog.dispose();
             if (owner instanceof TrangChu) {
                 ((TrangChu) owner).moThanhToanTuGioHang();
@@ -278,10 +293,23 @@ public class GoiYThucAnPanel extends JPanel {
 
     private static final class TextIcon implements Icon {
         private final String text;
-        private TextIcon(String text) { this.text = text; }
-        @Override public int getIconWidth() { return 150; }
-        @Override public int getIconHeight() { return 110; }
-        @Override public void paintIcon(Component component, Graphics graphics, int x, int y) {
+
+        private TextIcon(String text) {
+            this.text = text;
+        }
+
+        @Override
+        public int getIconWidth() {
+            return 150;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return 110;
+        }
+
+        @Override
+        public void paintIcon(Component component, Graphics graphics, int x, int y) {
             Graphics2D g = (Graphics2D) graphics.create();
             g.setColor(new Color(246, 249, 252));
             g.fillRect(x, y, getIconWidth(), getIconHeight());
