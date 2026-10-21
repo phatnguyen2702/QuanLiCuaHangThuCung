@@ -10,61 +10,93 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import ConnectDB.connectDB;
 import entity.ThanhToan;
 
 public class ThanhToanDao {
 
-    public List<ThanhToan> timMatHangTheoMa(String ma) throws SQLException {
-        String sql = "SELECT maSanPham AS maHang, tenSanPham AS tenHang, "
-                + "giaBan AS donGia, CAST(0 AS BIT) AS laDichVu "
-                + "FROM SanPham WHERE maSanPham = ?"
-                + " UNION ALL "
-                + "SELECT maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
-                + "FROM DichVu WHERE maDichVu = ?";
+    public List<ThanhToan> timSanPhamTheoMa(String ma) throws SQLException {
+        String sql = "SELECT maSanPham, tenSanPham, giaBan "
+                + "FROM SanPham WHERE maSanPham = ?";
         List<ThanhToan> matHangs = new ArrayList<>();
 
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             String keyword = ma.trim();
             ps.setString(1, keyword);
-            ps.setString(2, keyword);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    BigDecimal donGia = rs.getBigDecimal("donGia");
+                    BigDecimal donGia = rs.getBigDecimal("giaBan");
                     if (donGia == null || donGia.signum() < 0) {
-                        throw new SQLException("Mặt hàng " + rs.getString("maHang")
+                        throw new SQLException("Sản phẩm " + rs.getString("maSanPham")
                                 + " có đơn giá không hợp lệ.");
                     }
-                    String maHang = rs.getString("maHang");
-                    String tenHang = rs.getString("tenHang");
-                    if (rs.getBoolean("laDichVu")) {
-                        matHangs.add(ThanhToan.dichVu(maHang, tenHang, donGia));
-                    } else {
-                        matHangs.add(ThanhToan.sanPham(maHang, tenHang, donGia));
-                    }
+                    matHangs.add(ThanhToan.sanPham(
+                            rs.getString("maSanPham"),
+                            rs.getString("tenSanPham"),
+                            donGia));
                 }
             }
         }
         return matHangs;
     }
 
-    public List<String> layDanhSachMaMatHang() throws SQLException {
-        String sql = "SELECT maSanPham AS maHang FROM SanPham "
-                + "UNION SELECT maDichVu AS maHang FROM DichVu "
-                + "ORDER BY maHang";
-        List<String> maMatHangs = new ArrayList<>();
+    public List<String> layDanhSachMaSanPham() throws SQLException {
+        String sql = "SELECT maSanPham FROM SanPham ORDER BY maSanPham";
+        List<String> maSanPhams = new ArrayList<>();
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                maMatHangs.add(rs.getString("maHang"));
+                maSanPhams.add(rs.getString("maSanPham"));
             }
         }
-        return maMatHangs;
+        return maSanPhams;
+    }
+
+    public Map<String, List<ThanhToan>> layPhieuDichVuDangXuLy(
+            String maKhachHang) throws SQLException {
+        String sql = "SELECT p.maPhieuDichVu, ct.maDichVu, dv.tenDichVu, "
+                + "ct.soLuong, ct.donGia "
+                + "FROM PhieuDichVu p "
+                + "INNER JOIN ChiTietDichVu ct "
+                + "ON ct.maPhieuDichVu = p.maPhieuDichVu "
+                + "INNER JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
+                + "WHERE p.maKhachHang = ? AND p.trangThai = 0 "
+                + "ORDER BY p.maPhieuDichVu, ct.maDichVu";
+        Map<String, List<ThanhToan>> phieuDichVus = new LinkedHashMap<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maKhachHang);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String maPhieuDichVu = rs.getString("maPhieuDichVu");
+                    int soLuong = rs.getInt("soLuong");
+                    if (rs.wasNull() || soLuong < 1) {
+                        throw new SQLException("Số lượng dịch vụ trong phiếu "
+                                + maPhieuDichVu + " không hợp lệ.");
+                    }
+                    BigDecimal donGia = rs.getBigDecimal("donGia");
+                    if (donGia == null || donGia.signum() < 0) {
+                        throw new SQLException("Đơn giá dịch vụ trong phiếu "
+                                + maPhieuDichVu + " không hợp lệ.");
+                    }
+                    ThanhToan dichVu = ThanhToan.dichVu(
+                            rs.getString("maDichVu"),
+                            rs.getString("tenDichVu"),
+                            donGia);
+                    dichVu.setSoLuong(soLuong);
+                    phieuDichVus.computeIfAbsent(
+                            maPhieuDichVu, ma -> new ArrayList<>()).add(dichVu);
+                }
+            }
+        }
+        return phieuDichVus;
     }
 
     public ThanhToan.KhachHang timKhachHang(String maHoacSoDienThoai)
@@ -199,9 +231,13 @@ public class ThanhToanDao {
             String maPhuongThuc,
             LocalDateTime ngayLap,
             BigDecimal phanTramGiam,
-            List<ThanhToan> chiTiet) throws SQLException {
+            List<ThanhToan> chiTiet,
+            List<String> maPhieuDichVus) throws SQLException {
         if (chiTiet == null || chiTiet.isEmpty()) {
             throw new IllegalArgumentException("Hóa đơn chưa có mặt hàng.");
+        }
+        if (maPhieuDichVus == null) {
+            throw new IllegalArgumentException("Danh sách phiếu dịch vụ không hợp lệ.");
         }
 
         if (maHoaDon == null || !maHoaDon.matches("HD\\d{13}")) {
@@ -213,6 +249,8 @@ public class ThanhToanDao {
         String insertChiTiet = "INSERT INTO ChiTietHoaDon "
                 + "(maHoaDon, maSanPham, maDichVu, soLuong, donGia, phanTramGiam) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
+        String completeServiceTicket = "UPDATE PhieuDichVu SET trangThai = 1 "
+                + "WHERE maPhieuDichVu = ? AND maKhachHang = ? AND trangThai = 0";
 
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
@@ -242,6 +280,16 @@ public class ThanhToanDao {
                         ps.addBatch();
                     }
                     ps.executeBatch();
+                }
+                try (PreparedStatement ps = con.prepareStatement(completeServiceTicket)) {
+                    for (String maPhieuDichVu : maPhieuDichVus) {
+                        ps.setString(1, maPhieuDichVu);
+                        ps.setString(2, maKhachHang);
+                        if (ps.executeUpdate() != 1) {
+                            throw new SQLException("Phiếu dịch vụ " + maPhieuDichVu
+                                    + " không còn ở trạng thái đang xử lý cho khách hàng này.");
+                        }
+                    }
                 }
                 con.commit();
                 return maHoaDon;
