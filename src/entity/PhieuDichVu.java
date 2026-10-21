@@ -12,6 +12,7 @@ public class PhieuDichVu {
     private String tenKhachHang;
     private String tenThuCung;
     private String tenNhanVien;
+    private String cacDichVu;
 
     public PhieuDichVu() {
     }
@@ -97,5 +98,13 @@ public class PhieuDichVu {
 
     public void setTenNhanVien(String tenNhanVien) {
         this.tenNhanVien = tenNhanVien;
+    }
+
+    public String getCacDichVu() {
+        return cacDichVu;
+    }
+
+    public void setCacDichVu(String cacDichVu) {
+        this.cacDichVu = cacDichVu;
     }
 }
