@@ -456,7 +456,8 @@ public class QuanLyVoucher extends JPanel {
                 hienThongTin();
         }
 
-        // Hiện thông tin của dòng đang chọn ở khung bên dưới bảng + đổi chữ nút Kích hoạt / Hủy
+        // Hiện thông tin của dòng đang chọn ở khung bên dưới bảng + đổi chữ nút Kích
+        // hoạt / Hủy
         private void hienThongTin() {
 
                 Voucher v = dongDangChon();
@@ -571,7 +572,8 @@ public class QuanLyVoucher extends JPanel {
 
                 LocalDate homNay = LocalDate.now();
 
-                // hết hạn hoặc hết lượt thì kích hoạt cũng không chạy được -> mời người dùng sửa
+                // hết hạn hoặc hết lượt thì kích hoạt cũng không chạy được -> mời người dùng
+                // sửa
                 boolean hetHan = v.getNgayKetThuc() != null && v.getNgayKetThuc().isBefore(homNay);
                 boolean hetLuot = v.getSoLuongToiDa() != null && v.getDaDung() >= v.getSoLuongToiDa();
 
@@ -724,7 +726,8 @@ public class QuanLyVoucher extends JPanel {
                 private final JTextField txtBd = new JTextField();
                 private final JTextField txtKt = new JTextField();
                 private final JTextField txtSl = new JTextField();
-                private final JComboBox<String> cboTt = new JComboBox<>(new String[] { "Đang kích hoạt", "Sắp chạy", "Đã hủy" });
+                private final JComboBox<String> cboTt = new JComboBox<>(
+                                new String[] { "Đang kích hoạt", "Sắp chạy", "Đã hủy" });
                 private final JTextArea txtDk = new JTextArea(3, 30);
 
                 public VoucherDialog(Window owner, Voucher goc, VoucherDAO voucherDAO) {
@@ -826,7 +829,8 @@ public class QuanLyVoucher extends JPanel {
 
                                 txtKt.setText(goc.getNgayKetThuc() == null ? "" : goc.getNgayKetThuc().format(D));
 
-                                txtSl.setText(goc.getSoLuongToiDa() == null ? "" : String.valueOf(goc.getSoLuongToiDa()));
+                                txtSl.setText(goc.getSoLuongToiDa() == null ? ""
+                                                : String.valueOf(goc.getSoLuongToiDa()));
 
                                 cboTt.setSelectedIndex(!goc.isTrangThai() ? 2
                                                 : goc.getTrangThaiText().equals("Sap chay") ? 1 : 0);
@@ -925,6 +929,13 @@ public class QuanLyVoucher extends JPanel {
                 // Ghép ô nhập ngày với nút "Lịch" bên cạnh; bấm nút mở bảng chọn ngày
                 private JPanel oChonNgay(JTextField txt) {
 
+                        // Chỉ cho chọn ngày qua lịch; không cho nhập/gõ/dán trực tiếp.
+                        // setText(...) vẫn hoạt động khi sửa voucher hoặc chọn ngày từ lịch.
+                        txt.setEditable(false);
+                        txt.setFocusable(false);
+                        txt.setBackground(new Color(245, 247, 250));
+                        txt.setToolTipText("Nhấn nút Lịch để chọn ngày (dd/MM/yyyy)");
+
                         JButton btnLich = nut("Lịch", new Color(15, 42, 68));
 
                         btnLich.setPreferredSize(new Dimension(70, 36));
@@ -947,7 +958,8 @@ public class QuanLyVoucher extends JPanel {
 
                                 // hiện ngay bên cạnh nút Lịch, không để tràn màn hình
                                 Point p = btnLich.getLocationOnScreen();
-                                Rectangle mh = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+                                Rectangle mh = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                .getMaximumWindowBounds();
 
                                 int x = p.x + btnLich.getWidth() + 10;
                                 int y = p.y - 10;
