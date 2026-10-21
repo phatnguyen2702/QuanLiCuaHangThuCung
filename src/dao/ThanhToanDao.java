@@ -1,34 +1,66 @@
 package dao;
 
+import ConnectDB.connectDB;
+import entity.ThanhToan;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-
-import ConnectDB.connectDB;
-import entity.ThanhToan;
 
 public class ThanhToanDao {
 
-    public List<ThanhToan> timSanPhamTheoMa(String ma) throws SQLException {
-        String sql = "SELECT maSanPham, tenSanPham, giaBan "
-                + "FROM SanPham WHERE maSanPham = ?";
+    public List<ThanhToan> timMatHangTheoMa(String ma) throws SQLException {
+        List<ThanhToan> ketQua = new ArrayList<>();
+        for (ThanhToan item : timMatHang(ma)) {
+            if (item.getMaHang().equalsIgnoreCase(ma.trim())) ketQua.add(item);
+        }
+        return ketQua;
+    }
+
+    public List<String> layDanhSachMaMatHang() throws SQLException {
+        List<String> ds = new ArrayList<>();
+        String sql = "SELECT maSanPham AS maHang FROM SanPham UNION SELECT maDichVu FROM DichVu ORDER BY maHang";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) ds.add(rs.getString(1));
+        }
+        return ds;
+    }
+
+    public List<String> layDanhSachMaKhachHang() throws SQLException {
+        List<String> ds = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement("SELECT maKhachHang FROM KhachHang ORDER BY maKhachHang");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) ds.add(rs.getString(1));
+        }
+        return ds;
+    }
+
+    public List<ThanhToan> timMatHang(String tuKhoa) throws SQLException {
+        String sql = "SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, "
+                + "giaBan AS donGia, CAST(0 AS BIT) AS laDichVu "
+                + "FROM SanPham WHERE maSanPham = ? OR tenSanPham LIKE ? "
+                + "UNION ALL "
+                + "SELECT TOP 30 maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
+                + "FROM DichVu WHERE maDichVu = ? OR tenDichVu LIKE ?";
         List<ThanhToan> matHangs = new ArrayList<>();
 
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
-            String keyword = ma.trim();
+            String keyword = tuKhoa.trim();
             ps.setString(1, keyword);
+            ps.setString(2, "%" + keyword + "%");
+            ps.setString(3, keyword);
+            ps.setString(4, "%" + keyword + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     BigDecimal donGia = rs.getBigDecimal("giaBan");
@@ -44,59 +76,6 @@ public class ThanhToanDao {
             }
         }
         return matHangs;
-    }
-
-    public List<String> layDanhSachMaSanPham() throws SQLException {
-        String sql = "SELECT maSanPham FROM SanPham ORDER BY maSanPham";
-        List<String> maSanPhams = new ArrayList<>();
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                maSanPhams.add(rs.getString("maSanPham"));
-            }
-        }
-        return maSanPhams;
-    }
-
-    public Map<String, List<ThanhToan>> layPhieuDichVuDangXuLy(
-            String maKhachHang) throws SQLException {
-        String sql = "SELECT p.maPhieuDichVu, ct.maDichVu, dv.tenDichVu, "
-                + "ct.soLuong, ct.donGia "
-                + "FROM PhieuDichVu p "
-                + "INNER JOIN ChiTietDichVu ct "
-                + "ON ct.maPhieuDichVu = p.maPhieuDichVu "
-                + "INNER JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
-                + "WHERE p.maKhachHang = ? AND p.trangThai = 0 "
-                + "ORDER BY p.maPhieuDichVu, ct.maDichVu";
-        Map<String, List<ThanhToan>> phieuDichVus = new LinkedHashMap<>();
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maKhachHang);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String maPhieuDichVu = rs.getString("maPhieuDichVu");
-                    int soLuong = rs.getInt("soLuong");
-                    if (rs.wasNull() || soLuong < 1) {
-                        throw new SQLException("Số lượng dịch vụ trong phiếu "
-                                + maPhieuDichVu + " không hợp lệ.");
-                    }
-                    BigDecimal donGia = rs.getBigDecimal("donGia");
-                    if (donGia == null || donGia.signum() < 0) {
-                        throw new SQLException("Đơn giá dịch vụ trong phiếu "
-                                + maPhieuDichVu + " không hợp lệ.");
-                    }
-                    ThanhToan dichVu = ThanhToan.dichVu(
-                            rs.getString("maDichVu"),
-                            rs.getString("tenDichVu"),
-                            donGia);
-                    dichVu.setSoLuong(soLuong);
-                    phieuDichVus.computeIfAbsent(
-                            maPhieuDichVu, ma -> new ArrayList<>()).add(dichVu);
-                }
-            }
-        }
-        return phieuDichVus;
     }
 
     public ThanhToan.KhachHang timKhachHang(String maHoacSoDienThoai)
@@ -118,19 +97,6 @@ public class ThanhToanDao {
                         rs.getString("soDienThoai"));
             }
         }
-    }
-
-    public List<String> layDanhSachMaKhachHang() throws SQLException {
-        String sql = "SELECT maKhachHang FROM KhachHang ORDER BY maKhachHang";
-        List<String> maKhachHangs = new ArrayList<>();
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                maKhachHangs.add(rs.getString("maKhachHang"));
-            }
-        }
-        return maKhachHangs;
     }
 
     public ThanhToan.Voucher timVoucher(String maHoacTen) throws SQLException {

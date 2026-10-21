@@ -13,7 +13,12 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.zip.DeflaterOutputStream;
 
 /**
  * Cua so chinh Pet Shop Pro - menu theo HUONG CHUC NANG.
@@ -71,7 +77,10 @@ public class TrangChu extends JFrame {
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
     private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
     private ThongKeDoanhThu pnlThongKeDoanhThu;
+    private QuanLyThanhToan pnlThanhToan;
     private final javax.swing.Timer tmrDongHo;
+    private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
+    private GoiYThucAnPanel pnlGoiYThucAn;
 
     // Thanh phan dong tren trang chu.
     private JPanel pnlLichSpaNoiDung;
@@ -242,8 +251,21 @@ public class TrangChu extends JFrame {
 
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnNghiepVu,
-                () -> new QuanLyThanhToan(maNV,
+                () -> pnlThanhToan = new QuanLyThanhToan(maNV,
                         () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon)));
+        if (pnlThanhToan != null) {
+            pnlThanhToan.napGioHang();
+        }
+    }
+
+    /** Mở màn hình thanh toán với các mặt hàng đang có trong giỏ gợi ý. */
+    public void moThanhToanTuGioHang() {
+        if (UI.PhienLamViec.gioHang().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.", "Giỏ hàng",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        chuyenTuNhom(btnNghiepVu, this::moThanhToan);
     }
 
     private void moQuanLyTaiKhoan() {
@@ -259,6 +281,14 @@ public class TrangChu extends JFrame {
     private void moQuanLyCaLam() {
         hienManHinh("calam", "Quản lý ca làm", btnHeThong,
                 QuanLyCaLam::new);
+    }
+
+    private void moDichVu() {
+        hienManHinh("dichvu", "Quản lý dịch vụ", btnDanhMuc, QuanLyDichVu::new);
+        Component manHinh = mapManHinhKhac.get("dichvu");
+        if (manHinh instanceof QuanLyDichVu) {
+            ((QuanLyDichVu) manHinh).lamMoi();
+        }
     }
 
     private void chuyenTuNhom(JButton nhom, Runnable hanhDong) {
@@ -401,7 +431,8 @@ public class TrangChu extends JFrame {
         themMuc(p, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
-        themMuc(p, "Voucher / Mã giảm giá", btnNghiepVu, this::moVoucher);
+        themMuc(p, "Dịch vụ", btnDanhMuc, this::moDichVu);
+        themMuc(p, "Mã giảm giá", btnNghiepVu, this::moVoucher);
         return p;
     }
 
@@ -412,10 +443,9 @@ public class TrangChu extends JFrame {
         p.addSeparator();
         themMuc(p, "Lịch hẹn Spa", btnNghiepVu, this::moLichHen);
         themMuc(p, "Phiếu dịch vụ", btnNghiepVu, this::moPhieuDichVu);
-        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn",
-                btnNghiepVu, this::moCanhBaoHanSuDung);
-        themMuc(p, "Gợi ý thức ăn theo loại thú cưng",
-                btnNghiepVu, this::moGoiYThucAn);
+        p.addSeparator();
+        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu, this::moCanhBaoHanSuDung);
+        themMuc(p, "Gợi ý thức ăn theo loại thú cưng", btnNghiepVu, this::moGoiYThucAn);
         p.addSeparator();
         themMuc(p, "Thanh toán hóa đơn", btnNghiepVu, this::moThanhToan);
 
@@ -454,7 +484,7 @@ public class TrangChu extends JFrame {
         mniDoiMatKhau.setBorder(new EmptyBorder(9, 14, 9, 14));
         mniDoiMatKhau.addActionListener(e -> moDlgDoiMatKhau());
         popMenu.add(mniDoiMatKhau);
-
+        popMenu.addSeparator();
         JMenuItem mniDangXuat = new JMenuItem("Đăng xuất");
         mniDangXuat.setFont(UIStyle.font(Font.PLAIN, 13));
         mniDangXuat.setBorder(new EmptyBorder(9, 14, 9, 14));
@@ -851,9 +881,6 @@ public class TrangChu extends JFrame {
         lblTam.setForeground(new Color(38, 45, 57));
         return lblTam;
     }
-
-    private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
-    private GoiYThucAnPanel pnlGoiYThucAn;
 
     private void moCanhBaoHanSuDung() {
         hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu,
@@ -1370,6 +1397,122 @@ public class TrangChu extends JFrame {
 
         public static void thongBao(Component cha, String strNoiDung) {
             JOptionPane.showMessageDialog(cha, strNoiDung, "Pet Shop Pro", JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        public static void xuatPdf(Component cha, String tieuDe, JTable bang) {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Lưu " + tieuDe + " PDF");
+            chooser.setSelectedFile(new java.io.File(
+                    tieuDe.trim().replaceAll("[^\\p{L}\\p{N}]+", "-") + ".pdf"));
+            chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
+            if (chooser.showSaveDialog(cha) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            java.io.File file = chooser.getSelectedFile();
+            if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+                file = new java.io.File(file.getParentFile(), file.getName() + ".pdf");
+            }
+            try {
+                Files.write(file.toPath(), taoPdfBang(tieuDe, bang));
+                JOptionPane.showMessageDialog(cha, "Đã xuất PDF:\n" + file.getAbsolutePath(),
+                        "Xuất PDF", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(cha, "Không thể xuất PDF.\n" + ex.getMessage(),
+                        "Lỗi xuất PDF", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        private static byte[] taoPdfBang(String tieuDe, JTable bang) throws IOException {
+            int tableWidth = Math.max(1, bang.getPreferredSize().width);
+            int tableHeight = Math.max(1, bang.getTableHeader().getPreferredSize().height
+                    + bang.getRowCount() * bang.getRowHeight());
+            int imageWidth = 1400;
+            int imageHeight = Math.max(120, (int) Math.ceil(
+                    (double) tableHeight * imageWidth / tableWidth) + 90);
+            BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = image.createGraphics();
+            Dimension oldTableSize = bang.getSize();
+            Dimension oldHeaderSize = bang.getTableHeader().getSize();
+            try {
+                g.setColor(Color.WHITE);
+                g.fillRect(0, 0, imageWidth, imageHeight);
+                g.scale((double) imageWidth / tableWidth, (double) imageWidth / tableWidth);
+                g.setColor(NAVY);
+                g.setFont(new Font("Segoe UI", Font.BOLD, 20));
+                g.drawString(tieuDe, 0, 25);
+                int headerHeight = bang.getTableHeader().getPreferredSize().height;
+                bang.getTableHeader().setSize(tableWidth, headerHeight);
+                g.translate(0, 40);
+                bang.getTableHeader().paint(g);
+                g.translate(0, headerHeight);
+                bang.setSize(tableWidth, tableHeight - headerHeight);
+                bang.doLayout();
+                bang.paint(g);
+            } finally {
+                g.dispose();
+                bang.setSize(oldTableSize);
+                bang.getTableHeader().setSize(oldHeaderSize);
+            }
+
+            ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+            try (DeflaterOutputStream deflater = new DeflaterOutputStream(compressed)) {
+                int[] pixels = new int[imageWidth];
+                byte[] row = new byte[imageWidth * 3];
+                for (int y = 0; y < imageHeight; y++) {
+                    image.getRGB(0, y, imageWidth, 1, pixels, 0, imageWidth);
+                    for (int x = 0; x < imageWidth; x++) {
+                        int rgb = pixels[x];
+                        row[x * 3] = (byte) (rgb >> 16);
+                        row[x * 3 + 1] = (byte) (rgb >> 8);
+                        row[x * 3 + 2] = (byte) rgb;
+                    }
+                    deflater.write(row);
+                }
+            }
+
+            byte[] imageData = compressed.toByteArray();
+            int pageHeight = Math.max(1, (int) Math.ceil(842.0 * imageHeight / imageWidth));
+            java.util.List<byte[]> objects = new ArrayList<>();
+            objects.add(pdfBytes("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"));
+            objects.add(pdfBytes("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"));
+            objects.add(pdfBytes("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 "
+                    + pageHeight + "] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>\nendobj\n"));
+            byte[] content = pdfBytes("q\n842 0 0 " + pageHeight + " 0 0 cm\n/Im0 Do\nQ\n");
+            objects.add(pdfStream(4, "", content));
+            objects.add(pdfStream(5, "/Type /XObject /Subtype /Image /Width " + imageWidth
+                    + " /Height " + imageHeight + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode",
+                    imageData));
+
+            ByteArrayOutputStream pdf = new ByteArrayOutputStream();
+            pdf.write(pdfBytes("%PDF-1.4\n"));
+            java.util.List<Integer> offsets = new ArrayList<>();
+            offsets.add(0);
+            for (byte[] object : objects) {
+                offsets.add(pdf.size());
+                pdf.write(object);
+            }
+            int xref = pdf.size();
+            pdf.write(pdfBytes("xref\n0 " + offsets.size() + "\n0000000000 65535 f \n"));
+            for (int i = 1; i < offsets.size(); i++) {
+                pdf.write(pdfBytes(String.format(Locale.ROOT, "%010d 00000 n \n", offsets.get(i))));
+            }
+            pdf.write(pdfBytes("trailer\n<< /Size " + offsets.size()
+                    + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n"));
+            return pdf.toByteArray();
+        }
+
+        private static byte[] pdfStream(int number, String dictionary, byte[] data) throws IOException {
+            ByteArrayOutputStream object = new ByteArrayOutputStream();
+            object.write(pdfBytes(number + " 0 obj\n<< " + dictionary + " /Length " + data.length
+                    + " >>\nstream\n"));
+            object.write(data);
+            object.write(pdfBytes("\nendstream\nendobj\n"));
+            return object.toByteArray();
+        }
+
+        private static byte[] pdfBytes(String value) {
+            return value.getBytes(StandardCharsets.ISO_8859_1);
         }
 
         public static void canhBao(Component cha, String strNoiDung) {

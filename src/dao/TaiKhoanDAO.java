@@ -4,10 +4,34 @@ import entity.TaiKhoan;
 
 import java.sql.*;
 import java.text.Normalizer;
-import java.util.Locale;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class TaiKhoanDAO {
+
+        /** Xác thực bằng tài khoản suy ra từ họ tên + 3 số cuối mã nhân viên. */
+        public TaiKhoan xacThuc(String tenDangNhap, String matKhau) throws SQLException {
+                String sql = "SELECT maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro FROM NhanVien";
+                try (Connection con = ConnectDB.connectDB.getConnection();
+                     PreparedStatement ps = con.prepareStatement(sql);
+                     ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                                String ma = rs.getString("maNhanVien");
+                                String ten = rs.getString("hoTen");
+                                if (ma == null || ten == null || ma.length() < 3) continue;
+                                String normalized = java.text.Normalizer.normalize(ten, java.text.Normalizer.Form.NFD)
+                                        .replaceAll("\\p{M}", "").replace("đ", "d").replace("Đ", "D")
+                                        .toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", "")
+                                        + ma.substring(ma.length() - 3);
+                                if (normalized.equals(tenDangNhap) && rs.getString("matKhau") != null
+                                        && rs.getString("matKhau").equals(matKhau)) {
+                                        return new TaiKhoan(ma, ten, rs.getString("soDienThoai"), rs.getString("email"),
+                                                rs.getString("matKhau"), rs.getString("gioiTinh"), rs.getString("vaiTro"));
+                                }
+                        }
+                }
+                return null;
+        }
 
         // =========================================================
         // LAY TAT CA
@@ -56,27 +80,35 @@ public class TaiKhoanDAO {
         // THEM
         // =========================================================
 
-        public boolean them(
-                        TaiKhoan tk) {
-
+        // Mã nhân viên được cấp khi INSERT trong cùng transaction.
+        public boolean them(TaiKhoan tk) throws SQLException {
                 String sql = "INSERT INTO NhanVien "
-                                + "(maNhanVien, hoTen, soDienThoai, "
-                                + "email, matKhau, gioiTinh, vaiTro) "
+                                + "(maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro) "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-                try (Connection con = ConnectDB.connectDB.getConnection();
-                                PreparedStatement ps = con.prepareStatement(sql)) {
-                        ps.setString(1, tk.getMaNhanVien());
-                        ps.setString(2, tk.getHoTen());
-                        ps.setString(3, tk.getSoDienThoai());
-                        ps.setString(4, tk.getEmail());
-                        ps.setString(5, tk.getMatKhau());
-                        ps.setString(6, tk.getGioiTinh());
-                        ps.setString(7, tk.getVaiTro());
-                        return ps.executeUpdate() > 0;
-                } catch (SQLException e) {
-                        e.printStackTrace();
-                        return false;
+                try (Connection con = ConnectDB.connectDB.getConnection()) {
+                        con.setAutoCommit(false);
+                        try {
+                                String maMoi = MaTuDongDAO.taoMaTrongGiaoDich(
+                                                con, MaTuDongDAO.Loai.NHAN_VIEN);
+                                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                                        ps.setString(1, maMoi);
+                                        ps.setString(2, tk.getHoTen());
+                                        ps.setString(3, tk.getSoDienThoai());
+                                        ps.setString(4, tk.getEmail());
+                                        ps.setString(5, tk.getMatKhau());
+                                        ps.setString(6, tk.getGioiTinh());
+                                        ps.setString(7, tk.getVaiTro());
+                                        if (ps.executeUpdate() != 1) {
+                                                throw new SQLException("Không thể thêm nhân viên.");
+                                        }
+                                }
+                                con.commit();
+                                tk.setMaNhanVien(maMoi);
+                                return true;
+                        } catch (SQLException ex) {
+                                con.rollback();
+                                throw ex;
+                        }
                 }
         }
 

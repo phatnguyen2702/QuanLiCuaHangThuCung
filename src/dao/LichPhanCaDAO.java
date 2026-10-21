@@ -14,6 +14,58 @@ import java.time.LocalTime;
 import ConnectDB.connectDB;
 
 public class LichPhanCaDAO {
+
+    public boolean sua(LichPhanCa pc) throws SQLException {
+        String sql = "UPDATE LichPhanCa SET ngayLamViec=?, maNhanVien=?, maCa=? "
+                + "WHERE maPhanCa=? AND ngayLamViec >= CONVERT(date, GETDATE()) "
+                + "AND ? >= CONVERT(date, GETDATE())";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, java.sql.Date.valueOf(pc.getNgayLamViec()));
+            ps.setString(2, pc.getMaNhanVien());
+            ps.setString(3, pc.getMaCa());
+            ps.setString(4, pc.getMaPhanCa());
+            ps.setDate(5, java.sql.Date.valueOf(pc.getNgayLamViec()));
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public boolean trungGio(String maNhanVien, String maCa, LocalDate ngay, String boQuaMaPhanCa)
+            throws SQLException {
+        LocalTime[] gioMoi = layGioCa(maCa);
+        LocalDateTime batDau = LocalDateTime.of(ngay, gioMoi[0]);
+        LocalDateTime ketThuc = LocalDateTime.of(ngay, gioMoi[1]);
+        if (!ketThuc.isAfter(batDau)) ketThuc = ketThuc.plusDays(1);
+        String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc "
+                + "FROM LichPhanCa pc JOIN CaLam c ON c.maCa=pc.maCa "
+                + "WHERE pc.maNhanVien=? AND pc.ngayLamViec BETWEEN DATEADD(day,-1,?) AND DATEADD(day,1,?)";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maNhanVien);
+            ps.setDate(2, java.sql.Date.valueOf(ngay));
+            ps.setDate(3, java.sql.Date.valueOf(ngay));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    if (boQuaMaPhanCa != null && boQuaMaPhanCa.equals(rs.getString("maPhanCa"))) continue;
+                    LocalDate ngayCu = rs.getDate("ngayLamViec").toLocalDate();
+                    LocalDateTime dauCu = LocalDateTime.of(ngayCu, LocalTime.parse(rs.getString("gioBatDau").trim()));
+                    LocalDateTime cuoiCu = LocalDateTime.of(ngayCu, LocalTime.parse(rs.getString("gioKetThuc").trim()));
+                    if (!cuoiCu.isAfter(dauCu)) cuoiCu = cuoiCu.plusDays(1);
+                    if (batDau.isBefore(cuoiCu) && dauCu.isBefore(ketThuc)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private LocalTime[] layGioCa(String maCa) throws SQLException {
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(
+                "SELECT gioBatDau, gioKetThuc FROM CaLam WHERE maCa=?")) {
+            ps.setString(1, maCa);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new SQLException("Không tìm thấy ca làm: " + maCa);
+                return new LocalTime[]{LocalTime.parse(rs.getString(1).trim()), LocalTime.parse(rs.getString(2).trim())};
+            }
+        }
+    }
     // LAY TAT CA LICH PHAN CA
     public ArrayList<LichPhanCa> getAll() {
         ArrayList<LichPhanCa> list = new ArrayList<>();
@@ -74,84 +126,6 @@ public class LichPhanCaDAO {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        }
-    }
-
-    /**
-     * Sửa một phân ca trong SQL Server. Không cho thay đổi phân ca cũ
-     * đã qua ngày, cũng không chấp nhận một ngày mới trong quá khứ.
-     */
-    public boolean sua(LichPhanCa pc) throws SQLException {
-        String sql = "UPDATE LichPhanCa " +
-                "SET ngayLamViec = ?, maNhanVien = ?, maCa = ? " +
-                "WHERE maPhanCa = ? AND ngayLamViec >= CONVERT(date, GETDATE()) " +
-                "AND ? >= CONVERT(date, GETDATE())";
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setDate(1, java.sql.Date.valueOf(pc.getNgayLamViec()));
-            ps.setString(2, pc.getMaNhanVien());
-            ps.setString(3, pc.getMaCa());
-            ps.setString(4, pc.getMaPhanCa());
-            ps.setDate(5, java.sql.Date.valueOf(pc.getNgayLamViec()));
-            return ps.executeUpdate() == 1;
-        }
-    }
-
-    /**
-     * Kiểm tra mọi ca trùng giờ, kể cả hai mã ca khác nhau.
-     * Xử lý ca qua đêm và ca của ngày liền kề.
-     * Khi sửa, boQuaMaPhanCa là mã của chính bản ghi đang sửa.
-     */
-    public boolean trungGio(String maNhanVien, String maCa, LocalDate ngay,
-            String boQuaMaPhanCa) throws SQLException {
-        String sqlCa = "SELECT gioBatDau, gioKetThuc FROM CaLam WHERE maCa = ?";
-        String sqlTrung = "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc " +
-                "FROM LichPhanCa pc JOIN CaLam c ON pc.maCa = c.maCa " +
-                "WHERE pc.maNhanVien = ? " +
-                "AND pc.ngayLamViec BETWEEN DATEADD(day, -1, ?) AND DATEADD(day, 1, ?)";
-        try (Connection con = connectDB.getConnection()) {
-            LocalTime gioBatDau, gioKetThuc;
-            try (PreparedStatement ps = con.prepareStatement(sqlCa)) {
-                ps.setString(1, maCa);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next())
-                        throw new SQLException("Không tìm thấy ca làm: " + maCa);
-                    gioBatDau = gioSQL(rs.getString("gioBatDau"));
-                    gioKetThuc = gioSQL(rs.getString("gioKetThuc"));
-                }
-            }
-            LocalDateTime batDau = LocalDateTime.of(ngay, gioBatDau);
-            LocalDateTime ketThuc = LocalDateTime.of(ngay, gioKetThuc);
-            if (!ketThuc.isAfter(batDau))
-                ketThuc = ketThuc.plusDays(1);
-
-            try (PreparedStatement ps = con.prepareStatement(sqlTrung)) {
-                ps.setString(1, maNhanVien);
-                ps.setDate(2, java.sql.Date.valueOf(ngay));
-                ps.setDate(3, java.sql.Date.valueOf(ngay));
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        if (boQuaMaPhanCa != null && boQuaMaPhanCa.equals(rs.getString("maPhanCa")))
-                            continue;
-                        LocalDate ngayCu = rs.getDate("ngayLamViec").toLocalDate();
-                        LocalDateTime batDauCu = LocalDateTime.of(ngayCu, gioSQL(rs.getString("gioBatDau")));
-                        LocalDateTime ketThucCu = LocalDateTime.of(ngayCu, gioSQL(rs.getString("gioKetThuc")));
-                        if (!ketThucCu.isAfter(batDauCu))
-                            ketThucCu = ketThucCu.plusDays(1);
-                        if (batDau.isBefore(ketThucCu) && batDauCu.isBefore(ketThuc))
-                            return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
-    private LocalTime gioSQL(String giaTri) throws SQLException {
-        try {
-            return LocalTime.parse(giaTri.trim());
-        } catch (Exception ex) {
-            throw new SQLException("Giờ ca làm không hợp lệ: " + giaTri, ex);
         }
     }
 

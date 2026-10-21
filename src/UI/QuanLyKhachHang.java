@@ -16,21 +16,12 @@ import java.util.Locale;
 // Man Quan ly khach hang: tim kiem, them / sua / xoa, lam moi, chon 1 dong de xem thong tin
 public class QuanLyKhachHang extends JPanel {
 
-        private static final String[] COLS = { "Mã KH", "Họ tên", "Số điện thoại", "Email",
-                        "Thú cưng", "Hạng", "Điểm", "Tổng chi", "Gần nhất" };
-
-        private static final String[] LOC_HIEN_THI = { "Tất cả hạng", "Không có thẻ", "Silver", "Gold", "Platinum" };
-
-        // giá trị tương ứng mà KhachHangDAO.timKiem hiểu
-        private static final String[] LOC_DAO = { "Tat ca hang", "Khong co the", "Silver", "Gold", "Platinum" };
+        private static final String[] COLS = { "Mã KH", "Họ tên", "Số điện thoại", "Số thú cưng", "Tổng chi" };
 
         private final KhachHangDAO khachHangDAO = new KhachHangDAO();
         private final KhachHangChiTietDAO chiTietDAO = new KhachHangChiTietDAO();
 
-        private final String maNhanVien;
-
         private final JTextField txtTim = UIStyle.o(16);
-        private final JComboBox<String> cboHang = new JComboBox<>(LOC_HIEN_THI);
         private final JLabel lblDem = UIStyle.nhan("0 khách hàng");
 
         private final javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(COLS, 0) {
@@ -44,6 +35,7 @@ public class QuanLyKhachHang extends JPanel {
 
         // dòng i của bảng <-> dsHienThi.get(i)
         private ArrayList<KhachHang> dsHienThi = new ArrayList<>();
+        private final String maNV;
 
         // ----- khung thông tin chi tiết (hiện khi chọn 1 dòng) -----
         private final CardLayout cardCT = new CardLayout();
@@ -52,17 +44,15 @@ public class QuanLyKhachHang extends JPanel {
         private final JLabel vMa = giaTri();
         private final JLabel vTen = giaTri();
         private final JLabel vSdt = giaTri();
-        private final JLabel vEmail = giaTri();
-        private final JLabel vDiaChi = giaTri();
-        private final JLabel vHang = giaTri();
-        private final JLabel vDiem = giaTri();
         private final JLabel vTong = giaTri();
         private final JLabel vThuCung = new JLabel();
 
-        // maNhanVien: nhân viên đang đăng nhập (ghi vào thẻ thành viên khi tạo thẻ)
-        public QuanLyKhachHang(String maNhanVien) {
+        public QuanLyKhachHang() {
+                this(null);
+        }
 
-                this.maNhanVien = maNhanVien;
+        public QuanLyKhachHang(String maNV) {
+                this.maNV = maNV;
 
                 setLayout(new BorderLayout(0, 14));
                 setBackground(UIStyle.LIGHT_BLUE);
@@ -85,8 +75,6 @@ public class QuanLyKhachHang extends JPanel {
                 dau.add(btnThem, BorderLayout.EAST);
 
                 // ---------------- hàng tìm kiếm + nút ----------------
-                cboHang.setFont(UIStyle.font(Font.PLAIN, 13));
-
                 JButton btnTim = UIStyle.nutChinh("Tìm kiếm");
                 JButton btnSua = UIStyle.nutPhu("Sửa");
                 JButton btnXoa = UIStyle.nutXoa("Xóa");
@@ -94,7 +82,6 @@ public class QuanLyKhachHang extends JPanel {
 
                 btnTim.addActionListener(e -> taiLai(maDangChon()));
                 txtTim.addActionListener(e -> taiLai(maDangChon()));
-                cboHang.addActionListener(e -> taiLai(maDangChon()));
                 btnSua.addActionListener(e -> sua());
                 btnXoa.addActionListener(e -> xoa());
                 btnLamMoi.addActionListener(e -> lamMoiTatCa());
@@ -104,7 +91,6 @@ public class QuanLyKhachHang extends JPanel {
                 loc.setOpaque(false);
                 loc.add(UIStyle.nhan("Mã / tên / SĐT:"));
                 loc.add(txtTim);
-                loc.add(cboHang);
                 loc.add(btnTim);
                 loc.add(btnSua);
                 loc.add(btnXoa);
@@ -119,7 +105,7 @@ public class QuanLyKhachHang extends JPanel {
                 // ---------------- bảng ----------------
                 UIStyle.taoBang(table, 6, 7);
 
-                int[] w = { 70, 160, 110, 170, 230, 80, 80, 120, 100 };
+                int[] w = { 70, 160, 110, 230, 120 };
 
                 for (int i = 0; i < w.length; i++) {
                         table.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
@@ -221,17 +207,13 @@ public class QuanLyKhachHang extends JPanel {
 
         private JPanel taoNoiDungChiTiet() {
 
-                JPanel luoi = new JPanel(new GridLayout(2, 4, 18, 8));
+                JPanel luoi = new JPanel(new GridLayout(2, 3, 18, 8));
 
                 luoi.setOpaque(false);
 
                 luoi.add(cap("Mã khách hàng", vMa));
                 luoi.add(cap("Họ tên", vTen));
                 luoi.add(cap("Số điện thoại", vSdt));
-                luoi.add(cap("Email", vEmail));
-                luoi.add(cap("Địa chỉ", vDiaChi));
-                luoi.add(cap("Hạng thành viên", vHang));
-                luoi.add(cap("Điểm tích lũy", vDiem));
                 luoi.add(cap("Tổng chi / mua gần nhất", vTong));
 
                 vThuCung.setFont(UIStyle.font(Font.PLAIN, 13));
@@ -260,11 +242,6 @@ public class QuanLyKhachHang extends JPanel {
         // =========================================================
         // DỮ LIỆU
         // =========================================================
-
-        private static String so(long v) {
-
-                return String.format(Locale.US, "%,d", v).replace(',', '.');
-        }
 
         private KhachHang dongDangChon() {
 
@@ -295,17 +272,15 @@ public class QuanLyKhachHang extends JPanel {
 
                 txtTim.setText("");
 
-                cboHang.setSelectedIndex(0);
-
                 table.clearSelection();
 
                 taiLai(null);
         }
 
-        // Nạp bảng theo bộ lọc; chonMa != null thì chọn lại dòng đó nếu còn
+        // Nạp bảng theo từ khóa; chonMa != null thì chọn lại dòng đó nếu còn
         public void taiLai(String chonMa) {
 
-                dsHienThi = khachHangDAO.timKiem(txtTim.getText(), LOC_DAO[cboHang.getSelectedIndex()]);
+                dsHienThi = khachHangDAO.timKiem(txtTim.getText());
 
                 table.clearSelection();
 
@@ -317,12 +292,8 @@ public class QuanLyKhachHang extends JPanel {
                                         k.getMaKhachHang(),
                                         k.getHoTen(),
                                         k.getSoDienThoai(),
-                                        k.getEmail() == null ? "" : k.getEmail(),
-                                        k.getThuCung() == null ? "" : k.getThuCung(),
-                                        k.getHangThe() == null ? "-" : k.getHangThe(),
-                                        so(k.getDiemTichLuy()),
-                                        UIStyle.tien(k.getTongChi()),
-                                        k.getGanNhat() == null ? "" : k.getGanNhat() });
+                                        k.getThuCung() == null ? "0" : k.getThuCung(),
+                                        UIStyle.tien(k.getTongChi()) });
                 }
 
                 lblDem.setText(dsHienThi.size() + " khách hàng");
@@ -360,10 +331,6 @@ public class QuanLyKhachHang extends JPanel {
                 vMa.setText(k.getMaKhachHang());
                 vTen.setText(k.getHoTen());
                 vSdt.setText(k.getSoDienThoai());
-                vEmail.setText(k.getEmail() == null || k.getEmail().isEmpty() ? "-" : k.getEmail());
-                vDiaChi.setText(k.getDiaChi() == null || k.getDiaChi().isEmpty() ? "-" : k.getDiaChi());
-                vHang.setText(k.getHangThe() == null ? "Không có thẻ" : k.getHangThe());
-                vDiem.setText(so(k.getDiemTichLuy()));
                 vTong.setText(UIStyle.tien(k.getTongChi())
                                 + (k.getGanNhat() == null ? "" : "  /  " + k.getGanNhat()));
 
@@ -438,7 +405,7 @@ public class QuanLyKhachHang extends JPanel {
                 }
 
                 if (!UIStyle.xacNhan(this, "Xóa khách hàng " + k.getMaKhachHang() + " - " + k.getHoTen() + "?\n"
-                                + "(Cũng xóa thẻ thành viên và thú cưng của khách này)")) {
+                                + "(Cũng xóa thú cưng của khách này)")) {
                         return;
                 }
 
@@ -459,7 +426,7 @@ public class QuanLyKhachHang extends JPanel {
 
                 KhachHangDialog dlg = new KhachHangDialog(
                                 SwingUtilities.getWindowAncestor(this),
-                                maNhanVien, goc, khachHangDAO, chiTietDAO);
+                                goc, khachHangDAO, chiTietDAO);
 
                 dlg.setVisible(true);
 
@@ -486,7 +453,6 @@ public class QuanLyKhachHang extends JPanel {
                 private final KhachHangDAO khachHangDAO;
                 private final KhachHangChiTietDAO chiTietDAO;
 
-                private final String maNhanVien;
                 private final KhachHang goc;
 
                 private boolean daLuu = false;
@@ -494,46 +460,25 @@ public class QuanLyKhachHang extends JPanel {
 
                 private final JTextField txtTen = new JTextField();
                 private final JTextField txtSdt = new JTextField();
-                private final JTextField txtEmail = new JTextField();
-                private final JTextField txtDiaChi = new JTextField();
-                private final JComboBox<String> cboHangThe;
-                private final JSpinner spnDiem = new JSpinner(new SpinnerNumberModel(0, 0, 1000000, 10));
-
                 private final JPanel petsBox = new JPanel();
                 private final ArrayList<PetRow> rows = new ArrayList<>();
 
-                public KhachHangDialog(Window owner, String maNhanVien, KhachHang goc,
+                public KhachHangDialog(Window owner, KhachHang goc,
                                 KhachHangDAO khachHangDAO, KhachHangChiTietDAO chiTietDAO) {
 
                         super(owner, goc == null ? "Thêm Khách Hàng" : "Sửa Khách Hàng",
                                         Dialog.ModalityType.APPLICATION_MODAL);
 
-                        this.maNhanVien = maNhanVien;
                         this.goc = goc;
                         this.khachHangDAO = khachHangDAO;
                         this.chiTietDAO = chiTietDAO;
 
-                        // Khách đã có thẻ: chỉ đổi giữa các hạng; chưa có thẻ: thêm lựa chọn "Không có thẻ"
-                        if (goc != null && goc.getHangThe() != null) {
-                                cboHangThe = new JComboBox<>(new String[] { "Silver", "Gold", "Platinum" });
-                                cboHangThe.setSelectedItem(goc.getHangThe());
-                        } else {
-                                cboHangThe = new JComboBox<>(new String[] { "Không có thẻ", "Silver", "Gold", "Platinum" });
-                        }
-
-                        setSize(760, goc == null ? 640 : 440);
+                        setSize(760, goc == null ? 490 : 330);
                         setResizable(false);
                         setLocationRelativeTo(owner);
 
                         kieu(txtTen);
                         kieu(txtSdt);
-                        kieu(txtEmail);
-                        kieu(txtDiaChi);
-
-                        kieuCbo(cboHangThe);
-
-                        spnDiem.setPreferredSize(new Dimension(100, 36));
-                        ((JSpinner.DefaultEditor) spnDiem.getEditor()).getTextField().setFont(F14);
 
                         JPanel body = new JPanel();
 
@@ -545,14 +490,6 @@ public class QuanLyKhachHang extends JPanel {
                                         : "Thông tin Khách hàng (" + goc.getMaKhachHang() + ")"));
                         them(body, Box.createVerticalStrut(8));
                         them(body, hai(cot("Họ và tên: *", txtTen), cot("Số điện thoại: *", txtSdt)));
-                        them(body, Box.createVerticalStrut(8));
-                        them(body, hai(cot("Email:", txtEmail), cot("Địa chỉ:", txtDiaChi)));
-                        them(body, Box.createVerticalStrut(14));
-                        them(body, muc("Hạng thành viên"));
-                        them(body, Box.createVerticalStrut(8));
-                        them(body, hai(cot("Cấp thẻ:", cboHangThe),
-                                        cot(goc == null ? "Điểm khởi tạo:" : "Điểm tích lũy:", spnDiem)));
-
                         // Thú cưng: chỉ nhập khi thêm mới
                         if (goc == null) {
 
@@ -615,9 +552,6 @@ public class QuanLyKhachHang extends JPanel {
 
                                 txtTen.setText(goc.getHoTen());
                                 txtSdt.setText(goc.getSoDienThoai());
-                                txtEmail.setText(goc.getEmail() == null ? "" : goc.getEmail());
-                                txtDiaChi.setText(goc.getDiaChi() == null ? "" : goc.getDiaChi());
-                                spnDiem.setValue(goc.getDiemTichLuy());
                         }
                 }
 
@@ -793,8 +727,6 @@ public class QuanLyKhachHang extends JPanel {
 
                         String ten = txtTen.getText().trim();
                         String sdt = txtSdt.getText().replaceAll("\\s", "");
-                        String email = txtEmail.getText().trim();
-                        String diaChi = txtDiaChi.getText().trim();
 
                         if (ten.isEmpty() || ten.length() > 50) {
                                 loi("Họ tên bắt buộc nhập (tối đa 50 ký tự).");
@@ -803,16 +735,6 @@ public class QuanLyKhachHang extends JPanel {
 
                         if (!sdt.matches("\\d{10,11}")) {
                                 loi("Số điện thoại phải gồm 10 hoặc 11 chữ số.");
-                                return;
-                        }
-
-                        if (!email.isEmpty() && (!email.contains("@") || email.length() > 50)) {
-                                loi("Email không hợp lệ (tối đa 50 ký tự).");
-                                return;
-                        }
-
-                        if (diaChi.length() > 50) {
-                                loi("Địa chỉ tối đa 50 ký tự.");
                                 return;
                         }
 
@@ -825,22 +747,13 @@ public class QuanLyKhachHang extends JPanel {
                                 return;
                         }
 
-                        String hangChon = (String) cboHangThe.getSelectedItem();
-
-                        String hang = hangChon.equals("Không có thẻ") ? null : hangChon;
-
                         KhachHang kh = new KhachHang(goc == null ? null : goc.getMaKhachHang(), ten, sdt,
-                                        email.isEmpty() ? null : email,
-                                        diaChi.isEmpty() ? null : diaChi,
-                                        (Integer) spnDiem.getValue());
+                                        null, null, 0);
 
                         // ---------- SỬA ----------
                         if (goc != null) {
 
-                                // chỉ đổi hạng khi người dùng chọn hạng khác hạng hiện tại
-                                String hangMoi = (hang != null && !hang.equals(goc.getHangThe())) ? hang : null;
-
-                                if (!chiTietDAO.sua(kh, hangMoi, maNhanVien)) {
+                                if (!chiTietDAO.sua(kh)) {
                                         loi("Lưu thất bại. Xem lỗi chi tiết trong Console.");
                                         return;
                                 }
@@ -896,7 +809,7 @@ public class QuanLyKhachHang extends JPanel {
                                                 giong, (String) r.gioiTinh.getSelectedItem(), kg));
                         }
 
-                        String ma = khachHangDAO.them(kh, pets, hang, maNhanVien);
+                        String ma = khachHangDAO.them(kh, pets);
 
                         if (ma == null) {
                                 loi("Lưu thất bại. Xem lỗi chi tiết trong Console.");

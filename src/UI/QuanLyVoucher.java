@@ -12,6 +12,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -39,7 +40,9 @@ public class QuanLyVoucher extends JPanel {
         private final JComboBox<String> cboTt = new JComboBox<>(LOC_HIEN_THI);
         private final JLabel lblDem = UIStyle.nhan("0 voucher");
 
-        private final JButton btnKichHoat = UIStyle.nutPhu("Kích hoạt / Hủy");
+        private final JButton btnKichHoat = UIStyle.nutPhu("Kích hoạt voucher");
+        private final JButton btnHuyVc = UIStyle.nutPhu("Hủy voucher");
+        private final JButton btnDung = UIStyle.nutPhu("Dừng voucher");
 
         private final DefaultTableModel model = new DefaultTableModel(COLS, 0) {
                 @Override
@@ -102,7 +105,9 @@ public class QuanLyVoucher extends JPanel {
                 cboTt.addActionListener(e -> taiLai(maDangChon()));
                 btnSua.addActionListener(e -> sua());
                 btnXoa.addActionListener(e -> xoa());
-                btnKichHoat.addActionListener(e -> kichHoatHuy());
+                btnKichHoat.addActionListener(e -> kichHoat());
+                btnHuyVc.addActionListener(e -> huyVoucher());
+                btnDung.addActionListener(e -> dungVoucher());
                 btnLamMoi.addActionListener(e -> lamMoiTatCa());
 
                 JPanel loc = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -115,6 +120,8 @@ public class QuanLyVoucher extends JPanel {
                 loc.add(btnSua);
                 loc.add(btnXoa);
                 loc.add(btnKichHoat);
+                loc.add(btnHuyVc);
+                loc.add(btnDung);
                 loc.add(btnLamMoi);
 
                 JPanel hangTren = new JPanel(new BorderLayout(0, 8));
@@ -449,21 +456,29 @@ public class QuanLyVoucher extends JPanel {
                 hienThongTin();
         }
 
-        // Hiện thông tin của dòng đang chọn ở khung bên dưới bảng + đổi chữ nút Kích hoạt / Hủy
+        // Hiện thông tin của dòng đang chọn ở khung bên dưới bảng + đổi chữ nút Kích
+        // hoạt / Hủy
         private void hienThongTin() {
 
                 Voucher v = dongDangChon();
 
                 if (v == null) {
 
-                        btnKichHoat.setText("Kích hoạt / Hủy");
+                        btnKichHoat.setEnabled(false);
+                        btnHuyVc.setEnabled(false);
+                        btnDung.setEnabled(false);
 
                         cardCT.show(khungCT, "TRONG");
 
                         return;
                 }
 
-                btnKichHoat.setText(v.isTrangThai() ? "Hủy voucher" : "Kích hoạt");
+                String ttMa = v.getTrangThaiText();
+
+                btnKichHoat.setEnabled(!ttMa.equals("Dang chay") && !ttMa.equals("Sap chay"));
+                btnHuyVc.setEnabled(v.isTrangThai());
+                btnDung.setEnabled(ttMa.equals("Dang chay")
+                                && (v.getNgayBatDau() == null || v.getNgayBatDau().isBefore(LocalDate.now())));
 
                 vMa.setText(v.getMaVoucher());
                 vTen.setText(v.getTenVoucher());
@@ -533,8 +548,9 @@ public class QuanLyVoucher extends JPanel {
                 taiLai(null);
         }
 
-        // Voucher đang hoạt động -> Hủy; đã hủy -> Kích hoạt (chuyển sang "Đang chạy")
-        private void kichHoatHuy() {
+        // Kích hoạt: voucher đã hủy / hết hạn / hết lượt -> chạy lại
+        // (ngày bắt đầu ở tương lai thì thành "Sắp chạy", còn lại là "Đang chạy")
+        private void kichHoat() {
 
                 Voucher v = dongDangChon();
 
@@ -545,32 +561,19 @@ public class QuanLyVoucher extends JPanel {
                         return;
                 }
 
-                boolean hoatDong = v.isTrangThai();
+                String tt = v.getTrangThaiText();
 
-                // ---------- HỦY ----------
-                if (hoatDong) {
+                if (tt.equals("Dang chay") || tt.equals("Sap chay")) {
 
-                        if (!UIStyle.xacNhan(this, "Hủy voucher " + v.getMaVoucher()
-                                        + "? (Vẫn giữ trong danh sách, có thể kích hoạt lại)")) {
-                                return;
-                        }
-
-                        if (!voucherDAO.doiTrangThai(v.getMaVoucher(), false)) {
-
-                                UIStyle.canhBao(this, "Cập nhật thất bại. Xem lỗi chi tiết trong Console.");
-
-                                return;
-                        }
-
-                        taiLai(v.getMaVoucher());
+                        UIStyle.canhBao(this, "Voucher này đang được kích hoạt rồi.");
 
                         return;
                 }
 
-                // ---------- KÍCH HOẠT ----------
                 LocalDate homNay = LocalDate.now();
 
-                // hết hạn hoặc hết lượt thì kích hoạt cũng không chạy được -> mời người dùng sửa
+                // hết hạn hoặc hết lượt thì kích hoạt cũng không chạy được -> mời người dùng
+                // sửa
                 boolean hetHan = v.getNgayKetThuc() != null && v.getNgayKetThuc().isBefore(homNay);
                 boolean hetLuot = v.getSoLuongToiDa() != null && v.getDaDung() >= v.getSoLuongToiDa();
 
@@ -588,37 +591,98 @@ public class QuanLyVoucher extends JPanel {
                         return;
                 }
 
-                boolean chuaToiNgay = v.getNgayBatDau() != null && v.getNgayBatDau().isAfter(homNay);
-
-                String hoi = "Kích hoạt voucher " + v.getMaVoucher() + "?";
-
-                if (chuaToiNgay) {
-                        hoi += "\nVoucher bắt đầu từ " + v.getNgayBatDau().format(D)
-                                        + ", ngày bắt đầu sẽ được đổi thành hôm nay (" + homNay.format(D)
-                                        + ") để chạy ngay.";
-                }
-
-                if (!UIStyle.xacNhan(this, hoi)) {
+                if (!UIStyle.xacNhan(this, "Kích hoạt voucher " + v.getMaVoucher() + "?")) {
                         return;
                 }
 
-                boolean ok;
+                if (!voucherDAO.doiTrangThai(v.getMaVoucher(), true)) {
 
-                if (chuaToiNgay) {
+                        UIStyle.canhBao(this, "Cập nhật thất bại. Xem lỗi chi tiết trong Console.");
 
-                        // dời ngày bắt đầu về hôm nay + bật trạng thái trong cùng một lần cập nhật
-                        Voucher moi = new Voucher(
-                                        v.getMaVoucher(), v.getTenVoucher(), v.getPhanTramGiam(),
-                                        v.getDieuKien(), true, homNay, v.getNgayKetThuc(), v.getSoLuongToiDa());
-
-                        ok = voucherDAO.sua(moi);
-
-                } else {
-
-                        ok = voucherDAO.doiTrangThai(v.getMaVoucher(), true);
+                        return;
                 }
 
-                if (!ok) {
+                taiLai(v.getMaVoucher());
+        }
+
+        // Hủy: chuyển sang "Đã hủy", vẫn giữ trong danh sách, có thể kích hoạt lại
+        private void huyVoucher() {
+
+                Voucher v = dongDangChon();
+
+                if (v == null) {
+
+                        UIStyle.canhBao(this, "Hãy chọn một voucher trong bảng.");
+
+                        return;
+                }
+
+                if (!v.isTrangThai()) {
+
+                        UIStyle.canhBao(this, "Voucher này đã hủy rồi.");
+
+                        return;
+                }
+
+                if (!UIStyle.xacNhan(this, "Hủy voucher " + v.getMaVoucher()
+                                + "? (Vẫn giữ trong danh sách, có thể kích hoạt lại)")) {
+                        return;
+                }
+
+                if (!voucherDAO.doiTrangThai(v.getMaVoucher(), false)) {
+
+                        UIStyle.canhBao(this, "Cập nhật thất bại. Xem lỗi chi tiết trong Console.");
+
+                        return;
+                }
+
+                taiLai(v.getMaVoucher());
+        }
+
+        // Dừng: voucher đang chạy kết thúc ngay (ngày kết thúc = hôm qua -> "Hết hạn")
+        private void dungVoucher() {
+
+                Voucher v = dongDangChon();
+
+                if (v == null) {
+
+                        UIStyle.canhBao(this, "Hãy chọn một voucher trong bảng.");
+
+                        return;
+                }
+
+                String tt = v.getTrangThaiText();
+
+                if (!tt.equals("Dang chay")) {
+
+                        UIStyle.canhBao(this, tt.equals("Sap chay")
+                                        ? "Voucher chưa chạy nên không cần dừng. Hãy dùng \"Hủy voucher\"."
+                                        : "Chỉ có thể dừng voucher đang chạy.");
+
+                        return;
+                }
+
+                LocalDate ketThuc = LocalDate.now().minusDays(1);
+
+                if (v.getNgayBatDau() != null && ketThuc.isBefore(v.getNgayBatDau())) {
+
+                        UIStyle.canhBao(this, "Voucher mới bắt đầu từ hôm nay nên không thể dừng theo ngày.\n"
+                                        + "Hãy dùng \"Hủy voucher\".");
+
+                        return;
+                }
+
+                if (!UIStyle.xacNhan(this, "Dừng voucher " + v.getMaVoucher() + " - " + v.getTenVoucher()
+                                + "?\nVoucher sẽ kết thúc ngay (chuyển sang \"Hết hạn\"). "
+                                + "Muốn chạy lại, hãy sửa ngày kết thúc rồi kích hoạt.")) {
+                        return;
+                }
+
+                Voucher moi = new Voucher(
+                                v.getMaVoucher(), v.getTenVoucher(), v.getPhanTramGiam(),
+                                v.getDieuKien(), v.isTrangThai(), v.getNgayBatDau(), ketThuc, v.getSoLuongToiDa());
+
+                if (!voucherDAO.sua(moi)) {
 
                         UIStyle.canhBao(this, "Cập nhật thất bại. Xem lỗi chi tiết trong Console.");
 
@@ -662,7 +726,8 @@ public class QuanLyVoucher extends JPanel {
                 private final JTextField txtBd = new JTextField();
                 private final JTextField txtKt = new JTextField();
                 private final JTextField txtSl = new JTextField();
-                private final JComboBox<String> cboTt = new JComboBox<>(new String[] { "Đang kích hoạt", "Đã hủy" });
+                private final JComboBox<String> cboTt = new JComboBox<>(
+                                new String[] { "Đang kích hoạt", "Sắp chạy", "Đã hủy" });
                 private final JTextArea txtDk = new JTextArea(3, 30);
 
                 public VoucherDialog(Window owner, Voucher goc, VoucherDAO voucherDAO) {
@@ -717,7 +782,8 @@ public class QuanLyVoucher extends JPanel {
                         them(body, Box.createVerticalStrut(14));
                         them(body, muc("Hiệu lực & Giới hạn"));
                         them(body, Box.createVerticalStrut(8));
-                        them(body, hai(cot("Từ ngày: (dd/MM/yyyy)", txtBd), cot("Đến ngày: (dd/MM/yyyy)", txtKt)));
+                        them(body, hai(cot("Từ ngày: (dd/MM/yyyy)", oChonNgay(txtBd)),
+                                        cot("Đến ngày: (dd/MM/yyyy)", oChonNgay(txtKt))));
                         them(body, Box.createVerticalStrut(8));
                         them(body, hai(cot("Số lượt tối đa:", txtSl), cot("Trạng thái:", cboTt)));
                         them(body, Box.createVerticalStrut(6));
@@ -763,9 +829,11 @@ public class QuanLyVoucher extends JPanel {
 
                                 txtKt.setText(goc.getNgayKetThuc() == null ? "" : goc.getNgayKetThuc().format(D));
 
-                                txtSl.setText(goc.getSoLuongToiDa() == null ? "" : String.valueOf(goc.getSoLuongToiDa()));
+                                txtSl.setText(goc.getSoLuongToiDa() == null ? ""
+                                                : String.valueOf(goc.getSoLuongToiDa()));
 
-                                cboTt.setSelectedIndex(goc.isTrangThai() ? 0 : 1);
+                                cboTt.setSelectedIndex(!goc.isTrangThai() ? 2
+                                                : goc.getTrangThaiText().equals("Sap chay") ? 1 : 0);
                         }
                 }
 
@@ -856,6 +924,247 @@ public class QuanLyVoucher extends JPanel {
                         p.add(c);
                 }
 
+                // ---------------- ô ngày + nút Lịch ----------------
+
+                // Ghép ô nhập ngày với nút "Lịch" bên cạnh; bấm nút mở bảng chọn ngày
+                private JPanel oChonNgay(JTextField txt) {
+
+                        // Chỉ cho chọn ngày qua lịch; không cho nhập/gõ/dán trực tiếp.
+                        // setText(...) vẫn hoạt động khi sửa voucher hoặc chọn ngày từ lịch.
+                        txt.setEditable(false);
+                        txt.setFocusable(false);
+                        txt.setBackground(new Color(245, 247, 250));
+                        txt.setToolTipText("Nhấn nút Lịch để chọn ngày (dd/MM/yyyy)");
+
+                        JButton btnLich = nut("Lịch", new Color(15, 42, 68));
+
+                        btnLich.setPreferredSize(new Dimension(70, 36));
+
+                        btnLich.addActionListener(e -> {
+
+                                LocalDate hienTai = null;
+
+                                try {
+                                        String t = txt.getText().trim();
+
+                                        if (!t.isEmpty()) {
+                                                hienTai = LocalDate.parse(t, D);
+                                        }
+                                } catch (DateTimeParseException ex) {
+                                        hienTai = null;
+                                }
+
+                                LichDialog lich = new LichDialog(this, hienTai);
+
+                                // hiện ngay bên cạnh nút Lịch, không để tràn màn hình
+                                Point p = btnLich.getLocationOnScreen();
+                                Rectangle mh = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                .getMaximumWindowBounds();
+
+                                int x = p.x + btnLich.getWidth() + 10;
+                                int y = p.y - 10;
+
+                                if (x + lich.getWidth() > mh.x + mh.width) {
+                                        x = p.x - lich.getWidth() - 10;
+                                }
+
+                                if (y + lich.getHeight() > mh.y + mh.height) {
+                                        y = mh.y + mh.height - lich.getHeight();
+                                }
+
+                                lich.setLocation(Math.max(mh.x, x), Math.max(mh.y, y));
+                                lich.setVisible(true);
+
+                                if (lich.getKetQua() != null) {
+                                        txt.setText(lich.getKetQua().format(D));
+                                }
+                        });
+
+                        JPanel p = new JPanel(new BorderLayout(6, 0));
+
+                        p.setOpaque(false);
+                        p.add(txt, BorderLayout.CENTER);
+                        p.add(btnLich, BorderLayout.EAST);
+
+                        return p;
+                }
+
+                // ---------------- bảng chọn ngày (Chọn ngày) ----------------
+
+                private static class LichDialog extends JDialog {
+
+                        private static final Color NAVY = new Color(15, 42, 68);
+                        private static final Color XANH_NHAT = new Color(222, 236, 250);
+                        private static final Color VIEN_O = new Color(200, 205, 212);
+                        private static final String[] THU = { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
+
+                        private final LocalDate dangChon;
+                        private YearMonth thang;
+                        private LocalDate ketQua = null;
+
+                        private final JLabel lblThang = new JLabel("", SwingConstants.CENTER);
+                        private final JPanel luoi = new JPanel(new GridLayout(7, 7, 6, 6));
+
+                        LichDialog(Component cha, LocalDate batDau) {
+
+                                super(SwingUtilities.getWindowAncestor(cha), "Chọn ngày",
+                                                Dialog.ModalityType.APPLICATION_MODAL);
+
+                                this.dangChon = batDau;
+                                this.thang = YearMonth.from(batDau != null ? batDau : LocalDate.now());
+
+                                setResizable(false);
+
+                                lblThang.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                                lblThang.setForeground(NAVY);
+
+                                JButton truoc = nutNhat("◄");
+                                JButton sau = nutNhat("►");
+
+                                truoc.setPreferredSize(new Dimension(70, 34));
+                                sau.setPreferredSize(new Dimension(70, 34));
+
+                                truoc.addActionListener(e -> {
+                                        thang = thang.minusMonths(1);
+                                        veLich();
+                                });
+
+                                sau.addActionListener(e -> {
+                                        thang = thang.plusMonths(1);
+                                        veLich();
+                                });
+
+                                JPanel dau = new JPanel(new BorderLayout());
+
+                                dau.setOpaque(false);
+                                dau.add(truoc, BorderLayout.WEST);
+                                dau.add(lblThang, BorderLayout.CENTER);
+                                dau.add(sau, BorderLayout.EAST);
+
+                                luoi.setOpaque(false);
+                                luoi.setBorder(new EmptyBorder(14, 0, 10, 0));
+
+                                JButton homNay = nutNhat("Hôm nay");
+                                JButton huy = nutNhat("Hủy");
+
+                                homNay.addActionListener(e -> {
+                                        ketQua = LocalDate.now();
+                                        dispose();
+                                });
+
+                                huy.addActionListener(e -> dispose());
+
+                                JPanel chan = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+
+                                chan.setOpaque(false);
+                                chan.add(homNay);
+                                chan.add(huy);
+
+                                JPanel root = new JPanel(new BorderLayout());
+
+                                root.setBackground(Color.WHITE);
+                                root.setBorder(new EmptyBorder(14, 16, 14, 16));
+                                root.add(dau, BorderLayout.NORTH);
+                                root.add(luoi, BorderLayout.CENTER);
+                                root.add(chan, BorderLayout.SOUTH);
+
+                                setContentPane(root);
+
+                                veLich();
+
+                                setSize(360, 400);
+                        }
+
+                        LocalDate getKetQua() {
+
+                                return ketQua;
+                        }
+
+                        private static JButton nutNhat(String text) {
+
+                                JButton b = new JButton(text);
+
+                                b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                                b.setForeground(NAVY);
+                                b.setBackground(XANH_NHAT);
+                                b.setOpaque(true);
+                                b.setFocusPainted(false);
+                                b.setContentAreaFilled(true);
+                                b.setBorder(new LineBorder(new Color(160, 190, 225), 1));
+                                b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                b.setPreferredSize(new Dimension(Math.max(80, b.getPreferredSize().width + 16), 32));
+
+                                return b;
+                        }
+
+                        private void veLich() {
+
+                                lblThang.setText("Tháng " + thang.getMonthValue() + " / " + thang.getYear());
+
+                                luoi.removeAll();
+
+                                // hàng tiêu đề thứ
+                                for (String t : THU) {
+
+                                        JLabel l = new JLabel(t, SwingConstants.CENTER);
+
+                                        l.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                                        l.setForeground(NAVY);
+
+                                        luoi.add(l);
+                                }
+
+                                // tuần bắt đầu từ T2: T2 = 1 ... CN = 7
+                                int lech = thang.atDay(1).getDayOfWeek().getValue() - 1;
+                                int soNgay = thang.lengthOfMonth();
+                                LocalDate homNay = LocalDate.now();
+
+                                for (int i = 0; i < 42; i++) {
+
+                                        int ngay = i - lech + 1;
+
+                                        if (ngay < 1 || ngay > soNgay) {
+                                                luoi.add(new JLabel());
+                                                continue;
+                                        }
+
+                                        LocalDate d = thang.atDay(ngay);
+
+                                        JButton b = new JButton(String.valueOf(ngay));
+
+                                        b.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                                        b.setForeground(new Color(40, 40, 40));
+                                        b.setBackground(Color.WHITE);
+                                        b.setOpaque(true);
+                                        b.setFocusPainted(false);
+                                        b.setContentAreaFilled(true);
+                                        b.setBorder(new LineBorder(VIEN_O, 1));
+                                        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+                                        if (d.equals(homNay)) {
+                                                b.setBackground(XANH_NHAT);
+                                                b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                                        }
+
+                                        if (d.equals(dangChon)) {
+                                                b.setBackground(NAVY);
+                                                b.setForeground(Color.WHITE);
+                                                b.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                                        }
+
+                                        b.addActionListener(e -> {
+                                                ketQua = d;
+                                                dispose();
+                                        });
+
+                                        luoi.add(b);
+                                }
+
+                                luoi.revalidate();
+                                luoi.repaint();
+                        }
+                }
+
                 // ---------------- lưu ----------------
 
                 private void canhBao(String msg) {
@@ -944,10 +1253,22 @@ public class QuanLyVoucher extends JPanel {
                                 }
                         }
 
+                        // "Đang kích hoạt" mà ngày bắt đầu còn ở tương lai -> phải chọn "Sắp chạy"
+                        if (cboTt.getSelectedIndex() == 0 && bd != null && bd.isAfter(LocalDate.now())) {
+                                canhBao("Từ ngày còn ở tương lai, hãy chọn trạng thái \"Sắp chạy\".");
+                                return;
+                        }
+
+                        // "Sắp chạy" -> bắt buộc có ngày bắt đầu ở tương lai
+                        if (cboTt.getSelectedIndex() == 1 && (bd == null || !bd.isAfter(LocalDate.now()))) {
+                                canhBao("Trạng thái \"Sắp chạy\" cần có Từ ngày sau hôm nay.");
+                                return;
+                        }
+
                         Voucher v = new Voucher(
                                         goc == null ? null : goc.getMaVoucher(),
                                         ten, pt, dk.isEmpty() ? null : dk,
-                                        cboTt.getSelectedIndex() == 0, bd, kt, sl);
+                                        cboTt.getSelectedIndex() != 2, bd, kt, sl);
 
                         if (goc == null) {
 
