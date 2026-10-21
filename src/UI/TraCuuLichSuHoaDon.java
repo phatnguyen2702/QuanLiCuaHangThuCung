@@ -515,7 +515,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Không thể lưu hóa đơn TXT.\n" + e.getMessage(),
+                    "Không thể lưu hóa đơn.\n" + e.getMessage(),
                     "Lỗi xuất hóa đơn",
                     JOptionPane.ERROR_MESSAGE);
         }
