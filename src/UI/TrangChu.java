@@ -253,14 +253,14 @@ public class TrangChu extends JFrame {
     private void moTraCuuNhapKho() {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
                 () -> pnlTraCuuNhapKho = new TraCuuKho(
-                        () -> chuyenTuNhom(btnNghiepVu, () -> chuyenKho(2))));
+                        () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2))));
         if (pnlTraCuuNhapKho != null) pnlTraCuuNhapKho.lamMoi();
     }
 
     private void moTraCuuKiemKe() {
         hienManHinh("tracuukkkho", "Tra cứu kiểm kê kho", btnTimKiem,
                 () -> pnlTraCuuKiemKe = new TraCuuKKKho(
-                        () -> chuyenTuNhom(btnNghiepVu, () -> chuyenKho(3))));
+                        () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(3))));
         if (pnlTraCuuKiemKe != null) pnlTraCuuKiemKe.lamMoi();
     }
 
