@@ -268,9 +268,17 @@ public class TrangChu extends JFrame {
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnNghiepVu,
                 () -> pnlThanhToan = new QuanLyThanhToan(maNV,
-                        () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon)));
+                        () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon),
+                        this::capNhatDanhSachPhieuDichVu));
         if (pnlThanhToan != null) {
             pnlThanhToan.napGioHang();
+        }
+    }
+
+    private void capNhatDanhSachPhieuDichVu() {
+        Component manHinh = mapManHinhKhac.get("phieudv");
+        if (manHinh instanceof QuanLyPhieuDichVu) {
+            ((QuanLyPhieuDichVu) manHinh).loadData();
         }
     }
 
