@@ -129,10 +129,10 @@ public class KiemKeDAO {
         }
     }
 
-    public ArrayList<PhieuKiemKe> dsPhieu() throws SQLException {
+    public ArrayList<PhieuKiemKe> dsPhieuNhap() throws SQLException {
         damBaoCotKiemKe();
         ArrayList<PhieuKiemKe> ds = new ArrayList<>();
-        String sql = "SELECT maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot, lyDoChenhLech, maNhanVienXacNhan FROM PhieuKiemKe ORDER BY ngayKiemKe DESC";
+        String sql = "SELECT maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot, lyDoChenhLech, maNhanVienXacNhan FROM PhieuKiemKe WHERE ISNULL(trangThai,0)=0 ORDER BY ngayKiemKe DESC";
         try (Connection c = ConnectDB.connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql); ResultSet r = p.executeQuery()) {
             while (r.next()) {
                 PhieuKiemKe x = new PhieuKiemKe();
