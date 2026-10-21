@@ -3,15 +3,8 @@ package UI;
 import ConnectDB.connectDB;
 import dao.HoaDonDAO;
 import dao.LichHenDAO;
-import entity.LichHen;
 import dao.TaiKhoanDAO;
-
-import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
+import entity.LichHen;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -30,14 +23,20 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.zip.DeflaterOutputStream;
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 
 /**
  * Cua so chinh Pet Shop Pro - menu theo HUONG CHUC NANG.
@@ -64,7 +63,7 @@ public class TrangChu extends JFrame {
     private JButton btnTrangChu;
     private JButton btnHeThong;
     private JButton btnDanhMuc;
-    private JButton btnNghiepVu;
+    private JButton btnXuLy;
     private JButton btnTimKiem;
     private JButton btnThongKe;
     private final ArrayList<JButton> dsBtnMucChinh = new ArrayList<>();
@@ -217,7 +216,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moLichHen() {
-        hienManHinh("lichhen", "Lịch hẹn Spa", btnNghiepVu, QuanLyLichHen::new);
+        hienManHinh("lichhen", "Lịch hẹn Spa", btnXuLy, QuanLyLichHen::new);
     }
 
     private void moThuCung() {
@@ -230,18 +229,18 @@ public class TrangChu extends JFrame {
     }
 
     private void moVoucher() {
-        hienManHinh("voucher", "Quản lý voucher", btnNghiepVu, QuanLyVoucher::new);
+        hienManHinh("voucher", "Quản lý voucher", btnDanhMuc, QuanLyVoucher::new);
     }
 
     private void moPhieuDichVu() {
-        hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnNghiepVu,
+        hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnXuLy,
                 QuanLyPhieuDichVu::new);
     }
 
     private void moTraCuuHoaDon() {
         hienManHinh("hoadon", "Tra cứu lịch sử hóa đơn", btnTimKiem,
                 () -> pnlTraCuuHoaDon = new TraCuuLichSuHoaDon(
-                        () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan)));
+                        () -> chuyenTuNhom(btnXuLy, this::moThanhToan)));
         if (pnlTraCuuHoaDon != null) {
             try {
                 pnlTraCuuHoaDon.hienDanhSach();
@@ -266,7 +265,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moThanhToan() {
-        hienManHinh("thanhtoan", "Thanh toán", btnNghiepVu,
+        hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
                 () -> pnlThanhToan = new QuanLyThanhToan(maNV,
                         () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon),
                         this::capNhatDanhSachPhieuDichVu));
@@ -289,7 +288,7 @@ public class TrangChu extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        chuyenTuNhom(btnNghiepVu, this::moThanhToan);
+        chuyenTuNhom(btnXuLy, this::moThanhToan);
     }
 
     private void moQuanLyTaiKhoan() {
@@ -298,7 +297,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moQuanLyPhanCa() {
-        hienManHinh("phanca", "Phân ca nhân viên", btnNghiepVu,
+        hienManHinh("phanca", "Phân ca nhân viên", btnXuLy,
                 QuanLyPhanCa::new);
     }
 
@@ -366,26 +365,26 @@ public class TrangChu extends JFrame {
 
         btnHeThong = taoBtnNhom("HỆ THỐNG", "/img/caidatlogo.png");
         btnDanhMuc = taoBtnNhom("DANH MỤC", "/img/danhmuclogo.png");
-        btnNghiepVu = taoBtnNhom("XỬ LÝ", "/img/nghiepvulogo.png");
+        btnXuLy = taoBtnNhom("XỬ LÝ", "/img/nghiepvulogo.png");
         btnTimKiem = taoBtnNhom("TÌM KIẾM", "/img/timkiemlogo.png");
         btnThongKe = taoBtnNhom("THỐNG KÊ", "/img/thongkelogo.png");
 
         pnlMenu.add(btnTrangChu);
         pnlMenu.add(btnHeThong);
         pnlMenu.add(btnDanhMuc);
-        pnlMenu.add(btnNghiepVu);
+        pnlMenu.add(btnXuLy);
         pnlMenu.add(btnTimKiem);
         pnlMenu.add(btnThongKe);
 
         dsBtnMucChinh.add(btnHeThong);
         dsBtnMucChinh.add(btnDanhMuc);
-        dsBtnMucChinh.add(btnNghiepVu);
+        dsBtnMucChinh.add(btnXuLy);
         dsBtnMucChinh.add(btnTimKiem);
         dsBtnMucChinh.add(btnThongKe);
 
         btnHeThong.addActionListener(e -> hienPopup(btnHeThong, taoMenuHeThong()));
         btnDanhMuc.addActionListener(e -> hienPopup(btnDanhMuc, taoMenuDanhMuc()));
-        btnNghiepVu.addActionListener(e -> hienPopup(btnNghiepVu, taoMenuNghiepVu()));
+        btnXuLy.addActionListener(e -> hienPopup(btnXuLy, taoMenuNghiepVu()));
         btnTimKiem.addActionListener(e -> hienPopup(btnTimKiem, taoMenuTimKiem()));
         btnThongKe.addActionListener(e -> hienPopup(btnThongKe, taoMenuThongKe()));
 
@@ -456,25 +455,25 @@ public class TrangChu extends JFrame {
         themMuc(p, "Khách hàng", btnDanhMuc, this::moKhachHang);
         themMuc(p, "Thú cưng", btnDanhMuc, this::moThuCung);
         themMuc(p, "Dịch vụ", btnDanhMuc, this::moDichVu);
-        themMuc(p, "Mã giảm giá", btnNghiepVu, this::moVoucher);
+        themMuc(p, "Mã giảm giá", btnDanhMuc, this::moVoucher);
         return p;
     }
 
     private JPopupMenu taoMenuNghiepVu() {
         JPopupMenu p = new JPopupMenu();
-        themMuc(p, "Nhập kho", btnNghiepVu, () -> chuyenKho(2));
-        themMuc(p, "Kiểm kê kho", btnNghiepVu, () -> chuyenKho(3));
+        themMuc(p, "Nhập kho", btnXuLy, () -> chuyenKho(2));
+        themMuc(p, "Kiểm kê kho", btnXuLy, () -> chuyenKho(3));
         p.addSeparator();
-        themMuc(p, "Lịch hẹn Spa", btnNghiepVu, this::moLichHen);
-        themMuc(p, "Phiếu dịch vụ", btnNghiepVu, this::moPhieuDichVu);
+        themMuc(p, "Lịch hẹn Spa", btnXuLy, this::moLichHen);
+        themMuc(p, "Phiếu dịch vụ", btnXuLy, this::moPhieuDichVu);
         p.addSeparator();
-        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu, this::moCanhBaoHanSuDung);
-        themMuc(p, "Gợi ý thức ăn theo loại thú cưng", btnNghiepVu, this::moGoiYThucAn);
+        themMuc(p, "Cảnh báo sản phẩm sắp hết hạn", btnXuLy, this::moCanhBaoHanSuDung);
+        themMuc(p, "Gợi ý thức ăn theo loại thú cưng", btnXuLy, this::moGoiYThucAn);
         p.addSeparator();
-        themMuc(p, "Thanh toán hóa đơn", btnNghiepVu, this::moThanhToan);
+        themMuc(p, "Thanh toán hóa đơn", btnXuLy, this::moThanhToan);
 
         p.addSeparator();
-        themMuc(p, "Phân ca nhân viên", btnNghiepVu, this::moQuanLyPhanCa);
+        themMuc(p, "Phân ca nhân viên", btnXuLy, this::moQuanLyPhanCa);
 
         return p;
     }
@@ -832,11 +831,11 @@ public class TrangChu extends JFrame {
         themBtnTruyCapNhanh(pnlPanel, "Quản lý khách hàng", "F4",
                 () -> chuyenTuNhom(btnDanhMuc, this::moKhachHang));
         themBtnTruyCapNhanh(pnlPanel, "Quản lý lịch hẹn", "F5",
-                () -> chuyenTuNhom(btnNghiepVu, this::moLichHen));
+                () -> chuyenTuNhom(btnXuLy, this::moLichHen));
         themBtnTruyCapNhanh(pnlPanel, "Phiếu dịch vụ", "F6",
-                () -> chuyenTuNhom(btnNghiepVu, this::moPhieuDichVu));
+                () -> chuyenTuNhom(btnXuLy, this::moPhieuDichVu));
         themBtnTruyCapNhanh(pnlPanel, "Thanh toán", "F7",
-                () -> chuyenTuNhom(btnNghiepVu, this::moThanhToan));
+                () -> chuyenTuNhom(btnXuLy, this::moThanhToan));
         themBtnTruyCapNhanh(pnlPanel, "Tra cứu hóa đơn", "F8",
                 () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon));
 
@@ -907,7 +906,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moCanhBaoHanSuDung() {
-        hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnNghiepVu,
+        hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnXuLy,
                 () -> pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel());
         if (pnlCanhBaoHanSuDung != null) {
             pnlCanhBaoHanSuDung.napLai();
@@ -915,7 +914,7 @@ public class TrangChu extends JFrame {
     }
 
     private void moGoiYThucAn() {
-        hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnNghiepVu,
+        hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnXuLy,
                 () -> pnlGoiYThucAn = new GoiYThucAnPanel());
         if (pnlGoiYThucAn != null) {
             pnlGoiYThucAn.napLai();
