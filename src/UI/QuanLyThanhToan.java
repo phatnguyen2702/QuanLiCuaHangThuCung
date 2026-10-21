@@ -1,5 +1,10 @@
 package UI;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
 import dao.ThanhToanDao;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -15,7 +20,6 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,9 +31,11 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.zip.DeflaterOutputStream;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
@@ -68,9 +74,11 @@ public class QuanLyThanhToan extends JPanel {
     private final ThanhToanDao dao = new ThanhToanDao();
     private final String maNhanVien;
     private final Runnable moLichSuHoaDon;
+    private final Runnable capNhatPhieuDichVu;
     private final List<entity.ThanhToan> chiTiet = UI.PhienLamViec.gioHang();
     private final List<String> danhSachMaKhachHang = new ArrayList<>();
     private final List<String> danhSachMaSanPham = new ArrayList<>();
+    private final Map<String, String> tenSanPhamTheoMa = new LinkedHashMap<>();
     private final List<String> maPhieuDichVuTrongDonHang = new ArrayList<>();
     private final List<entity.ThanhToan> dichVuTuPhieuDaThem = new ArrayList<>();
     private final DonHangModel tableModel = new DonHangModel();
@@ -101,8 +109,14 @@ public class QuanLyThanhToan extends JPanel {
     private LocalDateTime ngayLap = LocalDateTime.now();
 
     public QuanLyThanhToan(String maNhanVien, Runnable moLichSuHoaDon) {
+        this(maNhanVien, moLichSuHoaDon, () -> { });
+    }
+
+    public QuanLyThanhToan(
+            String maNhanVien, Runnable moLichSuHoaDon, Runnable capNhatPhieuDichVu) {
         this.maNhanVien = maNhanVien;
         this.moLichSuHoaDon = moLichSuHoaDon;
+        this.capNhatPhieuDichVu = capNhatPhieuDichVu;
         setLayout(new BorderLayout(10, 12));
         setBackground(LIGHT_BLUE);
         setBorder(BorderFactory.createEmptyBorder(12, 18, 16, 18));
@@ -512,9 +526,11 @@ public class QuanLyThanhToan extends JPanel {
     private void napDanhSachMaSanPham() {
         try {
             danhSachMaSanPham.clear();
-            danhSachMaSanPham.addAll(dao.layDanhSachMaSanPham());
+            tenSanPhamTheoMa.clear();
+            tenSanPhamTheoMa.putAll(dao.layDanhSachSanPham());
+            danhSachMaSanPham.addAll(tenSanPhamTheoMa.keySet());
             for (String ma : danhSachMaSanPham) {
-                cboMaSanPham.addItem(ma);
+                cboMaSanPham.addItem(taoGoiYSanPham(ma));
             }
             cboMaSanPham.setSelectedItem("");
         } catch (Exception e) {
@@ -596,8 +612,9 @@ public class QuanLyThanhToan extends JPanel {
             }
             JTextField editor = (JTextField) editorComponent;
             String tuKhoa = editor.getText();
+            String maTimKiem = layMaSanPhamTuGoiY(tuKhoa);
             List<String> goiY = new ArrayList<>();
-            String tuKhoaKhongPhanBietHoaThuong = tuKhoa.toLowerCase(Locale.ROOT);
+            String tuKhoaKhongPhanBietHoaThuong = maTimKiem.toLowerCase(Locale.ROOT);
             for (String ma : danhSachMaSanPham) {
                 if (maCoChuaTatCaKyTu(ma, tuKhoaKhongPhanBietHoaThuong)) {
                     goiY.add(ma);
@@ -609,7 +626,7 @@ public class QuanLyThanhToan extends JPanel {
             try {
                 DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
                 for (String ma : goiY) {
-                    model.addElement(ma);
+                    model.addElement(taoGoiYSanPham(ma));
                 }
                 cboMaSanPham.setModel(model);
                 cboMaSanPham.setSelectedItem(tuKhoa);
@@ -619,13 +636,31 @@ public class QuanLyThanhToan extends JPanel {
                 dangCapNhatGoiYMaSanPham = false;
             }
 
-            if (!tuKhoa.isEmpty() && !goiY.isEmpty()
-                    && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(tuKhoa))) {
+            boolean daChonGoiY = tenSanPhamTheoMa.containsKey(maTimKiem)
+                    && tuKhoa.equals(taoGoiYSanPham(maTimKiem));
+            if (!maTimKiem.isEmpty() && !goiY.isEmpty() && !daChonGoiY
+                    && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(maTimKiem))) {
                 cboMaSanPham.showPopup();
             } else if (cboMaSanPham.isPopupVisible()) {
                 cboMaSanPham.hidePopup();
             }
         });
+    }
+
+    private String taoGoiYSanPham(String ma) {
+        String ten = tenSanPhamTheoMa.get(ma);
+        return ten == null || ten.isBlank() ? ma : ma + " - " + ten;
+    }
+
+    private String layMaSanPhamTuGoiY(String tuKhoa) {
+        int separator = tuKhoa.indexOf(" - ");
+        if (separator > 0) {
+            String ma = tuKhoa.substring(0, separator);
+            if (tenSanPhamTheoMa.containsKey(ma)) {
+                return ma;
+            }
+        }
+        return tuKhoa.trim();
     }
 
     private boolean maCoChuaTatCaKyTu(String ma, String tuKhoaDaChuanHoa) {
@@ -706,17 +741,17 @@ public class QuanLyThanhToan extends JPanel {
 
     private void moChonSanPham() {
         Object item = cboMaSanPham.getEditor().getItem();
-        moChonSanPham(item == null ? "" : item.toString().trim());
+        moChonSanPham(item == null ? "" : layMaSanPhamTuGoiY(item.toString()).trim());
     }
 
     private void moChonSanPham(String tuKhoa) {
-        tuKhoa = tuKhoa.trim();
+        tuKhoa = layMaSanPhamTuGoiY(tuKhoa).trim();
         if (tuKhoa.isEmpty()) {
             hienLoi("Nhập mã sản phẩm.");
             return;
         }
         try {
-            List<entity.ThanhToan> ketQua = dao.timSanPhamTheoMa(tuKhoa);
+            List<entity.ThanhToan> ketQua = dao.timMatHangTheoMa(tuKhoa);
             if (ketQua.isEmpty()) {
                 hienLoi("Không tìm thấy sản phẩm.");
                 return;
@@ -928,6 +963,9 @@ public class QuanLyThanhToan extends JPanel {
                     voucher == null ? BigDecimal.ZERO : voucher.getPhanTramGiam(),
                     chiTiet,
                     maPhieuDichVuTrongDonHang);
+            if (!maPhieuDichVuTrongDonHang.isEmpty()) {
+                capNhatPhieuDichVu.run();
+            }
             String noiDungHoaDon = taoNoiDungHoaDon(
                     phuongThuc.getTenPhuongThuc(), tongThanhToan);
             noiDungHoaDon = "PET SHOP PRO\nHÓA ĐƠN: " + maHoaDonDaLuu + "\n"
@@ -957,7 +995,13 @@ public class QuanLyThanhToan extends JPanel {
 
     private boolean hienMaQrDemo(String maHoaDon, BigDecimal tongThanhToan) {
         String duLieuQr = "PETSHOP-DEMO|" + maHoaDon + "|" + tongThanhToan.toPlainString();
-        BufferedImage qrImage = taoQrImage(duLieuQr);
+        BufferedImage qrImage;
+        try {
+            qrImage = taoQrImage(duLieuQr);
+        } catch (WriterException e) {
+            hienLoi("Không tạo được mã QR: " + e.getMessage());
+            return false;
+        }
 
         JPanel content = new JPanel(new BorderLayout(8, 8));
         content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -966,7 +1010,7 @@ public class QuanLyThanhToan extends JPanel {
         details.add(new JLabel("Mã đơn: " + maHoaDon));
         details.add(new JLabel("Số tiền: " + dinhDangTien(tongThanhToan)));
         JLabel note = new JLabel(
-                "<html><b>QR Thanh Toán</b> — Quét mã để chuyển khoản.</html>");
+                "<html><b>QR minh họa</b> — Chưa kết nối cổng thanh toán ngân hàng.</html>");
         note.setForeground(new Color(180, 75, 25));
         details.add(note);
         content.add(details, BorderLayout.SOUTH);
@@ -974,7 +1018,7 @@ public class QuanLyThanhToan extends JPanel {
         int choice = JOptionPane.showOptionDialog(
                 this,
                 content,
-                "Mã QR chuyển khoản",
+                "Mã QR minh họa",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.PLAIN_MESSAGE,
                 null,
@@ -983,51 +1027,17 @@ public class QuanLyThanhToan extends JPanel {
         return choice == 0;
     }
 
-    private static BufferedImage taoQrImage(String duLieuQr) {
-        final int dimension = 21;
-        boolean[][] data = new boolean[dimension][dimension];
-
-        for (int row = 0; row < 7; row++) {
-            for (int col = 0; col < 7; col++) {
-                boolean isFinder = row == 0 || row == 6 || col == 0 || col == 6
-                        || (row >= 2 && row <= 4 && col >= 2 && col <= 4);
-                data[row][col] = isFinder;
-                data[row][dimension - 7 + col] = isFinder;
-                data[dimension - 7 + row][col] = isFinder;
-            }
-        }
-
-        for (int index = 0; index < dimension; index++) {
-            data[index][6] = index % 2 == 0;
-            data[6][index] = index % 2 == 0;
-        }
-
-        int seed = 0;
-        for (int row = 0; row < dimension; row++) {
-            for (int col = 0; col < dimension; col++) {
-                if (row < 7 && col < 7) {
-                    continue;
-                }
-                if (row == 6 || col == 6) {
-                    continue;
-                }
-                if (row >= dimension - 7 && col < 7) {
-                    continue;
-                }
-                if (col >= dimension - 7 && row < 7) {
-                    continue;
-                }
-                char ch = duLieuQr.charAt(seed % duLieuQr.length());
-                boolean bit = ((ch + row * 7 + col * 11 + seed) % 2 == 0);
-                data[row][col] = bit;
-                seed++;
-            }
-        }
-
-        BufferedImage image = new BufferedImage(dimension, dimension, BufferedImage.TYPE_INT_RGB);
-        for (int y = 0; y < dimension; y++) {
-            for (int x = 0; x < dimension; x++) {
-                image.setRGB(x, y, data[y][x] ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+    private static BufferedImage taoQrImage(String duLieuQr) throws WriterException {
+        Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
+        hints.put(EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name());
+        BitMatrix matrix = new MultiFormatWriter().encode(
+                duLieuQr, BarcodeFormat.QR_CODE, 280, 280, hints);
+        BufferedImage image = new BufferedImage(
+                matrix.getWidth(), matrix.getHeight(), BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < matrix.getHeight(); y++) {
+            for (int x = 0; x < matrix.getWidth(); x++) {
+                image.setRGB(x, y, matrix.get(x, y)
+                        ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
             }
         }
         return image;
@@ -1092,18 +1102,18 @@ public class QuanLyThanhToan extends JPanel {
         return text.toString();
     }
 
-    private void xuatHoaDonPdf(String noiDung, String maHoaDon) {
+    private void xuatHoaDonTxt(String noiDung, String maHoaDon) {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu hóa đơn PDF");
-        chooser.setSelectedFile(new java.io.File("HoaDon-" + maHoaDon + ".pdf"));
-        chooser.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
+        chooser.setDialogTitle("Lưu hóa đơn dạng TXT");
+        chooser.setSelectedFile(new java.io.File("HoaDon-" + maHoaDon + ".txt"));
+        chooser.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
         if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
         Path file = chooser.getSelectedFile().toPath();
-        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            file = file.resolveSibling(file.getFileName() + ".pdf");
+        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".txt")) {
+            file = file.resolveSibling(file.getFileName() + ".txt");
         }
         if (Files.exists(file)
                 && JOptionPane.showConfirmDialog(
@@ -1115,14 +1125,14 @@ public class QuanLyThanhToan extends JPanel {
             return;
         }
         try {
-            Files.write(file, taoPdf(noiDung));
+            Files.write(file, noiDung.getBytes(StandardCharsets.UTF_8));
             JOptionPane.showMessageDialog(
                     this,
-                    "Đã lưu hóa đơn PDF:\n" + file.toAbsolutePath(),
+                    "Đã lưu hóa đơn TXT:\n" + file.toAbsolutePath(),
                     "Xuất hóa đơn thành công",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
-            hienLoi("Hóa đơn đã lưu nhưng không thể xuất PDF: " + e.getMessage());
+            hienLoi("Không thể xuất hóa đơn TXT: " + e.getMessage());
         }
     }
 
@@ -1139,163 +1149,11 @@ public class QuanLyThanhToan extends JPanel {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
                 null,
-                new Object[] { "Xuất hóa đơn PDF", "Đóng" },
-                "Xuất hóa đơn PDF");
+                new Object[] { "Xuất hóa đơn TXT", "Đóng" },
+                "Xuất hóa đơn TXT");
         if (action == 0) {
-            xuatHoaDonPdf(noiDung, maHoaDon);
+            xuatHoaDonTxt(noiDung, maHoaDon);
         }
-    }
-
-    private byte[] taoPdf(String noiDung) throws IOException {
-        final int pageWidth = 595;
-        final int pageHeight = 842;
-        final int scale = 2;
-        final int lineHeight = 25;
-        final int firstLineY = 72;
-        List<String> lines = wrapNoiDung(noiDung, 470);
-        int linesPerPage = (pageHeight - firstLineY - 50) / lineHeight;
-        int pageCount = Math.max(1, (lines.size() + linesPerPage - 1) / linesPerPage);
-        List<byte[]> objects = new ArrayList<>();
-        objects.add(null);
-        objects.add(null);
-        StringBuilder pageReferences = new StringBuilder();
-
-        for (int page = 0; page < pageCount; page++) {
-            int pageObject = 3 + page * 3;
-            int contentObject = pageObject + 1;
-            int imageObject = pageObject + 2;
-            pageReferences.append(pageObject).append(" 0 R ");
-            BufferedImage image = new BufferedImage(
-                    pageWidth * scale, pageHeight * scale, BufferedImage.TYPE_INT_RGB);
-            Graphics2D graphics = image.createGraphics();
-            try {
-                graphics.scale(scale, scale);
-                graphics.setColor(Color.WHITE);
-                graphics.fillRect(0, 0, pageWidth, pageHeight);
-                graphics.setColor(NAVY);
-                graphics.setFont(new Font("Segoe UI", Font.BOLD, 18));
-                graphics.drawString("PET SHOP PRO", 55, 42);
-                graphics.setColor(Color.DARK_GRAY);
-                graphics.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-                int firstLine = page * linesPerPage;
-                int lastLine = Math.min(firstLine + linesPerPage, lines.size());
-                for (int line = firstLine; line < lastLine; line++) {
-                    graphics.drawString(
-                            lines.get(line),
-                            55,
-                            firstLineY + (line - firstLine) * lineHeight);
-                }
-            } finally {
-                graphics.dispose();
-            }
-
-            byte[] compressedImage = nenAnhRgb(image);
-            byte[] content = ascii("q\n"
-                    + pageWidth + " 0 0 " + pageHeight + " 0 0 cm\n"
-                    + "/Im0 Do\nQ\n");
-            objects.add(ascii(pageObject + " 0 obj\n"
-                    + "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
-                    + pageWidth + " " + pageHeight + "] "
-                    + "/Resources << /XObject << /Im0 " + imageObject + " 0 R >> >> "
-                    + "/Contents " + contentObject + " 0 R >>\nendobj\n"));
-            objects.add(streamObject(contentObject, "<<", content));
-            objects.add(streamObject(
-                    imageObject,
-                    "<< /Type /XObject /Subtype /Image /Width " + image.getWidth()
-                            + " /Height " + image.getHeight()
-                            + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode",
-                    compressedImage));
-        }
-
-        objects.set(0, ascii("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"));
-        objects.set(1, ascii("2 0 obj\n<< /Type /Pages /Kids ["
-                + pageReferences + "] /Count " + pageCount + " >>\nendobj\n"));
-        return assemblePdf(objects);
-    }
-
-    private List<String> wrapNoiDung(String text, int maxWidth) {
-        List<String> lines = new ArrayList<>();
-        Font font = new Font("Segoe UI", Font.PLAIN, 11);
-        BufferedImage measureImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-        Graphics2D graphics = measureImage.createGraphics();
-        try {
-            graphics.setFont(font);
-            java.awt.FontMetrics metrics = graphics.getFontMetrics();
-            for (String sourceLine : text.split("\\R", -1)) {
-                String remaining = sourceLine;
-                while (!remaining.isEmpty() && metrics.stringWidth(remaining) > maxWidth) {
-                    int breakAt = remaining.length();
-                    while (breakAt > 1
-                            && metrics.stringWidth(remaining.substring(0, breakAt)) > maxWidth) {
-                        breakAt--;
-                    }
-                    int space = remaining.lastIndexOf(' ', breakAt);
-                    if (space > 0) {
-                        breakAt = space;
-                    }
-                    lines.add(remaining.substring(0, breakAt));
-                    remaining = remaining.substring(breakAt).trim();
-                }
-                lines.add(remaining);
-            }
-        } finally {
-            graphics.dispose();
-        }
-        return lines;
-    }
-
-    private byte[] nenAnhRgb(BufferedImage image) throws IOException {
-        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
-        try (DeflaterOutputStream deflater = new DeflaterOutputStream(compressed)) {
-            int[] pixels = new int[image.getWidth()];
-            byte[] row = new byte[image.getWidth() * 3];
-            for (int y = 0; y < image.getHeight(); y++) {
-                image.getRGB(0, y, image.getWidth(), 1, pixels, 0, image.getWidth());
-                for (int x = 0; x < pixels.length; x++) {
-                    int rgb = pixels[x];
-                    int offset = x * 3;
-                    row[offset] = (byte) (rgb >> 16);
-                    row[offset + 1] = (byte) (rgb >> 8);
-                    row[offset + 2] = (byte) rgb;
-                }
-                deflater.write(row);
-            }
-        }
-        return compressed.toByteArray();
-    }
-
-    private byte[] streamObject(int objectNumber, String dictionary, byte[] data)
-            throws IOException {
-        ByteArrayOutputStream object = new ByteArrayOutputStream();
-        object.write(ascii(objectNumber + " 0 obj\n" + dictionary
-                + " /Length " + data.length + " >>\nstream\n"));
-        object.write(data);
-        object.write(ascii("\nendstream\nendobj\n"));
-        return object.toByteArray();
-    }
-
-    private byte[] assemblePdf(List<byte[]> objects) throws IOException {
-        ByteArrayOutputStream pdf = new ByteArrayOutputStream();
-        pdf.write(ascii("%PDF-1.4\n"));
-        List<Integer> offsets = new ArrayList<>();
-        offsets.add(0);
-        for (byte[] object : objects) {
-            offsets.add(pdf.size());
-            pdf.write(object);
-        }
-        int xrefOffset = pdf.size();
-        pdf.write(ascii("xref\n0 " + offsets.size() + "\n"));
-        pdf.write(ascii("0000000000 65535 f \n"));
-        for (int index = 1; index < offsets.size(); index++) {
-            pdf.write(ascii(String.format(Locale.ROOT, "%010d 00000 n \n", offsets.get(index))));
-        }
-        pdf.write(ascii("trailer\n<< /Size " + offsets.size()
-                + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF\n"));
-        return pdf.toByteArray();
-    }
-
-    private byte[] ascii(String text) {
-        return text.getBytes(StandardCharsets.ISO_8859_1);
     }
 
     private BigDecimal tinhTongHang() {

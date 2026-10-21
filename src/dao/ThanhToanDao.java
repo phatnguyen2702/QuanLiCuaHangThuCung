@@ -12,8 +12,10 @@ import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class ThanhToanDao {
 
@@ -25,14 +27,27 @@ public class ThanhToanDao {
         return ketQua;
     }
 
-    public List<String> layDanhSachMaMatHang() throws SQLException {
+    public List<String> layDanhSachMaSanPham() throws SQLException {
         List<String> ds = new ArrayList<>();
-        String sql = "SELECT maSanPham AS maHang FROM SanPham UNION SELECT maDichVu FROM DichVu ORDER BY maHang";
+        String sql = "SELECT maSanPham FROM SanPham ORDER BY maSanPham";
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) ds.add(rs.getString(1));
         }
         return ds;
+    }
+
+    public Map<String, String> layDanhSachSanPham() throws SQLException {
+        Map<String, String> sanPhams = new LinkedHashMap<>();
+        String sql = "SELECT maSanPham, tenSanPham FROM SanPham ORDER BY maSanPham";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                sanPhams.put(rs.getString("maSanPham"), rs.getString("tenSanPham"));
+            }
+        }
+        return sanPhams;
     }
 
     public List<String> layDanhSachMaKhachHang() throws SQLException {
@@ -47,11 +62,8 @@ public class ThanhToanDao {
 
     public List<ThanhToan> timMatHang(String tuKhoa) throws SQLException {
         String sql = "SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, "
-                + "giaBan AS donGia, CAST(0 AS BIT) AS laDichVu "
-                + "FROM SanPham WHERE maSanPham = ? OR tenSanPham LIKE ? "
-                + "UNION ALL "
-                + "SELECT TOP 30 maDichVu, tenDichVu, giaDichVu, CAST(1 AS BIT) "
-                + "FROM DichVu WHERE maDichVu = ? OR tenDichVu LIKE ?";
+                + "giaBan AS donGia FROM SanPham "
+                + "WHERE maSanPham = ? OR tenSanPham LIKE ?";
         List<ThanhToan> matHangs = new ArrayList<>();
 
         try (Connection con = connectDB.getConnection();
@@ -59,23 +71,51 @@ public class ThanhToanDao {
             String keyword = tuKhoa.trim();
             ps.setString(1, keyword);
             ps.setString(2, "%" + keyword + "%");
-            ps.setString(3, keyword);
-            ps.setString(4, "%" + keyword + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    BigDecimal donGia = rs.getBigDecimal("giaBan");
+                    BigDecimal donGia = rs.getBigDecimal("donGia");
                     if (donGia == null || donGia.signum() < 0) {
-                        throw new SQLException("Sản phẩm " + rs.getString("maSanPham")
+                        throw new SQLException("Mặt hàng " + rs.getString("maHang")
                                 + " có đơn giá không hợp lệ.");
                     }
                     matHangs.add(ThanhToan.sanPham(
-                            rs.getString("maSanPham"),
-                            rs.getString("tenSanPham"),
-                            donGia));
+                            rs.getString("maHang"), rs.getString("tenHang"), donGia));
                 }
             }
         }
         return matHangs;
+    }
+
+    public Map<String, List<ThanhToan>> layPhieuDichVuDangXuLy(String maKhachHang)
+            throws SQLException {
+        String sql = "SELECT p.maPhieuDichVu, dv.maDichVu, dv.tenDichVu, "
+                + "ctdv.soLuong, ctdv.donGia "
+                + "FROM PhieuDichVu p "
+                + "JOIN ChiTietDichVu ctdv ON ctdv.maPhieuDichVu = p.maPhieuDichVu "
+                + "JOIN DichVu dv ON dv.maDichVu = ctdv.maDichVu "
+                + "WHERE p.maKhachHang = ? AND p.trangThai = 0 "
+                + "ORDER BY p.maPhieuDichVu, dv.maDichVu";
+        Map<String, List<ThanhToan>> phieuDichVus = new LinkedHashMap<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maKhachHang);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String maPhieuDichVu = rs.getString("maPhieuDichVu");
+                    BigDecimal donGia = rs.getBigDecimal("donGia");
+                    if (donGia == null || donGia.signum() < 0) {
+                        throw new SQLException("Dịch vụ trong phiếu " + maPhieuDichVu
+                                + " có đơn giá không hợp lệ.");
+                    }
+                    ThanhToan dichVu = ThanhToan.dichVu(
+                            rs.getString("maDichVu"), rs.getString("tenDichVu"), donGia);
+                    dichVu.setSoLuong(rs.getInt("soLuong"));
+                    phieuDichVus.computeIfAbsent(maPhieuDichVu, key -> new ArrayList<>())
+                            .add(dichVu);
+                }
+            }
+        }
+        return phieuDichVus;
     }
 
     public ThanhToan.KhachHang timKhachHang(String maHoacSoDienThoai)
