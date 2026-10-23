@@ -11,7 +11,7 @@ public class PhieuDichVuDAO {
     public ArrayList<PhieuDichVu> getAll() {
         ArrayList<PhieuDichVu> list = new ArrayList<>();
         String sql = "SELECT p.*, tc.tenThuCung, tc.giong, nv.hoTen AS tenNhanVien, kh.hoTen AS tenKhachHang, " +
-                "ISNULL((SELECT STRING_AGG(dv.tenDichVu, ', ') FROM ChiTietDichVu ctdv JOIN DichVu dv ON ctdv.maDichVu = dv.maDichVu WHERE ctdv.maPhieuDichVu = p.maPhieuDichVu), N'') AS cacDichVu "
+                "ISNULL((SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), dv.tenDichVu), N', ') FROM ChiTietDichVu ctdv JOIN DichVu dv ON ctdv.maDichVu = dv.maDichVu WHERE ctdv.maPhieuDichVu = p.maPhieuDichVu), N'') AS cacDichVu "
                 +
                 "FROM PhieuDichVu p " +
                 "INNER JOIN ThuCung tc ON p.maThuCung = tc.maThuCung " +
@@ -24,7 +24,7 @@ public class PhieuDichVuDAO {
             while (rs.next()) {
                 PhieuDichVu pdv = new PhieuDichVu();
                 pdv.setMaPhieuDichVu(rs.getString("maPhieuDichVu"));
-                pdv.setTrangThai(rs.getBoolean("trangThai") ? "Hoàn thành" : "Đang xử lý");
+                pdv.setTrangThai(rs.getBoolean("trangThai") ? "Đã thanh toán" : "Chưa thanh toán");
                 pdv.setMaKhachHang(rs.getString("maKhachHang"));
                 pdv.setMaThuCung(rs.getString("maThuCung"));
                 pdv.setMaNhanVien(rs.getString("maNhanVien"));
@@ -71,99 +71,180 @@ public class PhieuDichVuDAO {
         return list;
     }
 
-    // Lưu phiếu và các dịch vụ đã tick
+    /** Kiểm tra thú cưng thuộc khách và phiếu liên kết đúng lịch đã chọn. */
+    private void kiemTraLienKet(Connection con, PhieuDichVu p) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT 1 FROM ThuCung WHERE maThuCung = ? AND maKhachHang = ?")) {
+            ps.setString(1, p.getMaThuCung());
+            ps.setString(2, p.getMaKhachHang());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next())
+                    throw new SQLException("Thú cưng không thuộc khách hàng đã chọn.");
+            }
+        }
+        if (p.getMaLichHen() == null || "Không có".equals(p.getMaLichHen()))
+            return;
+        String sql = "SELECT 1 FROM LichHen WITH (UPDLOCK, HOLDLOCK) "
+                + "WHERE maLichHen = ? AND maKhachHang = ? AND maThuCung = ? "
+                + "AND maNhanVien = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, p.getMaLichHen());
+            ps.setString(2, p.getMaKhachHang());
+            ps.setString(3, p.getMaThuCung());
+            ps.setString(4, p.getMaNhanVien());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next())
+                    throw new SQLException("Thông tin phiếu không khớp lịch hẹn.");
+            }
+        }
+        String trung = "SELECT 1 FROM PhieuDichVu WITH (UPDLOCK, HOLDLOCK) "
+                + "WHERE maLichHen = ? AND maPhieuDichVu <> ?";
+        try (PreparedStatement ps = con.prepareStatement(trung)) {
+            ps.setString(1, p.getMaLichHen());
+            ps.setString(2, p.getMaPhieuDichVu());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    throw new SQLException("Lịch hẹn này đã có phiếu dịch vụ khác.");
+            }
+        }
+    }
+
+    /** Lưu chi tiết trên cùng transaction với phiếu. */
+    private void chenDichVu(Connection con, String maPhieu, List<String[]> ds) throws SQLException {
+        if (ds == null || ds.isEmpty())
+            throw new SQLException("Phiếu phải có ít nhất một dịch vụ.");
+        String sql = "INSERT INTO ChiTietDichVu (maPhieuDichVu, maDichVu, soLuong, donGia, ghiChu) "
+                + "VALUES (?, ?, 1, ?, N'')";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (String[] dv : ds) {
+                ps.setString(1, maPhieu);
+                ps.setString(2, dv[0]);
+                ps.setBigDecimal(3, new java.math.BigDecimal(dv[2]));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    private static void rollback(Connection con, Exception ex) {
+        try {
+            con.rollback();
+        } catch (SQLException rb) {
+            ex.addSuppressed(rb);
+        }
+    }
+
+    /**
+     * Trạng thái = 0 (chưa thanh toán) khi tạo; thu ngân sẽ chuyển sang 1 sau thanh
+     * toán.
+     */
     public boolean them(PhieuDichVu p, List<String[]> dichVuDuocChon) {
-        String sql1 = "INSERT INTO PhieuDichVu (maPhieuDichVu, trangThai, maKhachHang, maThuCung, maNhanVien, maLichHen) VALUES (?, ?, ?, ?, ?, ?)";
-        String sql2 = "INSERT INTO ChiTietDichVu (maPhieuDichVu, maDichVu, soLuong, donGia, ghiChu) VALUES (?, ?, 1, ?, N'')";
+        String sql = "INSERT INTO PhieuDichVu "
+                + "(maPhieuDichVu, trangThai, maKhachHang, maThuCung, maNhanVien, maLichHen) "
+                + "VALUES (?, 0, ?, ?, ?, ?)";
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
-            try (PreparedStatement ps = con.prepareStatement(sql1)) {
-                ps.setString(1, p.getMaPhieuDichVu());
-                ps.setBoolean(2, p.getTrangThai().equals("Hoàn thành"));
-                ps.setString(3, p.getMaKhachHang());
-                ps.setString(4, p.getMaThuCung());
-                ps.setString(5, p.getMaNhanVien());
-                if (p.getMaLichHen() == null || p.getMaLichHen().equals("Không có"))
-                    ps.setNull(6, Types.VARCHAR);
-                else
-                    ps.setString(6, p.getMaLichHen());
-                ps.executeUpdate();
-            }
-            if (dichVuDuocChon != null && !dichVuDuocChon.isEmpty()) {
-                try (PreparedStatement ps2 = con.prepareStatement(sql2)) {
-                    for (String[] dv : dichVuDuocChon) {
-                        ps2.setString(1, p.getMaPhieuDichVu());
-                        ps2.setString(2, dv[0]);
-                        ps2.setDouble(3, Double.parseDouble(dv[2]));
-                        ps2.addBatch();
-                    }
-                    ps2.executeBatch();
+            try {
+                kiemTraLienKet(con, p);
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setString(1, p.getMaPhieuDichVu());
+                    ps.setString(2, p.getMaKhachHang());
+                    ps.setString(3, p.getMaThuCung());
+                    ps.setString(4, p.getMaNhanVien());
+                    if (p.getMaLichHen() == null || "Không có".equals(p.getMaLichHen()))
+                        ps.setNull(5, Types.VARCHAR);
+                    else
+                        ps.setString(5, p.getMaLichHen());
+                    ps.executeUpdate();
                 }
+                chenDichVu(con, p.getMaPhieuDichVu(), dichVuDuocChon);
+                con.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                rollback(con, ex);
+                ex.printStackTrace();
+                return false;
             }
-            con.commit();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             return false;
         }
     }
 
-    // Cập nhật phiếu và cập nhật lại các dịch vụ đã tick
+    /** Chỉ sửa phiếu chưa thanh toán; không đổi trạng thái do ứng dụng Spa. */
     public boolean sua(PhieuDichVu p, List<String[]> dichVuDuocChon) {
-        String sql1 = "UPDATE PhieuDichVu SET trangThai=?, maKhachHang=?, maThuCung=?, maNhanVien=?, maLichHen=? WHERE maPhieuDichVu=?";
-        String sqlDel = "DELETE FROM ChiTietDichVu WHERE maPhieuDichVu=?";
-        String sql2 = "INSERT INTO ChiTietDichVu (maPhieuDichVu, maDichVu, soLuong, donGia, ghiChu) VALUES (?, ?, 1, ?, N'')";
+        String sql = "UPDATE PhieuDichVu SET maKhachHang=?, maThuCung=?, maNhanVien=?, maLichHen=? "
+                + "WHERE maPhieuDichVu=? AND trangThai=0";
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
-            try (PreparedStatement ps = con.prepareStatement(sql1)) {
-                ps.setBoolean(1, p.getTrangThai().equals("Hoàn thành"));
-                ps.setString(2, p.getMaKhachHang());
-                ps.setString(3, p.getMaThuCung());
-                ps.setString(4, p.getMaNhanVien());
-                if (p.getMaLichHen() == null || p.getMaLichHen().equals("Không có"))
-                    ps.setNull(5, Types.VARCHAR);
-                else
-                    ps.setString(5, p.getMaLichHen());
-                ps.setString(6, p.getMaPhieuDichVu());
-                ps.executeUpdate();
-            }
-            try (PreparedStatement psDel = con.prepareStatement(sqlDel)) {
-                psDel.setString(1, p.getMaPhieuDichVu());
-                psDel.executeUpdate();
-            }
-            if (dichVuDuocChon != null && !dichVuDuocChon.isEmpty()) {
-                try (PreparedStatement ps2 = con.prepareStatement(sql2)) {
-                    for (String[] dv : dichVuDuocChon) {
-                        ps2.setString(1, p.getMaPhieuDichVu());
-                        ps2.setString(2, dv[0]);
-                        ps2.setDouble(3, Double.parseDouble(dv[2]));
-                        ps2.addBatch();
-                    }
-                    ps2.executeBatch();
+            try {
+                kiemTraLienKet(con, p);
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setString(1, p.getMaKhachHang());
+                    ps.setString(2, p.getMaThuCung());
+                    ps.setString(3, p.getMaNhanVien());
+                    if (p.getMaLichHen() == null || "Không có".equals(p.getMaLichHen()))
+                        ps.setNull(4, Types.VARCHAR);
+                    else
+                        ps.setString(4, p.getMaLichHen());
+                    ps.setString(5, p.getMaPhieuDichVu());
+                    if (ps.executeUpdate() != 1)
+                        throw new SQLException("Phiếu không tồn tại hoặc đã thanh toán.");
                 }
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM ChiTietDichVu WHERE maPhieuDichVu=?")) {
+                    ps.setString(1, p.getMaPhieuDichVu());
+                    ps.executeUpdate();
+                }
+                chenDichVu(con, p.getMaPhieuDichVu(), dichVuDuocChon);
+                con.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                rollback(con, ex);
+                ex.printStackTrace();
+                return false;
             }
-            con.commit();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             return false;
         }
     }
 
+    /** Xóa phiếu chưa thanh toán và chi tiết một cách nguyên tử. */
     public boolean xoa(String maPhieu) {
-        String sqlChiTiet = "DELETE FROM ChiTietDichVu WHERE maPhieuDichVu = ?";
-        String sqlPhieu = "DELETE FROM PhieuDichVu WHERE maPhieuDichVu = ?";
         try (Connection con = connectDB.getConnection()) {
-            try (PreparedStatement ps1 = con.prepareStatement(sqlChiTiet)) {
-                ps1.setString(1, maPhieu);
-                ps1.executeUpdate();
+            con.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT trangThai FROM PhieuDichVu WITH (UPDLOCK, HOLDLOCK) WHERE maPhieuDichVu=?")) {
+                    ps.setString(1, maPhieu);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next() || rs.getBoolean(1)) {
+                            con.rollback();
+                            return false;
+                        }
+                    }
+                }
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM ChiTietDichVu WHERE maPhieuDichVu=?")) {
+                    ps.setString(1, maPhieu);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM PhieuDichVu WHERE maPhieuDichVu=? AND trangThai=0")) {
+                    ps.setString(1, maPhieu);
+                    if (ps.executeUpdate() != 1)
+                        throw new SQLException("Không xóa được phiếu.");
+                }
+                con.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                rollback(con, ex);
+                ex.printStackTrace();
+                return false;
             }
-            try (PreparedStatement ps2 = con.prepareStatement(sqlPhieu)) {
-                ps2.setString(1, maPhieu);
-                return ps2.executeUpdate() > 0;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             return false;
         }
     }
@@ -176,22 +257,44 @@ public class PhieuDichVuDAO {
                     int num = Integer.parseInt(p.getMaPhieuDichVu().substring(3));
                     if (num > max)
                         max = num;
-                } catch (Exception e) {
+                } catch (NumberFormatException ignored) {
                 }
             }
         }
         return String.format("PDV%03d", max + 1);
     }
 
-    public ArrayList<String> getDanhSachLichHen() {
+    /**
+     * Chỉ lịch chưa hủy và chưa gắn phiếu khác. Khi sửa vẫn hiện lịch đã gắn với
+     * phiếu này.
+     */
+    public ArrayList<String> getDanhSachLichHen(String maPhieuDangSua) {
         ArrayList<String> list = new ArrayList<>();
+        String sql = "SELECT lh.maLichHen FROM LichHen lh "
+                + "WHERE ISNULL(lh.trangThai, N'Xác nhận') <> N'Đã hủy' "
+                + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu p WHERE p.maLichHen = lh.maLichHen "
+                + "AND (? IS NULL OR p.maPhieuDichVu <> ?)) "
+                + "ORDER BY lh.ngayGioHen DESC";
         try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement("SELECT maLichHen FROM LichHen");
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next())
-                list.add(rs.getString(1));
-        } catch (SQLException e) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            if (maPhieuDangSua == null) {
+                ps.setNull(1, Types.VARCHAR);
+                ps.setNull(2, Types.VARCHAR);
+            } else {
+                ps.setString(1, maPhieuDangSua);
+                ps.setString(2, maPhieuDangSua);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next())
+                    list.add(rs.getString(1));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
         return list;
+    }
+
+    public ArrayList<String> getDanhSachLichHen() {
+        return getDanhSachLichHen(null);
     }
 }
