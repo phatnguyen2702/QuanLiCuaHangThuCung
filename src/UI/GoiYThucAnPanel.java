@@ -11,7 +11,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
 import java.math.BigDecimal;
-import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 
@@ -106,21 +105,6 @@ public class GoiYThucAnPanel extends JPanel {
         selectedButton.setText("Giỏ hàng (" + tongSoLuongTrongGio() + ")");
         cards.revalidate();
         cards.repaint();
-    }
-
-    private boolean isFood(SanPham product) {
-        String category = normalize(product.getTenDanhMuc());
-        String name = normalize(product.getTenSanPham());
-        return category.contains("thuc an") || category.contains("thuc-an")
-                || name.contains("thuc an") || name.contains("hat ")
-                || name.contains("pate") || name.contains("snack");
-    }
-
-    private String normalize(String value) {
-        if (value == null)
-            return "";
-        return Normalizer.normalize(value, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
-                .replace('đ', 'd').replace('Đ', 'D').toLowerCase(Locale.ROOT);
     }
 
     private JPanel taoTheSanPham(SanPham product) {

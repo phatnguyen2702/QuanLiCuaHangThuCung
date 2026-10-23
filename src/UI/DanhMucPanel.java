@@ -220,16 +220,13 @@ public class DanhMucPanel extends JPanel {
         }
 
         try {
-            // Thong ke du lieu se bi xoa kem de canh bao cho dung
-            int tongSp = 0, tongHd = 0, tongNhap = 0, tongKk = 0;
+            // Danh muc co san pham khong the xoa de bao toan lich su kho/ban hang.
+            int tongSp = 0;
             StringBuilder ten = new StringBuilder();
 
             for (DanhMuc dm : dsXoa) {
                 int[] c = dao.demLienQuan(dm.getMaDanhMuc());
                 tongSp += c[0];
-                tongHd += c[1];
-                tongNhap += c[2];
-                tongKk += c[3];
                 ten.append("\n  - ").append(dm.getMaDanhMuc())
                    .append(" ").append(dm.getTenDanhMuc());
             }
@@ -239,15 +236,12 @@ public class DanhMucPanel extends JPanel {
                .append(ten);
 
             if (tongSp > 0) {
-                hoi.append("\n\nCÁC DANH MỤC NÀY ĐANG CÓ ").append(tongSp)
-                   .append(" SẢN PHẨM — sẽ bị xóa theo cùng với:")
-                   .append("\n  • ").append(tongNhap).append(" dòng nhập kho")
-                   .append("\n  • ").append(tongHd).append(" dòng hóa đơn")
-                   .append("\n  • ").append(tongKk).append(" dòng kiểm kê")
-                   .append("\nThao tác này không thể hoàn tác.");
+                UIStyle.canhBao(this, "Không thể xóa danh mục đang có " + tongSp
+                        + " sản phẩm. Hãy chuyển sản phẩm sang danh mục khác trước.");
+                return;
             }
 
-            hoi.append("\n\nBạn chắc chắn muốn xóa?");
+            hoi.append("\n\nBạn chắc chắn muốn xóa danh mục rỗng?");
 
             if (!UIStyle.xacNhan(this, hoi.toString())) {
                 return;

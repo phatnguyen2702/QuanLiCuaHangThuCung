@@ -163,54 +163,20 @@ public class DanhMucDAO {
         }
     }
 
-    /**
-     * Xoa danh muc BAT KY (ke ca khi con san pham): xoa luon cac dong
-     * chi tiet hoa don / nhap kho / kiem ke cua san pham thuoc danh muc,
-     * roi xoa san pham, roi xoa danh muc - tat ca trong 1 giao dich.
-     * Phieu nhap / phieu kiem ke bi trong sau khi xoa cung duoc don di.
-     */
+    /** Chỉ xóa danh mục rỗng để không làm mất sản phẩm và lịch sử giao dịch. */
     public boolean xoa(String maDanhMuc) throws SQLException {
-
-        String[] cacLenh = {
-                """
-                DELETE FROM ChiTietHoaDon WHERE maSanPham IN
-                  (SELECT maSanPham FROM SanPham WHERE maDanhMuc = ?)
-                """,
-                """
-                DELETE FROM ChiTietPhieuNhap WHERE maSanPham IN
-                  (SELECT maSanPham FROM SanPham WHERE maDanhMuc = ?)
-                """,
-                """
-                DELETE FROM ChiTietPhieuKiemKe WHERE maSanPham IN
-                  (SELECT maSanPham FROM SanPham WHERE maDanhMuc = ?)
-                """,
-                "DELETE FROM SanPham WHERE maDanhMuc = ?"
-        };
-
         try (Connection con = connectDB.getConnection()) {
-
             con.setAutoCommit(false);
-
             try {
-                for (String lenh : cacLenh) {
-                    try (PreparedStatement ps = con.prepareStatement(lenh)) {
-                        ps.setString(1, maDanhMuc);
-                        ps.executeUpdate();
+                try (PreparedStatement check = con.prepareStatement(
+                        "SELECT COUNT(*) FROM SanPham WHERE maDanhMuc=?")) {
+                    check.setString(1, maDanhMuc);
+                    try (ResultSet rs = check.executeQuery()) {
+                        if (rs.next() && rs.getInt(1) > 0) {
+                            throw new SQLException("Không thể xóa danh mục đang có sản phẩm. Hãy chuyển hoặc xóa sản phẩm trước.");
+                        }
                     }
                 }
-
-                // Don phieu nhap / kiem ke khong con dong chi tiet nao
-                try (Statement st = con.createStatement()) {
-                    st.executeUpdate("""
-                            DELETE FROM PhieuNhapKho WHERE maPhieuNhap NOT IN
-                              (SELECT maPhieuNhap FROM ChiTietPhieuNhap)
-                            """);
-                    st.executeUpdate("""
-                            DELETE FROM PhieuKiemKe WHERE maPhieuKiemKe NOT IN
-                              (SELECT maPhieuKiemKe FROM ChiTietPhieuKiemKe)
-                            """);
-                }
-
                 boolean ok;
                 try (PreparedStatement ps = con.prepareStatement(
                         "DELETE FROM DanhMuc WHERE maDanhMuc = ?")) {

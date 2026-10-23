@@ -260,7 +260,15 @@ public class SanPhamDAO {
                 (tenSanPham == null ? "" : tenSanPham)).toLowerCase(java.util.Locale.ROOT);
         boolean laThucAn = nguon.contains("thức ăn") || nguon.contains("thuc an")
                 || nguon.contains("pate") || nguon.contains("hạt chó") || nguon.contains("hạt mèo");
-        if (!laThucAn) return;
+        if (!laThucAn) {
+            damBaoBangGoiYThucAn();
+            try (Connection con = connectDB.getConnection();
+                 PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
+                ps.setString(1, maSanPham);
+                ps.executeUpdate();
+            }
+            return;
+        }
         String loai = (nguon.contains("chó") || nguon.contains("cho") || nguon.contains("dog")) ? "Chó"
                 : (nguon.contains("mèo") || nguon.contains("meo") || nguon.contains("cat")) ? "Mèo" : null;
         if (loai == null) {
@@ -303,16 +311,25 @@ public class SanPhamDAO {
     }
 
     public boolean xoa(String maSanPham) throws SQLException {
-
-        String sql = "DELETE FROM SanPham WHERE maSanPham = ?";
-
-        try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            ps.setString(1, maSanPham);
-
-            return ps.executeUpdate() > 0;
+        damBaoBangGoiYThucAn();
+        try (Connection con = connectDB.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
+                    ps.setString(1, maSanPham);
+                    ps.executeUpdate();
+                }
+                boolean deleted;
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM SanPham WHERE maSanPham=?")) {
+                    ps.setString(1, maSanPham);
+                    deleted = ps.executeUpdate() > 0;
+                }
+                con.commit();
+                return deleted;
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            }
         }
     }
 

@@ -261,6 +261,26 @@ public class ThanhToanDao {
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
+                // Kiem tra ton ngay trong giao dich va khoa dong san pham den khi hoa don duoc ghi.
+                java.util.Map<String, Integer> soLuongCan = new java.util.LinkedHashMap<>();
+                for (ThanhToan item : chiTiet) {
+                    if (item.getMaSanPham() != null) {
+                        soLuongCan.merge(item.getMaSanPham(), item.getSoLuong(), Integer::sum);
+                    }
+                }
+                String sqlTon = "SELECT " + SanPhamDAO.BIEU_THUC_TON + " AS tonKho FROM SanPham sp WITH (UPDLOCK, HOLDLOCK) WHERE sp.maSanPham=?";
+                try (PreparedStatement psTon = con.prepareStatement(sqlTon)) {
+                    for (var entry : soLuongCan.entrySet()) {
+                        psTon.setString(1, entry.getKey());
+                        try (ResultSet rs = psTon.executeQuery()) {
+                            if (!rs.next() || rs.getInt("tonKho") < entry.getValue()) {
+                                throw new SQLException("Sản phẩm " + entry.getKey()
+                                        + " không đủ tồn kho. Vui lòng tải lại giỏ hàng.");
+                            }
+                        }
+                    }
+                }
+
                 try (PreparedStatement ps = con.prepareStatement(insertHoaDon)) {
                     ps.setString(1, maHoaDon);
                     ps.setTimestamp(2, Timestamp.valueOf(ngayLap));
