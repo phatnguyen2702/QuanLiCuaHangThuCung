@@ -4,7 +4,6 @@ import dao.ThuCungDAO;
 import dao.ThuCungDAO.ChuNuoi;
 import dao.ThuCungDAO.HoSoThuCung;
 import entity.ThuCung;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
