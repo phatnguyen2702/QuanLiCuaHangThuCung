@@ -1,430 +1,626 @@
 package UI;
 
 import dao.ThuCungDAO;
+import dao.ThuCungDAO.ChuNuoi;
+import dao.ThuCungDAO.HoSoThuCung;
 import entity.ThuCung;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
+/**
+ * Quản lý hồ sơ thú cưng: tên thú cưng không bắt buộc, liên kết chủ nuôi đúng
+ * mã,
+ * và hiển thị đầy đủ chi tiết khi người dùng chọn một dòng trong bảng.
+ */
 public class QuanLyThuCung extends JPanel {
+    private static final Color NAVY = new Color(18, 48, 82);
+    private static final Color GREEN = new Color(72, 196, 62);
+    private static final Color BLUE = new Color(91, 180, 235);
+    private static final Color LIGHT_BLUE = new Color(229, 241, 252);
 
-    private final Color NAVY = new Color(18, 48, 82);
-    private final Color GREEN_BTN = new Color(72, 196, 62);
-    private final Color BLUE_BTN = new Color(91, 180, 235);
-    private final Color LIGHT_BLUE = new Color(229, 241, 252);
+    private final ThuCungDAO dao = new ThuCungDAO();
+    private final ArrayList<HoSoThuCung> dsTatCa = new ArrayList<>();
+    private final ArrayList<HoSoThuCung> dsHienThi = new ArrayList<>();
 
-    private JTextField txtTimKiem, txtMaTC, txtHoTen, txtCanNang, txtMaKH, txtGiong;
+    private JTextField txtTimKiem, txtMaTC, txtTenTC, txtCanNang, txtGiong;
+    private JTextField txtTenKhachHang, txtMaKH;
     private JComboBox<String> cboLocGioiTinh, cboLocLoai;
-    private JComboBox<String> cboLoai, cboGioiTinh, cboTrangThai;
-
-    // Đưa Tiêu đề và Nút Lưu lên làm biến toàn cục để dễ cập nhật Text
-    private JLabel lblFormTitle;
-    private JButton btnLuu;
-
+    private JComboBox<String> cboLoai, cboGioiTinh;
+    private JTextField txtTinhTrangLich;
+    private JLabel lblFormTitle, lblChiTietChuNuoi;
+    private JButton btnLuu, btnXoaHoSo, btnBoChon;
+    private JDialog dlgHoSo;
+    private HoSoThuCung hoSoDangSua;
     private JTable table;
     private DefaultTableModel tableModel;
-    private ThuCungDAO dao;
-
+    private ChuNuoi chuDaChon;
+    private boolean dangNapChu = false;
     private boolean isEditMode = false;
 
     public QuanLyThuCung() {
-        dao = new ThuCungDAO();
-        setLayout(new BorderLayout(20, 20));
+        setLayout(new BorderLayout(18, 15));
         setBackground(LIGHT_BLUE);
-        setBorder(new EmptyBorder(20, 25, 20, 25));
+        setBorder(new EmptyBorder(18, 24, 18, 24));
 
-        // Tiêu đề chính
-        JLabel lblTitle = new JLabel("Quản lý hồ sơ thú cưng");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        lblTitle.setBorder(new EmptyBorder(0, 0, 15, 0));
-        add(lblTitle, BorderLayout.NORTH);
-
-        // Chia màn hình làm 2 phần: Trái (Bảng) - Phải (Form)
-        JPanel centerPanel = new JPanel(new BorderLayout(20, 0));
-        centerPanel.setOpaque(false);
-
-        centerPanel.add(createLeftPanel(), BorderLayout.CENTER);
-        centerPanel.add(createRightPanel(), BorderLayout.EAST);
-
-        add(centerPanel, BorderLayout.CENTER);
-        loadData();
+        JPanel pnlDau = new JPanel(new BorderLayout(12, 0));
+        pnlDau.setOpaque(false);
+        JLabel lblTitle = new JLabel("QUẢN LÝ HỒ SƠ THÚ CƯNG");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 25));
+        JButton btnThem = nut("+ Thêm thú cưng", GREEN);
+        btnThem.setPreferredSize(new Dimension(175, 39));
+        btnThem.addActionListener(e -> moDialogHoSo(null));
+        pnlDau.add(lblTitle, BorderLayout.WEST);
+        pnlDau.add(btnThem, BorderLayout.EAST);
+        add(pnlDau, BorderLayout.NORTH);
+        add(createLeftPanel(), BorderLayout.CENTER);
+        lamMoiDanhSach();
+        // Khi quay lại từ Lịch hẹn Spa, tự tải lại trạng thái Có lịch hẹn/Chưa có.
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && isShowing()) {
+                lamMoiDanhSach();
+            }
+        });
     }
 
-    // ================== PANEL TRÁI (BẢNG & LỌC) ==================
     private JPanel createLeftPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(Color.WHITE);
         panel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        // 1. Thanh tìm kiếm & lọc
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        filterPanel.setBackground(Color.WHITE);
-
-        txtTimKiem = new JTextField(15);
-        txtTimKiem.setPreferredSize(new Dimension(200, 35));
-        txtTimKiem.setToolTipText("Mã Thú cưng...");
-
+        JPanel pnlTim = new JPanel(new FlowLayout(FlowLayout.LEFT, 7, 0));
+        pnlTim.setOpaque(false);
+        txtTimKiem = new JTextField(13);
+        txtTimKiem.setPreferredSize(new Dimension(170, 34));
+        txtTimKiem.setToolTipText("Tìm mã/tên/giống thú cưng hoặc tên/SĐT chủ nuôi, không phân biệt dấu");
         cboLocGioiTinh = new JComboBox<>(new String[] { "Giới tính", "Đực", "Cái" });
-        cboLocGioiTinh.setPreferredSize(new Dimension(100, 35));
-
         cboLocLoai = new JComboBox<>(new String[] { "Loại", "Chó", "Mèo", "Chim", "Khác" });
-        cboLocLoai.setPreferredSize(new Dimension(100, 35));
+        cboLocGioiTinh.setPreferredSize(new Dimension(92, 34));
+        cboLocLoai.setPreferredSize(new Dimension(90, 34));
+        JButton btnTim = nut("Tìm kiếm", GREEN);
+        btnTim.addActionListener(e -> locDuLieu());
+        txtTimKiem.addActionListener(e -> locDuLieu());
+        cboLocGioiTinh.addActionListener(e -> locDuLieu());
+        cboLocLoai.addActionListener(e -> locDuLieu());
+        pnlTim.add(txtTimKiem);
+        pnlTim.add(cboLocGioiTinh);
+        pnlTim.add(cboLocLoai);
+        pnlTim.add(btnTim);
+        panel.add(pnlTim, BorderLayout.NORTH);
 
-        JButton btnTimKiem = new JButton("Tìm kiếm");
-        btnTimKiem.setBackground(GREEN_BTN);
-        btnTimKiem.setForeground(Color.WHITE);
-        btnTimKiem.setPreferredSize(new Dimension(100, 35));
-
-        // --- GÁN SỰ KIỆN TÌM KIẾM ---
-        btnTimKiem.addActionListener(e -> timKiem());
-        txtTimKiem.addActionListener(e -> timKiem()); // Cho phép ấn Enter ở ô Text
-        cboLocGioiTinh.addActionListener(e -> timKiem()); // Lọc ngay khi đổi tùy chọn
-        cboLocLoai.addActionListener(e -> timKiem());
-
-        filterPanel.add(txtTimKiem);
-        filterPanel.add(cboLocGioiTinh);
-        filterPanel.add(cboLocLoai);
-        filterPanel.add(btnTimKiem);
-
-        panel.add(filterPanel, BorderLayout.NORTH);
-
-        // 2. Bảng dữ liệu
-        String[] columns = { "Mã TC", "Họ tên TC", "Loại TC", "Trạng thái", "Thao Tác" };
-        tableModel = new DefaultTableModel(columns, 0) {
+        String[] cot = { "Mã TC", "Tên thú cưng", "Loài", "Giống",
+                "Giới tính", "Cân nặng", "Chủ nuôi", "Số điện thoại", "Lịch hẹn" };
+        tableModel = new DefaultTableModel(cot, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 4;
+            public boolean isCellEditable(int r, int c) {
+                return false;
             }
         };
-
         table = new JTable(tableModel);
-        table.setRowHeight(40);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setRowHeight(39);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setBackground(NAVY);
         table.getTableHeader().setForeground(Color.WHITE);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        table.getTableHeader().setPreferredSize(new Dimension(100, 40));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        table.getTableHeader().setPreferredSize(new Dimension(100, 38));
+        int[] rongCot = { 80, 145, 75, 140, 85, 96, 180, 140, 140 };
+        for (int i = 0; i < rongCot.length; i++) {
+            table.getColumnModel().getColumn(i).setPreferredWidth(rongCot[i]);
+        }
+        DefaultTableCellRenderer canGiua = new DefaultTableCellRenderer();
+        canGiua.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int i : new int[] { 0, 2, 4, 5, 8 }) {
+            table.getColumnModel().getColumn(i).setCellRenderer(canGiua);
+        }
+        // Không còn cột Thao tác: toàn bộ nút Lưu / Xóa / Đóng nằm trong modal.
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        table.setToolTipText("Nhấp một lần vào dòng để xem chi tiết, sửa hoặc xóa hồ sơ.");
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (!SwingUtilities.isLeftMouseButton(e))
+                    return;
+                int row = table.rowAtPoint(e.getPoint());
+                if (row < 0)
+                    return;
+                int i = table.convertRowIndexToModel(row);
+                if (i >= 0 && i < dsHienThi.size()) {
+                    moDialogHoSo(dsHienThi.get(i));
+                }
+            }
+        });
+        JScrollPane scrBang = new JScrollPane(table);
+        scrBang.getViewport().setBackground(Color.WHITE);
+        panel.add(scrBang, BorderLayout.CENTER);
 
-        DefaultTableCellRenderer center = new DefaultTableCellRenderer();
-        center.setHorizontalAlignment(SwingConstants.CENTER);
-        table.getColumnModel().getColumn(0).setCellRenderer(center);
-        table.getColumnModel().getColumn(2).setCellRenderer(center);
-        table.getColumnModel().getColumn(3).setCellRenderer(center);
-
-        table.getColumnModel().getColumn(4).setCellRenderer(new ActionButtonRenderer());
-        table.getColumnModel().getColumn(4).setCellEditor(new ActionButtonEditor());
-
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-        // 3. Nút làm mới dưới cùng
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.setBackground(Color.WHITE);
-        JButton btnLamMoi = new JButton("↻ Làm mới");
-        btnLamMoi.setBackground(BLUE_BTN);
-        btnLamMoi.setForeground(Color.WHITE);
+        JPanel pnlDuoi = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        pnlDuoi.setOpaque(false);
+        JButton btnLamMoi = nut("↻ Làm mới", BLUE);
         btnLamMoi.addActionListener(e -> {
-            // Khi bấm Làm Mới, xóa cả bộ lọc và tải lại danh sách gốc
             txtTimKiem.setText("");
             cboLocGioiTinh.setSelectedIndex(0);
             cboLocLoai.setSelectedIndex(0);
-            loadData();
-            resetForm();
+            lamMoiDanhSach();
         });
-        bottomPanel.add(btnLamMoi);
-
-        panel.add(bottomPanel, BorderLayout.SOUTH);
+        pnlDuoi.add(btnLamMoi);
+        panel.add(pnlDuoi, BorderLayout.SOUTH);
         return panel;
     }
 
-    // ================== PANEL PHẢI (FORM THÊM/SỬA) ==================
     private JPanel createRightPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(Color.WHITE);
-        panel.setPreferredSize(new Dimension(400, 0));
-        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        panel.setPreferredSize(new Dimension(670, 610));
+        panel.setBorder(new EmptyBorder(13, 14, 12, 14));
 
-        // Khởi tạo Tiêu đề
         lblFormTitle = new JLabel("Thêm hồ sơ thú cưng", SwingConstants.CENTER);
-        lblFormTitle.setFont(new Font("Segoe UI", Font.PLAIN, 22));
+        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 19));
+        lblFormTitle.setBorder(new EmptyBorder(3, 0, 6, 0));
         panel.add(lblFormTitle, BorderLayout.NORTH);
 
         JPanel pnlForm = new JPanel(new GridBagLayout());
         pnlForm.setBackground(Color.WHITE);
+        pnlForm.setBorder(new EmptyBorder(4, 1, 6, 3));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(10, 5, 10, 5);
+        gbc.insets = new Insets(5, 3, 5, 3);
         gbc.weightx = 1.0;
-
         int row = 0;
-        txtMaTC = createTextField();
+
+        txtMaTC = textField();
         txtMaTC.setEditable(false);
-        addFieldRow(pnlForm, gbc, "Mã thú cưng", txtMaTC, row++);
+        txtMaTC.setBackground(new Color(245, 247, 250));
+        themTruong(pnlForm, gbc, "Mã thú cưng", txtMaTC, row++);
 
-        txtHoTen = createTextField();
-        addFieldRow(pnlForm, gbc, "Họ tên", txtHoTen, row++);
+        txtTenTC = textField();
+        txtTenTC.setToolTipText("Có thể để trống: hệ thống tự tạo từ loài + giống");
+        themTruong(pnlForm, gbc, "Tên thú cưng", txtTenTC, row++);
 
-        cboLoai = new JComboBox<>(new String[] { "Chó", "Mèo", "Chim", "Khác" });
-        cboLoai.setPreferredSize(new Dimension(200, 35));
-        cboLoai.setBackground(Color.WHITE);
-        addFieldRow(pnlForm, gbc, "Loại", cboLoai, row++);
+        cboLoai = combo(new String[] { "Chó", "Mèo", "Chim", "Khác" });
+        themTruong(pnlForm, gbc, "Loại", cboLoai, row++);
+        txtGiong = textField();
+        themTruong(pnlForm, gbc, "Giống", txtGiong, row++);
+        cboGioiTinh = combo(new String[] { "Đực", "Cái" });
+        themTruong(pnlForm, gbc, "Giới tính", cboGioiTinh, row++);
+        txtCanNang = textField();
+        themTruong(pnlForm, gbc, "Cân nặng (kg)", txtCanNang, row++);
 
-        txtGiong = createTextField();
-        addFieldRow(pnlForm, gbc, "Giống", txtGiong, row++);
+        txtTenKhachHang = textField();
+        JButton btnChonKH = nut("Chọn", NAVY);
+        btnChonKH.setPreferredSize(new Dimension(67, 34));
+        btnChonKH.addActionListener(e -> chonKhachHang());
+        JPanel pnlTenKH = new JPanel(new BorderLayout(5, 0));
+        pnlTenKH.setOpaque(false);
+        pnlTenKH.add(txtTenKhachHang, BorderLayout.CENTER);
+        pnlTenKH.add(btnChonKH, BorderLayout.EAST);
+        themTruong(pnlForm, gbc, "Tên khách hàng", pnlTenKH, row++);
+        txtTenKhachHang.setToolTipText("Nhập tên không cần đúng dấu/chữ hoa, hoặc nhấn Chọn");
+        txtTenKhachHang.getDocument().addDocumentListener(new DocumentListener() {
+            private void thayDoi() {
+                if (!dangNapChu) {
+                    chuDaChon = null;
+                    txtMaKH.setText("");
+                    lblChiTietChuNuoi.setText("Chưa xác định chủ nuôi");
+                }
+            }
 
-        cboGioiTinh = new JComboBox<>(new String[] { "Đực", "Cái" });
-        cboGioiTinh.setPreferredSize(new Dimension(200, 35));
-        cboGioiTinh.setBackground(Color.WHITE);
-        addFieldRow(pnlForm, gbc, "Giới tính", cboGioiTinh, row++);
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                thayDoi();
+            }
 
-        txtCanNang = createTextField();
-        addFieldRow(pnlForm, gbc, "Cân nặng (kg)", txtCanNang, row++);
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                thayDoi();
+            }
 
-        txtMaKH = createTextField();
-        addFieldRow(pnlForm, gbc, "Mã khách hàng", txtMaKH, row++);
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                thayDoi();
+            }
+        });
 
-        cboTrangThai = new JComboBox<>(new String[] { "Đang hoạt động", "Không hoạt động" });
-        cboTrangThai.setPreferredSize(new Dimension(200, 35));
-        cboTrangThai.setBackground(Color.WHITE);
-        addFieldRow(pnlForm, gbc, "Trạng thái", cboTrangThai, row++);
+        txtMaKH = textField();
+        txtMaKH.setEditable(false);
+        txtMaKH.setBackground(new Color(245, 247, 250));
+        themTruong(pnlForm, gbc, "Mã khách hàng", txtMaKH, row++);
 
-        panel.add(pnlForm, BorderLayout.CENTER);
+        txtTinhTrangLich = textField();
+        txtTinhTrangLich.setEditable(false);
+        txtTinhTrangLich.setBackground(new Color(245, 247, 250));
+        txtTinhTrangLich.setToolTipText("Tự xác định theo lịch hẹn sắp tới chưa hủy trong SQL Server.");
+        themTruong(pnlForm, gbc, "Lịch hẹn Spa", txtTinhTrangLich, row++);
 
-        // Khởi tạo Nút Lưu
-        btnLuu = new JButton("Thêm Hồ Sơ");
-        btnLuu.setBackground(GREEN_BTN);
-        btnLuu.setForeground(Color.WHITE);
-        btnLuu.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnLuu.setPreferredSize(new Dimension(200, 40));
+        JPanel pnlThongTinChu = new JPanel(new BorderLayout(0, 3));
+        pnlThongTinChu.setOpaque(false);
+        pnlThongTinChu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(212, 223, 233)),
+                new EmptyBorder(7, 9, 7, 9)));
+        JLabel lblNhom = new JLabel("THÔNG TIN CHỦ NUÔI");
+        lblNhom.setForeground(NAVY);
+        lblNhom.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblChiTietChuNuoi = new JLabel("Chưa xác định chủ nuôi");
+        lblChiTietChuNuoi.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        pnlThongTinChu.add(lblNhom, BorderLayout.NORTH);
+        pnlThongTinChu.add(lblChiTietChuNuoi, BorderLayout.CENTER);
+        gbc.gridx = 0;
+        gbc.gridy = row++;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        pnlForm.add(pnlThongTinChu, gbc);
+        gbc.gridwidth = 1;
+
+        // Nhiều trường: cho phép cuộn để không bị cắt khi cửa sổ nhỏ.
+        JScrollPane scrForm = new JScrollPane(pnlForm,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scrForm.setBorder(null);
+        scrForm.getVerticalScrollBar().setUnitIncrement(14);
+        panel.add(scrForm, BorderLayout.CENTER);
+
+        btnLuu = nut("Thêm hồ sơ", GREEN);
+        btnLuu.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnLuu.addActionListener(e -> xuLyLuuDuLieu());
-
-        JPanel pnlBtn = new JPanel();
-        pnlBtn.setBackground(Color.WHITE);
-        pnlBtn.add(btnLuu);
-        panel.add(pnlBtn, BorderLayout.SOUTH);
-
-        resetForm(); // Gọi để sinh mã tự động ban đầu
+        btnXoaHoSo = nut("Xóa hồ sơ", new Color(210, 60, 76));
+        btnXoaHoSo.setPreferredSize(new Dimension(130, 38));
+        btnXoaHoSo.addActionListener(e -> {
+            if (hoSoDangSua != null) {
+                xoaThuCung(hoSoDangSua.thuCung.getMaThuCung());
+            }
+        });
+        btnBoChon = nut("Đóng", new Color(105, 117, 133));
+        btnBoChon.addActionListener(e -> {
+            if (dlgHoSo != null)
+                dlgHoSo.dispose();
+        });
+        btnLuu.setPreferredSize(new Dimension(150, 38));
+        btnBoChon.setPreferredSize(new Dimension(110, 38));
+        JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 9, 0));
+        pnlNut.setOpaque(false);
+        pnlNut.setBorder(new EmptyBorder(6, 2, 0, 2));
+        pnlNut.add(btnLuu);
+        pnlNut.add(btnXoaHoSo);
+        pnlNut.add(btnBoChon);
+        panel.add(pnlNut, BorderLayout.SOUTH);
         return panel;
     }
 
-    private JTextField createTextField() {
-        JTextField txt = new JTextField();
-        txt.setPreferredSize(new Dimension(200, 35));
-        txt.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.BLACK), new EmptyBorder(0, 10, 0, 10)));
-        return txt;
+    private static JTextField textField() {
+        JTextField f = new JTextField();
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setPreferredSize(new Dimension(160, 34));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(145, 162, 180)),
+                new EmptyBorder(0, 8, 0, 8)));
+        return f;
     }
 
-    private void addFieldRow(JPanel panel, GridBagConstraints gbc, String label, JComponent comp, int y) {
-        gbc.gridy = y;
+    private static JComboBox<String> combo(String[] options) {
+        JComboBox<String> c = new JComboBox<>(options);
+        c.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        c.setPreferredSize(new Dimension(160, 34));
+        c.setBackground(Color.WHITE);
+        return c;
+    }
+
+    private static JButton nut(String ten, Color nen) {
+        JButton b = new JButton(ten);
+        b.setBackground(nen);
+        b.setForeground(Color.WHITE);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setFocusPainted(false);
+        b.setPreferredSize(new Dimension(100, 34));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
+    }
+
+    private static void themTruong(JPanel panel, GridBagConstraints gbc, String label, JComponent comp, int row) {
+        gbc.gridy = row;
         gbc.gridx = 0;
-        gbc.weightx = 0.3;
+        gbc.weightx = 0.31;
         JLabel lbl = new JLabel(label);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         panel.add(lbl, gbc);
         gbc.gridx = 1;
-        gbc.weightx = 0.7;
+        gbc.weightx = 0.69;
         panel.add(comp, gbc);
     }
 
-    // =========================================================
-    // XỬ LÝ DỮ LIỆU
-    // =========================================================
+    private void lamMoiDanhSach() {
+        dsTatCa.clear();
+        dsTatCa.addAll(dao.getAllChiTiet());
+        locDuLieu();
+    }
 
-    // Hàm thực hiện việc tìm kiếm và lọc
-    private void timKiem() {
-        String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
-        String gioiTinhLoc = cboLocGioiTinh.getSelectedItem().toString();
-        String loaiLoc = cboLocLoai.getSelectedItem().toString();
+    private static String boDauVaThuong(String s) {
+        if (s == null)
+            return "";
+        String normal = Normalizer.normalize(s, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT);
+        return normal.replace('đ', 'd').trim().replaceAll("\\s+", " ");
+    }
 
-        tableModel.setRowCount(0); // Làm sạch bảng
-
-        for (ThuCung tc : dao.getAll()) {
-            // Lọc mã Thú Cưng (chứa từ khóa tìm kiếm)
-            boolean khopMa = tuKhoa.isEmpty() || tc.getMaThuCung().toLowerCase().contains(tuKhoa);
-
-            // Lọc Giới tính
-            boolean khopGioiTinh = gioiTinhLoc.equals("Giới tính") ||
-                    (tc.getGioiTinh() != null && tc.getGioiTinh().equals(gioiTinhLoc));
-
-            // Lọc Loại thú cưng
-            boolean khopLoai = loaiLoc.equals("Loại") ||
-                    (tc.getLoai() != null && tc.getLoai().equals(loaiLoc));
-
-            // Thỏa mãn toàn bộ điều kiện thì đưa vào bảng
-            if (khopMa && khopGioiTinh && khopLoai) {
-                tableModel.addRow(new Object[] {
-                        tc.getMaThuCung(), tc.getTenThuCung(), tc.getLoai(), tc.getTrangThai(), ""
-                });
-            }
+    private void locDuLieu() {
+        if (tableModel == null)
+            return;
+        String q = boDauVaThuong(txtTimKiem.getText());
+        String gt = String.valueOf(cboLocGioiTinh.getSelectedItem());
+        String loai = String.valueOf(cboLocLoai.getSelectedItem());
+        dsHienThi.clear();
+        tableModel.setRowCount(0);
+        for (HoSoThuCung hs : dsTatCa) {
+            ThuCung tc = hs.thuCung;
+            String haystack = boDauVaThuong(tc.getMaThuCung() + " " + tc.getTenThuCung()
+                    + " " + tc.getLoai() + " " + tc.getGiong() + " "
+                    + hs.tenKhachHang + " " + hs.soDienThoai);
+            if (!haystack.contains(q))
+                continue;
+            if (!"Giới tính".equals(gt) && !gt.equals(tc.getGioiTinh()))
+                continue;
+            if (!"Loại".equals(loai) && !loai.equals(tc.getLoai()))
+                continue;
+            dsHienThi.add(hs);
+            tableModel.addRow(new Object[] {
+                    tc.getMaThuCung(), tc.getTenThuCung(), tc.getLoai(),
+                    tc.getGiong(), tc.getGioiTinh(), String.format(Locale.US, "%.2f kg", tc.getCanNang()),
+                    hs.tenKhachHang == null ? "" : hs.tenKhachHang,
+                    hs.soDienThoai == null ? "" : hs.soDienThoai,
+                    hs.coLichHen ? "Có lịch hẹn" : "Chưa có"
+            });
         }
     }
 
-    private void loadData() {
-        tableModel.setRowCount(0);
-        for (ThuCung tc : dao.getAll()) {
-            tableModel.addRow(new Object[] {
-                    tc.getMaThuCung(), tc.getTenThuCung(), tc.getLoai(), tc.getTrangThai(), ""
-            });
+    private void ganChuNuoi(ChuNuoi kh) {
+        dangNapChu = true;
+        try {
+            txtTenKhachHang.setText(kh == null ? "" : kh.hoTen);
+        } finally {
+            dangNapChu = false;
         }
+        chuDaChon = kh;
+        txtMaKH.setText(kh == null ? "" : kh.maKhachHang);
+        lblChiTietChuNuoi.setText(kh == null ? "Chưa xác định chủ nuôi"
+                : "<html>" + html(kh.hoTen) + "<br>Mã: " + html(kh.maKhachHang)
+                        + " &nbsp;|&nbsp; SĐT: " + html(kh.soDienThoai) + "</html>");
+    }
+
+    private static String html(String s) {
+        return s == null ? ""
+                : s.replace("&", "&amp;")
+                        .replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    /** Chọn chính xác mã khách hàng khi nhiều người trùng tên. */
+    private ChuNuoi chonTrongDanhSach(List<ChuNuoi> ds, String title) {
+        DefaultListModel<ChuNuoi> model = new DefaultListModel<>();
+        for (ChuNuoi c : ds)
+            model.addElement(c);
+        JList<ChuNuoi> list = new JList<>(model);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        if (!ds.isEmpty())
+            list.setSelectedIndex(0);
+        JScrollPane scroll = new JScrollPane(list);
+        scroll.setPreferredSize(new Dimension(485, 230));
+        int ret = JOptionPane.showConfirmDialog(this, scroll, title,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+        return ret == JOptionPane.OK_OPTION ? list.getSelectedValue() : null;
+    }
+
+    private void chonKhachHang() {
+        String tuKhoa = boDauVaThuong(txtTenKhachHang.getText());
+        ArrayList<ChuNuoi> khop = new ArrayList<>();
+        for (ChuNuoi c : dao.getDanhSachChuNuoi()) {
+            if (tuKhoa.isEmpty() || boDauVaThuong(c.hoTen).contains(tuKhoa)
+                    || boDauVaThuong(c.maKhachHang).contains(tuKhoa)
+                    || boDauVaThuong(c.soDienThoai).contains(tuKhoa)) {
+                khop.add(c);
+            }
+        }
+        if (khop.isEmpty()) {
+            canhBao("Không tìm thấy khách hàng. Vui lòng thêm khách hàng trước khi đăng ký thú cưng.");
+            return;
+        }
+        ChuNuoi c = chonTrongDanhSach(khop, "Chọn đúng khách hàng (mã / họ tên / số điện thoại)");
+        if (c != null)
+            ganChuNuoi(c);
+    }
+
+    private ChuNuoi xacDinhChuNuoi() {
+        if (chuDaChon != null && chuDaChon.maKhachHang.equals(txtMaKH.getText())) {
+            return chuDaChon;
+        }
+        String tenNhap = boDauVaThuong(txtTenKhachHang.getText());
+        if (tenNhap.isBlank()) {
+            canhBao("Vui lòng nhập hoặc chọn tên khách hàng.");
+            return null;
+        }
+        ArrayList<ChuNuoi> khop = new ArrayList<>();
+        for (ChuNuoi c : dao.getDanhSachChuNuoi()) {
+            if (boDauVaThuong(c.hoTen).equals(tenNhap))
+                khop.add(c);
+        }
+        if (khop.size() == 1) {
+            ganChuNuoi(khop.get(0));
+            return khop.get(0);
+        }
+        if (khop.size() > 1) {
+            ChuNuoi c = chonTrongDanhSach(khop,
+                    "Có nhiều khách trùng tên, vui lòng chọn theo mã / số điện thoại");
+            if (c != null)
+                ganChuNuoi(c);
+            return c;
+        }
+        canhBao("Chưa tìm được khách hàng có tên này. Bạn có thể nhập không dấu/không đúng hoa thường, "
+                + "nhưng khách hàng phải tồn tại trong hệ thống. Nhấn Chọn để tìm theo tên gần đúng.");
+        return null;
     }
 
     private void resetForm() {
         isEditMode = false;
+        hoSoDangSua = null;
         txtMaTC.setText(dao.taoMaThuCungTuDong());
-        txtHoTen.setText("");
+        txtTenTC.setText("");
         txtGiong.setText("");
         txtCanNang.setText("");
-        txtMaKH.setText("");
         cboLoai.setSelectedIndex(0);
         cboGioiTinh.setSelectedIndex(0);
-        cboTrangThai.setSelectedIndex(0);
-
-        // Đổi lại Text tiêu đề và Nút bấm trực tiếp qua biến toàn cục
-        if (lblFormTitle != null)
-            lblFormTitle.setText("Thêm hồ sơ thú cưng");
-        if (btnLuu != null)
-            btnLuu.setText("Thêm Hồ Sơ");
+        txtTinhTrangLich.setText("Chưa có");
+        ganChuNuoi(null);
+        lblFormTitle.setText("Thêm hồ sơ thú cưng");
+        btnLuu.setText("Thêm hồ sơ");
+        btnLuu.setBackground(GREEN);
+        btnXoaHoSo.setVisible(false);
+        btnBoChon.setEnabled(true);
     }
 
-    private void hienThiThongTinSua(String maTC) {
-        for (ThuCung tc : dao.getAll()) {
-            if (tc.getMaThuCung().equals(maTC)) {
-                isEditMode = true;
-                txtMaTC.setText(tc.getMaThuCung());
-                txtHoTen.setText(tc.getTenThuCung());
-                txtGiong.setText(tc.getGiong() != null ? tc.getGiong() : "");
-                cboLoai.setSelectedItem(tc.getLoai());
-                cboGioiTinh.setSelectedItem(tc.getGioiTinh());
-                txtCanNang.setText(String.valueOf(tc.getCanNang()));
-                txtMaKH.setText(tc.getMaKhachHang() != null ? tc.getMaKhachHang() : "");
-                cboTrangThai.setSelectedItem(tc.getTrangThai());
+    private void hienThongTinChiTiet(HoSoThuCung hs) {
+        ThuCung tc = hs.thuCung;
+        isEditMode = true;
+        txtMaTC.setText(tc.getMaThuCung());
+        txtTenTC.setText(tc.getTenThuCung() == null ? "" : tc.getTenThuCung());
+        cboLoai.setSelectedItem(tc.getLoai());
+        txtGiong.setText(tc.getGiong() == null ? "" : tc.getGiong());
+        cboGioiTinh.setSelectedItem(tc.getGioiTinh());
+        txtCanNang.setText(tc.getCanNang() <= 0 ? "" : String.valueOf(tc.getCanNang()));
+        hoSoDangSua = hs;
+        txtTinhTrangLich.setText(hs.coLichHen ? "Có lịch hẹn" : "Chưa có");
+        ganChuNuoi(new ChuNuoi(tc.getMaKhachHang(), hs.tenKhachHang, hs.soDienThoai));
+        lblFormTitle.setText("Thông tin chi tiết thú cưng");
+        btnLuu.setText("Lưu thay đổi");
+        btnLuu.setBackground(NAVY);
+        btnXoaHoSo.setVisible(true);
+        btnBoChon.setEnabled(true);
+    }
 
-                // Đổi Text tiêu đề và Nút bấm sang chế độ Cập nhật
-                if (lblFormTitle != null)
-                    lblFormTitle.setText("Cập nhật hồ sơ");
-                if (btnLuu != null)
-                    btnLuu.setText("Cập nhật");
-                break;
-            }
-        }
+    /**
+     * Form thêm/sửa được hiển thị trong modal, bảng danh sách chiếm hết màn hình.
+     */
+    private void moDialogHoSo(HoSoThuCung hoSo) {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        dlgHoSo = new JDialog(owner,
+                hoSo == null ? "Thêm hồ sơ thú cưng"
+                        : "Chi tiết / Sửa thú cưng - "
+                                + hoSo.thuCung.getMaThuCung(),
+                Dialog.ModalityType.APPLICATION_MODAL);
+        dlgHoSo.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dlgHoSo.setContentPane(createRightPanel());
+        if (hoSo == null)
+            resetForm();
+        else
+            hienThongTinChiTiet(hoSo);
+        dlgHoSo.setSize(740, 690);
+        dlgHoSo.setMinimumSize(new Dimension(610, 560));
+        dlgHoSo.setLocationRelativeTo(this);
+        dlgHoSo.getRootPane().setDefaultButton(btnLuu);
+        dlgHoSo.setVisible(true);
+        dlgHoSo = null;
+    }
+
+    private void canhBao(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
     }
 
     private void xuLyLuuDuLieu() {
-        try {
-            if (txtHoTen.getText().trim().isEmpty() || txtCanNang.getText().trim().isEmpty()
-                    || txtMaKH.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!");
-                return;
-            }
-            double canNang = Double.parseDouble(txtCanNang.getText().replace("kg", "").trim());
-
-            ThuCung tc = new ThuCung(
-                    txtMaTC.getText(), txtHoTen.getText().trim(), cboLoai.getSelectedItem().toString(),
-                    txtGiong.getText().trim(), cboGioiTinh.getSelectedItem().toString(),
-                    canNang, txtMaKH.getText().trim(), cboTrangThai.getSelectedItem().toString());
-
-            boolean success = isEditMode ? dao.sua(tc) : dao.them(tc);
-
-            if (success) {
-                JOptionPane.showMessageDialog(this, isEditMode ? "Cập nhật thành công!" : "Thêm mới thành công!");
-                timKiem(); // Làm mới lại danh sách nhưng vẫn giữ các filter đang chọn
-                resetForm();
-            } else {
-                JOptionPane.showMessageDialog(this, "Thao tác thất bại. Hãy kiểm tra Mã Khách Hàng có tồn tại không!",
-                        "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Cân nặng phải là một con số!");
+        String loai = String.valueOf(cboLoai.getSelectedItem());
+        String giong = txtGiong.getText().trim();
+        String ten = txtTenTC.getText().trim();
+        if (ten.isEmpty()) {
+            ten = loai + " - " + (giong.isEmpty() ? "Chưa rõ giống" : giong);
         }
+        if (ten.length() > 50) {
+            canhBao("Tên thú cưng không được quá 50 ký tự.");
+            return;
+        }
+        if (giong.length() > 25) {
+            canhBao("Giống thú cưng không được quá 25 ký tự.");
+            return;
+        }
+        String chuoiCanNang = txtCanNang.getText().trim().replace(',', '.');
+        double canNang;
+        try {
+            canNang = Double.parseDouble(chuoiCanNang);
+        } catch (NumberFormatException ex) {
+            canhBao("Vui lòng nhập cân nặng là số, ví dụ 3.5 (kg).");
+            return;
+        }
+        if (!Double.isFinite(canNang) || canNang <= 0 || canNang > 999.99) {
+            canhBao("Cân nặng phải lớn hơn 0 và không quá 999,99 kg.");
+            return;
+        }
+        ChuNuoi c = xacDinhChuNuoi();
+        if (c == null)
+            return;
+
+        // Không chuyển chủ nuôi khi đã có lịch sử nghiệp vụ gắn với thú cưng.
+        if (isEditMode) {
+            for (HoSoThuCung cu : dsTatCa) {
+                if (cu.thuCung.getMaThuCung().equals(txtMaTC.getText())
+                        && !cu.thuCung.getMaKhachHang().equals(c.maKhachHang)) {
+                    if (dao.daCoLichSu(txtMaTC.getText())) {
+                        canhBao("Thú cưng đã có lịch hẹn, phiếu dịch vụ hoặc hóa đơn. "
+                                + "Không thể đổi chủ trực tiếp vì sẽ sai lịch sử. "
+                                + "Vui lòng giữ chủ cũ và lập hồ sơ chuyển chủ riêng nếu cần.");
+                        return;
+                    }
+                    int xacNhan = JOptionPane.showConfirmDialog(this,
+                            "Bạn đang đổi chủ nuôi của thú cưng chưa có lịch sử. Tiếp tục?",
+                            "Xác nhận đổi chủ", JOptionPane.YES_NO_OPTION,
+                            JOptionPane.WARNING_MESSAGE);
+                    if (xacNhan != JOptionPane.YES_OPTION)
+                        return;
+                }
+            }
+        }
+        // Giữ nguyên trạng thái hồ sơ cũ; "Có lịch hẹn" được tính từ LichHen,
+        // không ghi đè vào ThuCung.trangThai.
+        String trangThaiHoSo = isEditMode && hoSoDangSua != null
+                ? hoSoDangSua.thuCung.getTrangThai()
+                : "Đang theo dõi";
+        ThuCung tc = new ThuCung(txtMaTC.getText(), ten, loai, giong,
+                String.valueOf(cboGioiTinh.getSelectedItem()), canNang,
+                c.maKhachHang, trangThaiHoSo);
+        boolean thanhCong = isEditMode ? dao.sua(tc) : dao.them(tc);
+        if (!thanhCong) {
+            JOptionPane.showMessageDialog(this,
+                    "Không lưu được hồ sơ. Hãy kiểm tra mã khách hàng, kết nối SQL Server và thông báo Console.",
+                    "Lưu thất bại", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        JOptionPane.showMessageDialog(this,
+                isEditMode ? "Đã cập nhật hồ sơ thú cưng." : "Đã thêm hồ sơ thú cưng.");
+        lamMoiDanhSach();
+        if (dlgHoSo != null)
+            dlgHoSo.dispose();
     }
 
     private void xoaThuCung(String maTC) {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc muốn xóa thú cưng " + maTC
-                        + "?\nKhuyến nghị: Chuyển Trạng thái sang 'Không hoạt động' thay vì xóa vĩnh viễn.",
-                "Xác nhận", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            if (dao.xoa(maTC)) {
-                JOptionPane.showMessageDialog(this, "Đã xóa thú cưng!");
-                timKiem(); // Gọi tìm kiếm để giữ nguyên trạng thái filter đang áp dụng
-                resetForm();
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "Không thể xóa! Thú cưng này đang có dữ liệu trong Lịch Hẹn hoặc Dịch Vụ.", "Lỗi Ràng Buộc",
-                        JOptionPane.ERROR_MESSAGE);
-            }
+        int ret = JOptionPane.showConfirmDialog(this,
+                "Xóa thú cưng " + maTC + "?\nHồ sơ đã có lịch hẹn, phiếu dịch vụ "
+                        + "hoặc hóa đơn sẽ không thể xóa để giữ lịch sử.",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (ret != JOptionPane.YES_OPTION)
+            return;
+        if (dao.xoa(maTC)) {
+            JOptionPane.showMessageDialog(this, "Đã xóa hồ sơ thú cưng.");
+            lamMoiDanhSach();
+            if (dlgHoSo != null)
+                dlgHoSo.dispose();
+        } else {
+            canhBao("Không thể xóa hồ sơ có lịch hẹn, phiếu dịch vụ hoặc hóa đơn. "
+                    + "Hãy giữ hồ sơ để bảo toàn lịch sử nghiệp vụ.");
         }
     }
 
-    // =========================================================
-    // LỚP VẼ VÀ BẮT SỰ KIỆN NÚT SỬA/XÓA TRONG BẢNG
-    // =========================================================
-    private class ActionButtonRenderer extends JPanel implements TableCellRenderer {
-        public ActionButtonRenderer() {
-            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-            setOpaque(true);
-            JButton btnEdit = new JButton("Sửa");
-            btnEdit.setBackground(NAVY);
-            btnEdit.setForeground(Color.WHITE);
-            JButton btnDelete = new JButton("Xóa");
-            btnDelete.setBackground(new Color(220, 53, 69));
-            btnDelete.setForeground(Color.WHITE);
-            add(btnEdit);
-            add(btnDelete);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
-                int row, int column) {
-            setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
-            return this;
-        }
-    }
-
-    private class ActionButtonEditor extends AbstractCellEditor implements TableCellEditor {
-        private JPanel panel;
-        private String currentMaTC;
-
-        public ActionButtonEditor() {
-            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
-            panel.setBackground(Color.WHITE);
-
-            JButton btnEdit = new JButton("Sửa");
-            btnEdit.setBackground(NAVY);
-            btnEdit.setForeground(Color.WHITE);
-            btnEdit.addActionListener(e -> {
-                fireEditingStopped();
-                hienThiThongTinSua(currentMaTC);
-            });
-
-            JButton btnDelete = new JButton("Xóa");
-            btnDelete.setBackground(new Color(220, 53, 69));
-            btnDelete.setForeground(Color.WHITE);
-            btnDelete.addActionListener(e -> {
-                fireEditingStopped();
-                xoaThuCung(currentMaTC);
-            });
-
-            panel.add(btnEdit);
-            panel.add(btnDelete);
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
-                int column) {
-            currentMaTC = table.getValueAt(row, 0).toString();
-            panel.setBackground(table.getSelectionBackground());
-            return panel;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            return "";
-        }
-    }
 }

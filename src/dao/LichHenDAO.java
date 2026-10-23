@@ -14,9 +14,11 @@ public class LichHenDAO {
     public ArrayList<String> getDanhSachDichVu() {
         ArrayList<String> list = new ArrayList<>();
         String sql = "SELECT tenDichVu FROM DichVu ORDER BY tenDichVu";
-        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(rs.getString(1));
+            while (rs.next())
+                list.add(rs.getString(1));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -29,7 +31,7 @@ public class LichHenDAO {
     public ArrayList<LichHen> getAll() {
         ArrayList<LichHen> list = new ArrayList<>();
 
-        String sql = "SELECT lh.maLichHen, lh.ngayGioHen, lh.ghiChu, " +
+        String sql = "SELECT lh.maLichHen, lh.ngayGioHen, lh.ghiChu, lh.trangThai, " +
                 "lh.maKhachHang, kh.hoTen as tenKhachHang, " +
                 "lh.maThuCung, tc.tenThuCung, tc.giong, " +
                 "lh.maNhanVien, nv.hoTen as tenNhanVien " +
@@ -63,8 +65,9 @@ public class LichHenDAO {
                 lh.setMaNhanVien(rs.getString("maNhanVien"));
                 lh.setTenNhanVien(rs.getString("tenNhanVien"));
 
-                // Mặc định do DB không có cột trangThai
-                lh.setTrangThai("Xác nhận");
+                lh.setTrangThai(rs.getString("trangThai") == null
+                        ? "Xác nhận"
+                        : rs.getString("trangThai"));
 
                 list.add(lh);
             }
@@ -74,15 +77,26 @@ public class LichHenDAO {
         return list;
     }
 
-    // =========================================================
-    // XÓA LỊCH HẸN
-    // =========================================================
-    public boolean xoa(String maLichHen) {
-        String sql = "DELETE FROM LichHen WHERE maLichHen = ?";
+    /** Dùng khi chọn lịch hẹn trong phiếu dịch vụ. */
+    public LichHen timTheoMa(String ma) {
+        if (ma == null || ma.isBlank())
+            return null;
+        for (LichHen lh : getAll()) {
+            if (ma.equals(lh.getMaLichHen()))
+                return lh;
+        }
+        return null;
+    }
+
+    /** Hủy mềm để bảo toàn lịch sử, không hủy lịch đã có phiếu dịch vụ. */
+    public boolean huy(String maLichHen) {
+        String sql = "UPDATE LichHen SET trangThai = N'Đã hủy' "
+                + "WHERE maLichHen = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy' "
+                + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu p WHERE p.maLichHen = LichHen.maLichHen)";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maLichHen);
-            return ps.executeUpdate() > 0;
+            return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -90,10 +104,20 @@ public class LichHenDAO {
     }
 
     // =========================================================
+    // XÓA LỊCH HẸN
+    // =========================================================
+    /** Tên phương thức tương thích code cũ; luôn hủy mềm, không DELETE. */
+    public boolean xoa(String maLichHen) {
+        return huy(maLichHen);
+    }
+
+    // =========================================================
     // THÊM LỊCH HẸN
     // =========================================================
     public boolean them(LichHen lh) {
-        String sql = "INSERT INTO LichHen (maLichHen, ngayGioHen, ghiChu, maKhachHang, maNhanVien, maThuCung) VALUES (?, ?, ?, ?, ?, ?)";
+        if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
+            return false;
+        String sql = "INSERT INTO LichHen (maLichHen, ngayGioHen, ghiChu, maKhachHang, maNhanVien, maThuCung, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, lh.getMaLichHen());
@@ -102,6 +126,7 @@ public class LichHenDAO {
             ps.setString(4, lh.getMaKhachHang());
             ps.setString(5, lh.getMaNhanVien());
             ps.setString(6, lh.getMaThuCung());
+            ps.setString(7, lh.getTrangThai() == null ? "Xác nhận" : lh.getTrangThai());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -113,7 +138,10 @@ public class LichHenDAO {
     // SỬA LỊCH HẸN
     // =========================================================
     public boolean sua(LichHen lh) {
-        String sql = "UPDATE LichHen SET ngayGioHen = ?, ghiChu = ?, maKhachHang = ?, maNhanVien = ?, maThuCung = ? WHERE maLichHen = ?";
+        if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
+            return false;
+        String sql = "UPDATE LichHen SET ngayGioHen = ?, ghiChu = ?, maKhachHang = ?, maNhanVien = ?, maThuCung = ? "
+                + "WHERE maLichHen = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setTimestamp(1, java.sql.Timestamp.valueOf(lh.getNgayGioHen()));
@@ -125,6 +153,21 @@ public class LichHenDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean thuCungThuocKhach(String maTC, String maKH) {
+        String sql = "SELECT 1 FROM ThuCung WHERE maThuCung = ? AND maKhachHang = ?";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maTC);
+            ps.setString(2, maKH);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             return false;
         }
     }
@@ -154,6 +197,25 @@ public class LichHenDAO {
                 list.add(new String[] { rs.getString(1), rs.getString(2) });
             }
         } catch (SQLException e) {
+        }
+        return list;
+    }
+
+    /** Chỉ hiển thị thú cưng thuộc khách hàng đang chọn. */
+    public ArrayList<String[]> getDanhSachThuCungTheoKhachHang(String maKhachHang) {
+        ArrayList<String[]> list = new ArrayList<>();
+        if (maKhachHang == null || maKhachHang.isBlank())
+            return list;
+        String sql = "SELECT maThuCung, tenThuCung FROM ThuCung WHERE maKhachHang = ? ORDER BY tenThuCung";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maKhachHang);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next())
+                    list.add(new String[] { rs.getString(1), rs.getString(2) });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return list;
     }
