@@ -1128,11 +1128,19 @@ public class QuanLyThanhToan extends JPanel {
             Files.write(file, noiDung.getBytes(StandardCharsets.UTF_8));
             JOptionPane.showMessageDialog(
                     this,
+<<<<<<< HEAD
                     "Đã lưu hóa đơn TXT:\n" + file.toAbsolutePath(),
                     "Xuất hóa đơn thành công",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
             hienLoi("Không thể xuất hóa đơn TXT: " + e.getMessage());
+=======
+                    "Đã lưu hóa đơn:\n" + file.toAbsolutePath(),
+                    "Xuất hóa đơn thành công",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException e) {
+            hienLoi("Không thể xuất hóa đơn: " + e.getMessage());
+>>>>>>> 37efbabb3f5306c168f851f524a6bd75c2d5ac4f
         }
     }
 
@@ -1149,8 +1157,13 @@ public class QuanLyThanhToan extends JPanel {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
                 null,
+<<<<<<< HEAD
                 new Object[] { "Xuất hóa đơn TXT", "Đóng" },
                 "Xuất hóa đơn TXT");
+=======
+                new Object[] { "Xuất hóa đơn", "Đóng" },
+                "Xuất hóa đơn");
+>>>>>>> 37efbabb3f5306c168f851f524a6bd75c2d5ac4f
         if (action == 0) {
             xuatHoaDonTxt(noiDung, maHoaDon);
         }

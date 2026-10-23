@@ -75,8 +75,6 @@ public class TrangChu extends JFrame {
     // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
     private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
-    private TraCuuKhoPanel pnlTraCuuNhapKho;
-    private TraCuuKhoPanel pnlTraCuuKiemKe;
     private ThongKeDoanhThu pnlThongKeDoanhThu;
     private QuanLyThanhToan pnlThanhToan;
     private final javax.swing.Timer tmrDongHo;
@@ -175,12 +173,12 @@ public class TrangChu extends JFrame {
                 napLai[tab] = p::napLai;
             }
             case 2 -> {
-                NhapKhoPanel p = new NhapKhoPanel(this::moTraCuuNhapKho);
+                NhapKhoPanel p = new NhapKhoPanel();
                 arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
             default -> {
-                KiemKePanel p = new KiemKePanel(this::moTraCuuKiemKe);
+                KiemKePanel p = new KiemKePanel();
                 arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
@@ -250,6 +248,7 @@ public class TrangChu extends JFrame {
         }
     }
 
+<<<<<<< HEAD
     private void moTraCuuNhapKho() {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
                 () -> pnlTraCuuNhapKho = new TraCuuKho(
@@ -264,6 +263,8 @@ public class TrangChu extends JFrame {
         if (pnlTraCuuKiemKe != null) pnlTraCuuKiemKe.lamMoi();
     }
 
+=======
+>>>>>>> 37efbabb3f5306c168f851f524a6bd75c2d5ac4f
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
                 () -> pnlThanhToan = new QuanLyThanhToan(maNV,
@@ -480,9 +481,9 @@ public class TrangChu extends JFrame {
 
     private JPopupMenu taoMenuTimKiem() {
         JPopupMenu p = new JPopupMenu();
+        // Menu Tìm kiếm chỉ dành cho tra cứu lịch sử hóa đơn.
+        // Các màn hình khách hàng/sản phẩm/thú cưng/lịch hẹn vẫn ở Danh mục và Xử lý.
         themMuc(p, "Tra cứu lịch sử hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
-        themMuc(p, "Tra cứu nhập kho", btnTimKiem, this::moTraCuuNhapKho);
-        themMuc(p, "Tra cứu kiểm kê kho", btnTimKiem, this::moTraCuuKiemKe);
         return p;
     }
 

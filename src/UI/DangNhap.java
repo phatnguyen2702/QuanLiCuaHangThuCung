@@ -279,7 +279,7 @@ public class DangNhap extends JFrame {
                 card.setBackground(Color.WHITE);
 
                 card.setPreferredSize(
-                                new Dimension(350, 355));
+                                new Dimension(360, 395));
 
                 card.setBorder(
                                 new EmptyBorder(
@@ -438,8 +438,8 @@ public class DangNhap extends JFrame {
 
                 card.add(txtMatKhau);
 
-                card.add(
-                                Box.createVerticalStrut(30));
+                // Khoang cach giua truong mat khau va nut dang nhap.
+                card.add(Box.createVerticalStrut(20));
 
                 // =========================
                 // BUTTON
@@ -485,8 +485,100 @@ public class DangNhap extends JFrame {
         // =========================================================
         // XU LY DANG NHAP
         // =========================================================
-       private void xuLyDangNhap() {
-    this.dispose();
-    new TrangChu("NV001", "Dang Dinh An", "Quan ly").setVisible(true);
-}
+        private void xuLyDangNhap() {
+
+                String taiKhoan = txtTaiKhoan.getText()
+                                .trim()
+                                .toLowerCase();
+
+                String matKhau = new String(
+                                txtMatKhau.getPassword());
+
+                // =========================
+                // KIEM TRA TAI KHOAN
+                // =========================
+
+                if (taiKhoan.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui lòng nhập tài khoản!",
+                                        "Thông báo",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                        txtTaiKhoan.requestFocus();
+
+                        return;
+                }
+
+                // =========================
+                // KIEM TRA MAT KHAU
+                // =========================
+
+                if (matKhau.isEmpty()) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Vui lòng nhập mật khẩu!",
+                                        "Thong bao",
+                                        JOptionPane.WARNING_MESSAGE);
+
+                        txtMatKhau.requestFocus();
+
+                        return;
+                }
+
+                // =========================
+                // KIEM TRA DATABASE
+                // =========================
+
+                TaiKhoan tk = null;
+
+                for (TaiKhoan temp : taiKhoanDAO.getAll()) {
+
+                        String taiKhoanDB = taoTaiKhoanKhongDau(
+                                        temp.getHoTen(),
+                                        temp.getMaNhanVien());
+
+                        if (taiKhoanDB.equals(taiKhoan)
+                                        && temp.getMatKhau().equals(matKhau)) {
+
+                                tk = temp;
+
+                                break;
+                        }
+                }
+
+                // =========================
+                // DANG NHAP THANH CONG
+                // =========================
+
+                if (tk != null) {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Đăng nhập thành công!",
+                                        "Thông báo",
+                                        JOptionPane.INFORMATION_MESSAGE);
+
+                        dispose();
+
+                        new TrangChu(
+                                        tk.getMaNhanVien(),
+                                        tk.getHoTen(),
+                                        tk.getVaiTro()).setVisible(true);
+
+                } else {
+
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Tài khoản hoặc mật khẩu không chính xác!",
+                                        "Đăng nhập thất bại",
+                                        JOptionPane.ERROR_MESSAGE);
+
+                        txtMatKhau.selectAll();
+
+                        txtMatKhau.requestFocus();
+                }
+        }
 }
