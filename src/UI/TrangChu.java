@@ -75,6 +75,8 @@ public class TrangChu extends JFrame {
     // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
     private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
+    private TraCuuKhoPanel pnlTraCuuNhapKho;
+    private TraCuuKhoPanel pnlTraCuuKiemKe;
     private ThongKeDoanhThu pnlThongKeDoanhThu;
     private QuanLyThanhToan pnlThanhToan;
     private final javax.swing.Timer tmrDongHo;
@@ -173,12 +175,12 @@ public class TrangChu extends JFrame {
                 napLai[tab] = p::napLai;
             }
             case 2 -> {
-                NhapKhoPanel p = new NhapKhoPanel();
+                NhapKhoPanel p = new NhapKhoPanel(this::moTraCuuNhapKho);
                 arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
             default -> {
-                KiemKePanel p = new KiemKePanel();
+                KiemKePanel p = new KiemKePanel(this::moTraCuuKiemKe);
                 arrPnlManHinhKho[tab] = p;
                 napLai[tab] = p::napLai;
             }
@@ -246,6 +248,20 @@ public class TrangChu extends JFrame {
                 baoLoiMoManHinh("Tra cứu lịch sử hóa đơn", ex);
             }
         }
+    }
+
+    private void moTraCuuNhapKho() {
+        hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
+                () -> pnlTraCuuNhapKho = new TraCuuKho(
+                        () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2))));
+        if (pnlTraCuuNhapKho != null) pnlTraCuuNhapKho.lamMoi();
+    }
+
+    private void moTraCuuKiemKe() {
+        hienManHinh("tracuukkkho", "Tra cứu kiểm kê kho", btnTimKiem,
+                () -> pnlTraCuuKiemKe = new TraCuuKKKho(
+                        () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(3))));
+        if (pnlTraCuuKiemKe != null) pnlTraCuuKiemKe.lamMoi();
     }
 
     private void moThanhToan() {
@@ -464,9 +480,9 @@ public class TrangChu extends JFrame {
 
     private JPopupMenu taoMenuTimKiem() {
         JPopupMenu p = new JPopupMenu();
-        // Menu Tìm kiếm chỉ dành cho tra cứu lịch sử hóa đơn.
-        // Các màn hình khách hàng/sản phẩm/thú cưng/lịch hẹn vẫn ở Danh mục và Xử lý.
         themMuc(p, "Tra cứu lịch sử hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
+        themMuc(p, "Tra cứu nhập kho", btnTimKiem, this::moTraCuuNhapKho);
+        themMuc(p, "Tra cứu kiểm kê kho", btnTimKiem, this::moTraCuuKiemKe);
         return p;
     }
 
@@ -1114,7 +1130,7 @@ public class TrangChu extends JFrame {
                           <li><b>Hệ thống:</b> quản lý tài khoản nhân viên, quản lý ca làm, đăng xuất và quay về trang chủ.</li>
                           <li><b>Danh mục:</b> quản lý danh mục sản phẩm, sản phẩm, khách hàng và thú cưng.</li>
                           <li><b>Nghiệp vụ:</b> các thao tác vận hành cửa hàng như nhập kho, kiểm kê, lịch hẹn Spa, phiếu dịch vụ, thanh toán, voucher và phân ca nhân viên.</li>
-                          <li><b>Tìm kiếm:</b> chỉ tra cứu lịch sử hóa đơn (xem chi tiết, tìm theo mã hóa đơn hoặc thông tin khách hàng và xuất hóa đơn).</li>
+                          <li><b>Tìm kiếm:</b> tra cứu lịch sử hóa đơn, phiếu nhập kho và phiếu kiểm kê kho; xem chi tiết và lọc theo thông tin liên quan.</li>
                           <li><b>Thống kê:</b> thống kê doanh thu và thống kê lượt mua từ dữ liệu hóa đơn.</li>
                         </ul>
                         <h3 style='color:#123052;'>Khu vực trong trang chủ</h3>

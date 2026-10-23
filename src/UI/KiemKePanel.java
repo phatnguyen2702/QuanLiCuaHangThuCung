@@ -23,6 +23,7 @@ import java.util.List;
 public class KiemKePanel extends JPanel {
 
     private final KiemKeDAO dao = new KiemKeDAO();
+    private final Runnable moTraCuu;
 
     private final DefaultTableModel model = new DefaultTableModel(
             new String[] { "Mã SP", "Tên sản phẩm", "Tồn hệ thống",
@@ -52,6 +53,11 @@ public class KiemKePanel extends JPanel {
     private String maPhieu = "";
 
     public KiemKePanel() {
+        this(() -> { });
+    }
+
+    public KiemKePanel(Runnable moTraCuu) {
+        this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
         setBackground(UIStyle.LIGHT_BLUE);
@@ -87,23 +93,23 @@ public class KiemKePanel extends JPanel {
         lbTieuDe.setFont(UIStyle.font(Font.BOLD, 26));
 
         JButton btnPhieuMoi = UIStyle.nutPhu("Phiếu mới");
-        JButton btnLichSu = UIStyle.nutPhu("Lịch sử phiếu");
+        JButton btnLichSu = UIStyle.nutPhu("Phiếu nháp");
         JButton btnLuuNhap = UIStyle.nutPhu("Lưu nháp");
-        JButton btnChot = UIStyle.nutXanh("Chốt kiểm kê");
         JButton btnPdf = UIStyle.nutPhu("Xuất phiếu kiểm kê");
+        JButton btnTraCuu = UIStyle.nutPhu("Tra cứu kiểm kê");
         btnPdf.addActionListener(e -> UIStyle.xuatPdf(this, "Phiếu kiểm kê kho", bang));
+        btnTraCuu.addActionListener(e -> moTraCuu.run());
         btnPhieuMoi.addActionListener(e -> hoiPhieuMoi());
         btnLichSu.addActionListener(e -> xemLichSu());
         btnLuuNhap.addActionListener(e -> luuNhap());
-        btnChot.addActionListener(e -> chot());
 
         JPanel nut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         nut.setOpaque(false);
         nut.add(btnPhieuMoi);
         nut.add(btnLichSu);
         nut.add(btnLuuNhap);
-        nut.add(btnChot);
         nut.add(btnPdf);
+        nut.add(btnTraCuu);
 
         JPanel hang = new JPanel(new BorderLayout());
         hang.setOpaque(false);
@@ -135,9 +141,11 @@ public class KiemKePanel extends JPanel {
 
         JButton btnTim = UIStyle.nutChinh("Tìm");
         JButton btnNhap = UIStyle.nutChinh("Nhập số liệu kiểm");
+        JButton btnChot = UIStyle.nutXanh("Chốt kiểm kê");
         btnTim.addActionListener(e -> veLaiBang());
         txtTim.addActionListener(e -> veLaiBang());
         btnNhap.addActionListener(e -> nhapSoLieu());
+        btnChot.addActionListener(e -> chot());
 
         JPanel thanhCongCu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         thanhCongCu.setOpaque(false);
@@ -183,6 +191,10 @@ public class KiemKePanel extends JPanel {
 
         the.add(thanhCongCu, BorderLayout.NORTH);
         the.add(UIStyle.cuon(bang), BorderLayout.CENTER);
+        JPanel hanhDong = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 2));
+        hanhDong.setOpaque(false);
+        hanhDong.add(btnChot);
+        the.add(hanhDong, BorderLayout.SOUTH);
 
         return the;
     }
@@ -434,9 +446,8 @@ public class KiemKePanel extends JPanel {
 
     private void xemLichSu() {
         try {
-            ArrayList<PhieuKiemKe> ds = dao.dsPhieu();
-            String[] colsPhieu = { "Mã phiếu", "Trạng thái", "Thời điểm kiểm kê", "Người lập", "Người xác nhận",
-                    "Lý do chênh lệch" };
+            ArrayList<PhieuKiemKe> ds = dao.dsPhieuNhap();
+            String[] colsPhieu = { "Mã phiếu", "Trạng thái", "Thời điểm kiểm kê", "Mã NV lập" };
             DefaultTableModel modelPhieu = new DefaultTableModel(colsPhieu, 0) {
                 @Override
                 public boolean isCellEditable(int row, int col) {
@@ -446,14 +457,12 @@ public class KiemKePanel extends JPanel {
             for (PhieuKiemKe p : ds)
                 modelPhieu.addRow(new Object[] {
                         p.getMaPhieuKiemKe(), p.isTrangThai() ? "Đã chốt" : "Nháp",
-                        dinhDangGio(p.getNgayBatDau()), p.getMaNhanVien(),
-                        p.getMaNhanVienXacNhan() == null ? "—" : p.getMaNhanVienXacNhan(),
-                        p.getLyDoChenhLech() == null || p.getLyDoChenhLech().isBlank() ? "—" : p.getLyDoChenhLech()
+                        dinhDangGio(p.getNgayBatDau()), p.getMaNhanVien()
                 });
             JTable bangPhieu = new JTable(modelPhieu);
             UIStyle.taoBang(bangPhieu, 0);
             bangPhieu.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-            int[] rongCot = { 95, 80, 170, 100, 120, 280 };
+            int[] rongCot = { 95, 80, 170, 105 };
             for (int i = 0; i < rongCot.length; i++)
                 bangPhieu.getColumnModel().getColumn(i).setPreferredWidth(rongCot[i]);
 
@@ -467,10 +476,6 @@ public class KiemKePanel extends JPanel {
             JTable bangChiTiet = new JTable(modelChiTiet);
             UIStyle.taoBang(bangChiTiet, 2, 3, 4);
             JLabel lbThongTin = new JLabel("Chọn một phiếu để xem chi tiết.");
-            JTextArea txtLyDo = new JTextArea(2, 30);
-            txtLyDo.setLineWrap(true);
-            txtLyDo.setWrapStyleWord(true);
-            txtLyDo.setEditable(false);
             JButton tiepTuc = UIStyle.nutChinh("Tiếp tục phiếu nháp");
             tiepTuc.setEnabled(false);
 
@@ -478,10 +483,6 @@ public class KiemKePanel extends JPanel {
             chiTiet.setBorder(new EmptyBorder(8, 8, 8, 8));
             chiTiet.add(lbThongTin, BorderLayout.NORTH);
             chiTiet.add(UIStyle.cuon(bangChiTiet), BorderLayout.CENTER);
-            JPanel lyDo = new JPanel(new BorderLayout(0, 4));
-            lyDo.add(UIStyle.nhan("Lý do chênh lệch"), BorderLayout.NORTH);
-            lyDo.add(new JScrollPane(txtLyDo), BorderLayout.CENTER);
-            chiTiet.add(lyDo, BorderLayout.SOUTH);
 
             JSplitPane noiDung = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                     UIStyle.cuon(bangPhieu), chiTiet);
@@ -490,11 +491,11 @@ public class KiemKePanel extends JPanel {
             controls.add(tiepTuc);
             JPanel body = new JPanel(new BorderLayout(0, 8));
             body.setBorder(new EmptyBorder(12, 12, 12, 12));
-            body.add(new JLabel("Lịch sử kiểm kê — chọn phiếu để xem các mặt hàng và kết quả kiểm."),
+            body.add(new JLabel("Phiếu nháp kiểm kê — chọn phiếu để xem hoặc tiếp tục kiểm kê."),
                     BorderLayout.NORTH);
             body.add(noiDung, BorderLayout.CENTER);
             body.add(controls, BorderLayout.SOUTH);
-            JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Lịch sử kiểm kê",
+            JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(this), "Phiếu nháp kiểm kê",
                     Dialog.ModalityType.APPLICATION_MODAL);
             dlg.setContentPane(body);
             dlg.setSize(1180, 620);
@@ -510,9 +511,7 @@ public class KiemKePanel extends JPanel {
                 try {
                     lbThongTin.setText("Phiếu " + p.getMaPhieuKiemKe() + " | " + (p.isTrangThai() ? "Đã chốt" : "Nháp")
                             + " | Thời điểm kiểm kê: " + dinhDangGio(p.getNgayBatDau())
-                            + " | Người lập: " + p.getMaNhanVien() + " | Xác nhận: "
-                            + (p.getMaNhanVienXacNhan() == null ? "—" : p.getMaNhanVienXacNhan()));
-                    txtLyDo.setText(p.getLyDoChenhLech() == null ? "—" : p.getLyDoChenhLech());
+                            + " | Mã NV lập: " + p.getMaNhanVien());
                     modelChiTiet.setRowCount(0);
                     for (ChiTietPhieuKiemKe ct : dao.layChiTiet(p.getMaPhieuKiemKe())) {
                         Integer tt = ct.getSoLuongThucTe();

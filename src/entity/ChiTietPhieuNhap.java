@@ -10,7 +10,6 @@ public class ChiTietPhieuNhap {
     private double donGiaNhap;
     private boolean trangThai;
     private LocalDate hanSuDung;
-    private String maLoHang;
 
     // Chi dung de hien thi
     private String tenSanPham;
@@ -42,8 +41,6 @@ public class ChiTietPhieuNhap {
 
     public LocalDate getHanSuDung() { return hanSuDung; }
     public void setHanSuDung(LocalDate hanSuDung) { this.hanSuDung = hanSuDung; }
-    public String getMaLoHang() { return maLoHang; }
-    public void setMaLoHang(String maLoHang) { this.maLoHang = maLoHang; }
 
     public boolean isTrangThai() { return trangThai; }
     public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
