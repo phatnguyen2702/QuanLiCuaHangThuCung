@@ -26,7 +26,12 @@ public class TraCuuKhoPanel extends JPanel {
     private final JComboBox<String> trangThai = new JComboBox<>(new String[]{"Tất cả trạng thái", "Đã hoàn tất", "Phiếu nháp"});
     private final JComboBox<String> nhaCungCap = new JComboBox<>(new String[]{"Tất cả nhà cung cấp"});
     private final JComboBox<String> ketQuaKiemKe = new JComboBox<>(new String[]{"Tất cả kết quả", "Có chênh lệch", "Không chênh lệch", "Chưa kiểm đủ"});
-    private final DefaultTableModel model = new DefaultTableModel();
+    private final DefaultTableModel model = new DefaultTableModel() {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
     private final JTable table = new JTable(model);
     private List<String[]> ketQua = new ArrayList<>();
 

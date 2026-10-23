@@ -10,8 +10,6 @@ public class PhieuKiemKe {
     private String maNhanVien;
     private LocalDateTime ngayBatDau;
     private LocalDateTime ngayChot;
-    private String lyDoChenhLech;
-    private String maNhanVienXacNhan;
 
     public PhieuKiemKe() {
     }
@@ -39,8 +37,4 @@ public class PhieuKiemKe {
     public void setNgayBatDau(LocalDateTime ngayBatDau) { this.ngayBatDau = ngayBatDau; }
     public LocalDateTime getNgayChot() { return ngayChot; }
     public void setNgayChot(LocalDateTime ngayChot) { this.ngayChot = ngayChot; }
-    public String getLyDoChenhLech() { return lyDoChenhLech; }
-    public void setLyDoChenhLech(String lyDoChenhLech) { this.lyDoChenhLech = lyDoChenhLech; }
-    public String getMaNhanVienXacNhan() { return maNhanVienXacNhan; }
-    public void setMaNhanVienXacNhan(String maNhanVienXacNhan) { this.maNhanVienXacNhan = maNhanVienXacNhan; }
 }

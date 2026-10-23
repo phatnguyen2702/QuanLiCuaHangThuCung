@@ -19,8 +19,6 @@ public class KiemKeDAO {
         try (Connection con = ConnectDB.connectDB.getConnection(); Statement st = con.createStatement()) {
             st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayBatDau') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayBatDau DATETIME2 NULL");
             st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayChot') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayChot DATETIME2 NULL");
-            st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','lyDoChenhLech') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD lyDoChenhLech NVARCHAR(500) NULL");
-            st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','maNhanVienXacNhan') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD maNhanVienXacNhan VARCHAR(10) NULL");
         }
     }
 
@@ -36,8 +34,8 @@ public class KiemKeDAO {
 
         String sqlPhieu = """
                 INSERT INTO PhieuKiemKe
-                (maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot, lyDoChenhLech, maNhanVienXacNhan)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
         String sqlChiTiet = """
@@ -53,11 +51,10 @@ public class KiemKeDAO {
 
             try {
                 int daCapNhat;
-                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuKiemKe SET ngayKiemKe=?, trangThai=1, maNhanVien=?, ngayBatDau=?, ngayChot=?, lyDoChenhLech=?, maNhanVienXacNhan=? WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuKiemKe SET ngayKiemKe=?, trangThai=1, maNhanVien=?, ngayBatDau=?, ngayChot=? WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
                     ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayKiemKe())); ps.setString(2, phieu.getMaNhanVien());
                     ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayBatDau())); ps.setTimestamp(4, Timestamp.valueOf(phieu.getNgayChot()));
-                    ps.setString(5, phieu.getLyDoChenhLech()); ps.setString(6, phieu.getMaNhanVienXacNhan());
-                    ps.setString(7, phieu.getMaPhieuKiemKe()); daCapNhat = ps.executeUpdate();
+                    ps.setString(5, phieu.getMaPhieuKiemKe()); daCapNhat = ps.executeUpdate();
                 }
                 if (daCapNhat > 0) {
                     try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
@@ -70,8 +67,6 @@ public class KiemKeDAO {
                     ps.setString(4, phieu.getMaNhanVien());
                     ps.setTimestamp(5, Timestamp.valueOf(phieu.getNgayBatDau()));
                     ps.setTimestamp(6, Timestamp.valueOf(phieu.getNgayChot()));
-                    ps.setString(7, phieu.getLyDoChenhLech());
-                    ps.setString(8, phieu.getMaNhanVienXacNhan());
                     ps.executeUpdate();
                 }
 
@@ -103,7 +98,7 @@ public class KiemKeDAO {
             con.setAutoCommit(false);
             try {
                 int capNhat;
-                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuKiemKe SET ngayKiemKe=?,trangThai=0,maNhanVien=?,ngayBatDau=?,ngayChot=NULL,lyDoChenhLech=NULL,maNhanVienXacNhan=NULL WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuKiemKe SET ngayKiemKe=?,trangThai=0,maNhanVien=?,ngayBatDau=?,ngayChot=NULL WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
                     ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayBatDau())); ps.setString(2, phieu.getMaNhanVien());
                     ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayBatDau())); ps.setString(4, phieu.getMaPhieuKiemKe()); capNhat = ps.executeUpdate();
                 }
@@ -132,7 +127,7 @@ public class KiemKeDAO {
     public ArrayList<PhieuKiemKe> dsPhieuNhap() throws SQLException {
         damBaoCotKiemKe();
         ArrayList<PhieuKiemKe> ds = new ArrayList<>();
-        String sql = "SELECT maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot, lyDoChenhLech, maNhanVienXacNhan FROM PhieuKiemKe WHERE ISNULL(trangThai,0)=0 ORDER BY ngayKiemKe DESC";
+        String sql = "SELECT maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot FROM PhieuKiemKe WHERE ISNULL(trangThai,0)=0 ORDER BY ngayKiemKe DESC";
         try (Connection c = ConnectDB.connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql); ResultSet r = p.executeQuery()) {
             while (r.next()) {
                 PhieuKiemKe x = new PhieuKiemKe();
@@ -141,7 +136,7 @@ public class KiemKeDAO {
                 x.setTrangThai(r.getBoolean(3)); x.setMaNhanVien(r.getString(4));
                 t = r.getTimestamp(5); x.setNgayBatDau(t == null ? null : t.toLocalDateTime());
                 t = r.getTimestamp(6); x.setNgayChot(t == null ? null : t.toLocalDateTime());
-                x.setLyDoChenhLech(r.getString(7)); x.setMaNhanVienXacNhan(r.getString(8)); ds.add(x);
+                ds.add(x);
             }
         }
         return ds;

@@ -409,18 +409,6 @@ public class KiemKePanel extends JPanel {
             return;
         }
 
-        String lyDo = "";
-        if (daKiem.stream().anyMatch(ct -> ct.getChenhLech() != 0)) {
-            lyDo = JOptionPane.showInputDialog(this, "Ghi lý do chênh lệch (bắt buộc):", "Lý do chênh lệch",
-                    JOptionPane.QUESTION_MESSAGE);
-            if (lyDo == null)
-                return;
-            lyDo = lyDo.trim();
-            if (lyDo.isEmpty()) {
-                UIStyle.canhBao(this, "Vui lòng ghi lý do chênh lệch.");
-                return;
-            }
-        }
         LocalDateTime gioChot = LocalDateTime.now();
         PhieuKiemKe phieu = new PhieuKiemKe(
                 maPhieu,
@@ -429,8 +417,6 @@ public class KiemKePanel extends JPanel {
                 PhienLamViec.maNV);
         phieu.setNgayBatDau(ngayBatDau);
         phieu.setNgayChot(gioChot);
-        phieu.setLyDoChenhLech(lyDo);
-        phieu.setMaNhanVienXacNhan(PhienLamViec.maNV);
 
         try {
             dao.luu(phieu, daKiem);
