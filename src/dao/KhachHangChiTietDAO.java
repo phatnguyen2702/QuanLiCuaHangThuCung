@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.KhachHang;
 
 import java.sql.*;
@@ -80,6 +82,7 @@ public class KhachHangChiTietDAO {
         // =========================================================
 
         public boolean sua(KhachHang kh) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
 
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 

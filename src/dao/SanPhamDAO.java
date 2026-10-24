@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.DanhMuc;
 import entity.NhaCungCap;
@@ -203,6 +205,7 @@ public class SanPhamDAO {
     }
 
     public boolean them(SanPham sp) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
 
         String sql = """
                 INSERT INTO SanPham
@@ -227,6 +230,7 @@ public class SanPhamDAO {
     }
 
     public boolean sua(SanPham sp) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
 
         String sql = """
                 UPDATE SanPham
@@ -256,6 +260,7 @@ public class SanPhamDAO {
     /** Luu metadata goi y cho san pham thuc an. Loai thu cung duoc suy ra tu danh muc/ten. */
     public void luuThongTinGoiY(String maSanPham, String tenDanhMuc, String tenSanPham,
                                 String nhomTuoi, String kichThuoc) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
         String nguon = ((tenDanhMuc == null ? "" : tenDanhMuc) + " " +
                 (tenSanPham == null ? "" : tenSanPham)).toLowerCase(java.util.Locale.ROOT);
         boolean laThucAn = nguon.contains("thức ăn") || nguon.contains("thuc an")
@@ -311,6 +316,7 @@ public class SanPhamDAO {
     }
 
     public boolean xoa(String maSanPham) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
         damBaoBangGoiYThucAn();
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
@@ -417,6 +423,7 @@ public class SanPhamDAO {
      */
     public void nhapBoSung(List<SanPham> sanPham, List<Integer> soLuong,
                            String maNhanVien) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         // Gom theo nha cung cap
         Map<String, List<Integer>> theoNcc = new LinkedHashMap<>();

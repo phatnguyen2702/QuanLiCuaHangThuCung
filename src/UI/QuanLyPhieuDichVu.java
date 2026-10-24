@@ -578,13 +578,20 @@ public class QuanLyPhieuDichVu extends JPanel {
             boolean coLich = maLich != null && !"Không có".equals(maLich);
             if (coLich) {
                 entity.LichHen lh = lhDao.timTheoMa(maLich);
-                if (lh != null && !"Đã hủy".equals(lh.getTrangThai())) {
+                boolean duocChon = lh != null
+                        && !"Đã hủy".equals(lh.getTrangThai())
+                        && lh.getNgayGioHen() != null
+                        && (!lh.getNgayGioHen().isBefore(java.time.LocalDateTime.now())
+                                || (pEdit != null && maLich.equals(pEdit.getMaLichHen())));
+                if (duocChon) {
                     setCombo(cboKhachHang, lh.getMaKhachHang());
                     napThuCungTheoKhachHang();
                     setCombo(cboThuCung, lh.getMaThuCung());
                     setCombo(cboNhanVien, lh.getMaNhanVien());
                 } else {
-                    JOptionPane.showMessageDialog(this, "Lịch hẹn không tồn tại hoặc đã bị hủy.");
+                    JOptionPane.showMessageDialog(this,
+                            "Lịch hẹn đã qua giờ, đã bị hủy hoặc không còn hợp lệ.",
+                            "Không thể chọn lịch hẹn", JOptionPane.WARNING_MESSAGE);
                     cboLichHen.setSelectedItem("Không có");
                     return;
                 }
@@ -648,6 +655,23 @@ public class QuanLyPhieuDichVu extends JPanel {
             String maLich = (String) cboLichHen.getSelectedItem();
             if (maLich == null)
                 maLich = "Không có";
+
+            // Neu form mo qua lau, phai kiem tra lai truoc khi luu.
+            // Phieu dang sua duoc GIU NGUYEN lich da gan, ke ca khi lich qua gio.
+            if (!"Không có".equals(maLich)) {
+                entity.LichHen lich = lhDao.timTheoMa(maLich);
+                boolean giuLichCu = pEdit != null && maLich.equals(pEdit.getMaLichHen());
+                if (lich == null || "Đã hủy".equals(lich.getTrangThai())
+                        || lich.getNgayGioHen() == null
+                        || (!giuLichCu && lich.getNgayGioHen().isBefore(
+                                java.time.LocalDateTime.now()))) {
+                    JOptionPane.showMessageDialog(this,
+                            "Lịch hẹn đã qua giờ, bị hủy hoặc không còn tồn tại. "
+                                    + "Hãy chọn lịch hẹn khác hoặc 'Không có'.",
+                            "Không thể lưu phiếu", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
             PhieuDichVu p = new PhieuDichVu(txtMaPhieu.getText(),
                     pEdit == null ? "Chưa thanh toán" : pEdit.getTrangThai(), kh, tc, nv,
                     maLich);

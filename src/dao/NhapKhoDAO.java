@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
@@ -31,6 +33,7 @@ public class NhapKhoDAO {
     // Luu phieu + chi tiet trong 1 giao dich: loi o dau thi huy het
     public void luu(PhieuNhapKho phieu,
                     List<ChiTietPhieuNhap> chiTiet) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         damBaoCotHanSuDung();
 
@@ -160,6 +163,7 @@ public class NhapKhoDAO {
 
     /** Hoan tat phieu nhap: phieu + moi dong chi tiet chuyen sang trangThai 1. */
     public void hoanTatPhieuNhap(String maPhieu) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         try (Connection con = connectDB.getConnection()) {
 
@@ -192,6 +196,7 @@ public class NhapKhoDAO {
 
     /** Xoa phieu nhap (chi phieu con la nhap, khong dung toi ton kho). */
     public void xoaPhieuNhap(String maPhieu) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         try (Connection con = connectDB.getConnection()) {
 
@@ -261,6 +266,7 @@ public class NhapKhoDAO {
     }
 
     public boolean themNhaCungCap(NhaCungCap n) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         String sql = """
                 INSERT INTO Nhacungcap

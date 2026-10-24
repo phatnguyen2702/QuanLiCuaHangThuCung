@@ -96,6 +96,11 @@ public class TrangChu extends JFrame {
         this.hoTen = hoTen;
         this.vaiTro = vaiTro;
 
+        if (maNV == null || maNV.isBlank()
+                || PhanQuyen.vaiTro(vaiTro) == PhanQuyen.VaiTro.KHONG_HOP_LE) {
+            throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
+        }
+
         PhienLamViec.dat(maNV, hoTen, vaiTro);
         UI.PhienLamViec.dat(maNV, hoTen, vaiTro);
 
@@ -114,6 +119,7 @@ public class TrangChu extends JFrame {
         tmrDongHo = new javax.swing.Timer(1000, e -> capNhatGio());
         tmrDongHo.start();
         capNhatGio();
+        capNhatQuyenMenu();
         hienTrangChu();
     }
 
@@ -135,6 +141,14 @@ public class TrangChu extends JFrame {
     public void chuyenKho(int tab) {
         if (tab < 0 || tab >= TEN_TAB.length)
             tab = 0;
+        PhanQuyen.Quyen q = switch (tab) {
+            case 0 -> PhanQuyen.Quyen.DANH_MUC_SAN_PHAM;
+            case 1 -> PhanQuyen.Quyen.SAN_PHAM;
+            case 2 -> PhanQuyen.Quyen.NHAP_KHO;
+            default -> PhanQuyen.Quyen.KIEM_KE;
+        };
+        if (!PhanQuyen.kiemTra(q, this))
+            return;
         try {
             boolean laLanDau = arrPnlManHinhKho[tab] == null;
             if (laLanDau) {
@@ -189,6 +203,8 @@ public class TrangChu extends JFrame {
 
     private void hienManHinh(String khoa, String tieuDe, JButton nhomMacDinh,
             Supplier<? extends Component> tao) {
+        if (!PhanQuyen.kiemTra(PhanQuyen.tuMaManHinh(khoa), this))
+            return;
         try {
             Component c = mapManHinhKhac.get(khoa);
             if (c == null) {
@@ -254,14 +270,16 @@ public class TrangChu extends JFrame {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
                 () -> pnlTraCuuNhapKho = new TraCuuKho(
                         () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2))));
-        if (pnlTraCuuNhapKho != null) pnlTraCuuNhapKho.lamMoi();
+        if (pnlTraCuuNhapKho != null)
+            pnlTraCuuNhapKho.lamMoi();
     }
 
     private void moTraCuuKiemKe() {
         hienManHinh("tracuukkkho", "Tra cứu kiểm kê kho", btnTimKiem,
                 () -> pnlTraCuuKiemKe = new TraCuuKKKho(
                         () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(3))));
-        if (pnlTraCuuKiemKe != null) pnlTraCuuKiemKe.lamMoi();
+        if (pnlTraCuuKiemKe != null)
+            pnlTraCuuKiemKe.lamMoi();
     }
 
     private void moThanhToan() {
@@ -283,12 +301,19 @@ public class TrangChu extends JFrame {
 
     /** Mở màn hình thanh toán với các mặt hàng đang có trong giỏ gợi ý. */
     public void moThanhToanTuGioHang() {
+        if (!PhanQuyen.kiemTra(PhanQuyen.Quyen.THANH_TOAN, this))
+            return;
         if (UI.PhienLamViec.gioHang().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.", "Giỏ hàng",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         chuyenTuNhom(btnXuLy, this::moThanhToan);
+    }
+
+    private void moMaTranPhanQuyen() {
+        hienManHinh("phanquyen", "Ma trận phân quyền", btnHeThong,
+                () -> new MaTranPhanQuyenPanel(this::moQuanLyTaiKhoan));
     }
 
     private void moQuanLyTaiKhoan() {
@@ -317,6 +342,25 @@ public class TrangChu extends JFrame {
     private void chuyenTuNhom(JButton nhom, Runnable hanhDong) {
         btnNhomDaChon = nhom;
         hanhDong.run();
+    }
+
+    private boolean coMucMenu(JPopupMenu menu) {
+        for (Component c : menu.getComponents())
+            if (c instanceof JMenuItem)
+                return true;
+        return false;
+    }
+
+    private void capNhatQuyenMenu() {
+        btnHeThong.setEnabled(coMucMenu(taoMenuHeThong()));
+        btnDanhMuc.setEnabled(coMucMenu(taoMenuDanhMuc()));
+        btnXuLy.setEnabled(coMucMenu(taoMenuNghiepVu()));
+        btnTimKiem.setEnabled(coMucMenu(taoMenuTimKiem()));
+        btnThongKe.setEnabled(coMucMenu(taoMenuThongKe()));
+        for (JButton btn : dsBtnMucChinh) {
+            if (!btn.isEnabled())
+                btn.setToolTipText("Bạn không có quyền truy cập nhóm chức năng này");
+        }
     }
 
     private void datMucDangChon(JButton dangChon) {
@@ -434,16 +478,23 @@ public class TrangChu extends JFrame {
     }
 
     private void themMuc(JPopupMenu popMenu, String ten, JButton nhom, Runnable hanhDong) {
+        PhanQuyen.Quyen q = PhanQuyen.tuTenMenu(ten);
+        if (!PhanQuyen.coQuyen(q))
+            return;
         JMenuItem mniChucNang = new JMenuItem(ten);
         mniChucNang.setFont(UIStyle.font(Font.PLAIN, 13));
         mniChucNang.setBorder(new EmptyBorder(9, 14, 9, 14));
-        mniChucNang.addActionListener(e -> chuyenTuNhom(nhom, hanhDong));
+        mniChucNang.addActionListener(e -> {
+            if (PhanQuyen.kiemTra(q, this))
+                chuyenTuNhom(nhom, hanhDong);
+        });
         popMenu.add(mniChucNang);
     }
 
     private JPopupMenu taoMenuHeThong() {
         JPopupMenu p = new JPopupMenu();
         themMuc(p, "Quản lý tài khoản", btnHeThong, this::moQuanLyTaiKhoan);
+        themMuc(p, "Ma trận phân quyền", btnHeThong, this::moMaTranPhanQuyen);
         themMuc(p, "Quản lý ca làm", btnHeThong, this::moQuanLyCaLam);
         return p;
     }
@@ -829,14 +880,19 @@ public class TrangChu extends JFrame {
         pnlPanel.add(Box.createVerticalStrut(15));
 
         themBtnTruyCapNhanh(pnlPanel, "Quản lý khách hàng", "F4",
+                PhanQuyen.Quyen.KHACH_HANG,
                 () -> chuyenTuNhom(btnDanhMuc, this::moKhachHang));
         themBtnTruyCapNhanh(pnlPanel, "Quản lý lịch hẹn", "F5",
+                PhanQuyen.Quyen.LICH_HEN_SPA,
                 () -> chuyenTuNhom(btnXuLy, this::moLichHen));
         themBtnTruyCapNhanh(pnlPanel, "Phiếu dịch vụ", "F6",
+                PhanQuyen.Quyen.PHIEU_DICH_VU,
                 () -> chuyenTuNhom(btnXuLy, this::moPhieuDichVu));
         themBtnTruyCapNhanh(pnlPanel, "Thanh toán", "F7",
+                PhanQuyen.Quyen.THANH_TOAN,
                 () -> chuyenTuNhom(btnXuLy, this::moThanhToan));
         themBtnTruyCapNhanh(pnlPanel, "Tra cứu hóa đơn", "F8",
+                PhanQuyen.Quyen.TRA_CUU_HOA_DON,
                 () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon));
 
         return pnlPanel;
@@ -924,20 +980,35 @@ public class TrangChu extends JFrame {
     private void napTongQuanHomNay() {
         if (lblDoanhThuHomNay == null)
             return;
-        try {
-            HoaDonDAO.ThongKe tk = new HoaDonDAO().layThongKe();
-            int lichSpaHomNay = demLichSpaHomNay();
-            int phieuNhapHomNay = demPhieuNhapHomNay();
-
-            lblDoanhThuHomNay.setText(formatVnd(tk.getDoanhThuHomNay()));
-            lblLuotMuaHomNay.setText(String.valueOf(tk.getHoaDonHomNay()));
-            lblLichSpaHomNay.setText(String.valueOf(lichSpaHomNay));
-            lblPhieuNhapHomNay.setText(String.valueOf(phieuNhapHomNay));
-        } catch (Exception ex) {
-            lblDoanhThuHomNay.setText("—");
-            lblLuotMuaHomNay.setText("—");
-            lblLichSpaHomNay.setText("—");
-            lblPhieuNhapHomNay.setText("—");
+        boolean xemThongKe = PhanQuyen.coQuyen(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
+        boolean xemSpa = PhanQuyen.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA);
+        boolean xemKho = PhanQuyen.coQuyen(PhanQuyen.Quyen.NHAP_KHO);
+        lblDoanhThuHomNay.setText("Không có quyền");
+        lblLuotMuaHomNay.setText("—");
+        lblLichSpaHomNay.setText("—");
+        lblPhieuNhapHomNay.setText("—");
+        if (xemThongKe) {
+            try {
+                HoaDonDAO.ThongKe tk = new HoaDonDAO().layThongKe();
+                lblDoanhThuHomNay.setText(formatVnd(tk.getDoanhThuHomNay()));
+                lblLuotMuaHomNay.setText(String.valueOf(tk.getHoaDonHomNay()));
+            } catch (Exception ex) {
+                lblDoanhThuHomNay.setText("—");
+            }
+        }
+        if (xemSpa) {
+            try {
+                lblLichSpaHomNay.setText(String.valueOf(demLichSpaHomNay()));
+            } catch (SQLException ex) {
+                lblLichSpaHomNay.setText("—");
+            }
+        }
+        if (xemKho) {
+            try {
+                lblPhieuNhapHomNay.setText(String.valueOf(demPhieuNhapHomNay()));
+            } catch (SQLException ex) {
+                lblPhieuNhapHomNay.setText("—");
+            }
         }
     }
 
@@ -1003,6 +1074,13 @@ public class TrangChu extends JFrame {
     private void napLichSpaSapToi() {
         if (pnlLichSpaNoiDung == null || lblPhuDeLichSpa == null)
             return;
+        if (!PhanQuyen.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA)) {
+            pnlLichSpaNoiDung.removeAll();
+            lblPhuDeLichSpa.setText("Không có quyền xem lịch Spa");
+            pnlLichSpaNoiDung.revalidate();
+            pnlLichSpaNoiDung.repaint();
+            return;
+        }
 
         pnlLichSpaNoiDung.removeAll();
         LocalDateTime now = LocalDateTime.now();
@@ -1166,7 +1244,8 @@ public class TrangChu extends JFrame {
         dlgHoTro.setVisible(true);
     }
 
-    private void themBtnTruyCapNhanh(JPanel parent, String text, String shortcut, Runnable hanhDong) {
+    private void themBtnTruyCapNhanh(JPanel parent, String text, String shortcut,
+            PhanQuyen.Quyen quyen, Runnable hanhDong) {
         JPanel pnlDong = new JPanel(new BorderLayout());
         pnlDong.setBackground(MENU_BLUE);
         pnlDong.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
@@ -1177,7 +1256,13 @@ public class TrangChu extends JFrame {
         btnTruyCap.setBackground(MENU_BLUE);
         btnTruyCap.setFocusPainted(false);
         btnTruyCap.setBorderPainted(false);
-        btnTruyCap.addActionListener(e -> hanhDong.run());
+        btnTruyCap.setEnabled(PhanQuyen.coQuyen(quyen));
+        if (!btnTruyCap.isEnabled())
+            btnTruyCap.setToolTipText("Vai trò hiện tại không có quyền");
+        btnTruyCap.addActionListener(e -> {
+            if (PhanQuyen.kiemTra(quyen, this))
+                hanhDong.run();
+        });
 
         String khoa = "truycapnhanh-" + shortcut;
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
@@ -1185,7 +1270,8 @@ public class TrangChu extends JFrame {
         getRootPane().getActionMap().put(khoa, new AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                hanhDong.run();
+                if (PhanQuyen.kiemTra(quyen, TrangChu.this))
+                    hanhDong.run();
             }
         });
 

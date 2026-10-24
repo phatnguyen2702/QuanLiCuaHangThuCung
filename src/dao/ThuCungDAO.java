@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.ThuCung;
 import java.sql.*;
@@ -109,6 +111,7 @@ public class ThuCungDAO {
     }
 
     public boolean them(ThuCung tc) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
         String sql = "INSERT INTO ThuCung "
                 + "(maThuCung,tenThuCung,loai,giong,gioiTinh,canNang,maKhachHang,trangThai) "
                 + "VALUES(?,?,?,?,?,?,?,?)";
@@ -153,6 +156,7 @@ public class ThuCungDAO {
     }
 
     public boolean sua(ThuCung tc) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
         String sql = "UPDATE ThuCung SET tenThuCung=?, loai=?, giong=?, "
                 + "gioiTinh=?, canNang=?, maKhachHang=?, trangThai=? WHERE maThuCung=? "
                 + "AND (maKhachHang=? OR ("
@@ -181,6 +185,7 @@ public class ThuCungDAO {
     }
 
     public boolean xoa(String maThuCung) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
         String sql = "DELETE FROM ThuCung WHERE maThuCung=?";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -192,18 +197,28 @@ public class ThuCungDAO {
         }
     }
 
+    /**
+     * Sinh mã thú cưng theo dạng TC001, TC002,..., TC999.
+     * Mã cũ TC0001 (nếu có) vẫn được tính khi tìm số tiếp theo;
+     * không thay đổi mã đã lưu để tránh ảnh hưởng các khóa ngoại.
+     */
     public String taoMaThuCungTuDong() {
         int max = 0;
         for (ThuCung tc : getAll()) {
             String ma = tc.getMaThuCung();
-            if (ma != null && ma.matches("TC\\d{4,}")) {
+            if (ma != null && ma.matches("TC\\d{3,}")) {
                 try {
                     max = Math.max(max, Integer.parseInt(ma.substring(2)));
                 } catch (NumberFormatException ignore) {
-                    // Ignore corrupted identifiers.
+                    // Bỏ qua mã không hợp lệ hoặc quá lớn.
                 }
             }
         }
-        return String.format("TC%04d", max + 1);
+        if (max >= 999) {
+            throw new IllegalStateException(
+                    "Đã sử dụng hết mã thú cưng TC001–TC999. "
+                            + "Cần mở rộng quy tắc mã trước khi thêm hồ sơ mới.");
+        }
+        return String.format("TC%03d", max + 1);
     }
 }
