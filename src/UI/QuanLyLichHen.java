@@ -101,16 +101,19 @@ public class QuanLyLichHen extends JPanel {
             }
         });
         filterRow.add(btnLich);
-
-        JButton btnXoaNgay = new JButton("x");
-        btnXoaNgay.setBackground(Color.GRAY);
+        JButton btnXoaNgay = new JButton("Xóa ngày");
+        btnXoaNgay.setBackground(new Color(108, 117, 125));
         btnXoaNgay.setForeground(Color.WHITE);
+        btnXoaNgay.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnXoaNgay.setFocusPainted(false);
-        btnXoaNgay.setPreferredSize(new Dimension(40, 25));
+        btnXoaNgay.setPreferredSize(new Dimension(85, 30));
+        btnXoaNgay.setToolTipText("Bỏ lọc ngày và hiển thị lịch của tất cả các ngày");
+
         btnXoaNgay.addActionListener(e -> {
             txtNgay.setText("");
             locDuLieu();
         });
+
         filterRow.add(btnXoaNgay);
 
         filterRow.add(Box.createHorizontalStrut(5));
@@ -592,7 +595,9 @@ public class QuanLyLichHen extends JPanel {
 
             JPanel pnlNgay = new JPanel(new BorderLayout());
             pnlNgay.setOpaque(false);
-            txtNgayDat = taoTextField(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            // Ngày giờ mặc định phải ở tương lai, kể cả khi đang gần nửa đêm.
+            LocalDateTime macDinh = LocalDateTime.now().plusMinutes(15).withSecond(0).withNano(0);
+            txtNgayDat = taoTextField(macDinh.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
             txtNgayDat.setEditable(false);
             txtNgayDat.setFocusable(false);
             txtNgayDat.setBackground(new Color(244, 247, 250));
@@ -621,7 +626,7 @@ public class QuanLyLichHen extends JPanel {
             });
             pnlNgay.add(btnLichForm, BorderLayout.EAST);
 
-            txtGioHen = taoOChonGio("09:00");
+            txtGioHen = taoOChonGio(macDinh.format(DateTimeFormatter.ofPattern("HH:mm")));
             gbc.gridy = 1;
             gbc.gridx = 0;
             pnlForm.add(pnlNgay, gbc);
@@ -809,8 +814,9 @@ public class QuanLyLichHen extends JPanel {
                 LocalTime gioHen = LocalTime.parse(gioStr,
                         DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT));
                 LocalDateTime ngayGioHen = LocalDateTime.of(ngayHen, gioHen);
-                if (ngayGioHen.isBefore(LocalDateTime.now())) {
-                    JOptionPane.showMessageDialog(this, "Không thể đặt hoặc chuyển lịch sang thời gian đã qua.",
+                if (!ngayGioHen.isAfter(LocalDateTime.now())) {
+                    JOptionPane.showMessageDialog(this,
+                            "Giờ hẹn phải lớn hơn thời gian hiện tại. Vui lòng chọn giờ trong tương lai.",
                             "Ngày giờ không hợp lệ", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -876,6 +882,10 @@ public class QuanLyLichHen extends JPanel {
             } catch (DateTimeParseException ex) {
                 JOptionPane.showMessageDialog(this, "Ngày phải chọn từ lịch và giờ phải đúng HH:mm (00:00–23:59).",
                         "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                // Hiển thị lý do do DAO trả về (quá giờ hoặc thợ Spa trùng lịch).
+                JOptionPane.showMessageDialog(this, ex.getMessage(),
+                        "Không thể lưu lịch hẹn", JOptionPane.WARNING_MESSAGE);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this,
