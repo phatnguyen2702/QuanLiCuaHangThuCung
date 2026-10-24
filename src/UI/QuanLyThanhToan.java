@@ -86,7 +86,7 @@ public class QuanLyThanhToan extends JPanel {
     private final JComboBox<String> cboMaKhachHang = new JComboBox<>();
     private final JTextField txtTenKhachHang = new JTextField();
     private final JTextField txtSoDienThoai = new JTextField(12);
-    private final JTextField txtMaPhieuDichVu = new JTextField();
+    private final JTextField txtMaPhieuDichVu = new JTextField(18);
     private final JTextField txtKhachHangTomTat = new JTextField();
     private final JComboBox<String> cboMaSanPham = new JComboBox<>();
     private final JTextField txtVoucher = new JTextField(12);
@@ -318,6 +318,7 @@ public class QuanLyThanhToan extends JPanel {
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 0.45;
+        txtTenKhachHang.setColumns(18);
         txtTenKhachHang.setEditable(false);
         panel.add(txtTenKhachHang, gbc);
         gbc.gridx = 3;
@@ -529,10 +530,17 @@ public class QuanLyThanhToan extends JPanel {
             tenSanPhamTheoMa.clear();
             tenSanPhamTheoMa.putAll(dao.layDanhSachSanPham());
             danhSachMaSanPham.addAll(tenSanPhamTheoMa.keySet());
+            String mauHienThi = "";
             for (String ma : danhSachMaSanPham) {
-                cboMaSanPham.addItem(taoGoiYSanPham(ma));
+                String goiY = taoGoiYSanPham(ma);
+                cboMaSanPham.addItem(goiY);
+                if (goiY.length() > mauHienThi.length()) {
+                    mauHienThi = goiY;
+                }
             }
+            cboMaSanPham.setPrototypeDisplayValue(mauHienThi);
             cboMaSanPham.setSelectedItem("");
+            cboMaSanPham.setPreferredSize(cboMaSanPham.getPreferredSize());
         } catch (Exception e) {
             hienLoi("Không tải được danh sách mã sản phẩm: " + e.getMessage());
         }
@@ -798,7 +806,8 @@ public class QuanLyThanhToan extends JPanel {
 
     private void themSanPham(entity.ThanhToan sanPham, int soLuong) {
         for (entity.ThanhToan item : chiTiet) {
-            if (item.getMaHang().equals(sanPham.getMaHang())) {
+            if (item.getMaHang().equals(sanPham.getMaHang())
+                    && java.util.Objects.equals(item.getMaThuCung(), sanPham.getMaThuCung())) {
                 item.setSoLuong(item.getSoLuong() + soLuong);
                 tableModel.fireTableDataChanged();
                 capNhatTien();

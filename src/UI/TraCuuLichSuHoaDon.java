@@ -308,9 +308,10 @@ public class TraCuuLichSuHoaDon extends JPanel {
         tblChiTiet.getColumnModel().getColumn(1).setPreferredWidth(120);
         tblChiTiet.getColumnModel().getColumn(2).setPreferredWidth(115);
         tblChiTiet.getColumnModel().getColumn(3).setPreferredWidth(240);
-        tblChiTiet.getColumnModel().getColumn(4).setPreferredWidth(70);
-        tblChiTiet.getColumnModel().getColumn(5).setPreferredWidth(120);
-        tblChiTiet.getColumnModel().getColumn(6).setPreferredWidth(135);
+        tblChiTiet.getColumnModel().getColumn(4).setPreferredWidth(140);
+        tblChiTiet.getColumnModel().getColumn(5).setPreferredWidth(70);
+        tblChiTiet.getColumnModel().getColumn(6).setPreferredWidth(120);
+        tblChiTiet.getColumnModel().getColumn(7).setPreferredWidth(135);
     }
 
     private JPanel createDetailFooter() {
@@ -472,6 +473,9 @@ public class TraCuuLichSuHoaDon extends JPanel {
         for (HoaDon.ChiTiet detail : invoice.getChiTiet()) {
             if ("Thú cưng".equals(detail.getLoaiHang())) {
                 names.add(detail.getTenHang());
+            } else if (detail.getTenThuCung() != null
+                    && !names.contains(detail.getTenThuCung())) {
+                names.add(detail.getTenThuCung());
             }
         }
         return names.isEmpty() ? "-" : String.join(", ", names);
@@ -533,7 +537,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         text.append("Thú cưng: ").append(layTenThuCung(invoice)).append('\n');
         text.append("Thanh toán: ").append(safe(invoice.getTenPhuongThuc())).append('\n');
         text.append("------------------------------------------------------------\n");
-        text.append("STT | Mã hàng | Loại | Tên hàng | SL | Đơn giá | Thành tiền\n");
+        text.append("STT | Mã hàng | Loại | Tên hàng | Thú cưng | SL | Đơn giá | Thành tiền\n");
         text.append("------------------------------------------------------------\n");
         List<HoaDon.ChiTiet> details = invoice.getChiTiet();
         for (int index = 0; index < details.size(); index++) {
@@ -542,6 +546,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
                     .append(safe(item.getMaHang())).append(" | ")
                     .append(safe(item.getLoaiHang())).append(" | ")
                     .append(safe(item.getTenHang())).append(" | ")
+                    .append(safe(item.getTenThuCung())).append(" | ")
                     .append(item.getSoLuong()).append(" | ")
                     .append(formatMoney(item.getDonGia())).append(" ₫ | ")
                     .append(formatMoney(item.getThanhTien())).append(" ₫\n");
@@ -623,7 +628,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
 
     private static class DetailTableModel extends AbstractTableModel {
         private static final String[] COLUMNS = {
-                "STT", "Mã sản phẩm / Dịch vụ", "Loại", "Sản phẩm / Dịch vụ",
+                "STT", "Mã sản phẩm / Dịch vụ", "Loại", "Sản phẩm / Dịch vụ", "Thú cưng",
                 "Số lượng", "Đơn giá", "Thành tiền"
         };
         private List<HoaDon.ChiTiet> details = new ArrayList<>();
@@ -656,10 +661,12 @@ public class TraCuuLichSuHoaDon extends JPanel {
                 case 3:
                     return detail.getTenHang();
                 case 4:
-                    return detail.getSoLuong();
+                    return detail.getTenThuCung() == null ? "" : detail.getTenThuCung();
                 case 5:
-                    return formatMoney(detail.getDonGia()) + " ₫";
+                    return detail.getSoLuong();
                 case 6:
+                    return formatMoney(detail.getDonGia()) + " ₫";
+                case 7:
                     return formatMoney(detail.getThanhTien()) + " ₫";
                 default:
                     return "";

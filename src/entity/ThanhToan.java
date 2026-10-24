@@ -6,6 +6,7 @@ public class ThanhToan {
 
     private final String maSanPham;
     private final String maDichVu;
+    private final String maThuCung;
     private final String tenMatHang;
     private final BigDecimal donGia;
     private int soLuong;
@@ -13,6 +14,7 @@ public class ThanhToan {
     private ThanhToan(
             String maSanPham,
             String maDichVu,
+            String maThuCung,
             String tenMatHang,
             BigDecimal donGia,
             int soLuong) {
@@ -24,17 +26,23 @@ public class ThanhToan {
         }
         this.maSanPham = maSanPham;
         this.maDichVu = maDichVu;
+        this.maThuCung = maThuCung;
         this.tenMatHang = tenMatHang;
         this.donGia = donGia;
         this.soLuong = soLuong;
     }
 
     public static ThanhToan sanPham(String ma, String ten, BigDecimal donGia) {
-        return new ThanhToan(ma, null, ten, donGia, 1);
+        return new ThanhToan(ma, null, null, ten, donGia, 1);
     }
 
     public static ThanhToan dichVu(String ma, String ten, BigDecimal donGia) {
-        return new ThanhToan(null, ma, ten, donGia, 1);
+        return dichVu(ma, ten, donGia, null);
+    }
+
+    public static ThanhToan dichVu(
+            String ma, String ten, BigDecimal donGia, String maThuCung) {
+        return new ThanhToan(null, ma, maThuCung, ten, donGia, 1);
     }
 
     public String getMaSanPham() {
@@ -43,6 +51,10 @@ public class ThanhToan {
 
     public String getMaDichVu() {
         return maDichVu;
+    }
+
+    public String getMaThuCung() {
+        return maThuCung;
     }
 
     public String getMaHang() {
