@@ -121,7 +121,7 @@ public class QuanLyLichHen extends JPanel {
         filterRow.add(cboNhanVien);
 
         filterRow.add(createFilterLabel("Trạng thái"));
-        cboTrangThai = new JComboBox<>(new String[] { "Tất cả", "Xác nhận", "Chờ xác nhận", "Đã hủy" });
+        cboTrangThai = new JComboBox<>(new String[] { "Tất cả", "Xác nhận", "Đã hủy" });
         cboTrangThai.setPreferredSize(new Dimension(110, 30));
         filterRow.add(cboTrangThai);
 
@@ -217,6 +217,7 @@ public class QuanLyLichHen extends JPanel {
         for (String[] nv : dao.getDanhSachNhanVienSpa()) {
             cboNhanVien.addItem(nv[1]);
         }
+        cboNhanVien.setSelectedItem("Tất cả");
     }
 
     public void loadData() {
@@ -224,12 +225,15 @@ public class QuanLyLichHen extends JPanel {
     }
 
     private void locDuLieu() {
-        if (cboNhanVien == null || cboTrangThai == null)
+        // Khi JComboBox đang tải lại, lựa chọn có thể tạm thời là null.
+        if (cboNhanVien == null || cboTrangThai == null || tableModel == null)
             return;
 
         String ngayStr = txtNgay.getText().trim();
-        String nhanVienLoc = cboNhanVien.getSelectedItem().toString();
-        String trangThaiLoc = cboTrangThai.getSelectedItem().toString();
+        Object nvDaChon = cboNhanVien.getSelectedItem();
+        Object trangThaiDaChon = cboTrangThai.getSelectedItem();
+        String nhanVienLoc = nvDaChon == null ? "Tất cả" : nvDaChon.toString();
+        String trangThaiLoc = trangThaiDaChon == null ? "Tất cả" : trangThaiDaChon.toString();
         String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -707,12 +711,23 @@ public class QuanLyLichHen extends JPanel {
         }
 
         private void loadComboData() {
-            for (String[] kh : lichHenDAO.getDanhSachKhachHang())
+            // Nạp khách hàng trước, rồi mới nạp thú cưng tương ứng.
+            // Nếu SQL không trả về khách hàng, JComboBox sẽ không có lựa chọn.
+            cboKhachHang.removeAllItems();
+            for (String[] kh : lichHenDAO.getDanhSachKhachHang()) {
                 cboKhachHang.addItem(kh[0] + " - " + kh[1]);
+            }
             cboKhachHang.addActionListener(e -> napThuCungTheoKhachHang());
+            if (cboKhachHang.getItemCount() > 0)
+                cboKhachHang.setSelectedIndex(0);
             napThuCungTheoKhachHang();
-            for (String[] nv : lichHenDAO.getDanhSachNhanVienSpa())
+
+            cboNhanVienSpa.removeAllItems();
+            for (String[] nv : lichHenDAO.getDanhSachNhanVienSpa()) {
                 cboNhanVienSpa.addItem(nv[0] + " - " + nv[1]);
+            }
+            if (cboNhanVienSpa.getItemCount() > 0)
+                cboNhanVienSpa.setSelectedIndex(0);
         }
 
         private void dienDuLieuSua() {
@@ -737,10 +752,21 @@ public class QuanLyLichHen extends JPanel {
         private void napThuCungTheoKhachHang() {
             if (cboThuCung == null || cboKhachHang == null)
                 return;
-            String maKh = extractId((String) cboKhachHang.getSelectedItem());
+            Object khDaChon = cboKhachHang.getSelectedItem();
             cboThuCung.removeAllItems();
+            if (khDaChon == null) {
+                cboThuCung.setToolTipText("Chọn khách hàng trước khi chọn thú cưng.");
+                return;
+            }
+            String maKh = extractId(khDaChon.toString());
             for (String[] tc : lichHenDAO.getDanhSachThuCungTheoKhachHang(maKh)) {
                 cboThuCung.addItem(tc[0] + " - " + tc[1]);
+            }
+            if (cboThuCung.getItemCount() > 0) {
+                cboThuCung.setSelectedIndex(0);
+                cboThuCung.setToolTipText(null);
+            } else {
+                cboThuCung.setToolTipText("Khách hàng chưa có thú cưng. Đăng ký trong Danh mục > Thú cưng.");
             }
         }
 
@@ -788,10 +814,29 @@ public class QuanLyLichHen extends JPanel {
                             "Ngày giờ không hợp lệ", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                if (cboKhachHang.getSelectedItem() == null || cboThuCung.getSelectedItem() == null
-                        || cboNhanVienSpa.getSelectedItem() == null) {
-                    JOptionPane.showMessageDialog(this, "Hãy chọn khách hàng, thú cưng và thợ Spa.",
-                            "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                // Chỉ đọc lựa chọn một lần; không gọi .toString() khi chưa có dữ liệu.
+                Object khDaChon = cboKhachHang.getSelectedItem();
+                Object tcDaChon = cboThuCung.getSelectedItem();
+                Object nvDaChon = cboNhanVienSpa.getSelectedItem();
+                if (khDaChon == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Chưa có khách hàng để đặt lịch. Hãy kiểm tra dữ liệu KhachHang hoặc kết nối SQL Server.",
+                            "Chưa chọn khách hàng", JOptionPane.WARNING_MESSAGE);
+                    cboKhachHang.requestFocusInWindow();
+                    return;
+                }
+                if (tcDaChon == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Khách hàng đã chọn chưa có thú cưng. Hãy thêm hồ sơ tại Danh mục > Thú cưng trước.",
+                            "Chưa chọn thú cưng", JOptionPane.WARNING_MESSAGE);
+                    cboThuCung.requestFocusInWindow();
+                    return;
+                }
+                if (nvDaChon == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Chưa có thợ Spa để phân công. Hãy kiểm tra vai trò nhân viên và dữ liệu NhanVien.",
+                            "Chưa chọn nhân viên Spa", JOptionPane.WARNING_MESSAGE);
+                    cboNhanVienSpa.requestFocusInWindow();
                     return;
                 }
                 if ("Đã hủy".equals(txtFormTrangThai.getText())) {
@@ -800,9 +845,9 @@ public class QuanLyLichHen extends JPanel {
                     return;
                 }
 
-                String maKH = extractId(cboKhachHang.getSelectedItem().toString());
-                String maTC = extractId(cboThuCung.getSelectedItem().toString());
-                String maNV = extractId(cboNhanVienSpa.getSelectedItem().toString());
+                String maKH = extractId(khDaChon.toString());
+                String maTC = extractId(tcDaChon.toString());
+                String maNV = extractId(nvDaChon.toString());
                 String trangThai = txtFormTrangThai.getText();
 
                 String maLH = (lhEdit == null) ? taoMaLichHenTuDong() : lhEdit.getMaLichHen();
@@ -832,7 +877,10 @@ public class QuanLyLichHen extends JPanel {
                 JOptionPane.showMessageDialog(this, "Ngày phải chọn từ lịch và giờ phải đúng HH:mm (00:00–23:59).",
                         "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Không thể lưu lịch hẹn: " + ex.getMessage() + "\nKiểm tra Console nếu lỗi tiếp tục xảy ra.",
+                        "Lỗi đặt lịch", JOptionPane.ERROR_MESSAGE);
             }
         }
 
