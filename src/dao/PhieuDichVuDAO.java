@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.PhieuDichVu;
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import ConnectDB.connectDB;
 public class PhieuDichVuDAO {
 
     public ArrayList<PhieuDichVu> getAll() {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
         ArrayList<PhieuDichVu> list = new ArrayList<>();
         String sql = "SELECT p.*, tc.tenThuCung, tc.giong, nv.hoTen AS tenNhanVien, kh.hoTen AS tenKhachHang, " +
                 "ISNULL((SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), dv.tenDichVu), N', ') FROM ChiTietDichVu ctdv JOIN DichVu dv ON ctdv.maDichVu = dv.maDichVu WHERE ctdv.maPhieuDichVu = p.maPhieuDichVu), N'') AS cacDichVu "
@@ -84,17 +87,25 @@ public class PhieuDichVuDAO {
         }
         if (p.getMaLichHen() == null || "Không có".equals(p.getMaLichHen()))
             return;
+        // Khong duoc lien ket MOI voi lich da qua gio. Ngoai le: khi sua phieu
+        // cu thi van duoc GIU NGUYEN lich dang gan voi chinh phieu do.
+        // Kiem tra ngay tai SQL Server (GETDATE) de tranh thoi diem may tram lech.
         String sql = "SELECT 1 FROM LichHen WITH (UPDLOCK, HOLDLOCK) "
                 + "WHERE maLichHen = ? AND maKhachHang = ? AND maThuCung = ? "
-                + "AND maNhanVien = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
+                + "AND maNhanVien = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy' "
+                + "AND (ngayGioHen >= GETDATE() OR EXISTS ("
+                + "SELECT 1 FROM PhieuDichVu pdv "
+                + "WHERE pdv.maLichHen = LichHen.maLichHen "
+                + "AND pdv.maPhieuDichVu = ?))";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, p.getMaLichHen());
             ps.setString(2, p.getMaKhachHang());
             ps.setString(3, p.getMaThuCung());
             ps.setString(4, p.getMaNhanVien());
+            ps.setString(5, p.getMaPhieuDichVu());
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next())
-                    throw new SQLException("Thông tin phiếu không khớp lịch hẹn.");
+                    throw new SQLException("Lịch hẹn đã qua giờ, đã hủy hoặc không khớp thông tin phiếu.");
             }
         }
         String trung = "SELECT 1 FROM PhieuDichVu WITH (UPDLOCK, HOLDLOCK) "
@@ -139,6 +150,7 @@ public class PhieuDichVuDAO {
      * toán.
      */
     public boolean them(PhieuDichVu p, List<String[]> dichVuDuocChon) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
         String sql = "INSERT INTO PhieuDichVu "
                 + "(maPhieuDichVu, trangThai, maKhachHang, maThuCung, maNhanVien, maLichHen) "
                 + "VALUES (?, 0, ?, ?, ?, ?)";
@@ -173,6 +185,7 @@ public class PhieuDichVuDAO {
 
     /** Chỉ sửa phiếu chưa thanh toán; không đổi trạng thái do ứng dụng Spa. */
     public boolean sua(PhieuDichVu p, List<String[]> dichVuDuocChon) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
         String sql = "UPDATE PhieuDichVu SET maKhachHang=?, maThuCung=?, maNhanVien=?, maLichHen=? "
                 + "WHERE maPhieuDichVu=? AND trangThai=0";
         try (Connection con = connectDB.getConnection()) {
@@ -212,6 +225,7 @@ public class PhieuDichVuDAO {
 
     /** Xóa phiếu chưa thanh toán và chi tiết một cách nguyên tử. */
     public boolean xoa(String maPhieu) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
@@ -265,24 +279,30 @@ public class PhieuDichVuDAO {
     }
 
     /**
-     * Chỉ lịch chưa hủy và chưa gắn phiếu khác. Khi sửa vẫn hiện lịch đã gắn với
-     * phiếu này.
+     * Chi liet ke lich hen chua qua gio, chua huy va chua gan phieu khac.
+     * Khi SUA phieu, van hien lich da gan voi chinh phieu do du da qua gio.
      */
     public ArrayList<String> getDanhSachLichHen(String maPhieuDangSua) {
         ArrayList<String> list = new ArrayList<>();
         String sql = "SELECT lh.maLichHen FROM LichHen lh "
                 + "WHERE ISNULL(lh.trangThai, N'Xác nhận') <> N'Đã hủy' "
-                + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu p WHERE p.maLichHen = lh.maLichHen "
+                + "AND (lh.ngayGioHen >= GETDATE() OR EXISTS ("
+                + "SELECT 1 FROM PhieuDichVu px "
+                + "WHERE px.maLichHen = lh.maLichHen AND px.maPhieuDichVu = ?)) "
+                + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu p "
+                + "WHERE p.maLichHen = lh.maLichHen "
                 + "AND (? IS NULL OR p.maPhieuDichVu <> ?)) "
-                + "ORDER BY lh.ngayGioHen DESC";
+                + "ORDER BY lh.ngayGioHen ASC";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             if (maPhieuDangSua == null) {
                 ps.setNull(1, Types.VARCHAR);
                 ps.setNull(2, Types.VARCHAR);
+                ps.setNull(3, Types.VARCHAR);
             } else {
                 ps.setString(1, maPhieuDangSua);
                 ps.setString(2, maPhieuDangSua);
+                ps.setString(3, maPhieuDangSua);
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next())

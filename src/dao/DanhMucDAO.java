@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.DanhMuc;
 import entity.SanPham;
@@ -88,6 +90,7 @@ public class DanhMucDAO {
     }
 
     public boolean them(DanhMuc dm) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
 
         String sql = """
                 INSERT INTO DanhMuc (maDanhMuc, tenDanhMuc, moTa)
@@ -107,6 +110,7 @@ public class DanhMucDAO {
     }
 
     public boolean sua(DanhMuc dm) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
 
         String sql = """
                 UPDATE DanhMuc
@@ -165,6 +169,7 @@ public class DanhMucDAO {
 
     /** Chỉ xóa danh mục rỗng để không làm mất sản phẩm và lịch sử giao dịch. */
     public boolean xoa(String maDanhMuc) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
@@ -249,6 +254,7 @@ public class DanhMucDAO {
      */
     public void nhapBoSung(List<SanPham> sanPham, List<Integer> soLuong,
                            String maNhanVien) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         // Gom theo nha cung cap
         Map<String, List<Integer>> theoNcc = new LinkedHashMap<>();

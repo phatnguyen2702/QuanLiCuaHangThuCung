@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.CaLam;
 
 import java.sql.Connection;
@@ -14,6 +16,7 @@ public class CaLamDAO {
 
     // LAY TAT CA CA LAM
     public ArrayList<CaLam> getAll() {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
         ArrayList<CaLam> list = new ArrayList<>();
         String sql = "SELECT maCa, tenCa, gioBatDau, gioKetThuc " +
                 "FROM CaLam " +
@@ -40,6 +43,7 @@ public class CaLamDAO {
 
     // Mã ca được sinh tự động cùng giao dịch INSERT, không dùng mã người dùng nhập.
     public boolean them(CaLam ca) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
         String sql = "INSERT INTO CaLam (maCa, tenCa, gioBatDau, gioKetThuc) "
                 + "VALUES (?, ?, ?, ?)";
         try (Connection con = connectDB.getConnection()) {
@@ -66,6 +70,7 @@ public class CaLamDAO {
 
     // SUA
     public boolean sua(CaLam ca) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
 
         String sql = "UPDATE CaLam SET " +
                 "tenCa = ?, " +
@@ -88,6 +93,7 @@ public class CaLamDAO {
 
     // XOA
     public boolean xoa(String maCa) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
         String sql = "DELETE FROM CaLam WHERE maCa = ?";
         try (
                 Connection con = connectDB.getConnection();

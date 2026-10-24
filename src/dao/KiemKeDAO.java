@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuKiemKe;
 import entity.PhieuKiemKe;
@@ -29,6 +31,7 @@ public class KiemKeDAO {
     // Luu phieu + chi tiet trong 1 giao dich
     public void luu(PhieuKiemKe phieu,
                     List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
 
         damBaoCotKiemKe();
 
@@ -93,6 +96,7 @@ public class KiemKeDAO {
     }
 
     public void luuNhap(PhieuKiemKe phieu, List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
         damBaoCotKiemKe();
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);

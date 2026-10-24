@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -118,6 +120,7 @@ public class ThongKeDoanhThuDAO {
     }
 
     public BaoCao layBaoCao(CheDo cheDo, LocalDate ngayThamChieu) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
         if (cheDo == null || ngayThamChieu == null) {
             throw new IllegalArgumentException("Thiếu kỳ thống kê doanh thu.");
         }

@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.LichHen;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,6 +31,7 @@ public class LichHenDAO {
     // LẤY TẤT CẢ LỊCH HẸN (Kèm thông tin JOIN)
     // =========================================================
     public ArrayList<LichHen> getAll() {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
         ArrayList<LichHen> list = new ArrayList<>();
 
         String sql = "SELECT lh.maLichHen, lh.ngayGioHen, lh.ghiChu, lh.trangThai, " +
@@ -90,6 +93,7 @@ public class LichHenDAO {
 
     /** Hủy mềm để bảo toàn lịch sử, không hủy lịch đã có phiếu dịch vụ. */
     public boolean huy(String maLichHen) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
         String sql = "UPDATE LichHen SET trangThai = N'Đã hủy' "
                 + "WHERE maLichHen = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy' "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu p WHERE p.maLichHen = LichHen.maLichHen)";
@@ -108,6 +112,7 @@ public class LichHenDAO {
     // =========================================================
     /** Tên phương thức tương thích code cũ; luôn hủy mềm, không DELETE. */
     public boolean xoa(String maLichHen) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
         return huy(maLichHen);
     }
 
@@ -115,6 +120,7 @@ public class LichHenDAO {
     // THÊM LỊCH HẸN
     // =========================================================
     public boolean them(LichHen lh) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
         if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
             return false;
         String sql = "INSERT INTO LichHen (maLichHen, ngayGioHen, ghiChu, maKhachHang, maNhanVien, maThuCung, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -138,6 +144,7 @@ public class LichHenDAO {
     // SỬA LỊCH HẸN
     // =========================================================
     public boolean sua(LichHen lh) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
         if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
             return false;
         String sql = "UPDATE LichHen SET ngayGioHen = ?, ghiChu = ?, maKhachHang = ?, maNhanVien = ?, maThuCung = ? "

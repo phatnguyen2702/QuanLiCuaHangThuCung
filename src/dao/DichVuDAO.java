@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.DichVu;
 import java.math.BigDecimal;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 public class DichVuDAO {
 
     public ArrayList<DichVu> timKiem(String tuKhoa) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.DICH_VU);
         ArrayList<DichVu> ketQua = new ArrayList<>();
         String sql = "SELECT maDichVu, tenDichVu, giaDichVu, moTa FROM DichVu "
                 + "WHERE maDichVu LIKE ? OR tenDichVu LIKE ? OR moTa LIKE ? "
@@ -65,6 +68,7 @@ public class DichVuDAO {
 
     /** Sinh ma va luu tren cung mot transaction, khoa bang khi cap ma. */
     public String them(DichVu dv) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.DICH_VU);
         String sql = "INSERT INTO DichVu (maDichVu, tenDichVu, giaDichVu, moTa) VALUES (?, ?, ?, ?)";
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
@@ -92,6 +96,7 @@ public class DichVuDAO {
     }
 
     public boolean sua(DichVu dv) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.DICH_VU);
         String sql = "UPDATE DichVu SET tenDichVu = ?, giaDichVu = ?, moTa = ? WHERE maDichVu = ?";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -120,6 +125,7 @@ public class DichVuDAO {
     }
 
     public boolean xoa(String ma) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.DICH_VU);
         // FK trong SQL Server tiep tuc bao ve neu co giao dich phat sinh dong thoi.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement("DELETE FROM DichVu WHERE maDichVu = ?")) {

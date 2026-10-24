@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.Voucher;
 
 import java.sql.*;
@@ -13,6 +15,7 @@ public class VoucherDAO {
         // =========================================================
 
         public ArrayList<Voucher> getAll(String tuKhoa) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
 
                 ArrayList<Voucher> list = new ArrayList<>();
 
@@ -111,6 +114,7 @@ public class VoucherDAO {
         // =========================================================
 
         public String them(Voucher v) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
 
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
@@ -145,6 +149,7 @@ public class VoucherDAO {
         // =========================================================
 
         public boolean sua(Voucher v) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
 
                 String sql = "UPDATE Vocher SET tenVoucher = ?, phanTramGiam = ?, dieuKien = ?, "
                                 + "trangThai = ?, ngayBatDau = ?, ngayKetThuc = ?, soLuongToiDa = ? "
@@ -173,6 +178,7 @@ public class VoucherDAO {
         // =========================================================
 
         public boolean doiTrangThai(String maVoucher, boolean hoatDong) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
 
                 String sql = "UPDATE Vocher SET trangThai = ? WHERE maVoucher = ?";
 
@@ -199,6 +205,7 @@ public class VoucherDAO {
         // =========================================================
 
         public String xoa(String maVoucher) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
 
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
