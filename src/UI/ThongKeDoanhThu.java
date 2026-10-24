@@ -118,7 +118,7 @@ public class ThongKeDoanhThu extends JPanel {
         kyChon.add(btnSau);
         toolbar.add(kyChon, BorderLayout.WEST);
 
-        JButton btnPdf = new JButton("Xuất file PDF");
+        JButton btnPdf = new JButton("Xuất file");
         btnPdf.addActionListener(e -> xuatPdf());
         toolbar.add(btnPdf, BorderLayout.EAST);
 
@@ -295,7 +295,7 @@ public class ThongKeDoanhThu extends JPanel {
 
     private void xuatPdf() {
         if (baoCao == null) {
-            JOptionPane.showMessageDialog(this, "Chưa có số liệu để xuất PDF.",
+            JOptionPane.showMessageDialog(this, "Chưa có số liệu để xuất.",
                     "Xuất thống kê", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -315,12 +315,12 @@ public class ThongKeDoanhThu extends JPanel {
         try {
             Files.write(file, taoPdf());
             JOptionPane.showMessageDialog(this,
-                    "Đã xuất thống kê PDF:\n" + file.toAbsolutePath(),
+                    "Đã xuất thống kê:\n" + file.toAbsolutePath(),
                     "Xuất thống kê", JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this,
-                    "Không thể xuất file PDF.\n" + ex.getMessage(),
-                    "Lỗi xuất PDF", JOptionPane.ERROR_MESSAGE);
+                    "Không thể xuất file.\n" + ex.getMessage(),
+                    "Lỗi xuất", JOptionPane.ERROR_MESSAGE);
         }
     }
 
