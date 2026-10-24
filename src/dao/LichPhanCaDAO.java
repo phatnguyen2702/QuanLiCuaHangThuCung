@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.LichPhanCa;
 
 import java.sql.Connection;
@@ -16,6 +18,7 @@ import ConnectDB.connectDB;
 public class LichPhanCaDAO {
 
     public boolean sua(LichPhanCa pc) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
         String sql = "UPDATE LichPhanCa SET ngayLamViec=?, maNhanVien=?, maCa=? "
                 + "WHERE maPhanCa=? AND ngayLamViec >= CONVERT(date, GETDATE()) "
                 + "AND ? >= CONVERT(date, GETDATE())";
@@ -68,6 +71,7 @@ public class LichPhanCaDAO {
     }
     // LAY TAT CA LICH PHAN CA
     public ArrayList<LichPhanCa> getAll() {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
         ArrayList<LichPhanCa> list = new ArrayList<>();
         String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, " +
                 "pc.maNhanVien, nv.hoTen, " +
@@ -106,6 +110,7 @@ public class LichPhanCaDAO {
 
     // THEM PHAN CA
     public boolean them(LichPhanCa pc) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
         String sql = "INSERT INTO LichPhanCa " +
                 "(maPhanCa, ngayLamViec, maNhanVien, maCa) " +
                 "VALUES (?, ?, ?, ?)";
@@ -131,6 +136,7 @@ public class LichPhanCaDAO {
 
     // XOA PHAN CA
     public boolean xoa(String maPhanCa) {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
         String sql = "DELETE FROM LichPhanCa " +
                 "WHERE maPhanCa = ?";
         try (

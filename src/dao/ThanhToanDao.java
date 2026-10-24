@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.ThanhToan;
 import java.math.BigDecimal;
@@ -200,6 +202,7 @@ public class ThanhToanDao {
 
     public String taoMaHoaDon(String maKhachHang, LocalDateTime ngayLap)
             throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THANH_TOAN);
         if (maKhachHang == null || ngayLap == null) {
             throw new IllegalArgumentException("Thiếu mã khách hàng hoặc ngày lập hóa đơn.");
         }
@@ -239,6 +242,7 @@ public class ThanhToanDao {
             BigDecimal phanTramGiam,
             List<ThanhToan> chiTiet,
             List<String> maPhieuDichVus) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THANH_TOAN);
         if (chiTiet == null || chiTiet.isEmpty()) {
             throw new IllegalArgumentException("Hóa đơn chưa có mặt hàng.");
         }

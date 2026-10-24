@@ -9,9 +9,9 @@ public final class PhienLamViec {
 
     private static final List<ThanhToan> GIO_HANG = new ArrayList<>();
 
-    public static String maNV = "NV001";
-    public static String hoTen = "Đặng Đình An";
-    public static String vaiTro = "Quản lý";
+    public static String maNV = null;
+    public static String hoTen = null;
+    public static String vaiTro = null;
 
     private PhienLamViec() {
     }
