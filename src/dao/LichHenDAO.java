@@ -8,10 +8,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import ConnectDB.connectDB;
 
 public class LichHenDAO {
+
+    /** Mỗi lịch Spa giữ chỗ cho nhân viên 60 phút kể từ giờ bắt đầu. */
+    private static final int THOI_LUONG_LICH_PHUT = 60;
+    private static final DateTimeFormatter GIO_HEN_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public ArrayList<String> getDanhSachDichVu() {
         ArrayList<String> list = new ArrayList<>();
@@ -117,23 +123,112 @@ public class LichHenDAO {
     }
 
     // =========================================================
+    // KIỂM TRA GIỜ HẸN VÀ TRÙNG LỊCH NHÂN VIÊN SPA
+    // =========================================================
+
+    /**
+     * Hàm này được gọi khi THÊM hoặc SỬA, ngay trong transaction lưu.
+     * - Cấm giờ hiện tại / giờ trong quá khứ.
+     * - Một thợ Spa chỉ có một lịch trong mỗi khoảng 60 phút.
+     * - Bỏ qua lịch đã hủy và chính lịch đang sửa.
+     * Khóa UPDLOCK + HOLDLOCK dưới SERIALIZABLE tránh hai nhân viên cùng
+     * đặt trùng trong lúc thao tác đồng thời ở hai máy.
+     */
+    private void kiemTraLichHopLe(Connection con, LichHen lh) throws SQLException {
+        if (lh == null || lh.getNgayGioHen() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn ngày và giờ hẹn hợp lệ.");
+        }
+        if (lh.getMaNhanVien() == null || lh.getMaNhanVien().isBlank()) {
+            throw new IllegalArgumentException("Vui lòng chọn nhân viên Spa.");
+        }
+
+        LocalDateTime ngayGio = lh.getNgayGioHen();
+        if (!ngayGio.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Không được đặt hoặc chuyển lịch sang thời gian đã qua.");
+        }
+
+        // Kiểm tra theo đồng hồ SQL Server lần nữa, ngay trước khi lưu.
+        String sqlQuaGio = "SELECT CASE WHEN ? <= SYSDATETIME() THEN 1 ELSE 0 END";
+        try (PreparedStatement ps = con.prepareStatement(sqlQuaGio)) {
+            ps.setTimestamp(1, Timestamp.valueOf(ngayGio));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getInt(1) == 1) {
+                    throw new IllegalArgumentException("Giờ hẹn đã qua. Vui lòng chọn thời gian mới.");
+                }
+            }
+        }
+
+        // Hai lịch cách nhau dưới 60 phút sẽ chồng nhau (ví dụ 09:00 và 09:30).
+        String sqlTrung = "SELECT TOP (1) maLichHen, ngayGioHen "
+                + "FROM LichHen WITH (UPDLOCK, HOLDLOCK) "
+                + "WHERE maNhanVien = ? "
+                + "AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy' "
+                + "AND maLichHen <> ? "
+                + "AND ngayGioHen > DATEADD(MINUTE, ?, ?) "
+                + "AND ngayGioHen < DATEADD(MINUTE, ?, ?) "
+                + "ORDER BY ngayGioHen";
+        try (PreparedStatement ps = con.prepareStatement(sqlTrung)) {
+            ps.setString(1, lh.getMaNhanVien());
+            ps.setString(2, lh.getMaLichHen() == null ? "" : lh.getMaLichHen());
+            ps.setInt(3, -THOI_LUONG_LICH_PHUT);
+            ps.setTimestamp(4, Timestamp.valueOf(ngayGio));
+            ps.setInt(5, THOI_LUONG_LICH_PHUT);
+            ps.setTimestamp(6, Timestamp.valueOf(ngayGio));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Timestamp gioDaCo = rs.getTimestamp("ngayGioHen");
+                    String gioTrung = gioDaCo == null ? "" : gioDaCo.toLocalDateTime().format(GIO_HEN_FORMAT);
+                    throw new IllegalStateException("Nhân viên Spa này đã có lịch "
+                            + rs.getString("maLichHen") + " vào " + gioTrung + ". "
+                            + "Mỗi lịch chiếm 60 phút. Hãy chọn giờ cách lịch hiện có ít nhất 60 phút "
+                            + "hoặc chọn nhân viên Spa khác.");
+                }
+            }
+        }
+    }
+
+    private void rollbackAnToan(Connection con, Exception loiBanDau) {
+        try {
+            con.rollback();
+        } catch (SQLException ex) {
+            loiBanDau.addSuppressed(ex);
+        }
+    }
+
+    // =========================================================
     // THÊM LỊCH HẸN
     // =========================================================
     public boolean them(LichHen lh) {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        if (lh == null) {
+            throw new IllegalArgumentException("Thông tin lịch hẹn không hợp lệ.");
+        }
         if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
             return false;
-        String sql = "INSERT INTO LichHen (maLichHen, ngayGioHen, ghiChu, maKhachHang, maNhanVien, maThuCung, trangThai) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, lh.getMaLichHen());
-            ps.setTimestamp(2, java.sql.Timestamp.valueOf(lh.getNgayGioHen()));
-            ps.setString(3, lh.getGhiChu());
-            ps.setString(4, lh.getMaKhachHang());
-            ps.setString(5, lh.getMaNhanVien());
-            ps.setString(6, lh.getMaThuCung());
-            ps.setString(7, lh.getTrangThai() == null ? "Xác nhận" : lh.getTrangThai());
-            return ps.executeUpdate() > 0;
+        String sql = "INSERT INTO LichHen (maLichHen, ngayGioHen, ghiChu, maKhachHang, maNhanVien, maThuCung, trangThai) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection con = connectDB.getConnection()) {
+            con.setAutoCommit(false);
+            con.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            try {
+                kiemTraLichHopLe(con, lh);
+                int soDong;
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setString(1, lh.getMaLichHen());
+                    ps.setTimestamp(2, Timestamp.valueOf(lh.getNgayGioHen()));
+                    ps.setString(3, lh.getGhiChu());
+                    ps.setString(4, lh.getMaKhachHang());
+                    ps.setString(5, lh.getMaNhanVien());
+                    ps.setString(6, lh.getMaThuCung());
+                    ps.setString(7, lh.getTrangThai() == null ? "Xác nhận" : lh.getTrangThai());
+                    soDong = ps.executeUpdate();
+                }
+                con.commit();
+                return soDong == 1;
+            } catch (SQLException | RuntimeException ex) {
+                rollbackAnToan(con, ex);
+                throw ex;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -145,19 +240,34 @@ public class LichHenDAO {
     // =========================================================
     public boolean sua(LichHen lh) {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        if (lh == null) {
+            throw new IllegalArgumentException("Thông tin lịch hẹn không hợp lệ.");
+        }
         if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
             return false;
         String sql = "UPDATE LichHen SET ngayGioHen = ?, ghiChu = ?, maKhachHang = ?, maNhanVien = ?, maThuCung = ? "
                 + "WHERE maLichHen = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setTimestamp(1, java.sql.Timestamp.valueOf(lh.getNgayGioHen()));
-            ps.setString(2, lh.getGhiChu());
-            ps.setString(3, lh.getMaKhachHang());
-            ps.setString(4, lh.getMaNhanVien());
-            ps.setString(5, lh.getMaThuCung());
-            ps.setString(6, lh.getMaLichHen());
-            return ps.executeUpdate() > 0;
+        try (Connection con = connectDB.getConnection()) {
+            con.setAutoCommit(false);
+            con.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            try {
+                kiemTraLichHopLe(con, lh);
+                int soDong;
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setTimestamp(1, Timestamp.valueOf(lh.getNgayGioHen()));
+                    ps.setString(2, lh.getGhiChu());
+                    ps.setString(3, lh.getMaKhachHang());
+                    ps.setString(4, lh.getMaNhanVien());
+                    ps.setString(5, lh.getMaThuCung());
+                    ps.setString(6, lh.getMaLichHen());
+                    soDong = ps.executeUpdate();
+                }
+                con.commit();
+                return soDong == 1;
+            } catch (SQLException | RuntimeException ex) {
+                rollbackAnToan(con, ex);
+                throw ex;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
