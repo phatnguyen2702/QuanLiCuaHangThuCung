@@ -135,6 +135,8 @@ public class HoaDonDAO {
                 + "COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không xác định') AS tenHang, "
                 + "CASE WHEN sp.maSanPham IS NOT NULL THEN N'Sản phẩm' "
                 + "WHEN dv.maDichVu IS NOT NULL THEN N'Dịch vụ' ELSE N'Thú cưng' END AS loaiHang, "
+                + "CASE WHEN dv.maDichVu IS NOT NULL THEN tc.tenThuCung END "
+                + "AS tenThuCungDichVu, "
                 + "ct.soLuong, ct.donGia, ct.phanTramGiam "
                 + "FROM ChiTietHoaDon ct "
                 + "LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham "
@@ -175,7 +177,8 @@ public class HoaDonDAO {
                                 rs.getString("loaiHang"),
                                 rs.getInt("soLuong"),
                                 rs.getBigDecimal("donGia"),
-                                rs.getBigDecimal("phanTramGiam")));
+                                rs.getBigDecimal("phanTramGiam"),
+                                rs.getString("tenThuCungDichVu")));
                     }
                 }
             }

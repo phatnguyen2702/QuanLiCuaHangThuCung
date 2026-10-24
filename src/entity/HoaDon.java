@@ -74,6 +74,7 @@ public class HoaDon {
         private final String maHang;
         private final String tenHang;
         private final String loaiHang;
+        private final String tenThuCung;
         private final int soLuong;
         private final BigDecimal donGia;
         private final BigDecimal phanTramGiam;
@@ -85,9 +86,21 @@ public class HoaDon {
                 int soLuong,
                 BigDecimal donGia,
                 BigDecimal phanTramGiam) {
+            this(maHang, tenHang, loaiHang, soLuong, donGia, phanTramGiam, null);
+        }
+
+        public ChiTiet(
+                String maHang,
+                String tenHang,
+                String loaiHang,
+                int soLuong,
+                BigDecimal donGia,
+                BigDecimal phanTramGiam,
+                String tenThuCung) {
             this.maHang = maHang;
             this.tenHang = tenHang;
             this.loaiHang = loaiHang;
+            this.tenThuCung = tenThuCung;
             this.soLuong = soLuong;
             this.donGia = donGia == null ? BigDecimal.ZERO : donGia;
             this.phanTramGiam = phanTramGiam == null ? BigDecimal.ZERO : phanTramGiam;
@@ -103,6 +116,10 @@ public class HoaDon {
 
         public String getLoaiHang() {
             return loaiHang;
+        }
+
+        public String getTenThuCung() {
+            return tenThuCung;
         }
 
         public int getSoLuong() {

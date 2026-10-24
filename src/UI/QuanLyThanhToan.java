@@ -806,7 +806,8 @@ public class QuanLyThanhToan extends JPanel {
 
     private void themSanPham(entity.ThanhToan sanPham, int soLuong) {
         for (entity.ThanhToan item : chiTiet) {
-            if (item.getMaHang().equals(sanPham.getMaHang())) {
+            if (item.getMaHang().equals(sanPham.getMaHang())
+                    && java.util.Objects.equals(item.getMaThuCung(), sanPham.getMaThuCung())) {
                 item.setSoLuong(item.getSoLuong() + soLuong);
                 tableModel.fireTableDataChanged();
                 capNhatTien();
