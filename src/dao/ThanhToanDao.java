@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import ConnectDB.connectDB;
 import entity.ThanhToan;
 import java.math.BigDecimal;
@@ -88,7 +90,7 @@ public class ThanhToanDao {
 
     public Map<String, List<ThanhToan>> layPhieuDichVuDangXuLy(String maKhachHang)
             throws SQLException {
-        String sql = "SELECT p.maPhieuDichVu, dv.maDichVu, dv.tenDichVu, "
+        String sql = "SELECT p.maPhieuDichVu, p.maThuCung, dv.maDichVu, dv.tenDichVu, "
                 + "ctdv.soLuong, ctdv.donGia "
                 + "FROM PhieuDichVu p "
                 + "JOIN ChiTietDichVu ctdv ON ctdv.maPhieuDichVu = p.maPhieuDichVu "
@@ -108,7 +110,8 @@ public class ThanhToanDao {
                                 + " có đơn giá không hợp lệ.");
                     }
                     ThanhToan dichVu = ThanhToan.dichVu(
-                            rs.getString("maDichVu"), rs.getString("tenDichVu"), donGia);
+                            rs.getString("maDichVu"), rs.getString("tenDichVu"), donGia,
+                            rs.getString("maThuCung"));
                     dichVu.setSoLuong(rs.getInt("soLuong"));
                     phieuDichVus.computeIfAbsent(maPhieuDichVu, key -> new ArrayList<>())
                             .add(dichVu);
@@ -200,6 +203,7 @@ public class ThanhToanDao {
 
     public String taoMaHoaDon(String maKhachHang, LocalDateTime ngayLap)
             throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THANH_TOAN);
         if (maKhachHang == null || ngayLap == null) {
             throw new IllegalArgumentException("Thiếu mã khách hàng hoặc ngày lập hóa đơn.");
         }
@@ -239,6 +243,7 @@ public class ThanhToanDao {
             BigDecimal phanTramGiam,
             List<ThanhToan> chiTiet,
             List<String> maPhieuDichVus) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THANH_TOAN);
         if (chiTiet == null || chiTiet.isEmpty()) {
             throw new IllegalArgumentException("Hóa đơn chưa có mặt hàng.");
         }
@@ -253,8 +258,8 @@ public class ThanhToanDao {
                 + "(maHoaDon, ngayLap, maPhuongThuc, maKhachHang, maNhanVien, maVoucher) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
         String insertChiTiet = "INSERT INTO ChiTietHoaDon "
-                + "(maHoaDon, maSanPham, maDichVu, soLuong, donGia, phanTramGiam) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+                + "(maHoaDon, maThuCung, maSanPham, maDichVu, soLuong, donGia, phanTramGiam) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         String completeServiceTicket = "UPDATE PhieuDichVu SET trangThai = 1 "
                 + "WHERE maPhieuDichVu = ? AND maKhachHang = ? AND trangThai = 0";
 
@@ -298,11 +303,12 @@ public class ThanhToanDao {
                 try (PreparedStatement ps = con.prepareStatement(insertChiTiet)) {
                     for (ThanhToan item : chiTiet) {
                         ps.setString(1, maHoaDon);
-                        ps.setString(2, item.getMaSanPham());
-                        ps.setString(3, item.getMaDichVu());
-                        ps.setInt(4, item.getSoLuong());
-                        ps.setBigDecimal(5, item.getDonGia());
-                        ps.setBigDecimal(6, phanTramGiam);
+                        ps.setString(2, item.getMaThuCung());
+                        ps.setString(3, item.getMaSanPham());
+                        ps.setString(4, item.getMaDichVu());
+                        ps.setInt(5, item.getSoLuong());
+                        ps.setBigDecimal(6, item.getDonGia());
+                        ps.setBigDecimal(7, phanTramGiam);
                         ps.addBatch();
                     }
                     ps.executeBatch();

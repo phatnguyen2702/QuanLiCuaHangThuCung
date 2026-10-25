@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.TaiKhoan;
 
 import java.sql.*;
@@ -38,6 +40,7 @@ public class TaiKhoanDAO {
         // =========================================================
 
         public ArrayList<TaiKhoan> getAll() {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
 
                 ArrayList<TaiKhoan> list = new ArrayList<>();
 
@@ -82,6 +85,7 @@ public class TaiKhoanDAO {
 
         // Mã nhân viên được cấp khi INSERT trong cùng transaction.
         public boolean them(TaiKhoan tk) throws SQLException {
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
                 String sql = "INSERT INTO NhanVien "
                                 + "(maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro) "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -115,6 +119,7 @@ public class TaiKhoanDAO {
         // SUA
         public boolean sua(
                         TaiKhoan tk) {
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
 
                 String sql = "UPDATE NhanVien SET "
                                 + "hoTen = ?, "
@@ -152,6 +157,7 @@ public class TaiKhoanDAO {
         // XOA
         public boolean xoa(
                         String maNhanVien) {
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
                 String sql = "DELETE FROM NhanVien "
                                 + "WHERE maNhanVien = ?";
                 try (
@@ -194,6 +200,7 @@ public class TaiKhoanDAO {
          */
         public boolean capLaiMatKhauCoPheDuyet(String maNV, String maQuanLy,
                         String matKhauQuanLy, String matKhauMoi) throws SQLException {
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
                 if (maNV == null || maNV.trim().isEmpty() || maQuanLy == null
                                 || maQuanLy.trim().isEmpty() || matKhauQuanLy == null
                                 || matKhauQuanLy.isEmpty() || matKhauMoi == null
@@ -222,6 +229,7 @@ public class TaiKhoanDAO {
          * kiem tra quyen o may chu trong phien ban thuc te.
          */
         public boolean capLaiMatKhau(String maNhanVien, String matKhauMoi) throws SQLException {
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
                 if (maNhanVien == null || maNhanVien.trim().isEmpty()
                                 || matKhauMoi == null || matKhauMoi.length() < 6) {
                         throw new IllegalArgumentException("Ma NV hoac mat khau moi khong hop le.");
@@ -246,6 +254,7 @@ public class TaiKhoanDAO {
         public boolean capLaiMatKhauQuaTaiKhoanQuanLy(String maNhanVienCanKhoiPhuc,
                         String taiKhoanQuanLy, String matKhauQuanLy, String matKhauTamThoi)
                         throws SQLException {
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
                 if (maNhanVienCanKhoiPhuc == null || maNhanVienCanKhoiPhuc.trim().isEmpty()
                                 || taiKhoanQuanLy == null || taiKhoanQuanLy.trim().isEmpty()
                                 || matKhauQuanLy == null || matKhauQuanLy.isEmpty()
@@ -315,6 +324,12 @@ public class TaiKhoanDAO {
          */
         public boolean doiMatKhau(String maNhanVien, String matKhauCu,
                         String matKhauMoi) throws SQLException {
+            // Khong cho phep doi mat khau thay nguoi khac, ke ca khi biet mat khau cu.
+            if (maNhanVien == null || UI.PhienLamViec.maNV == null
+                    || !maNhanVien.trim().equals(UI.PhienLamViec.maNV)) {
+                throw new SecurityException("Chỉ được đổi mật khẩu của tài khoản đang đăng nhập.");
+            }
+
                 if (maNhanVien == null || maNhanVien.isBlank()
                                 || matKhauCu == null || matKhauCu.isEmpty()
                                 || matKhauMoi == null || matKhauMoi.length() < 6

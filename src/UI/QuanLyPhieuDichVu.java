@@ -24,7 +24,7 @@ public class QuanLyPhieuDichVu extends JPanel {
     private final Color STATUS_GRAY = new Color(200, 200, 200);
 
     private JTextField txtTimKiem;
-    private JComboBox<String> cboNhanVien, cboTrangThai;
+    private JComboBox<String> cboNhanVien, cboTrangThai, cboDichVuLoc;
     private JTable table;
     private DefaultTableModel tableModel;
 
@@ -79,9 +79,14 @@ public class QuanLyPhieuDichVu extends JPanel {
         filterRow.add(cboNhanVien);
 
         filterRow.add(createFilterLabel("Trạng thái"));
-        cboTrangThai = new JComboBox<>(new String[] { "Tất cả", "Hoàn thành", "Đang xử lý" });
+        cboTrangThai = new JComboBox<>(new String[] { "Tất cả", "Chưa thanh toán", "Đã thanh toán" });
         cboTrangThai.setPreferredSize(new Dimension(120, 30));
         filterRow.add(cboTrangThai);
+
+        filterRow.add(createFilterLabel("Dịch vụ"));
+        cboDichVuLoc = new JComboBox<>();
+        cboDichVuLoc.setPreferredSize(new Dimension(165, 30));
+        filterRow.add(cboDichVuLoc);
 
         filterRow.add(createFilterLabel("Tìm kiếm"));
         txtTimKiem = new JTextField(15);
@@ -97,8 +102,14 @@ public class QuanLyPhieuDichVu extends JPanel {
         txtTimKiem.addActionListener(e -> locDuLieu());
         cboNhanVien.addActionListener(e -> locDuLieu());
         cboTrangThai.addActionListener(e -> locDuLieu());
+        cboDichVuLoc.addActionListener(e -> locDuLieu());
 
         filterRow.add(btnTimKiem);
+        JButton btnLamMoi = new JButton("Làm mới");
+        btnLamMoi.setBackground(new Color(226, 233, 241));
+        btnLamMoi.setFocusPainted(false);
+        btnLamMoi.addActionListener(e -> lamMoiBoLoc());
+        filterRow.add(btnLamMoi);
 
         panel.add(filterRow, BorderLayout.CENTER);
         return panel;
@@ -116,29 +127,26 @@ public class QuanLyPhieuDichVu extends JPanel {
         panel.setBorder(new EmptyBorder(0, 25, 20, 25));
 
         // Thêm cột Dịch Vụ
-        String[] columns = { "Mã Phiếu", "Mã Lịch Hẹn", "Thú Cưng", "Nhân Viên", "Dịch Vụ", "Trạng Thái", "Thao Tác" };
+        String[] columns = { "Mã Phiếu", "Mã Lịch Hẹn", "Khách Hàng", "Thú Cưng",
+                "Nhân Viên", "Dịch Vụ", "Thanh Toán", "Thao Tác" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 6; // Cột Thao tác dời sang vị trí 6
+                return column == 7; // Chỉ cột Thao tác được bấm
             }
         };
 
         table = new JTable(tableModel);
-        table.setRowHeight(45);
+        table.setRowHeight(54);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.getTableHeader().setBackground(Color.WHITE);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         table.getTableHeader().setPreferredSize(new Dimension(100, 40));
 
         // Tinh chỉnh độ rộng các cột
-        table.getColumnModel().getColumn(0).setPreferredWidth(80);
-        table.getColumnModel().getColumn(1).setPreferredWidth(100);
-        table.getColumnModel().getColumn(2).setPreferredWidth(150);
-        table.getColumnModel().getColumn(3).setPreferredWidth(130);
-        table.getColumnModel().getColumn(4).setPreferredWidth(200); // Rộng một chút để hiển thị tên nhiều Dịch Vụ
-        table.getColumnModel().getColumn(5).setPreferredWidth(100);
-        table.getColumnModel().getColumn(6).setPreferredWidth(130);
+        int[] rongCot = { 85, 100, 160, 165, 145, 355, 135, 145 };
+        for (int i = 0; i < rongCot.length; i++)
+            table.getColumnModel().getColumn(i).setPreferredWidth(rongCot[i]);
 
         table.setBorder(BorderFactory.createLineBorder(new Color(51, 153, 255), 1));
 
@@ -146,11 +154,28 @@ public class QuanLyPhieuDichVu extends JPanel {
         center.setHorizontalAlignment(SwingConstants.CENTER);
         table.getColumnModel().getColumn(0).setCellRenderer(center);
         table.getColumnModel().getColumn(1).setCellRenderer(center);
-        table.getColumnModel().getColumn(5).setCellRenderer(new StatusCellRenderer());
+        table.getColumnModel().getColumn(6).setCellRenderer(new StatusCellRenderer());
+        table.getColumnModel().getColumn(5).setCellRenderer(new DichVuNhieuDongRenderer());
+        table.getColumnModel().getColumn(7).setCellRenderer(new ActionButtonRenderer());
+        table.getColumnModel().getColumn(7).setCellEditor(new ActionButtonEditor());
+        table.setToolTipText("Nhấp đúp một dòng để xem hoặc sửa phiếu chưa thanh toán.");
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2 && table.getSelectedRow() >= 0
+                        && table.columnAtPoint(e.getPoint()) != 7) {
+                    String ma = String.valueOf(table.getValueAt(table.getSelectedRow(), 0));
+                    for (PhieuDichVu pdv : dao.getAll()) {
+                        if (ma.equals(pdv.getMaPhieuDichVu())) {
+                            hienFormPhieuDichVu(pdv);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
 
-        table.getColumnModel().getColumn(6).setCellRenderer(new ActionButtonRenderer());
-        table.getColumnModel().getColumn(6).setCellEditor(new ActionButtonEditor());
-
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         JScrollPane scroll = new JScrollPane(table);
         scroll.getViewport().setBackground(Color.WHITE);
         scroll.setBorder(BorderFactory.createEmptyBorder());
@@ -164,6 +189,20 @@ public class QuanLyPhieuDichVu extends JPanel {
         for (String[] nv : lichHenDAO.getDanhSachNhanVienSpa()) {
             cboNhanVien.addItem(nv[1]);
         }
+        cboDichVuLoc.removeAllItems();
+        cboDichVuLoc.addItem("Tất cả");
+        for (String[] dv : dao.getDanhSachDichVu()) {
+            cboDichVuLoc.addItem(dv[1]);
+        }
+    }
+
+    private void lamMoiBoLoc() {
+        txtTimKiem.setText("");
+        cboNhanVien.setSelectedIndex(0);
+        cboTrangThai.setSelectedIndex(0);
+        cboDichVuLoc.setSelectedIndex(0);
+        loadComboBox();
+        locDuLieu();
     }
 
     public void loadData() {
@@ -174,11 +213,14 @@ public class QuanLyPhieuDichVu extends JPanel {
     // HÀM LỌC DỮ LIỆU
     // =========================================================
     private void locDuLieu() {
-        if (cboNhanVien == null || cboTrangThai == null)
+        if (cboNhanVien == null || cboTrangThai == null || cboDichVuLoc == null ||
+                cboNhanVien.getSelectedItem() == null || cboTrangThai.getSelectedItem() == null ||
+                cboDichVuLoc.getSelectedItem() == null)
             return;
 
         String nhanVienLoc = cboNhanVien.getSelectedItem().toString();
         String trangThaiLoc = cboTrangThai.getSelectedItem().toString();
+        String dichVuLoc = cboDichVuLoc.getSelectedItem().toString();
         String tuKhoa = txtTimKiem.getText().trim().toLowerCase();
 
         tableModel.setRowCount(0);
@@ -200,6 +242,13 @@ public class QuanLyPhieuDichVu extends JPanel {
                 }
             }
 
+            if (!"Tất cả".equals(dichVuLoc)) {
+                String cacDichVu = pdv.getCacDichVu() == null ? "" : pdv.getCacDichVu();
+                if (!java.util.Arrays.asList(cacDichVu.split(",\\s*")).contains(dichVuLoc)) {
+                    isMatch = false;
+                }
+            }
+
             // 3. Lọc theo Từ Khóa (Mã phiếu, Mã Lịch Hẹn, Tên thú cưng, Tên Dịch Vụ)
             if (!tuKhoa.isEmpty()) {
                 String maPhieu = pdv.getMaPhieuDichVu() != null ? pdv.getMaPhieuDichVu().toLowerCase() : "";
@@ -215,17 +264,59 @@ public class QuanLyPhieuDichVu extends JPanel {
 
             if (isMatch) {
                 tableModel.addRow(new Object[] {
-                        pdv.getMaPhieuDichVu(), pdv.getMaLichHen(), pdv.getTenThuCung(), pdv.getTenNhanVien(),
+                        pdv.getMaPhieuDichVu(), pdv.getMaLichHen(), pdv.getTenKhachHang(),
+                        pdv.getTenThuCung(), pdv.getTenNhanVien(),
                         pdv.getCacDichVu(), pdv.getTrangThai(), ""
                 });
             }
         }
+        // Đặt chiều cao dòng theo số tên dịch vụ để không bị cắt nội dung.
+        int rongCot = table.getColumnModel().getColumn(5).getPreferredWidth();
+        for (int row = 0; row < tableModel.getRowCount(); row++) {
+            String ds = String.valueOf(tableModel.getValueAt(row, 5));
+            JTextArea doCao = new JTextArea(ds.replace(", ", "\n"));
+            doCao.setFont(table.getFont());
+            doCao.setLineWrap(true);
+            doCao.setWrapStyleWord(true);
+            doCao.setSize(Math.max(120, rongCot - 18), Short.MAX_VALUE);
+            table.setRowHeight(row, Math.max(54, doCao.getPreferredSize().height + 18));
+        }
     }
 
     private void hienFormPhieuDichVu(PhieuDichVu pdvEdit) {
+        if (pdvEdit != null && "Đã thanh toán".equals(pdvEdit.getTrangThai())) {
+            JOptionPane.showMessageDialog(this,
+                    "Phiếu đã thanh toán không thể sửa. Hãy xem lại hóa đơn nếu cần đối chiếu.",
+                    "Không thể sửa", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         PhieuDichVuDialog dialog = new PhieuDichVuDialog(parentFrame, this, dao, lichHenDAO, pdvEdit);
         dialog.setVisible(true);
+    }
+
+    /** Hiển thị đầy đủ tên dịch vụ trên nhiều dòng thay vì dấu "...". */
+    private class DichVuNhieuDongRenderer extends JTextArea implements TableCellRenderer {
+        DichVuNhieuDongRenderer() {
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setEditable(false);
+            setBorder(new EmptyBorder(5, 8, 5, 6));
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable tbl, Object value,
+                boolean selected, boolean focused, int row, int column) {
+            String noiDung = value == null ? "" : value.toString();
+            setText(noiDung.replace(", ", "\n"));
+            setFont(tbl.getFont());
+            setBackground(selected ? tbl.getSelectionBackground() : Color.WHITE);
+            setForeground(selected ? tbl.getSelectionForeground() : tbl.getForeground());
+            setToolTipText("<html>" + noiDung.replace("&", "&amp;")
+                    .replace("<", "&lt;").replace(">", "&gt;")
+                    .replace(", ", "<br>") + "</html>");
+            return this;
+        }
     }
 
     // ================== RENDERER MÀU TRẠNG THÁI ==================
@@ -236,9 +327,9 @@ public class QuanLyPhieuDichVu extends JPanel {
             Component comp = super.getTableCellRendererComponent(table, value, isSel, hasFocus, r, c);
             setHorizontalAlignment(SwingConstants.CENTER);
             String st = value != null ? value.toString() : "";
-            if (st.equals("Hoàn thành"))
+            if (st.equals("Đã thanh toán"))
                 comp.setBackground(STATUS_GREEN);
-            else if (st.equals("Đang xử lý"))
+            else if (st.equals("Chưa thanh toán"))
                 comp.setBackground(STATUS_GRAY);
             else
                 comp.setBackground(Color.WHITE);
@@ -343,7 +434,8 @@ public class QuanLyPhieuDichVu extends JPanel {
             this.lhDao = lhDao;
             this.pEdit = pEdit;
 
-            setSize(600, 550); // Mở rộng chiều cao và chiều ngang để chứa danh sách Dịch Vụ
+            setSize(760, 640); // Modal rộng hơn, không chiếm diện tích bảng danh sách.
+            setMinimumSize(new Dimension(650, 560));
             setLocationRelativeTo(parent);
             setLayout(new BorderLayout());
 
@@ -360,7 +452,7 @@ public class QuanLyPhieuDichVu extends JPanel {
             pnlTop.add(new JLabel("Liên kết Lịch Hẹn:"));
             cboLichHen = new JComboBox<>();
             cboLichHen.addItem("Không có");
-            for (String lh : pDao.getDanhSachLichHen())
+            for (String lh : pDao.getDanhSachLichHen(pEdit == null ? null : pEdit.getMaPhieuDichVu()))
                 cboLichHen.addItem(lh);
             pnlTop.add(cboLichHen);
 
@@ -372,8 +464,6 @@ public class QuanLyPhieuDichVu extends JPanel {
 
             pnlTop.add(new JLabel("Thú Cưng:"));
             cboThuCung = new JComboBox<>();
-            for (String[] tc : lhDao.getDanhSachThuCung())
-                cboThuCung.addItem(tc[0] + " - " + tc[1]);
             pnlTop.add(cboThuCung);
 
             pnlTop.add(new JLabel("Thợ Spa:"));
@@ -383,12 +473,12 @@ public class QuanLyPhieuDichVu extends JPanel {
             pnlTop.add(cboNhanVien);
 
             pnlTop.add(new JLabel("Trạng Thái:"));
-            String trangThaiHienTai = (pEdit == null) ? "Đang xử lý" : pEdit.getTrangThai();
+            String trangThaiHienTai = (pEdit == null) ? "Chưa thanh toán" : pEdit.getTrangThai();
             txtFormTrangThai = new JTextField(trangThaiHienTai);
             txtFormTrangThai.setEditable(false);
             txtFormTrangThai.setBackground(new Color(240, 240, 240));
             txtFormTrangThai
-                    .setToolTipText("Trạng thái sẽ được chuyển sang 'Hoàn thành' khi khách thanh toán hóa đơn.");
+                    .setToolTipText("Tự chuyển sang 'Đã thanh toán' khi thanh toán hóa đơn thành công.");
             pnlTop.add(txtFormTrangThai);
 
             // --- PHẦN DANH SÁCH DỊCH VỤ (CHECKBOX) ---
@@ -453,13 +543,79 @@ public class QuanLyPhieuDichVu extends JPanel {
             pnlBtn.add(btnLuu);
             add(pnlBtn, BorderLayout.SOUTH);
 
-            // Nếu đang sửa, thiết lập lại các ComboBox
-            if (pEdit != null) {
+            // Khi liên kết lịch hẹn, khóa ba trường để tránh chọn sai người hoặc thú cưng.
+            cboKhachHang.addActionListener(e -> {
+                if (cboKhachHang.isEnabled())
+                    napThuCungTheoKhachHang();
+            });
+            cboLichHen.addActionListener(e -> capNhatTheoLichHen());
+
+            if (pEdit != null && pEdit.getMaLichHen() != null
+                    && !"Không có".equals(pEdit.getMaLichHen())) {
                 cboLichHen.setSelectedItem(pEdit.getMaLichHen());
-                setCombo(cboKhachHang, pEdit.getMaKhachHang());
-                setCombo(cboThuCung, pEdit.getMaThuCung());
-                setCombo(cboNhanVien, pEdit.getMaNhanVien());
+            } else {
+                cboLichHen.setSelectedItem("Không có");
+                if (pEdit != null) {
+                    setCombo(cboKhachHang, pEdit.getMaKhachHang());
+                    napThuCungTheoKhachHang();
+                    setCombo(cboThuCung, pEdit.getMaThuCung());
+                    setCombo(cboNhanVien, pEdit.getMaNhanVien());
+                }
             }
+            capNhatTheoLichHen();
+        }
+
+        private void napThuCungTheoKhachHang() {
+            String maKH = layMa(cboKhachHang);
+            cboThuCung.removeAllItems();
+            for (String[] tc : lhDao.getDanhSachThuCungTheoKhachHang(maKH)) {
+                cboThuCung.addItem(tc[0] + " - " + tc[1]);
+            }
+        }
+
+        private void capNhatTheoLichHen() {
+            String maLich = (String) cboLichHen.getSelectedItem();
+            boolean coLich = maLich != null && !"Không có".equals(maLich);
+            if (coLich) {
+                entity.LichHen lh = lhDao.timTheoMa(maLich);
+                boolean duocChon = lh != null
+                        && !"Đã hủy".equals(lh.getTrangThai())
+                        && lh.getNgayGioHen() != null
+                        && (!lh.getNgayGioHen().isBefore(java.time.LocalDateTime.now())
+                                || (pEdit != null && maLich.equals(pEdit.getMaLichHen())));
+                if (duocChon) {
+                    setCombo(cboKhachHang, lh.getMaKhachHang());
+                    napThuCungTheoKhachHang();
+                    setCombo(cboThuCung, lh.getMaThuCung());
+                    setCombo(cboNhanVien, lh.getMaNhanVien());
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Lịch hẹn đã qua giờ, đã bị hủy hoặc không còn hợp lệ.",
+                            "Không thể chọn lịch hẹn", JOptionPane.WARNING_MESSAGE);
+                    cboLichHen.setSelectedItem("Không có");
+                    return;
+                }
+            } else {
+                napThuCungTheoKhachHang();
+            }
+            cboKhachHang.setEnabled(!coLich);
+            cboThuCung.setEnabled(!coLich);
+            cboNhanVien.setEnabled(!coLich);
+            String goiY = coLich
+                    ? "Thông tin tự động lấy theo lịch hẹn, không thể chỉnh sửa ở phiếu."
+                    : "Phiếu khách đến trực tiếp: chọn khách hàng, thú cưng và thợ Spa.";
+            cboKhachHang.setToolTipText(goiY);
+            cboThuCung.setToolTipText(goiY);
+            cboNhanVien.setToolTipText(goiY);
+        }
+
+        private String layMa(JComboBox<String> cbo) {
+            Object item = cbo.getSelectedItem();
+            if (item == null)
+                return null;
+            String text = item.toString();
+            int pos = text.indexOf(" - ");
+            return pos >= 0 ? text.substring(0, pos) : text;
         }
 
         private void setCombo(JComboBox<String> cbo, String id) {
@@ -487,12 +643,38 @@ public class QuanLyPhieuDichVu extends JPanel {
                 return;
             }
 
-            String kh = cboKhachHang.getSelectedItem().toString().split(" - ")[0];
-            String tc = cboThuCung.getSelectedItem().toString().split(" - ")[0];
-            String nv = cboNhanVien.getSelectedItem().toString().split(" - ")[0];
+            String kh = layMa(cboKhachHang);
+            String tc = layMa(cboThuCung);
+            String nv = layMa(cboNhanVien);
+            if (kh == null || tc == null || nv == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Hãy chọn đầy đủ khách hàng, thú cưng và thợ Spa.",
+                        "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String maLich = (String) cboLichHen.getSelectedItem();
+            if (maLich == null)
+                maLich = "Không có";
 
-            PhieuDichVu p = new PhieuDichVu(txtMaPhieu.getText(), txtFormTrangThai.getText(), kh, tc, nv,
-                    cboLichHen.getSelectedItem().toString());
+            // Neu form mo qua lau, phai kiem tra lai truoc khi luu.
+            // Phieu dang sua duoc GIU NGUYEN lich da gan, ke ca khi lich qua gio.
+            if (!"Không có".equals(maLich)) {
+                entity.LichHen lich = lhDao.timTheoMa(maLich);
+                boolean giuLichCu = pEdit != null && maLich.equals(pEdit.getMaLichHen());
+                if (lich == null || "Đã hủy".equals(lich.getTrangThai())
+                        || lich.getNgayGioHen() == null
+                        || (!giuLichCu && lich.getNgayGioHen().isBefore(
+                                java.time.LocalDateTime.now()))) {
+                    JOptionPane.showMessageDialog(this,
+                            "Lịch hẹn đã qua giờ, bị hủy hoặc không còn tồn tại. "
+                                    + "Hãy chọn lịch hẹn khác hoặc 'Không có'.",
+                            "Không thể lưu phiếu", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+            PhieuDichVu p = new PhieuDichVu(txtMaPhieu.getText(),
+                    pEdit == null ? "Chưa thanh toán" : pEdit.getTrangThai(), kh, tc, nv,
+                    maLich);
 
             boolean success = (pEdit == null) ? pDao.them(p, dichVuDuocChon) : pDao.sua(p, dichVuDuocChon);
 

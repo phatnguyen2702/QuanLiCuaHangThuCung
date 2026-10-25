@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import entity.KhachHang;
 
 import java.sql.*;
@@ -199,6 +201,7 @@ public class KhachHangDAO {
         public String them(
                         KhachHang kh,
                         ArrayList<ThuCungMoi> thuCungs) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
 
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
@@ -273,6 +276,7 @@ public class KhachHangDAO {
         // =========================================================
 
         public String xoa(String maKhachHang) {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
 
                 String[][] rangBuoc = {
                                 { "LichHen", "lich hen" },

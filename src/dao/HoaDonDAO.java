@@ -1,5 +1,7 @@
 package dao;
 
+import UI.PhanQuyen;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,6 +52,7 @@ public class HoaDonDAO {
     }
 
     public ThongKe layThongKe() throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
         String sql = "SELECT "
                 + "(SELECT COUNT(*) FROM HoaDon) AS tongHoaDon, "
                 + "(SELECT COUNT(*) FROM HoaDon "
@@ -75,6 +78,7 @@ public class HoaDonDAO {
     }
 
     public List<HoaDon> timHoaDon(String tuKhoa) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
         String sql = "SELECT hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
                 + "COALESCE(SUM(ct.soLuong * ct.donGia * "
@@ -115,6 +119,7 @@ public class HoaDonDAO {
     }
 
     public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
+    PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
         String headerSql = "SELECT hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
                 + "COALESCE(SUM(ct.soLuong * ct.donGia * "
@@ -130,6 +135,8 @@ public class HoaDonDAO {
                 + "COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không xác định') AS tenHang, "
                 + "CASE WHEN sp.maSanPham IS NOT NULL THEN N'Sản phẩm' "
                 + "WHEN dv.maDichVu IS NOT NULL THEN N'Dịch vụ' ELSE N'Thú cưng' END AS loaiHang, "
+                + "CASE WHEN dv.maDichVu IS NOT NULL THEN tc.tenThuCung END "
+                + "AS tenThuCungDichVu, "
                 + "ct.soLuong, ct.donGia, ct.phanTramGiam "
                 + "FROM ChiTietHoaDon ct "
                 + "LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham "
@@ -170,7 +177,8 @@ public class HoaDonDAO {
                                 rs.getString("loaiHang"),
                                 rs.getInt("soLuong"),
                                 rs.getBigDecimal("donGia"),
-                                rs.getBigDecimal("phanTramGiam")));
+                                rs.getBigDecimal("phanTramGiam"),
+                                rs.getString("tenThuCungDichVu")));
                     }
                 }
             }
