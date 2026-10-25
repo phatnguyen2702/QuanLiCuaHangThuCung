@@ -57,7 +57,8 @@ public class NhapKhoPanel extends JPanel {
     private boolean dangNapCombo = false;
 
     public NhapKhoPanel() {
-        this(() -> { });
+        this(() -> {
+        });
     }
 
     public NhapKhoPanel(Runnable moTraCuu) {
@@ -162,12 +163,14 @@ public class NhapKhoPanel extends JPanel {
 
         UIStyle.taoBang(bang, 2, 3, 4);
 
-        JButton btnPdf = UIStyle.nutPhu("Xuất phiếu nhập kho");
-        btnPdf.addActionListener(e -> UIStyle.xuatPdf(this, "Phiếu nhập kho", bang));
+        // Khong xuat truc tiep bang chua luu: chung tu phai lay tu SQL theo ma phieu.
+        JLabel lblHuongDanPdf = new JLabel("Xuất PDF: Tra cứu nhập kho → Xem chi tiết");
+        lblHuongDanPdf.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblHuongDanPdf.setForeground(new Color(85, 101, 120));
         JPanel thanhCongCu = new JPanel(new BorderLayout());
         thanhCongCu.setOpaque(false);
         thanhCongCu.add(nhomTrai, BorderLayout.WEST);
-        thanhCongCu.add(btnPdf, BorderLayout.EAST);
+        thanhCongCu.add(lblHuongDanPdf, BorderLayout.EAST);
 
         the.add(thanhCongCu, BorderLayout.NORTH);
         the.add(UIStyle.cuon(bang), BorderLayout.CENTER);

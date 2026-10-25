@@ -26,8 +26,9 @@ public class SanPhamPanel extends JPanel {
     private final SanPhamDAO dao = new SanPhamDAO();
 
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[]{"Mã SP", "Tên sản phẩm", "Danh mục",
-                    "Nhà cung cấp", "Giá nhập", "Giá bán", "Tồn"}, 0) {
+            new String[] { "Mã SP", "Tên sản phẩm", "Danh mục",
+                    "Nhà cung cấp", "Giá nhập", "Giá bán", "Tồn" },
+            0) {
         @Override
         public boolean isCellEditable(int row, int col) {
             return false;
@@ -178,7 +179,7 @@ public class SanPhamPanel extends JPanel {
 
             model.setRowCount(0);
             for (SanPham sp : dsHienTai) {
-                model.addRow(new Object[]{
+                model.addRow(new Object[] {
                         sp.getMaSanPham(),
                         sp.getTenSanPham(),
                         sp.getTenDanhMuc(),
@@ -238,7 +239,7 @@ public class SanPhamPanel extends JPanel {
             SanPhamDialog dlg = new SanPhamDialog(
                     SwingUtilities.getWindowAncestor(this),
                     sp,
-                    sp == null ? "" : null,   // them moi: ma de trong, nguoi dung tu nhap
+                    sp == null ? "" : null, // them moi: ma de trong, nguoi dung tu nhap
                     dsDanhMuc, dsNcc);
             dlg.setVisible(true);
 
@@ -321,21 +322,22 @@ public class SanPhamPanel extends JPanel {
         private final JTextField txtTen = UIStyle.o(22);
         private final JTextField txtGiaNhap = UIStyle.o(22);
         private final JTextField txtGiaBan = UIStyle.o(22);
-        private final JSpinner spnThem =
-                new JSpinner(new SpinnerNumberModel(0, 0, 1_000_000, 1));
+        // Thông tin HSD theo lịch sử nhập kho, chỉ được xem khi mở chi tiết/sửa.
+        private final JTextField txtHanSuDung = UIStyle.oChiDoc("Chưa có dữ liệu");
+        private final JSpinner spnThem = new JSpinner(new SpinnerNumberModel(0, 0, 1_000_000, 1));
         private final JComboBox<DanhMuc> cboDanhMuc = new JComboBox<>();
         private final JComboBox<NhaCungCap> cboNhaCungCap = new JComboBox<>();
-        private final JComboBox<String> cboNhomTuoi = new JComboBox<>(new String[]{
-                "Mọi độ tuổi", "Con non", "Trưởng thành", "Cao tuổi", "Chưa xác định"});
-        private final JComboBox<String> cboKichThuoc = new JComboBox<>(new String[]{
-                "Mọi kích thước", "Nhỏ", "Trung bình", "Lớn", "Chưa xác định"});
+        private final JComboBox<String> cboNhomTuoi = new JComboBox<>(new String[] {
+                "Mọi độ tuổi", "Con non", "Trưởng thành", "Cao tuổi", "Chưa xác định" });
+        private final JComboBox<String> cboKichThuoc = new JComboBox<>(new String[] {
+                "Mọi kích thước", "Nhỏ", "Trung bình", "Lớn", "Chưa xác định" });
 
         private boolean daLuu = false;
 
         /** sp = null: them moi. maMoi: ma goi y khi them. */
         public SanPhamDialog(Window cha, SanPham sp, String maMoi,
-                             List<DanhMuc> dsDanhMuc,
-                             List<NhaCungCap> dsNhaCungCap) {
+                List<DanhMuc> dsDanhMuc,
+                List<NhaCungCap> dsNhaCungCap) {
 
             super(cha, sp == null ? "Thêm sản phẩm" : "Sửa sản phẩm",
                     ModalityType.APPLICATION_MODAL);
@@ -369,6 +371,15 @@ public class SanPhamPanel extends JPanel {
             spnThem.setFont(UIStyle.font(Font.PLAIN, 13));
             int dongTiep = 8;
             if (sp != null) {
+                // Hạn sử dụng thuộc CHI TIẾT PHIẾU NHẬP; không chỉnh ở hồ sơ sản phẩm.
+                txtHanSuDung.setEditable(false);
+                txtHanSuDung.setFocusable(false);
+                txtHanSuDung.setBackground(UIStyle.READONLY);
+                txtHanSuDung.setToolTipText(
+                        "Hạn sử dụng sớm nhất trong các phiếu nhập đã hoàn tất; "
+                                + "sản phẩm có thể có nhiều lô/HSD khác nhau. "
+                                + "Chỉnh hạn dùng tại nghiệp vụ nhập kho, không phải ở đây.");
+                UIStyle.hang(form, dongTiep++, "Hạn sử dụng (sớm nhất)", txtHanSuDung, false);
                 UIStyle.hang(form, dongTiep++, "Tồn hiện tại",
                         UIStyle.oChiDoc(String.valueOf(sp.getTonKho())), false);
             }
@@ -384,6 +395,18 @@ public class SanPhamPanel extends JPanel {
                 txtGiaBan.setText(String.valueOf((long) sp.getGiaBan()));
                 chonDanhMuc(sp.getMaDanhMuc());
                 chonNhaCungCap(sp.getMaNhaCungCap());
+                try {
+                    java.time.LocalDate han = dao.layHanSuDungSomNhat(sp.getMaSanPham());
+                    if (han == null) {
+                        txtHanSuDung.setText("Chưa có dữ liệu");
+                    } else {
+                        txtHanSuDung.setText(han.format(
+                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                    }
+                } catch (SQLException ex) {
+                    txtHanSuDung.setText("Không tải được dữ liệu");
+                    UIStyle.loi(this, ex);
+                }
                 try {
                     String[] thongTin = dao.layThongTinGoiY(sp.getMaSanPham());
                     if (thongTin != null) {

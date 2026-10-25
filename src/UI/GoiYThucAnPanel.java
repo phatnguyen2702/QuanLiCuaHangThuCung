@@ -10,6 +10,10 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
+import java.net.URL;
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +31,7 @@ public class GoiYThucAnPanel extends JPanel {
     private final JButton selectedButton = UIStyle.nutPhu("Giỏ hàng (0)");
     private final SanPhamDAO dao = new SanPhamDAO();
     private List<SanPham> products = List.of();
+    private final Map<String, Icon> anhSanPhamCache = new HashMap<>();
 
     public GoiYThucAnPanel() {
         setLayout(new BorderLayout(12, 12));
@@ -165,14 +170,58 @@ public class GoiYThucAnPanel extends JPanel {
         napLai();
     }
 
+    /**
+     * Anh duoc gan THEO MA SAN PHAM, vi du SP017 -> /img/products/SP017.png.
+     * Thu doc resource tren classpath (Eclipse, JAR), sau do moi doc file tu
+     * project.
+     * Cache de khong phai mo va scale anh moi lan tim kiem / thay doi bo loc.
+     */
     private Icon anhSanPham(SanPham product) {
-        String root = "src/img/products/" + product.getMaSanPham();
-        for (String extension : new String[] { ".jpg", ".jpeg", ".png" }) {
-            File imageFile = new File(root + extension);
-            if (imageFile.isFile()) {
-                ImageIcon source = new ImageIcon(imageFile.getPath());
-                Image scaled = source.getImage().getScaledInstance(145, 105, Image.SCALE_SMOOTH);
-                return new ImageIcon(scaled);
+        String maSanPham = product == null ? null : product.getMaSanPham();
+        if (maSanPham == null || !maSanPham.matches("[A-Za-z0-9_-]+")) {
+            return new TextIcon("Chưa có ảnh sản phẩm");
+        }
+        return anhSanPhamCache.computeIfAbsent(maSanPham, this::taiAnhTheoMa);
+    }
+
+    private Icon taiAnhTheoMa(String maSanPham) {
+        for (String extension : new String[] { ".png", ".jpg", ".jpeg" }) {
+            String tenFile = maSanPham + extension;
+            ImageIcon nguon = null;
+
+            URL resource = GoiYThucAnPanel.class.getResource("/img/products/" + tenFile);
+            if (resource != null) {
+                nguon = new ImageIcon(resource);
+            }
+
+            // Khi chay Java truc tiep tu thu muc project (khong dong goi JAR).
+            if (nguon == null || nguon.getIconWidth() <= 0) {
+                File file = new File("src/img/products/", tenFile);
+                if (!file.isFile()) {
+                    file = new File("img/products/", tenFile);
+                }
+                if (file.isFile()) {
+                    nguon = new ImageIcon(file.getAbsolutePath());
+                }
+            }
+
+            if (nguon != null && nguon.getIconWidth() > 0 && nguon.getIconHeight() > 0) {
+                // Giu nguyen ty le: anh vuong khong bi keo det trong the ngang.
+                final int rongKhung = 145;
+                final int caoKhung = 105;
+                double tyLe = Math.min((double) rongKhung / nguon.getIconWidth(),
+                        (double) caoKhung / nguon.getIconHeight());
+                int rongAnh = Math.max(1, (int) Math.round(nguon.getIconWidth() * tyLe));
+                int caoAnh = Math.max(1, (int) Math.round(nguon.getIconHeight() * tyLe));
+
+                BufferedImage ve = new BufferedImage(rongKhung, caoKhung, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = ve.createGraphics();
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g.drawImage(nguon.getImage(), (rongKhung - rongAnh) / 2,
+                        (caoKhung - caoAnh) / 2, rongAnh, caoAnh, null);
+                g.dispose();
+                return new ImageIcon(ve);
             }
         }
         return new TextIcon("Chưa có ảnh sản phẩm");

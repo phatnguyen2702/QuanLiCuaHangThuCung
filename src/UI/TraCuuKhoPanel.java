@@ -1,6 +1,9 @@
 package UI;
 
 import ConnectDB.connectDB;
+import dao.NhapKhoDAO;
+import entity.PhieuNhapKho;
+import entity.ChiTietPhieuNhap;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -166,7 +169,9 @@ public class TraCuuKhoPanel extends JPanel {
                     ResultSet r = p.executeQuery()) {
                 while (r.next()) {
                     String id = r.getString(1), staff = r.getString(3);
-                    String status = r.getBoolean(kiemKe ? 4 : 8) ? "Đã chốt" : "Phiếu nháp";
+                    String status = r.getBoolean(kiemKe ? 4 : 8)
+                            ? (kiemKe ? "Đã chốt" : "Đã hoàn tất")
+                            : "Phiếu nháp";
                     Timestamp ts = r.getTimestamp(2);
                     LocalDate date = ts == null ? null : ts.toLocalDateTime().toLocalDate();
                     String supplier = kiemKe ? "" : r.getString(5);
@@ -183,7 +188,7 @@ public class TraCuuKhoPanel extends JPanel {
                             || to != null && (date == null || date.isAfter(to)))
                         continue;
                     if (!kiemKe) {
-                        if (trangThai.getSelectedIndex() == 1 && !status.equals("Đã chốt")
+                        if (trangThai.getSelectedIndex() == 1 && !status.equals("Đã hoàn tất")
                                 || trangThai.getSelectedIndex() == 2 && !status.equals("Phiếu nháp"))
                             continue;
                         if (nhaCungCap.getSelectedIndex() > 0 && !Objects
@@ -254,7 +259,11 @@ public class TraCuuKhoPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn một phiếu để xem chi tiết.");
             return;
         }
-        String id = String.valueOf(model.getValueAt(row, 0));
+        String id = String.valueOf(model.getValueAt(table.convertRowIndexToModel(row), 0));
+        if (!kiemKe) {
+            xemChiTietPhieuNhap(id);
+            return;
+        }
         String sql = kiemKe
                 ? "SELECT d.maSanPham,s.tenSanPham,d.soLuongHeThong,d.soLuongThucTe FROM ChiTietPhieuKiemKe d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuKiemKe=? ORDER BY d.maSanPham"
                 : "SELECT d.maSanPham,s.tenSanPham,d.soLuongNhap,d.donGiaNhap,d.hanSuDung FROM ChiTietPhieuNhap d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuNhap=? ORDER BY d.maSanPham";
@@ -301,6 +310,103 @@ public class TraCuuKhoPanel extends JPanel {
         } catch (SQLException e) {
             baoLoi(e);
         }
+    }
+
+    /** Chi tiet phieu nhap: tai du lieu da luu tu CSDL, sau do cho xuat PDF. */
+    private void xemChiTietPhieuNhap(String maPhieu) {
+        final NhapKhoDAO dao = new NhapKhoDAO();
+        try {
+            NhapKhoDAO.BanInPhieuNhap banIn = dao.layBanInPhieuNhap(maPhieu);
+            PhieuNhapKho phieu = banIn.getPhieu();
+            String trangThaiPhieu = phieu.isTrangThai() ? "ĐÃ HOÀN TẤT" : "PHIẾU NHÁP – CHƯA HOÀN TẤT";
+
+            Window win = SwingUtilities.getWindowAncestor(this);
+            JDialog dialog = new JDialog(win, "Chi tiết phiếu nhập " + maPhieu,
+                    Dialog.ModalityType.APPLICATION_MODAL);
+            dialog.setSize(1040, 650);
+            dialog.setMinimumSize(new Dimension(850, 480));
+            dialog.setLocationRelativeTo(this);
+            dialog.setLayout(new BorderLayout(0, 12));
+            JPanel pnlHeader = new JPanel(new GridLayout(0, 2, 18, 8));
+            pnlHeader.setBackground(Color.WHITE);
+            pnlHeader.setBorder(new EmptyBorder(16, 20, 8, 20));
+            pnlHeader.add(new JLabel("Mã phiếu nhập: " + phieu.getMaPhieuNhap()));
+            pnlHeader.add(new JLabel("Trạng thái: " + trangThaiPhieu));
+            pnlHeader.add(new JLabel("Ngày nhập: " +
+                    (phieu.getNgayNhap() == null ? "Chưa có" : DATE_TIME.format(phieu.getNgayNhap()))));
+            pnlHeader.add(new JLabel("Nhân viên lập: " + hienThi(banIn.getTenNhanVien())
+                    + " (" + hienThi(phieu.getMaNhanVien()) + ")"));
+            pnlHeader.add(new JLabel("Nhà cung cấp: " + hienThi(phieu.getTenNhaCungCap())
+                    + " (" + hienThi(phieu.getMaNhaCungCap()) + ")"));
+            pnlHeader.add(new JLabel("Số điện thoại NCC: " + hienThi(banIn.getSoDienThoaiNhaCungCap())));
+            pnlHeader.add(new JLabel("Địa chỉ NCC: " + hienThi(banIn.getDiaChiNhaCungCap())));
+            dialog.add(pnlHeader, BorderLayout.NORTH);
+
+            DefaultTableModel mdl = new DefaultTableModel(new String[] {
+                    "STT", "Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá",
+                    "Thành tiền", "Hạn sử dụng"
+            }, 0) {
+                @Override
+                public boolean isCellEditable(int r, int c) {
+                    return false;
+                }
+            };
+            int stt = 0;
+            for (ChiTietPhieuNhap ct : banIn.getChiTiet()) {
+                mdl.addRow(new Object[] {
+                        ++stt, ct.getMaSanPham(), ct.getTenSanPham(), ct.getSoLuongNhap(),
+                        tien(ct.getDonGiaNhap()), tien(ct.getThanhTien()),
+                        ct.getHanSuDung() == null ? "—"
+                                : ct.getHanSuDung().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                });
+            }
+            JTable chiTiet = new JTable(mdl);
+            chiTiet.setRowHeight(30);
+            chiTiet.setFillsViewportHeight(true);
+            chiTiet.setAutoCreateRowSorter(true);
+            dialog.add(new JScrollPane(chiTiet), BorderLayout.CENTER);
+
+            JPanel pnlFooter = new JPanel(new BorderLayout());
+            pnlFooter.setBorder(new EmptyBorder(5, 20, 15, 20));
+            pnlFooter.setBackground(Color.WHITE);
+            JLabel lblTongTien = new JLabel("Tổng số lượng: " + banIn.getTongSoLuong()
+                    + "     |     Tổng tiền: " + tien(banIn.getTongTien()));
+            lblTongTien.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            lblTongTien.setForeground(NAVY);
+            pnlFooter.add(lblTongTien, BorderLayout.WEST);
+            JPanel pnlBtns = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+            pnlBtns.setOpaque(false);
+            JButton btnPdf = new JButton("Xuất phiếu nhập");
+            btnPdf.setBackground(NAVY);
+            btnPdf.setForeground(Color.WHITE);
+            btnPdf.setFocusPainted(false);
+            btnPdf.addActionListener(e -> {
+                try {
+                    // Nap lai theo ma phieu khi xuat de tranh in du lieu da thay doi.
+                    PhieuNhapPdfExporter.xuat(dialog, dao.layBanInPhieuNhap(maPhieu));
+                } catch (SQLException | SecurityException ex) {
+                    JOptionPane.showMessageDialog(dialog, ex.getMessage(),
+                            "Không thể xuất phiếu nhập", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            JButton btnDong = new JButton("Đóng");
+            btnDong.addActionListener(e -> dialog.dispose());
+            pnlBtns.add(btnPdf);
+            pnlBtns.add(btnDong);
+            pnlFooter.add(pnlBtns, BorderLayout.EAST);
+            dialog.add(pnlFooter, BorderLayout.SOUTH);
+            dialog.setVisible(true);
+        } catch (SQLException | SecurityException e) {
+            baoLoi(e);
+        }
+    }
+
+    private String hienThi(String value) {
+        return value == null || value.isBlank() ? "Chưa có dữ liệu" : value;
+    }
+
+    private String tien(double value) {
+        return String.format(Locale.forLanguageTag("vi-VN"), "%,.0f ₫", value);
     }
 
     private void baoLoi(Exception e) {
