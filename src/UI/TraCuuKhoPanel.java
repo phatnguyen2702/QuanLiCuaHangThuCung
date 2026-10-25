@@ -228,8 +228,15 @@ public class TraCuuKhoPanel extends JPanel {
                     }
                 }
             }
-            JTable detailTable = new JTable(detail); detailTable.setRowHeight(26);
-            JOptionPane.showMessageDialog(this, new JScrollPane(detailTable), "Chi tiết phiếu " + id, JOptionPane.PLAIN_MESSAGE);
+            JTable detailTable = new JTable(detail);
+            detailTable.setRowHeight(28);
+            detailTable.setFillsViewportHeight(true);
+            JScrollPane scroll = new JScrollPane(detailTable);
+            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+            scroll.setPreferredSize(new Dimension(
+                    Math.min(950, (int) (screen.width * 0.85)),
+                    Math.min(520, (int) (screen.height * 0.72))));
+            JOptionPane.showMessageDialog(this, scroll, "Chi tiết phiếu " + id, JOptionPane.PLAIN_MESSAGE);
         } catch (SQLException e) { baoLoi(e); }
     }
 
