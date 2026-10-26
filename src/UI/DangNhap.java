@@ -532,22 +532,21 @@ public class DangNhap extends JFrame {
                 // KIEM TRA DATABASE
                 // =========================
 
-                TaiKhoan tk;
-                try {
-                        tk = taiKhoanDAO.xacThuc(taiKhoan, matKhau);
-                } catch (java.sql.SQLException ex) {
-                        JOptionPane.showMessageDialog(this,
-                                        "Không kết nối được SQL Server. Vui lòng kiểm tra CSDL.",
-                                        "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
-                        ex.printStackTrace();
-                        return;
-                }
-                if (tk != null && PhanQuyen.vaiTro(tk.getVaiTro()) == PhanQuyen.VaiTro.KHONG_HOP_LE) {
-                        JOptionPane.showMessageDialog(this,
-                                        "Vai trò của tài khoản chưa được hỗ trợ: " + tk.getVaiTro()
-                                                        + ". Liên hệ quản lý để cập nhật.",
-                                        "Không có quyền", JOptionPane.WARNING_MESSAGE);
-                        return;
+                TaiKhoan tk = null;
+
+                for (TaiKhoan temp : taiKhoanDAO.getAll()) {
+
+                        String taiKhoanDB = taoTaiKhoanKhongDau(
+                                        temp.getHoTen(),
+                                        temp.getMaNhanVien());
+
+                        if (taiKhoanDB.equals(taiKhoan)
+                                        && temp.getMatKhau().equals(matKhau)) {
+
+                                tk = temp;
+
+                                break;
+                        }
                 }
 
                 // =========================

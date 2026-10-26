@@ -55,6 +55,7 @@ public class NhapKhoPanel extends JPanel {
     private LocalDateTime ngayNhap = LocalDateTime.now();
     private NhaCungCap nccHienTai = null;
     private boolean dangNapCombo = false;
+    private boolean daNapDongMau = false;
 
     public NhapKhoPanel() {
         this(() -> { });
@@ -208,6 +209,34 @@ public class NhapKhoPanel extends JPanel {
         // Chi doi ma phieu khi phieu dang trong
         if (dong.isEmpty()) {
             phieuMoi();
+            if (!daNapDongMau) {
+                napDongMau();
+                daNapDongMau = cboNhaCungCap.getSelectedItem() != null;
+            }
+        }
+    }
+
+    /** Điền sẵn vài mặt hàng thật vào phiếu nháp để màn hình có dữ liệu minh họa. */
+    private void napDongMau() {
+        NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+        if (ncc == null) return;
+
+        try {
+            ArrayList<SanPham> sanPham = dao.timSanPhamTheoNhaCungCap(ncc.getMaNhaCungCap());
+            int soDong = Math.min(3, sanPham.size());
+            for (int i = 0; i < soDong; i++) {
+                SanPham sp = sanPham.get(i);
+                ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
+                ct.setMaPhieuNhap(txtMaPhieu.getText());
+                ct.setMaSanPham(sp.getMaSanPham());
+                ct.setTenSanPham(sp.getTenSanPham());
+                ct.setSoLuongNhap(1);
+                ct.setDonGiaNhap(sp.getGiaNhap());
+                dong.add(ct);
+            }
+            veLaiBang();
+        } catch (SQLException ex) {
+            UIStyle.loi(this, ex);
         }
     }
 
