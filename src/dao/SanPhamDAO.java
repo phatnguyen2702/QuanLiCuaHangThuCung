@@ -22,11 +22,14 @@ public class SanPhamDAO {
 
     /*
      * Bang SanPham khong co cot ton kho, nen ton kho duoc TINH tu du lieu:
-     *   ton = tong nhap (phieu nhap da hoan tat)
-     *       - tong ban (ChiTietHoaDon)
-     *       + chenh lech cac phieu kiem ke da chot (thuc te - he thong)
+     * ton = tong nhap (phieu nhap da hoan tat)
+     * - tong ban (ChiTietHoaDon)
+     * + chenh lech cac phieu kiem ke da chot (thuc te - he thong)
      */
-    /** Bieu thuc SQL tinh ton kho cua san pham co bi danh "sp" (cac DAO khac dung lai de ton kho luon khop). */
+    /**
+     * Bieu thuc SQL tinh ton kho cua san pham co bi danh "sp" (cac DAO khac dung
+     * lai de ton kho luon khop).
+     */
     static final String BIEU_THUC_TON = """
                    ISNULL((SELECT SUM(ct.soLuongNhap)
                            FROM ChiTietPhieuNhap ct
@@ -64,8 +67,8 @@ public class SanPhamDAO {
             """;
 
     public ArrayList<SanPham> timKiem(String tuKhoa,
-                                      String maDanhMuc,
-                                      String maNhaCungCap) throws SQLException {
+            String maDanhMuc,
+            String maNhaCungCap) throws SQLException {
 
         ArrayList<SanPham> list = new ArrayList<>();
 
@@ -91,9 +94,8 @@ public class SanPhamDAO {
         sql.append(" ORDER BY sp.maSanPham");
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql.toString())
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())) {
             for (int i = 0; i < thamSo.size(); i++) {
                 ps.setString(i + 1, thamSo.get(i));
             }
@@ -153,47 +155,81 @@ public class SanPhamDAO {
         return list;
     }
 
-    /** Tạo bảng nếu thiếu, rồi gắn metadata dựa trên tên/danh mục dữ liệu hiện có. */
+    /**
+     * Tạo bảng nếu thiếu, rồi gắn metadata dựa trên tên/danh mục dữ liệu hiện có.
+     */
     private void damBaoBangGoiYThucAn() throws SQLException {
         String taoBang = """
-            IF OBJECT_ID('dbo.GoiYThucAn', 'U') IS NULL
-            CREATE TABLE dbo.GoiYThucAn (
-                maSanPham VARCHAR(10) NOT NULL,
-                loaiThuCung NVARCHAR(10) NOT NULL,
-                nhomTuoi NVARCHAR(20) NOT NULL,
-                kichThuoc NVARCHAR(20) NOT NULL,
-                ghiChu NVARCHAR(250) NULL,
-                CONSTRAINT FK_GoiYThucAn_SanPham FOREIGN KEY (maSanPham) REFERENCES SanPham(maSanPham),
-                CONSTRAINT PK_GoiYThucAn PRIMARY KEY (maSanPham, loaiThuCung, nhomTuoi, kichThuoc),
-                CONSTRAINT CK_GoiYThucAn_Loai CHECK (loaiThuCung IN (N'Chó', N'Mèo')),
-                CONSTRAINT CK_GoiYThucAn_Tuoi CHECK (nhomTuoi IN (N'Con non', N'Trưởng thành', N'Cao tuổi', N'Mọi độ tuổi', N'Chưa xác định')),
-                CONSTRAINT CK_GoiYThucAn_Size CHECK (kichThuoc IN (N'Nhỏ', N'Trung bình', N'Lớn', N'Mọi kích thước', N'Chưa xác định'))
-            )
-            """;
+                IF OBJECT_ID('dbo.GoiYThucAn', 'U') IS NULL
+                CREATE TABLE dbo.GoiYThucAn (
+                    maSanPham VARCHAR(10) NOT NULL,
+                    loaiThuCung NVARCHAR(10) NOT NULL,
+                    nhomTuoi NVARCHAR(20) NOT NULL,
+                    kichThuoc NVARCHAR(20) NOT NULL,
+                    ghiChu NVARCHAR(250) NULL,
+                    CONSTRAINT FK_GoiYThucAn_SanPham FOREIGN KEY (maSanPham) REFERENCES SanPham(maSanPham),
+                    CONSTRAINT PK_GoiYThucAn PRIMARY KEY (maSanPham, loaiThuCung, nhomTuoi, kichThuoc),
+                    CONSTRAINT CK_GoiYThucAn_Loai CHECK (loaiThuCung IN (N'Chó', N'Mèo')),
+                    CONSTRAINT CK_GoiYThucAn_Tuoi CHECK (nhomTuoi IN (N'Con non', N'Trưởng thành', N'Cao tuổi', N'Mọi độ tuổi', N'Chưa xác định')),
+                    CONSTRAINT CK_GoiYThucAn_Size CHECK (kichThuoc IN (N'Nhỏ', N'Trung bình', N'Lớn', N'Mọi kích thước', N'Chưa xác định'))
+                )
+                """;
         String seed = """
-            INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu)
-            SELECT sp.maSanPham,
-                   CASE WHEN dm.tenDanhMuc LIKE N'%chó%' OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%dog%' THEN N'Chó'
-                        WHEN dm.tenDanhMuc LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%cat%' THEN N'Mèo' END,
-                   CASE WHEN sp.tenSanPham LIKE N'%puppy%' OR sp.tenSanPham LIKE N'%kitten%' OR sp.tenSanPham LIKE N'%con non%' THEN N'Con non'
-                        WHEN sp.tenSanPham LIKE N'%senior%' OR sp.tenSanPham LIKE N'%ageing%' OR sp.tenSanPham LIKE N'%aging%' OR sp.tenSanPham LIKE N'%cao tuổi%' THEN N'Cao tuổi'
-                        WHEN sp.tenSanPham LIKE N'%adult%' OR sp.tenSanPham LIKE N'%trưởng thành%' THEN N'Trưởng thành'
-                        ELSE N'Chưa xác định' END,
-                   CASE WHEN sp.tenSanPham LIKE N'%mini%' OR sp.tenSanPham LIKE N'%small%' OR sp.tenSanPham LIKE N'%nhỏ%' THEN N'Nhỏ'
-                        WHEN sp.tenSanPham LIKE N'%medium%' OR sp.tenSanPham LIKE N'%trung bình%' THEN N'Trung bình'
-                        WHEN sp.tenSanPham LIKE N'%maxi%' OR sp.tenSanPham LIKE N'%large%' OR sp.tenSanPham LIKE N'%giant%' OR sp.tenSanPham LIKE N'%lớn%' THEN N'Lớn'
-                        ELSE N'Chưa xác định' END,
-                   N'Phân nhóm theo tên/danh mục; đối chiếu nhãn bao bì để xác nhận.'
-            FROM SanPham sp JOIN DanhMuc dm ON dm.maDanhMuc = sp.maDanhMuc
-            WHERE (dm.tenDanhMuc LIKE N'%thức ăn%' OR dm.tenDanhMuc LIKE N'%thuc an%')
-              AND (dm.tenDanhMuc LIKE N'%chó%' OR dm.tenDanhMuc LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%dog%' OR sp.tenSanPham LIKE N'%cat%'
-                   OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%mèo%')
-              AND NOT EXISTS (SELECT 1 FROM dbo.GoiYThucAn gy WHERE gy.maSanPham = sp.maSanPham)
-            """;
+                INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu)
+                SELECT sp.maSanPham,
+                       CASE WHEN dm.tenDanhMuc LIKE N'%chó%' OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%dog%' THEN N'Chó'
+                            WHEN dm.tenDanhMuc LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%cat%' THEN N'Mèo' END,
+                       CASE WHEN sp.tenSanPham LIKE N'%puppy%' OR sp.tenSanPham LIKE N'%kitten%' OR sp.tenSanPham LIKE N'%con non%' THEN N'Con non'
+                            WHEN sp.tenSanPham LIKE N'%senior%' OR sp.tenSanPham LIKE N'%ageing%' OR sp.tenSanPham LIKE N'%aging%' OR sp.tenSanPham LIKE N'%cao tuổi%' THEN N'Cao tuổi'
+                            WHEN sp.tenSanPham LIKE N'%adult%' OR sp.tenSanPham LIKE N'%trưởng thành%' THEN N'Trưởng thành'
+                            ELSE N'Chưa xác định' END,
+                       CASE WHEN sp.tenSanPham LIKE N'%mini%' OR sp.tenSanPham LIKE N'%small%' OR sp.tenSanPham LIKE N'%nhỏ%' THEN N'Nhỏ'
+                            WHEN sp.tenSanPham LIKE N'%medium%' OR sp.tenSanPham LIKE N'%trung bình%' THEN N'Trung bình'
+                            WHEN sp.tenSanPham LIKE N'%maxi%' OR sp.tenSanPham LIKE N'%large%' OR sp.tenSanPham LIKE N'%giant%' OR sp.tenSanPham LIKE N'%lớn%' THEN N'Lớn'
+                            ELSE N'Chưa xác định' END,
+                       N'Phân nhóm theo tên/danh mục; đối chiếu nhãn bao bì để xác nhận.'
+                FROM SanPham sp JOIN DanhMuc dm ON dm.maDanhMuc = sp.maDanhMuc
+                WHERE (dm.tenDanhMuc LIKE N'%thức ăn%' OR dm.tenDanhMuc LIKE N'%thuc an%')
+                  AND (dm.tenDanhMuc LIKE N'%chó%' OR dm.tenDanhMuc LIKE N'%mèo%' OR sp.tenSanPham LIKE N'%dog%' OR sp.tenSanPham LIKE N'%cat%'
+                       OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%mèo%')
+                  AND NOT EXISTS (SELECT 1 FROM dbo.GoiYThucAn gy WHERE gy.maSanPham = sp.maSanPham)
+                """;
         try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
             st.execute(taoBang);
             st.executeUpdate(seed);
         }
+    }
+
+    /**
+     * Hạn sử dụng sớm nhất đã ghi nhận từ các PHIẾU NHẬP HOÀN TẤT.
+     * Không phải cột của SanPham: mỗi lần nhập một mặt hàng có thể có HSD khác
+     * nhau.
+     * Đây là thông tin từ lịch sử nhập, không cam kết lô đó còn tồn thực tế.
+     */
+    public java.time.LocalDate layHanSuDungSomNhat(String maSanPham) throws SQLException {
+        if (maSanPham == null || maSanPham.isBlank()) {
+            return null;
+        }
+        String sql = """
+                SELECT MIN(ct.hanSuDung) AS hanSomNhat
+                FROM dbo.ChiTietPhieuNhap ct
+                JOIN dbo.PhieuNhapKho pn ON pn.maPhieuNhap = ct.maPhieuNhap
+                WHERE ct.maSanPham = ?
+                  AND pn.trangThai = 1
+                  AND ISNULL(ct.trangThai, 1) = 1
+                  AND ct.hanSuDung IS NOT NULL
+                """;
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maSanPham);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    java.sql.Date han = rs.getDate("hanSomNhat");
+                    return han == null ? null : han.toLocalDate();
+                }
+            }
+        }
+        return null;
     }
 
     public ArrayList<SanPham> getAll() throws SQLException {
@@ -205,7 +241,7 @@ public class SanPhamDAO {
     }
 
     public boolean them(SanPham sp) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
 
         String sql = """
                 INSERT INTO SanPham
@@ -215,9 +251,8 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sp.getMaSanPham());
             ps.setString(2, sp.getTenSanPham());
             ps.setDouble(3, sp.getGiaNhap());
@@ -230,7 +265,7 @@ public class SanPhamDAO {
     }
 
     public boolean sua(SanPham sp) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
 
         String sql = """
                 UPDATE SanPham
@@ -243,9 +278,8 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, sp.getTenSanPham());
             ps.setDouble(2, sp.getGiaNhap());
             ps.setDouble(3, sp.getGiaBan());
@@ -257,9 +291,12 @@ public class SanPhamDAO {
         }
     }
 
-    /** Luu metadata goi y cho san pham thuc an. Loai thu cung duoc suy ra tu danh muc/ten. */
+    /**
+     * Luu metadata goi y cho san pham thuc an. Loai thu cung duoc suy ra tu danh
+     * muc/ten.
+     */
     public void luuThongTinGoiY(String maSanPham, String tenDanhMuc, String tenSanPham,
-                                String nhomTuoi, String kichThuoc) throws SQLException {
+            String nhomTuoi, String kichThuoc) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
         String nguon = ((tenDanhMuc == null ? "" : tenDanhMuc) + " " +
                 (tenSanPham == null ? "" : tenSanPham)).toLowerCase(java.util.Locale.ROOT);
@@ -268,7 +305,7 @@ public class SanPhamDAO {
         if (!laThucAn) {
             damBaoBangGoiYThucAn();
             try (Connection con = connectDB.getConnection();
-                 PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
+                    PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
                 ps.setString(1, maSanPham);
                 ps.executeUpdate();
             }
@@ -285,7 +322,7 @@ public class SanPhamDAO {
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try (PreparedStatement psXoa = con.prepareStatement(xoa);
-                 PreparedStatement psThem = con.prepareStatement(them)) {
+                    PreparedStatement psThem = con.prepareStatement(them)) {
                 psXoa.setString(1, maSanPham);
                 psXoa.executeUpdate();
                 psThem.setString(1, maSanPham);
@@ -307,16 +344,17 @@ public class SanPhamDAO {
     public String[] layThongTinGoiY(String maSanPham) throws SQLException {
         damBaoBangGoiYThucAn();
         try (Connection con = connectDB.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT TOP 1 loaiThuCung, nhomTuoi, kichThuoc FROM dbo.GoiYThucAn WHERE maSanPham = ?")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT TOP 1 loaiThuCung, nhomTuoi, kichThuoc FROM dbo.GoiYThucAn WHERE maSanPham = ?")) {
             ps.setString(1, maSanPham);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? new String[]{rs.getString(1), rs.getString(2), rs.getString(3)} : null;
+                return rs.next() ? new String[] { rs.getString(1), rs.getString(2), rs.getString(3) } : null;
             }
         }
     }
 
     public boolean xoa(String maSanPham) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
         damBaoBangGoiYThucAn();
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
@@ -349,9 +387,8 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maSanPham);
             ps.setString(2, maSanPham);
             ps.setString(3, maSanPham);
@@ -371,11 +408,10 @@ public class SanPhamDAO {
         ArrayList<DanhMuc> list = new ArrayList<>();
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT maDanhMuc, tenDanhMuc, moTa FROM DanhMuc ORDER BY maDanhMuc");
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT maDanhMuc, tenDanhMuc, moTa FROM DanhMuc ORDER BY maDanhMuc");
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new DanhMuc(rs.getString("maDanhMuc"),
                         rs.getString("tenDanhMuc"), rs.getString("moTa")));
@@ -397,10 +433,9 @@ public class SanPhamDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new NhaCungCap(rs.getString("maNhaCungCap"),
                         rs.getString("tenNhaCungCap"), rs.getString("soDienThoai"),
@@ -422,7 +457,7 @@ public class SanPhamDAO {
      * soLuong.get(i) la so luong them cho sanPham.get(i); dong <= 0 bi bo qua.
      */
     public void nhapBoSung(List<SanPham> sanPham, List<Integer> soLuong,
-                           String maNhanVien) throws SQLException {
+            String maNhanVien) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         // Gom theo nha cung cap
@@ -493,18 +528,18 @@ public class SanPhamDAO {
         }
     }
 
-    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co roi cong 1
+    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co
+    // roi cong 1
     private static String taoMa(String bang, String cot,
-                                String tienTo, int soChuSo) throws SQLException {
+            String tienTo, int soChuSo) throws SQLException {
 
         int max = 0;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT " + cot + " FROM " + bang);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT " + cot + " FROM " + bang);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String ma = rs.getString(1);
 

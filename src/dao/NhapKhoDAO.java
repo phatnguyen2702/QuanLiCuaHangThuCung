@@ -32,7 +32,7 @@ public class NhapKhoDAO {
 
     // Luu phieu + chi tiet trong 1 giao dich: loi o dau thi huy het
     public void luu(PhieuNhapKho phieu,
-                    List<ChiTietPhieuNhap> chiTiet) throws SQLException {
+            List<ChiTietPhieuNhap> chiTiet) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         damBaoCotHanSuDung();
@@ -55,7 +55,8 @@ public class NhapKhoDAO {
 
             try {
                 int daCapNhat;
-                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuNhapKho SET ngayNhap=?, trangThai=?, maNhanVien=?, maNhaCungCap=? WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0")) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE PhieuNhapKho SET ngayNhap=?, trangThai=?, maNhanVien=?, maNhaCungCap=? WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0")) {
                     ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayNhap()));
                     ps.setBoolean(2, phieu.isTrangThai());
                     ps.setString(3, phieu.getMaNhanVien());
@@ -64,8 +65,10 @@ public class NhapKhoDAO {
                     daCapNhat = ps.executeUpdate();
                 }
                 if (daCapNhat > 0) {
-                    try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap=?")) {
-                        ps.setString(1, phieu.getMaPhieuNhap()); ps.executeUpdate();
+                    try (PreparedStatement ps = con
+                            .prepareStatement("DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap=?")) {
+                        ps.setString(1, phieu.getMaPhieuNhap());
+                        ps.executeUpdate();
                     }
                 } else {
                     try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
@@ -85,8 +88,10 @@ public class NhapKhoDAO {
                         ps.setInt(3, ct.getSoLuongNhap());
                         ps.setDouble(4, ct.getDonGiaNhap());
                         ps.setBoolean(5, phieu.isTrangThai());
-                        if (ct.getHanSuDung() == null) ps.setNull(6, Types.DATE);
-                        else ps.setDate(6, Date.valueOf(ct.getHanSuDung()));
+                        if (ct.getHanSuDung() == null)
+                            ps.setNull(6, Types.DATE);
+                        else
+                            ps.setDate(6, Date.valueOf(ct.getHanSuDung()));
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -107,14 +112,144 @@ public class NhapKhoDAO {
         String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham WHERE ct.maPhieuNhap=? ORDER BY ct.maSanPham";
         try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, maPhieu);
-            try (ResultSet r = p.executeQuery()) { while (r.next()) {
-                ChiTietPhieuNhap ct = new ChiTietPhieuNhap(); ct.setMaPhieuNhap(maPhieu);
-                ct.setMaSanPham(r.getString(1)); ct.setTenSanPham(r.getString(2));
-                ct.setSoLuongNhap(r.getInt(3)); ct.setDonGiaNhap(r.getDouble(4));
-                Date d = r.getDate(5); ct.setHanSuDung(d == null ? null : d.toLocalDate()); ds.add(ct);
-            }}
+            try (ResultSet r = p.executeQuery()) {
+                while (r.next()) {
+                    ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
+                    ct.setMaPhieuNhap(maPhieu);
+                    ct.setMaSanPham(r.getString(1));
+                    ct.setTenSanPham(r.getString(2));
+                    ct.setSoLuongNhap(r.getInt(3));
+                    ct.setDonGiaNhap(r.getDouble(4));
+                    Date d = r.getDate(5);
+                    ct.setHanSuDung(d == null ? null : d.toLocalDate());
+                    ds.add(ct);
+                }
+            }
         }
         return ds;
+    }
+
+    /**
+     * Du lieu in chung tu phieu nhap. Tat ca thong tin duoc lay tu SQL Server,
+     * khong doc tu bang dang nhap tren giao dien.
+     */
+    public static final class BanInPhieuNhap {
+        private final PhieuNhapKho phieu;
+        private final String tenNhanVien;
+        private final String soDienThoaiNhaCungCap;
+        private final String diaChiNhaCungCap;
+        private final ArrayList<ChiTietPhieuNhap> chiTiet;
+
+        public BanInPhieuNhap(PhieuNhapKho phieu, String tenNhanVien,
+                String soDienThoaiNhaCungCap, String diaChiNhaCungCap,
+                ArrayList<ChiTietPhieuNhap> chiTiet) {
+            this.phieu = phieu;
+            this.tenNhanVien = tenNhanVien;
+            this.soDienThoaiNhaCungCap = soDienThoaiNhaCungCap;
+            this.diaChiNhaCungCap = diaChiNhaCungCap;
+            this.chiTiet = chiTiet;
+        }
+
+        public PhieuNhapKho getPhieu() {
+            return phieu;
+        }
+
+        public String getTenNhanVien() {
+            return tenNhanVien;
+        }
+
+        public String getSoDienThoaiNhaCungCap() {
+            return soDienThoaiNhaCungCap;
+        }
+
+        public String getDiaChiNhaCungCap() {
+            return diaChiNhaCungCap;
+        }
+
+        public List<ChiTietPhieuNhap> getChiTiet() {
+            return java.util.Collections.unmodifiableList(chiTiet);
+        }
+
+        public double getTongTien() {
+            return chiTiet.stream().mapToDouble(ChiTietPhieuNhap::getThanhTien).sum();
+        }
+
+        public int getTongSoLuong() {
+            return chiTiet.stream().mapToInt(ChiTietPhieuNhap::getSoLuongNhap).sum();
+        }
+    }
+
+    /**
+     * Tai phieu nhap da LUU theo ma: ke ca phieu nhap va phieu da hoan tat.
+     * Vi du chi tiet va PDF deu dung cung bo du lieu tu database.
+     */
+    public BanInPhieuNhap layBanInPhieuNhap(String maPhieu) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_NHAP_KHO);
+        if (maPhieu == null || maPhieu.isBlank())
+            throw new IllegalArgumentException("Vui lòng chọn mã phiếu nhập hợp lệ.");
+        damBaoCotHanSuDung();
+
+        String sqlPhieu = """
+                SELECT pn.maPhieuNhap, pn.ngayNhap, pn.trangThai, pn.maNhanVien,
+                       nv.hoTen AS tenNhanVien, pn.maNhaCungCap,
+                       n.tenNhaCungCap, n.soDienThoai AS sdtNhaCungCap,
+                       n.diaChi AS diaChiNhaCungCap
+                FROM PhieuNhapKho pn
+                LEFT JOIN NhanVien nv ON nv.maNhanVien = pn.maNhanVien
+                LEFT JOIN Nhacungcap n ON n.maNhaCungCap = pn.maNhaCungCap
+                WHERE pn.maPhieuNhap = ?
+                """;
+        String sqlChiTiet = """
+                SELECT ct.maSanPham, sp.tenSanPham, ct.soLuongNhap,
+                       ct.donGiaNhap, ct.hanSuDung
+                FROM ChiTietPhieuNhap ct
+                LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham
+                WHERE ct.maPhieuNhap = ?
+                ORDER BY ct.maSanPham
+                """;
+        try (Connection con = connectDB.getConnection()) {
+            PhieuNhapKho phieu = null;
+            String tenNV = null, sdtNcc = null, diaChiNcc = null;
+            try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
+                ps.setString(1, maPhieu);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        phieu = new PhieuNhapKho();
+                        phieu.setMaPhieuNhap(rs.getString("maPhieuNhap"));
+                        Timestamp time = rs.getTimestamp("ngayNhap");
+                        phieu.setNgayNhap(time == null ? null : time.toLocalDateTime());
+                        phieu.setTrangThai(rs.getBoolean("trangThai"));
+                        phieu.setMaNhanVien(rs.getString("maNhanVien"));
+                        phieu.setMaNhaCungCap(rs.getString("maNhaCungCap"));
+                        phieu.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
+                        tenNV = rs.getString("tenNhanVien");
+                        sdtNcc = rs.getString("sdtNhaCungCap");
+                        diaChiNcc = rs.getString("diaChiNhaCungCap");
+                    }
+                }
+            }
+            if (phieu == null)
+                throw new SQLException("Không tìm thấy phiếu nhập " + maPhieu + " trong SQL Server.");
+
+            ArrayList<ChiTietPhieuNhap> danhSach = new ArrayList<>();
+            try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
+                ps.setString(1, maPhieu);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
+                        ct.setMaPhieuNhap(maPhieu);
+                        ct.setMaSanPham(rs.getString("maSanPham"));
+                        ct.setTenSanPham(rs.getString("tenSanPham"));
+                        ct.setSoLuongNhap(rs.getInt("soLuongNhap"));
+                        ct.setDonGiaNhap(rs.getDouble("donGiaNhap"));
+                        Date hsd = rs.getDate("hanSuDung");
+                        ct.setHanSuDung(hsd == null ? null : hsd.toLocalDate());
+                        danhSach.add(ct);
+                    }
+                }
+            }
+            return new BanInPhieuNhap(phieu, tenNV, sdtNcc, diaChiNcc, danhSach);
+        }
     }
 
     // =========================================================
@@ -140,10 +275,9 @@ public class NhapKhoDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 PhieuNhapKho p = new PhieuNhapKho();
                 p.setMaPhieuNhap(rs.getString("maPhieuNhap"));
@@ -243,10 +377,9 @@ public class NhapKhoDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 NhaCungCap n = new NhaCungCap();
                 n.setMaNhaCungCap(rs.getString("maNhaCungCap"));
@@ -266,7 +399,7 @@ public class NhapKhoDAO {
     }
 
     public boolean themNhaCungCap(NhaCungCap n) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         String sql = """
                 INSERT INTO Nhacungcap
@@ -275,9 +408,8 @@ public class NhapKhoDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, n.getMaNhaCungCap());
             ps.setString(2, n.getTenNhaCungCap());
             ps.setString(3, n.getSoDienThoai());
@@ -305,9 +437,8 @@ public class NhapKhoDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maNhaCungCap);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -324,18 +455,18 @@ public class NhapKhoDAO {
         return list;
     }
 
-    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co roi cong 1
+    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co
+    // roi cong 1
     private static String taoMa(String bang, String cot,
-                                String tienTo, int soChuSo) throws SQLException {
+            String tienTo, int soChuSo) throws SQLException {
 
         int max = 0;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT " + cot + " FROM " + bang);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT " + cot + " FROM " + bang);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String ma = rs.getString(1);
 
