@@ -9,17 +9,25 @@ import entity.TaiKhoan;
 import java.awt.*;
 import java.text.Normalizer;
 
+// Giao diện/chức năng đăng nhập của ứng dụng.
 public class DangNhap extends JFrame {
 
+        // txtTaiKhoan: Ô nhập/hiển thị văn bản tài khoản.
         private JTextField txtTaiKhoan;
+        // txtMatKhau: Ô nhập mật khẩu có che ký tự mật khẩu.
         private JPasswordField txtMatKhau;
 
+        // NAVY: Màu dùng cho giao diện: xanh đậm.
         private final Color NAVY = new Color(18, 48, 82);
+        // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
         private final Color LIGHT_BLUE = new Color(229, 241, 252);
+        // GREEN: Màu dùng cho giao diện: xanh lá.
         private final Color GREEN = new Color(72, 196, 62);
 
+        // taiKhoanDAO: Đối tượng truy cập dữ liệu tài khoản.
         private TaiKhoanDAO taiKhoanDAO;
 
+        // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
         public DangNhap() {
 
                 setTitle("Pet Shop Pro - Đăng Nhập");
@@ -30,17 +38,22 @@ public class DangNhap extends JFrame {
 
                 taiKhoanDAO = new TaiKhoanDAO();
 
-                JPanel mainPanel = new JPanel(new GridLayout(1, 2));
+                // pnlMainPanel: Khung chứa thành phần giao diện chính khung.
+                JPanel pnlMainPanel = new JPanel(new GridLayout(1, 2));
 
-                mainPanel.add(createLeftPanel());
-                mainPanel.add(createRightPanel());
+                pnlMainPanel.add(createLeftPanel());
+                pnlMainPanel.add(createRightPanel());
 
-                add(mainPanel);
+                add(pnlMainPanel);
         }
 
         // =========================================================
         // BO DAU + VIET THUONG + BO KHOANG TRANG
         // =========================================================
+        // Tạo tên đăng nhập từ họ tên không dấu và ba ký tự cuối mã nhân viên.
+        // Tham số hoTen: họ tên.
+        // Tham số maNhanVien: mã nhân viên.
+        // Kết quả: chuỗi kết quả.
         private String taoTaiKhoanKhongDau(String hoTen, String maNhanVien) {
 
                 String tenKhongDau = Normalizer.normalize(
@@ -64,67 +77,76 @@ public class DangNhap extends JFrame {
         // =========================================================
         // LEFT PANEL
         // =========================================================
+        // Tạo khung bên trái.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createLeftPanel() {
 
-                JPanel panel = new JPanel(new BorderLayout());
-                panel.setBackground(NAVY);
+                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung = new JPanel(new BorderLayout());
+                pnlKhung.setBackground(NAVY);
 
-                panel.setBorder(
+                pnlKhung.setBorder(
                                 new EmptyBorder(
                                                 35, 45, 30, 45));
 
                 // =====================================================
                 // KHU VUC NOI DUNG CHINH
                 // =====================================================
-                JPanel content = new JPanel(new BorderLayout(0, 20));
-                content.setOpaque(false);
+                // pnlContent: Khung chứa thành phần giao diện nội dung.
+                JPanel pnlContent = new JPanel(new BorderLayout(0, 20));
+                pnlContent.setOpaque(false);
 
                 // =====================================================
                 // PHAN LOGO + TIEU DE
                 // =====================================================
-                JPanel branding = new JPanel();
-                branding.setOpaque(false);
+                // pnlBranding: Khung chứa thành phần giao diện thương hiệu.
+                JPanel pnlBranding = new JPanel();
+                pnlBranding.setOpaque(false);
 
-                branding.setLayout(
+                pnlBranding.setLayout(
                                 new BoxLayout(
-                                                branding,
+                                                pnlBranding,
                                                 BoxLayout.Y_AXIS));
 
                 // Logo
-                JLabel logo = new JLabel("🐾");
-                logo.setFont(
+                // lblLogo2: Nhãn hiển thị: 🐾.
+                JLabel lblLogo2 = new JLabel("🐾");
+                lblLogo2.setFont(
                                 new Font(
                                                 "Segoe UI Emoji",
                                                 Font.PLAIN,
                                                 48));
-                logo.setAlignmentX(
+                lblLogo2.setAlignmentX(
                                 Component.CENTER_ALIGNMENT);
 
                 // Ten he thong
-                JLabel ten = new JLabel("PET SHOP PRO");
-                ten.setForeground(Color.WHITE);
-                ten.setFont(
+                // lblTen: Nhãn hiển thị: PET SHOP PRO.
+                JLabel lblTen = new JLabel("PET SHOP PRO");
+                lblTen.setForeground(Color.WHITE);
+                lblTen.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 26));
-                ten.setAlignmentX(
+                lblTen.setAlignmentX(
                                 Component.CENTER_ALIGNMENT);
 
                 // Tieu de
-                JLabel tieuDe = new JLabel(
+                // lblTieuDe2: Nhãn hiển thị: HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG.
+                JLabel lblTieuDe2 = new JLabel(
                                 "HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
-                tieuDe.setForeground(
+                lblTieuDe2.setForeground(
                                 new Color(255, 105, 90));
-                tieuDe.setFont(
+                lblTieuDe2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 16));
-                tieuDe.setAlignmentX(
+                lblTieuDe2.setAlignmentX(
                                 Component.CENTER_ALIGNMENT);
-                // slogan
-                JLabel slogan = new JLabel(
+                // lblSlogan
+                // lblSlogan: Nhãn hiển thị khẩu hiệu.
+                JLabel lblSlogan = new JLabel(
                                 "<html>"
                                                 + "<div style='text-align:center;'>"
                                                 + "Vận hành gọn gàng<br>"
@@ -132,49 +154,51 @@ public class DangNhap extends JFrame {
                                                 + "</div>"
                                                 + "</html>");
 
-                slogan.setForeground(Color.WHITE);
-                slogan.setFont(
+                lblSlogan.setForeground(Color.WHITE);
+                lblSlogan.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.ITALIC,
                                                 18));
 
-                slogan.setAlignmentX(Component.CENTER_ALIGNMENT);
-                slogan.setHorizontalAlignment(SwingConstants.CENTER);
+                lblSlogan.setAlignmentX(Component.CENTER_ALIGNMENT);
+                lblSlogan.setHorizontalAlignment(SwingConstants.CENTER);
 
-                branding.add(logo);
-                branding.add(
+                pnlBranding.add(lblLogo2);
+                pnlBranding.add(
                                 Box.createVerticalStrut(2));
 
-                branding.add(ten);
+                pnlBranding.add(lblTen);
 
-                branding.add(
+                pnlBranding.add(
                                 Box.createVerticalStrut(12));
 
-                branding.add(tieuDe);
+                pnlBranding.add(lblTieuDe2);
 
-                branding.add(
+                pnlBranding.add(
                                 Box.createVerticalStrut(12));
 
-                branding.add(slogan);
+                pnlBranding.add(lblSlogan);
 
-                content.add(
-                                branding,
+                pnlContent.add(
+                                pnlBranding,
                                 BorderLayout.NORTH);
 
                 // =====================================================
                 // KHUNG TINH NANG
                 // =====================================================
-                JPanel tinhNang = new JPanel(
+                // pnlTinhNang: Khung chứa thành phần giao diện tính nặng.
+                JPanel pnlTinhNang = new JPanel(
                                 new GridBagLayout());
 
-                tinhNang.setBackground(
+                pnlTinhNang.setBackground(
                                 new Color(169, 194, 218));
 
-                tinhNang.setBorder(
+                pnlTinhNang.setBorder(
                                 new EmptyBorder(
                                                 15, 18, 15, 18));
 
+                // dsTinhNang: Mảng lưu danh sách tính nặng.
                 String[] dsTinhNang = {
                                 "Thanh toán tại quầy - Thanh toán nhanh",
                                 "Lịch Spa - Điều phối phòng và thợ",
@@ -182,6 +206,8 @@ public class DangNhap extends JFrame {
                                 "Báo cáo - Đối soát theo ca"
                 };
 
+                // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+                // GridBagLayout.
                 GridBagConstraints gbc = new GridBagConstraints();
 
                 gbc.gridx = 0;
@@ -193,14 +219,15 @@ public class DangNhap extends JFrame {
 
                 for (int i = 0; i < dsTinhNang.length; i++) {
 
-                        JLabel label = new JLabel(
+                        // lblNhan2: Nhãn hiển thị nhãn.
+                        JLabel lblNhan2 = new JLabel(
                                         "<html>"
                                                         + "<b>•</b>&nbsp;&nbsp;"
                                                         + dsTinhNang[i]
                                                         + "</html>");
 
-                        label.setForeground(Color.WHITE);
-                        label.setFont(
+                        lblNhan2.setForeground(Color.WHITE);
+                        lblNhan2.setFont(
                                         new Font(
                                                         "Segoe UI",
                                                         Font.BOLD,
@@ -208,128 +235,137 @@ public class DangNhap extends JFrame {
 
                         gbc.gridy = i;
 
-                        tinhNang.add(
-                                        label,
+                        pnlTinhNang.add(
+                                        lblNhan2,
                                         gbc);
                 }
 
-                content.add(
-                                tinhNang,
+                pnlContent.add(
+                                pnlTinhNang,
                                 BorderLayout.CENTER);
 
                 // =====================================================
                 // TRANG THAI MAY CHU
                 // =====================================================
-                JPanel status = new JPanel(
+                // pnlStatus: Khung chứa thành phần giao diện trạng thái.
+                JPanel pnlStatus = new JPanel(
                                 new FlowLayout(
                                                 FlowLayout.LEFT,
                                                 5,
                                                 0));
 
-                status.setOpaque(false);
+                pnlStatus.setOpaque(false);
 
-                JLabel cham = new JLabel("●");
-                cham.setForeground(
+                // lblCham: Nhãn hiển thị: ●.
+                JLabel lblCham = new JLabel("●");
+                lblCham.setForeground(
                                 new Color(70, 220, 80));
-                cham.setFont(
+                lblCham.setFont(
                                 new Font(
                                                 "Arial",
                                                 Font.BOLD,
                                                 18));
 
-                JLabel trangThai = new JLabel(
+                // lblTrangThai2: Nhãn hiển thị: Máy chủ Pet Shop Pro đang hoạt động ổn định.
+                JLabel lblTrangThai2 = new JLabel(
                                 "Máy chủ Pet Shop Pro đang hoạt động ổn định");
 
-                trangThai.setForeground(Color.WHITE);
-                trangThai.setFont(
+                lblTrangThai2.setForeground(Color.WHITE);
+                lblTrangThai2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.ITALIC,
                                                 11));
 
-                status.add(cham);
-                status.add(trangThai);
+                pnlStatus.add(lblCham);
+                pnlStatus.add(lblTrangThai2);
 
-                content.add(
-                                status,
+                pnlContent.add(
+                                pnlStatus,
                                 BorderLayout.SOUTH);
 
                 // =====================================================
                 // THEM CONTENT VAO PANEL
                 // =====================================================
-                panel.add(
-                                content,
+                pnlKhung.add(
+                                pnlContent,
                                 BorderLayout.CENTER);
 
-                return panel;
+                return pnlKhung;
         }
 
         // =========================================================
         // RIGHT PANEL
         // =========================================================
+        // Tạo khung bên phải.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createRightPanel() {
 
-                JPanel background = new JPanel(
+                // pnlBackground: Khung chứa thành phần giao diện màu nền.
+                JPanel pnlBackground = new JPanel(
                                 new GridBagLayout());
 
-                background.setBackground(LIGHT_BLUE);
+                pnlBackground.setBackground(LIGHT_BLUE);
 
-                JPanel card = new JPanel();
+                // pnlCard: Khung chứa thành phần giao diện thẻ.
+                JPanel pnlCard = new JPanel();
 
-                card.setBackground(Color.WHITE);
+                pnlCard.setBackground(Color.WHITE);
 
-                card.setPreferredSize(
+                pnlCard.setPreferredSize(
                                 new Dimension(360, 395));
 
-                card.setBorder(
+                pnlCard.setBorder(
                                 new EmptyBorder(
                                                 35,
                                                 35,
                                                 35,
                                                 35));
 
-                card.setLayout(
+                pnlCard.setLayout(
                                 new BoxLayout(
-                                                card,
+                                                pnlCard,
                                                 BoxLayout.Y_AXIS));
 
-                JLabel title = new JLabel("Đăng Nhập");
+                // lblTitle2: Nhãn hiển thị: Đăng Nhập.
+                JLabel lblTitle2 = new JLabel("Đăng Nhập");
 
-                title.setFont(
+                lblTitle2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 27));
 
-                title.setAlignmentX(
+                lblTitle2.setAlignmentX(
                                 Component.LEFT_ALIGNMENT);
 
-                card.add(title);
+                pnlCard.add(lblTitle2);
 
-                card.add(
+                pnlCard.add(
                                 Box.createVerticalStrut(28));
 
                 // =========================
                 // TAI KHOAN
                 // =========================
 
-                JLabel lbTaiKhoan = new JLabel(
+                // lblTaiKhoan2: Nhãn hiển thị: TÀI KHOẢN.
+                JLabel lblTaiKhoan2 = new JLabel(
                                 "TÀI KHOẢN");
 
-                lbTaiKhoan.setForeground(Color.GRAY);
+                lblTaiKhoan2.setForeground(Color.GRAY);
 
-                lbTaiKhoan.setFont(
+                lblTaiKhoan2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 11));
 
-                lbTaiKhoan.setAlignmentX(
+                lblTaiKhoan2.setAlignmentX(
                                 Component.LEFT_ALIGNMENT);
 
-                card.add(lbTaiKhoan);
+                pnlCard.add(lblTaiKhoan2);
 
-                card.add(
+                pnlCard.add(
                                 Box.createVerticalStrut(7));
 
                 txtTaiKhoan = new JTextField();
@@ -354,10 +390,13 @@ public class DangNhap extends JFrame {
                                 .addDocumentListener(
                                                 new javax.swing.event.DocumentListener() {
 
+                                                        // Cập nhật trạng thái liên quan đến nội dung đang nhập.
                                                         private void xuLy() {
 
                                                                 SwingUtilities.invokeLater(() -> {
 
+                                                                        // text: Đọc nội dung chữ từ ô nhập để xử lý nội
+                                                                        // dung chữ.
                                                                         String text = txtTaiKhoan.getText();
 
                                                                         String moi = text.toLowerCase()
@@ -367,24 +406,34 @@ public class DangNhap extends JFrame {
 
                                                                         if (!text.equals(moi)) {
 
+                                                                                // Cập nhật nội dung chữ hiển thị trong
+                                                                                // control bằng setText().
                                                                                 txtTaiKhoan.setText(moi);
 
                                                                         }
                                                                 });
                                                         }
 
+                                                        // Cập nhật trạng thái liên quan khi người dùng thêm ký tự vào ô
+                                                        // văn bản.
+                                                        // Tham số e: thông tin sự kiện.
                                                         @Override
                                                         public void insertUpdate(
                                                                         javax.swing.event.DocumentEvent e) {
                                                                 xuLy();
                                                         }
 
+                                                        // Cập nhật trạng thái liên quan khi người dùng xóa ký tự trong
+                                                        // ô văn bản.
+                                                        // Tham số e: thông tin sự kiện.
                                                         @Override
                                                         public void removeUpdate(
                                                                         javax.swing.event.DocumentEvent e) {
                                                                 xuLy();
                                                         }
 
+                                                        // Nhận thông báo khi thuộc tính của tài liệu văn bản thay đổi.
+                                                        // Tham số e: thông tin sự kiện.
                                                         @Override
                                                         public void changedUpdate(
                                                                         javax.swing.event.DocumentEvent e) {
@@ -392,32 +441,33 @@ public class DangNhap extends JFrame {
                                                         }
                                                 });
 
-                card.add(txtTaiKhoan);
+                pnlCard.add(txtTaiKhoan);
 
-                card.add(
+                pnlCard.add(
                                 Box.createVerticalStrut(18));
 
                 // =========================
                 // MAT KHAU
                 // =========================
 
-                JLabel lbMatKhau = new JLabel(
+                // lblMatKhau: Nhãn hiển thị: MẬT KHẨU.
+                JLabel lblMatKhau = new JLabel(
                                 "MẬT KHẨU");
 
-                lbMatKhau.setForeground(Color.GRAY);
+                lblMatKhau.setForeground(Color.GRAY);
 
-                lbMatKhau.setFont(
+                lblMatKhau.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 11));
 
-                lbMatKhau.setAlignmentX(
+                lblMatKhau.setAlignmentX(
                                 Component.LEFT_ALIGNMENT);
 
-                card.add(lbMatKhau);
+                pnlCard.add(lblMatKhau);
 
-                card.add(
+                pnlCard.add(
                                 Box.createVerticalStrut(7));
 
                 txtMatKhau = new JPasswordField();
@@ -436,15 +486,16 @@ public class DangNhap extends JFrame {
                 txtMatKhau.setAlignmentX(
                                 Component.LEFT_ALIGNMENT);
 
-                card.add(txtMatKhau);
+                pnlCard.add(txtMatKhau);
 
                 // Khoang cach giua truong mat khau va nut dang nhap.
-                card.add(Box.createVerticalStrut(20));
+                pnlCard.add(Box.createVerticalStrut(20));
 
                 // =========================
                 // BUTTON
                 // =========================
 
+                // btnDangNhap: Nút thao tác: ĐĂNG NHẬP.
                 JButton btnDangNhap = new JButton("ĐĂNG NHẬP");
 
                 btnDangNhap.setBackground(GREEN);
@@ -469,28 +520,34 @@ public class DangNhap extends JFrame {
                 btnDangNhap.setAlignmentX(
                                 Component.LEFT_ALIGNMENT);
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnDangNhap.addActionListener(
                                 e -> xuLyDangNhap());
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 txtMatKhau.addActionListener(
                                 e -> xuLyDangNhap());
 
-                card.add(btnDangNhap);
+                pnlCard.add(btnDangNhap);
 
-                background.add(card);
+                pnlBackground.add(pnlCard);
 
-                return background;
+                return pnlBackground;
         }
 
         // =========================================================
         // XU LY DANG NHAP
         // =========================================================
+        // Kiểm tra thông tin đăng nhập và mở màn hình tương ứng khi xác thực thành
+        // công.
         private void xuLyDangNhap() {
 
+                // taiKhoan: Đọc nội dung chữ từ ô nhập để xử lý tài khoản.
                 String taiKhoan = txtTaiKhoan.getText()
                                 .trim()
                                 .toLowerCase();
 
+                // matKhau: Lưu mật khẩu.
                 String matKhau = new String(
                                 txtMatKhau.getPassword());
 
@@ -511,9 +568,7 @@ public class DangNhap extends JFrame {
                         return;
                 }
 
-                // =========================
                 // KIEM TRA MAT KHAU
-                // =========================
 
                 if (matKhau.isEmpty()) {
 
@@ -527,58 +582,56 @@ public class DangNhap extends JFrame {
 
                         return;
                 }
-
-                // =========================
                 // KIEM TRA DATABASE
-                // =========================
-
-                TaiKhoan tk = null;
-
-                for (TaiKhoan temp : taiKhoanDAO.getAll()) {
-
-                        String taiKhoanDB = taoTaiKhoanKhongDau(
-                                        temp.getHoTen(),
-                                        temp.getMaNhanVien());
-
-                        if (taiKhoanDB.equals(taiKhoan)
-                                        && temp.getMatKhau().equals(matKhau)) {
-
-                                tk = temp;
-
-                                break;
-                        }
-                }
-
-                // =========================
-                // DANG NHAP THANH CONG
-                // =========================
-
-                if (tk != null) {
-
+                // Xac thuc khong yeu cau phien dang nhap.
+                // getAll() chi dung cho man hinh QUAN LY TAI KHOAN,
+                // vi ham do yeu cau quyen TAI_KHOAN.
+                TaiKhoan tk;
+                try {
+                        tk = taiKhoanDAO.xacThuc(taiKhoan, matKhau);
+                } catch (java.sql.SQLException ex) {
+                        ex.printStackTrace();
                         JOptionPane.showMessageDialog(
                                         this,
-                                        "Đăng nhập thành công!",
-                                        "Thông báo",
-                                        JOptionPane.INFORMATION_MESSAGE);
+                                        "Không thể kết nối hoặc truy vấn SQL Server!\nChi tiết: " + ex.getMessage(),
+                                        "Lỗi cơ sở dữ liệu",
+                                        JOptionPane.ERROR_MESSAGE);
+                        return;
+                }
 
-                        dispose();
-
-                        new TrangChu(
-                                        tk.getMaNhanVien(),
-                                        tk.getHoTen(),
-                                        tk.getVaiTro()).setVisible(true);
-
-                } else {
-
+                if (tk == null) {
                         JOptionPane.showMessageDialog(
                                         this,
                                         "Tài khoản hoặc mật khẩu không chính xác!",
                                         "Đăng nhập thất bại",
                                         JOptionPane.ERROR_MESSAGE);
-
                         txtMatKhau.selectAll();
-
                         txtMatKhau.requestFocus();
+                        return;
+                }
+
+                // Khoi tao trang chu truoc khi dong cua so dang nhap:
+                // neu trang chu gap loi thi nguoi dung van nhin thay thong bao.
+                try {
+                        TrangChu trangChu = new TrangChu(
+                                        tk.getMaNhanVien(),
+                                        tk.getHoTen(),
+                                        tk.getVaiTro());
+                        trangChu.setVisible(true);
+                        dispose();
+                        JOptionPane.showMessageDialog(
+                                        trangChu,
+                                        "Đăng nhập thành công!",
+                                        "Thông báo",
+                                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (RuntimeException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Đã xác thực tài khoản nhưng không thể mở Trang chủ!\nChi tiết: "
+                                                        + ex.getMessage(),
+                                        "Lỗi mở giao diện",
+                                        JOptionPane.ERROR_MESSAGE);
                 }
         }
 }

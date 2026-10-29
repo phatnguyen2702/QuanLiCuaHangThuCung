@@ -49,173 +49,250 @@ import javax.swing.table.TableCellRenderer;
 import dao.HoaDonDAO;
 import entity.HoaDon;
 
+// Giao diện/chức năng tra cứu lịch sử hóa đơn của ứng dụng.
 public class TraCuuLichSuHoaDon extends JPanel {
 
+    // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
+    // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
     private static final Color LIGHT_BLUE = new Color(229, 241, 252);
+    // GREEN: Màu dùng cho giao diện: xanh lá.
     private static final Color GREEN = new Color(25, 157, 107);
+    // BORDER: Màu dùng cho giao diện: viền.
     private static final Color BORDER = new Color(210, 220, 230);
+    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    // MONEY: Bộ định dạng số/tiền dùng để hiển thị dữ liệu trên giao diện.
     private static final NumberFormat MONEY =
             NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    // dao: Đối tượng truy cập dữ liệu hóa đơn.
     private final HoaDonDAO dao = new HoaDonDAO();
+    // quayLai: Hành động được gọi khi cần quay lại màn hình trước.
     private final Runnable quayLai;
+    // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng chứa.
     private final CardLayout cardLayout = new CardLayout();
-    private final JPanel screens = new JPanel(cardLayout);
+    // pnlScreens: Khung chứa thành phần giao diện các màn hình.
+    private final JPanel pnlScreens = new JPanel(cardLayout);
+    // invoiceTableModel: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final InvoiceTableModel invoiceTableModel = new InvoiceTableModel();
+    // detailTableModel: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DetailTableModel detailTableModel = new DetailTableModel();
-    private final JComboBox<String> cboMaHoaDon = new JComboBox<>();
+    // cmbMaHoaDon: Hộp lựa chọn mã hóa đơn.
+    private final JComboBox<String> cmbMaHoaDon = new JComboBox<>();
+    // danhSachMaHoaDon: Lưu danh sách mã hóa đơn; phần tử có kiểu String.
     private final List<String> danhSachMaHoaDon = new ArrayList<>();
+    // tblHoaDon: Bảng hiển thị dữ liệu hóa đơn.
     private final JTable tblHoaDon = new JTable(invoiceTableModel);
+    // tblChiTiet: Bảng hiển thị dữ liệu chi tiết.
     private final JTable tblChiTiet = new JTable(detailTableModel);
+    // lblHoaDonHomNay: Nhãn hiển thị: 0.
     private final JLabel lblHoaDonHomNay = new JLabel("0");
+    // lblTongHoaDon: Nhãn hiển thị: 0.
     private final JLabel lblTongHoaDon = new JLabel("0");
+    // lblKhachHangHomNay: Nhãn hiển thị: 0.
     private final JLabel lblKhachHangHomNay = new JLabel("0");
+    // lblDoanhThuHomNay: Nhãn hiển thị: 0 ₫.
     private final JLabel lblDoanhThuHomNay = new JLabel("0 ₫");
+    // lblMaHoaDon: Nhãn hiển thị mã hóa đơn.
     private final JLabel lblMaHoaDon = new JLabel();
+    // lblNgayLap: Nhãn hiển thị ngày giờ lập hóa đơn.
     private final JLabel lblNgayLap = new JLabel();
+    // lblKhachHang: Nhãn hiển thị khách hàng.
     private final JLabel lblKhachHang = new JLabel();
+    // lblTrangThai: Nhãn hiển thị: Đã thanh toán.
     private final JLabel lblTrangThai = new JLabel("Đã thanh toán");
+    // lblMaKhachHang: Nhãn hiển thị mã khách hàng.
     private final JLabel lblMaKhachHang = new JLabel();
+    // lblTenKhachHang: Nhãn hiển thị tên khách hàng.
     private final JLabel lblTenKhachHang = new JLabel();
+    // lblSoDienThoai: Nhãn hiển thị số điện thoại.
     private final JLabel lblSoDienThoai = new JLabel();
+    // lblThuCung: Nhãn hiển thị: -.
     private final JLabel lblThuCung = new JLabel("-");
+    // lblTongTien: Nhãn hiển thị tổng tiền.
     private final JLabel lblTongTien = new JLabel();
+    // lblPhuongThuc: Nhãn hiển thị phương thức thanh toán.
     private final JLabel lblPhuongThuc = new JLabel();
+    // hoaDonDangXem: Đối tượng hóa đơn đang xem có kiểu HoaDon.
     private HoaDon hoaDonDangXem;
+    // dangCapNhatGoiYMaHoaDon: Cờ cho biết đang cập nhật gợi ý mã hóa đơn.
     private boolean dangCapNhatGoiYMaHoaDon;
 
+    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
+    // Tham số quayLai: quay lại màn hình trước.
     public TraCuuLichSuHoaDon(Runnable quayLai) {
         this.quayLai = quayLai;
         setLayout(new BorderLayout());
         setBackground(LIGHT_BLUE);
         setBorder(BorderFactory.createEmptyBorder(14, 18, 18, 18));
-        screens.setOpaque(false);
-        screens.add(createListScreen(), "LIST");
-        screens.add(createDetailScreen(), "DETAIL");
-        add(screens, BorderLayout.CENTER);
+        pnlScreens.setOpaque(false);
+        pnlScreens.add(createListScreen(), "LIST");
+        pnlScreens.add(createDetailScreen(), "DETAIL");
+        add(pnlScreens, BorderLayout.CENTER);
     }
 
+    // Hiển thị danh sách.
     public void hienDanhSach() {
-        cardLayout.show(screens, "LIST");
+        cardLayout.show(pnlScreens, "LIST");
         napDanhSach();
     }
 
+    // Tạo màn hình danh sách.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createListScreen() {
-        JPanel screen = new JPanel(new BorderLayout(0, 14));
-        screen.setOpaque(false);
-        screen.add(createTitle("Tra cứu lịch sử hóa đơn"), BorderLayout.NORTH);
+        // pnlScreen: Khung chứa thành phần giao diện màn hình.
+        JPanel pnlScreen = new JPanel(new BorderLayout(0, 14));
+        pnlScreen.setOpaque(false);
+        pnlScreen.add(createTitle("Tra cứu lịch sử hóa đơn"), BorderLayout.NORTH);
 
-        JPanel content = new JPanel(new BorderLayout(0, 12));
-        content.setBackground(Color.WHITE);
-        content.setBorder(BorderFactory.createCompoundBorder(
+        // pnlContent: Khung chứa thành phần giao diện nội dung.
+        JPanel pnlContent = new JPanel(new BorderLayout(0, 12));
+        pnlContent.setBackground(Color.WHITE);
+        pnlContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 BorderFactory.createEmptyBorder(14, 14, 14, 14)));
-        content.add(createStatistics(), BorderLayout.NORTH);
+        pnlContent.add(createStatistics(), BorderLayout.NORTH);
 
-        JPanel list = new JPanel(new BorderLayout(0, 10));
-        list.setOpaque(false);
-        list.add(createSearchBar(), BorderLayout.NORTH);
+        // pnlDanhSach: Khung chứa thành phần giao diện danh sách.
+        JPanel pnlDanhSach = new JPanel(new BorderLayout(0, 10));
+        pnlDanhSach.setOpaque(false);
+        pnlDanhSach.add(createSearchBar(), BorderLayout.NORTH);
         configureInvoiceTable();
-        list.add(new JScrollPane(tblHoaDon), BorderLayout.CENTER);
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
-        actions.setOpaque(false);
+        pnlDanhSach.add(new JScrollPane(tblHoaDon), BorderLayout.CENTER);
+        // pnlActions: Khung chứa thành phần giao diện thao tác.
+        JPanel pnlActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 4));
+        pnlActions.setOpaque(false);
+        // btnQuayLai: Nút thao tác: Quay lại.
         JButton btnQuayLai = new JButton("Quay lại");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnQuayLai.addActionListener(e -> quayLai.run());
-        actions.add(btnQuayLai);
-        list.add(actions, BorderLayout.SOUTH);
-        content.add(list, BorderLayout.CENTER);
-        screen.add(content, BorderLayout.CENTER);
-        return screen;
+        pnlActions.add(btnQuayLai);
+        pnlDanhSach.add(pnlActions, BorderLayout.SOUTH);
+        pnlContent.add(pnlDanhSach, BorderLayout.CENTER);
+        pnlScreen.add(pnlContent, BorderLayout.CENTER);
+        return pnlScreen;
     }
 
+    // Tạo tiêu đề.
+    // Tham số text: nội dung chữ.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createTitle(String text) {
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
-        JLabel title = new JLabel(text);
-        title.setForeground(NAVY);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 25));
-        titlePanel.add(title, BorderLayout.WEST);
-        return titlePanel;
+        // pnlTitlePanel: Khung chứa thành phần giao diện tiêu đề khung.
+        JPanel pnlTitlePanel = new JPanel(new BorderLayout());
+        pnlTitlePanel.setOpaque(false);
+        // title: Nhãn hiển thị tiêu đề.
+        JLabel lblTitle2 = new JLabel(text);
+        lblTitle2.setForeground(NAVY);
+        lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 25));
+        pnlTitlePanel.add(lblTitle2, BorderLayout.WEST);
+        return pnlTitlePanel;
     }
 
+    // Tạo các chỉ số thống kê.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createStatistics() {
-        JPanel panel = new JPanel(new GridLayout(1, 4, 12, 0));
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
-        panel.add(createStatCard("Hóa đơn hôm nay", lblHoaDonHomNay));
-        panel.add(createStatCard("Tổng hóa đơn", lblTongHoaDon));
-        panel.add(createStatCard("Khách hàng hôm nay", lblKhachHangHomNay));
-        panel.add(createStatCard("Doanh thu trong ngày", lblDoanhThuHomNay));
-        return panel;
+        // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+        JPanel pnlKhung = new JPanel(new GridLayout(1, 4, 12, 0));
+        pnlKhung.setOpaque(false);
+        pnlKhung.setBorder(BorderFactory.createEmptyBorder(0, 0, 14, 0));
+        pnlKhung.add(createStatCard("Hóa đơn hôm nay", lblHoaDonHomNay));
+        pnlKhung.add(createStatCard("Tổng hóa đơn", lblTongHoaDon));
+        pnlKhung.add(createStatCard("Khách hàng hôm nay", lblKhachHangHomNay));
+        pnlKhung.add(createStatCard("Doanh thu trong ngày", lblDoanhThuHomNay));
+        return pnlKhung;
     }
 
-    private JPanel createStatCard(String title, JLabel value) {
-        JPanel card = new JPanel(new BorderLayout(4, 3));
-        card.setBackground(new Color(245, 247, 250));
-        card.setBorder(BorderFactory.createCompoundBorder(
+    // Tạo thẻ thống kê.
+    // Tham số title: tiêu đề.
+    // Tham số lblValue: giá trị.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    private JPanel createStatCard(String title, JLabel lblValue) {
+        // pnlCard: Khung chứa thành phần giao diện thẻ.
+        JPanel pnlCard = new JPanel(new BorderLayout(4, 3));
+        pnlCard.setBackground(new Color(245, 247, 250));
+        pnlCard.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 BorderFactory.createEmptyBorder(7, 10, 7, 10)));
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setForeground(new Color(80, 80, 80));
-        value.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        value.setForeground(NAVY);
-        card.add(titleLabel, BorderLayout.NORTH);
-        card.add(value, BorderLayout.CENTER);
-        card.setPreferredSize(new Dimension(170, 60));
-        return card;
+        // lblTitleLabel: Nhãn hiển thị tiêu đề nhãn.
+        JLabel lblTitleLabel = new JLabel(title);
+        lblTitleLabel.setForeground(new Color(80, 80, 80));
+        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblValue.setForeground(NAVY);
+        pnlCard.add(lblTitleLabel, BorderLayout.NORTH);
+        pnlCard.add(lblValue, BorderLayout.CENTER);
+        pnlCard.setPreferredSize(new Dimension(170, 60));
+        return pnlCard;
     }
 
+    // Tạo thanh tìm kiếm.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createSearchBar() {
-        JPanel panel = new JPanel(new BorderLayout(8, 0));
-        panel.setOpaque(false);
-        JPanel search = new JPanel(new BorderLayout(6, 0));
-        search.setOpaque(false);
-        cboMaHoaDon.setEditable(true);
-        cboMaHoaDon.setToolTipText("Nhập mã hóa đơn hoặc tên khách hàng");
-        Component editor = cboMaHoaDon.getEditor().getEditorComponent();
+        // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+        JPanel pnlKhung = new JPanel(new BorderLayout(8, 0));
+        pnlKhung.setOpaque(false);
+        // pnlSearch: Khung chứa thành phần giao diện tìm kiếm.
+        JPanel pnlSearch = new JPanel(new BorderLayout(6, 0));
+        pnlSearch.setOpaque(false);
+        cmbMaHoaDon.setEditable(true);
+        cmbMaHoaDon.setToolTipText("Nhập mã hóa đơn hoặc tên khách hàng");
+        Component editor = cmbMaHoaDon.getEditor().getEditorComponent();
         if (editor instanceof JTextField) {
+            // txtMaHoaDon: Ô nhập/hiển thị văn bản mã hóa đơn.
             JTextField txtMaHoaDon = (JTextField) editor;
+            // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
             txtMaHoaDon.addActionListener(e -> timKiem());
             txtMaHoaDon.getDocument().addDocumentListener(new DocumentListener() {
+                // Cập nhật trạng thái liên quan khi người dùng thêm ký tự vào ô văn bản.
+                // Tham số e: thông tin sự kiện.
                 @Override
                 public void insertUpdate(DocumentEvent e) {
                     capNhatGoiYMaHoaDon();
                 }
 
+                // Cập nhật trạng thái liên quan khi người dùng xóa ký tự trong ô văn bản.
+                // Tham số e: thông tin sự kiện.
                 @Override
                 public void removeUpdate(DocumentEvent e) {
                     capNhatGoiYMaHoaDon();
                 }
 
+                // Nhận thông báo khi thuộc tính của tài liệu văn bản thay đổi.
+                // Tham số e: thông tin sự kiện.
                 @Override
                 public void changedUpdate(DocumentEvent e) {
                     capNhatGoiYMaHoaDon();
                 }
             });
         }
-        search.add(new JLabel("Tìm hóa đơn:"), BorderLayout.WEST);
-        search.add(cboMaHoaDon, BorderLayout.CENTER);
+        pnlSearch.add(new JLabel("Tìm hóa đơn:"), BorderLayout.WEST);
+        pnlSearch.add(cmbMaHoaDon, BorderLayout.CENTER);
+        // btnTimKiem: Nút thao tác: Xác nhận.
         JButton btnTimKiem = new JButton("Xác nhận");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnTimKiem.addActionListener(e -> timKiem());
-        search.add(btnTimKiem, BorderLayout.EAST);
-        panel.add(search, BorderLayout.CENTER);
+        pnlSearch.add(btnTimKiem, BorderLayout.EAST);
+        pnlKhung.add(pnlSearch, BorderLayout.CENTER);
 
+        // btnLamMoi: Nút thao tác: Làm mới.
         JButton btnLamMoi = new JButton("Làm mới");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnLamMoi.addActionListener(e -> {
-            cboMaHoaDon.getEditor().setItem("");
+            cmbMaHoaDon.getEditor().setItem("");
             napDanhSach();
         });
-        panel.add(btnLamMoi, BorderLayout.EAST);
-        return panel;
+        pnlKhung.add(btnLamMoi, BorderLayout.EAST);
+        return pnlKhung;
     }
 
+    // Lấy từ khóa tìm kiếm.
+    // Kết quả: chuỗi kết quả.
     private String layTuKhoa() {
-        Object item = cboMaHoaDon.getEditor().getItem();
+        Object item = cmbMaHoaDon.getEditor().getItem();
         return item == null ? "" : item.toString().trim();
     }
 
+    // Cấu hình hóa đơn bảng.
     private void configureInvoiceTable() {
         tblHoaDon.setRowHeight(30);
         tblHoaDon.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -236,66 +313,85 @@ public class TraCuuLichSuHoaDon extends JPanel {
         tblHoaDon.getColumnModel().getColumn(5).setCellRenderer(new StatusRenderer());
     }
 
+    // Tạo màn hình chi tiết.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createDetailScreen() {
-        JPanel screen = new JPanel(new BorderLayout(0, 12));
-        screen.setOpaque(false);
-        JPanel title = createTitle("Chi tiết hóa đơn");
+        // pnlScreen: Khung chứa thành phần giao diện màn hình.
+        JPanel pnlScreen = new JPanel(new BorderLayout(0, 12));
+        pnlScreen.setOpaque(false);
+        // title: Khung chứa thành phần giao diện tiêu đề.
+        JPanel pnlTitle = createTitle("Chi tiết hóa đơn");
 
-        JPanel content = new JPanel(new BorderLayout(0, 10));
-        content.setBackground(Color.WHITE);
-        content.setBorder(BorderFactory.createCompoundBorder(
+        // pnlContent: Khung chứa thành phần giao diện nội dung.
+        JPanel pnlContent = new JPanel(new BorderLayout(0, 10));
+        pnlContent.setBackground(Color.WHITE);
+        pnlContent.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 BorderFactory.createEmptyBorder(14, 16, 14, 16)));
-        content.add(createInvoiceInformation(), BorderLayout.NORTH);
+        pnlContent.add(createInvoiceInformation(), BorderLayout.NORTH);
 
         configureDetailTable();
-        content.add(new JScrollPane(tblChiTiet), BorderLayout.CENTER);
-        content.add(createDetailFooter(), BorderLayout.SOUTH);
-        screen.add(title, BorderLayout.NORTH);
-        screen.add(content, BorderLayout.CENTER);
-        return screen;
+        pnlContent.add(new JScrollPane(tblChiTiet), BorderLayout.CENTER);
+        pnlContent.add(createDetailFooter(), BorderLayout.SOUTH);
+        pnlScreen.add(pnlTitle, BorderLayout.NORTH);
+        pnlScreen.add(pnlContent, BorderLayout.CENTER);
+        return pnlScreen;
     }
 
+    // Tạo thông tin hóa đơn.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createInvoiceInformation() {
-        JPanel information = new JPanel(new GridLayout(1, 2, 26, 0));
-        information.setOpaque(false);
-        JPanel invoiceInfo = new JPanel(new GridLayout(0, 2, 8, 6));
-        invoiceInfo.setOpaque(false);
-        invoiceInfo.add(sectionLabel("Thông tin hóa đơn"));
-        invoiceInfo.add(new JLabel());
-        addInfo(invoiceInfo, "Mã hóa đơn:", lblMaHoaDon);
-        addInfo(invoiceInfo, "Ngày:", lblNgayLap);
-        addInfo(invoiceInfo, "Khách hàng:", lblKhachHang);
-        addInfo(invoiceInfo, "Trạng thái:", lblTrangThai);
+        // pnlInformation: Khung chứa thành phần giao diện thông tin.
+        JPanel pnlInformation = new JPanel(new GridLayout(1, 2, 26, 0));
+        pnlInformation.setOpaque(false);
+        // pnlInvoiceInfo: Khung chứa thành phần giao diện hóa đơn thông tin.
+        JPanel pnlInvoiceInfo = new JPanel(new GridLayout(0, 2, 8, 6));
+        pnlInvoiceInfo.setOpaque(false);
+        pnlInvoiceInfo.add(sectionLabel("Thông tin hóa đơn"));
+        pnlInvoiceInfo.add(new JLabel());
+        addInfo(pnlInvoiceInfo, "Mã hóa đơn:", lblMaHoaDon);
+        addInfo(pnlInvoiceInfo, "Ngày:", lblNgayLap);
+        addInfo(pnlInvoiceInfo, "Khách hàng:", lblKhachHang);
+        addInfo(pnlInvoiceInfo, "Trạng thái:", lblTrangThai);
         lblTrangThai.setForeground(GREEN);
         lblTrangThai.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        JPanel customerInfo = new JPanel(new GridLayout(0, 2, 8, 6));
-        customerInfo.setOpaque(false);
-        customerInfo.add(sectionLabel("Thông tin khách hàng"));
-        customerInfo.add(new JLabel());
-        addInfo(customerInfo, "Mã khách hàng:", lblMaKhachHang);
-        addInfo(customerInfo, "Tên khách hàng:", lblTenKhachHang);
-        addInfo(customerInfo, "Số điện thoại:", lblSoDienThoai);
-        addInfo(customerInfo, "Thú cưng:", lblThuCung);
-        addInfo(customerInfo, "Thanh toán:", lblPhuongThuc);
-        information.add(invoiceInfo);
-        information.add(customerInfo);
-        return information;
+        // pnlCustomerInfo: Khung chứa thành phần giao diện khách hàng thông tin.
+        JPanel pnlCustomerInfo = new JPanel(new GridLayout(0, 2, 8, 6));
+        pnlCustomerInfo.setOpaque(false);
+        pnlCustomerInfo.add(sectionLabel("Thông tin khách hàng"));
+        pnlCustomerInfo.add(new JLabel());
+        addInfo(pnlCustomerInfo, "Mã khách hàng:", lblMaKhachHang);
+        addInfo(pnlCustomerInfo, "Tên khách hàng:", lblTenKhachHang);
+        addInfo(pnlCustomerInfo, "Số điện thoại:", lblSoDienThoai);
+        addInfo(pnlCustomerInfo, "Thú cưng:", lblThuCung);
+        addInfo(pnlCustomerInfo, "Thanh toán:", lblPhuongThuc);
+        pnlInformation.add(pnlInvoiceInfo);
+        pnlInformation.add(pnlCustomerInfo);
+        return pnlInformation;
     }
 
+    // Tạo nhãn tiêu đề của một phần thông tin.
+    // Tham số text: nội dung chữ.
+    // Kết quả: đối tượng/giá trị kiểu JLabel.
     private JLabel sectionLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        label.setForeground(NAVY);
-        return label;
+        // lblNhan2: Nhãn hiển thị nhãn.
+        JLabel lblNhan2 = new JLabel(text);
+        lblNhan2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblNhan2.setForeground(NAVY);
+        return lblNhan2;
     }
 
-    private void addInfo(JPanel panel, String title, JLabel value) {
-        panel.add(new JLabel(title));
-        panel.add(value);
+    // Thêm thông tin.
+    // Tham số pnlKhung: khung.
+    // Tham số title: tiêu đề.
+    // Tham số lblValue: giá trị.
+    private void addInfo(JPanel pnlKhung, String title, JLabel lblValue) {
+        pnlKhung.add(new JLabel(title));
+        pnlKhung.add(lblValue);
     }
 
+    // Cấu hình chi tiết bảng.
     private void configureDetailTable() {
         tblChiTiet.setRowHeight(28);
         tblChiTiet.setFillsViewportHeight(true);
@@ -314,34 +410,46 @@ public class TraCuuLichSuHoaDon extends JPanel {
         tblChiTiet.getColumnModel().getColumn(7).setPreferredWidth(135);
     }
 
+    // Tạo phần cuối của khu vực chi tiết.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel createDetailFooter() {
-        JPanel footer = new JPanel(new BorderLayout());
-        footer.setOpaque(false);
-        JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-        totalPanel.setOpaque(false);
-        JLabel totalTitle = new JLabel("Tổng cộng:");
-        totalTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        // pnlFooter2: Khung chứa thành phần giao diện cuối trang.
+        JPanel pnlFooter2 = new JPanel(new BorderLayout());
+        pnlFooter2.setOpaque(false);
+        // pnlTotalPanel: Khung chứa thành phần giao diện tổng khung.
+        JPanel pnlTotalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        pnlTotalPanel.setOpaque(false);
+        // lblTotalTitle: Nhãn hiển thị: Tổng cộng:.
+        JLabel lblTotalTitle = new JLabel("Tổng cộng:");
+        lblTotalTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblTongTien.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        totalPanel.add(totalTitle);
-        totalPanel.add(lblTongTien);
-        footer.add(totalPanel, BorderLayout.NORTH);
+        pnlTotalPanel.add(lblTotalTitle);
+        pnlTotalPanel.add(lblTongTien);
+        pnlFooter2.add(pnlTotalPanel, BorderLayout.NORTH);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-        actions.setOpaque(false);
+        // pnlActions: Khung chứa thành phần giao diện thao tác.
+        JPanel pnlActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        pnlActions.setOpaque(false);
+        // btnXuatHoaDon: Nút thao tác: Xuất hóa đơn.
         JButton btnXuatHoaDon = new JButton("Xuất hóa đơn");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnXuatHoaDon.addActionListener(e -> xuatHoaDon());
+        // btnQuayLai: Nút thao tác: Quay lại.
         JButton btnQuayLai = new JButton("Quay lại");
-        btnQuayLai.addActionListener(e -> cardLayout.show(screens, "LIST"));
-        actions.add(btnXuatHoaDon);
-        actions.add(btnQuayLai);
-        footer.add(actions, BorderLayout.SOUTH);
-        return footer;
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        btnQuayLai.addActionListener(e -> cardLayout.show(pnlScreens, "LIST"));
+        pnlActions.add(btnXuatHoaDon);
+        pnlActions.add(btnQuayLai);
+        pnlFooter2.add(pnlActions, BorderLayout.SOUTH);
+        return pnlFooter2;
     }
 
+    // Tìm kiểm.
     private void timKiem() {
         napDanhSach();
     }
 
+    // Cập nhật gợi y mã hóa đơn.
     private void capNhatGoiYMaHoaDon() {
         if (dangCapNhatGoiYMaHoaDon) {
             return;
@@ -351,12 +459,15 @@ public class TraCuuLichSuHoaDon extends JPanel {
                 return;
             }
 
-            Component editorComponent = cboMaHoaDon.getEditor().getEditorComponent();
+            Component editorComponent = cmbMaHoaDon.getEditor().getEditorComponent();
             if (!(editorComponent instanceof JTextField)) {
                 return;
             }
-            JTextField editor = (JTextField) editorComponent;
-            String tuKhoa = editor.getText();
+            // txtEditor: Ô nhập/hiển thị văn bản bộ chỉnh sửa.
+            JTextField txtEditor = (JTextField) editorComponent;
+            // tuKhoa: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
+            String tuKhoa = txtEditor.getText();
+            // goiY: Lưu gợi y; phần tử có kiểu String.
             List<String> goiY = new ArrayList<>();
             String tuKhoaChuanHoa = tuKhoa.toLowerCase(Locale.ROOT);
             for (String ma : danhSachMaHoaDon) {
@@ -365,30 +476,35 @@ public class TraCuuLichSuHoaDon extends JPanel {
                 }
             }
 
-            int viTriConTro = editor.getCaretPosition();
+            int viTriConTro = txtEditor.getCaretPosition();
             dangCapNhatGoiYMaHoaDon = true;
             try {
                 DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
                 for (String ma : goiY) {
                     model.addElement(ma);
                 }
-                cboMaHoaDon.setModel(model);
-                cboMaHoaDon.setSelectedItem(tuKhoa);
-                editor.setText(tuKhoa);
-                editor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
+                cmbMaHoaDon.setModel(model);
+                cmbMaHoaDon.setSelectedItem(tuKhoa);
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
+                txtEditor.setText(tuKhoa);
+                txtEditor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
             } finally {
                 dangCapNhatGoiYMaHoaDon = false;
             }
 
             if (!tuKhoa.isEmpty() && !goiY.isEmpty()
                     && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(tuKhoa))) {
-                cboMaHoaDon.showPopup();
-            } else if (cboMaHoaDon.isPopupVisible()) {
-                cboMaHoaDon.hidePopup();
+                cmbMaHoaDon.showPopup();
+            } else if (cmbMaHoaDon.isPopupVisible()) {
+                cmbMaHoaDon.hidePopup();
             }
         });
     }
 
+    // Kiểm tra mã có chứa đủ các ký tự của từ khóa đã chuẩn hóa hay không.
+    // Tham số ma: mã.
+    // Tham số tuKhoaChuanHoa: từ khóa tìm kiếm chuẩn hóa.
+    // Kết quả: true/false theo điều kiện xử lý.
     private boolean maCoChuaTatCaKyTu(String ma, String tuKhoaChuanHoa) {
         String maChuanHoa = ma.toLowerCase(Locale.ROOT);
         for (int i = 0; i < tuKhoaChuanHoa.length(); i++) {
@@ -399,10 +515,13 @@ public class TraCuuLichSuHoaDon extends JPanel {
         return true;
     }
 
+    // Nạp danh sách.
     private void napDanhSach() {
         try {
             HoaDonDAO.ThongKe thongKe = dao.layThongKe();
+            // tuKhoa: Lưu từ khóa tìm kiếm.
             String tuKhoa = layTuKhoa();
+            // hoaDons: Lưu các hóa đơn; phần tử có kiểu HoaDon.
             List<HoaDon> hoaDons = dao.timHoaDon(tuKhoa);
             if (tuKhoa.isEmpty()) {
                 danhSachMaHoaDon.clear();
@@ -421,13 +540,21 @@ public class TraCuuLichSuHoaDon extends JPanel {
         }
     }
 
+    // Cập nhật thống kê.
+    // Tham số thongKe: thống kê.
     private void capNhatThongKe(HoaDonDAO.ThongKe thongKe) {
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblHoaDonHomNay.setText(Integer.toString(thongKe.getHoaDonHomNay()));
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblTongHoaDon.setText(Integer.toString(thongKe.getTongHoaDon()));
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblKhachHangHomNay.setText(Integer.toString(thongKe.getKhachHangHomNay()));
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblDoanhThuHomNay.setText(formatMoney(thongKe.getDoanhThuHomNay()) + " ₫");
     }
 
+    // Mở chi tiết.
+    // Tham số selected: trạng thái được chọn.
     private void moChiTiet(HoaDon selected) {
         if (selected == null) {
             return;
@@ -445,7 +572,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
             }
             hoaDonDangXem = fullInvoice;
             hienThongTinChiTiet(fullInvoice);
-            cardLayout.show(screens, "DETAIL");
+            cardLayout.show(pnlScreens, "DETAIL");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(
                     this,
@@ -455,20 +582,35 @@ public class TraCuuLichSuHoaDon extends JPanel {
         }
     }
 
+    // Hiển thị thông tin chi tiết.
+    // Tham số invoice: hóa đơn.
     private void hienThongTinChiTiet(HoaDon invoice) {
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblMaHoaDon.setText(invoice.getMaHoaDon());
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblNgayLap.setText(formatDate(invoice.getNgayLap()));
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblKhachHang.setText(invoice.getTenKhachHang());
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblMaKhachHang.setText(invoice.getMaKhachHang());
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblTenKhachHang.setText(invoice.getTenKhachHang());
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblSoDienThoai.setText(invoice.getSoDienThoai());
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblThuCung.setText(layTenThuCung(invoice));
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblPhuongThuc.setText(invoice.getTenPhuongThuc());
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblTongTien.setText(formatMoney(invoice.getTongTien()) + " ₫");
         detailTableModel.setDetails(invoice.getChiTiet());
     }
 
+    // Lấy tên thú cưng.
+    // Tham số invoice: hóa đơn.
+    // Kết quả: chuỗi kết quả.
     private String layTenThuCung(HoaDon invoice) {
+        // names: Lưu các tên; phần tử có kiểu String.
         List<String> names = new ArrayList<>();
         for (HoaDon.ChiTiet detail : invoice.getChiTiet()) {
             if ("Thú cưng".equals(detail.getLoaiHang())) {
@@ -481,19 +623,22 @@ public class TraCuuLichSuHoaDon extends JPanel {
         return names.isEmpty() ? "-" : String.join(", ", names);
     }
 
+    // Xuất hóa đơn.
     private void xuatHoaDon() {
         if (hoaDonDangXem == null) {
             return;
         }
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu hóa đơn TXT");
-        chooser.setSelectedFile(new java.io.File(hoaDonDangXem.getMaHoaDon() + ".txt"));
-        chooser.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
-        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+        // fchChonTep: Hộp chọn tệp bộ chọn.
+        JFileChooser fchChonTep = new JFileChooser();
+        fchChonTep.setDialogTitle("Lưu hóa đơn TXT");
+        fchChonTep.setSelectedFile(new java.io.File(hoaDonDangXem.getMaHoaDon() + ".txt"));
+        fchChonTep.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
+        if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
-        Path file = chooser.getSelectedFile().toPath();
+        // file: Đường dẫn tệp dùng cho tệp.
+        Path file = fchChonTep.getSelectedFile().toPath();
         if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".txt")) {
             file = file.resolveSibling(file.getFileName() + ".txt");
         }
@@ -525,7 +670,11 @@ public class TraCuuLichSuHoaDon extends JPanel {
         }
     }
 
+    // Tạo nội dung hóa đơn.
+    // Tham số invoice: hóa đơn.
+    // Kết quả: chuỗi kết quả.
     private String taoNoiDungHoaDon(HoaDon invoice) {
+        // text: Bộ đệm ghép các đoạn chuỗi để tạo nội dung chữ.
         StringBuilder text = new StringBuilder();
         text.append("PET SHOP PRO\n");
         text.append("HÓA ĐƠN THANH TOÁN\n");
@@ -539,6 +688,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         text.append("------------------------------------------------------------\n");
         text.append("STT | Mã hàng | Loại | Tên hàng | Thú cưng | SL | Đơn giá | Thành tiền\n");
         text.append("------------------------------------------------------------\n");
+        // details: Lưu các dòng chi tiết; phần tử có kiểu HoaDon.ChiTiet.
         List<HoaDon.ChiTiet> details = invoice.getChiTiet();
         for (int index = 0; index < details.size(); index++) {
             HoaDon.ChiTiet item = details.get(index);
@@ -558,41 +708,62 @@ public class TraCuuLichSuHoaDon extends JPanel {
         return text.toString();
     }
 
+    // Thay null bằng chuỗi rỗng trước khi hiển thị.
+    // Tham số lblValue: giá trị.
+    // Kết quả: chuỗi kết quả.
     private String safe(String value) {
         return value == null ? "" : value;
     }
 
+    // Định dạng ngày giờ của hóa đơn thành chuỗi hiển thị.
+    // Tham số dateTime: ngày giờ.
+    // Kết quả: chuỗi kết quả.
     private String formatDate(LocalDateTime dateTime) {
         return dateTime == null ? "" : dateTime.format(DATE_TIME);
     }
 
+    // Mô hình dữ liệu cho bảng hóa đơn.
     private static class InvoiceTableModel extends AbstractTableModel {
+        // COLUMNS: Mảng lưu các cột.
         private static final String[] COLUMNS = {
                 "MÃ", "THỜI GIAN", "KHÁCH HÀNG", "TỔNG TIỀN",
                 "THANH TOÁN", "TRẠNG THÁI", ""
         };
+        // invoices: Lưu danh sách hóa đơn; phần tử có kiểu HoaDon.
         private List<HoaDon> invoices = new ArrayList<>();
 
+        // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
         public int getRowCount() {
             return invoices.size();
         }
 
+        // Trả về số cột của mô hình bảng.
         @Override
         public int getColumnCount() {
             return COLUMNS.length;
         }
 
+        // Quy định ô của bảng có được chỉnh sửa trực tiếp hay không.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: true/false theo điều kiện xử lý.
         @Override
         public boolean isCellEditable(int row, int column) {
             return column == 6;
         }
 
+        // Trả về tiêu đề của cột theo chỉ số.
+        // Tham số column: chỉ số cột.
         @Override
         public String getColumnName(int column) {
             return COLUMNS[column];
         }
 
+        // Lấy giá trị hiển thị tại một dòng và cột của bảng.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int row, int column) {
             HoaDon invoice = invoices.get(row);
@@ -616,38 +787,54 @@ public class TraCuuLichSuHoaDon extends JPanel {
             }
         }
 
+        // Lấy hóa đơn.
+        // Tham số row: chỉ số dòng.
+        // Kết quả: đối tượng/giá trị kiểu HoaDon.
         private HoaDon getInvoice(int row) {
             return row < 0 || row >= invoices.size() ? null : invoices.get(row);
         }
 
+        // Cập nhật danh sách hóa đơn.
+        // Tham số invoices: danh sách hóa đơn.
         private void setInvoices(List<HoaDon> invoices) {
             this.invoices = new ArrayList<>(invoices);
             fireTableDataChanged();
         }
     }
 
+    // Mô hình dữ liệu cho bảng chi tiết.
     private static class DetailTableModel extends AbstractTableModel {
+        // COLUMNS: Mảng lưu các cột.
         private static final String[] COLUMNS = {
                 "STT", "Mã sản phẩm / Dịch vụ", "Loại", "Sản phẩm / Dịch vụ", "Thú cưng",
                 "Số lượng", "Đơn giá", "Thành tiền"
         };
+        // details: Lưu các dòng chi tiết; phần tử có kiểu HoaDon.ChiTiet.
         private List<HoaDon.ChiTiet> details = new ArrayList<>();
 
+        // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
         public int getRowCount() {
             return details.size();
         }
 
+        // Trả về số cột của mô hình bảng.
         @Override
         public int getColumnCount() {
             return COLUMNS.length;
         }
 
+        // Trả về tiêu đề của cột theo chỉ số.
+        // Tham số column: chỉ số cột.
         @Override
         public String getColumnName(int column) {
             return COLUMNS[column];
         }
 
+        // Lấy giá trị hiển thị tại một dòng và cột của bảng.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int row, int column) {
             HoaDon.ChiTiet detail = details.get(row);
@@ -673,73 +860,119 @@ public class TraCuuLichSuHoaDon extends JPanel {
             }
         }
 
+        // Cập nhật các dòng chi tiết.
+        // Tham số details: các dòng chi tiết.
         private void setDetails(List<HoaDon.ChiTiet> details) {
             this.details = new ArrayList<>(details);
             fireTableDataChanged();
         }
     }
 
+    // Định dạng số tiền thành chuỗi hiển thị.
+    // Tham số amount: số tiền.
+    // Kết quả: chuỗi kết quả.
     private static String formatMoney(BigDecimal amount) {
         return MONEY.format(amount == null ? BigDecimal.ZERO : amount);
     }
 
+    // Quy định cách hiển thị ô hoặc thành phần trạng thái.
     private static class StatusRenderer extends DefaultTableCellRenderer {
+        // Thiết lập thành phần dùng để vẽ một ô của bảng.
+        // Tham số tblDuLieu: bảng dữ liệu.
+        // Tham số lblValue: giá trị.
+        // Tham số selected: trạng thái được chọn.
+        // Tham số focused: trạng thái có tiêu điểm.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: đối tượng/giá trị kiểu Component.
         @Override
         public Component getTableCellRendererComponent(
-                JTable table, Object value, boolean selected, boolean focused, int row, int column) {
+                JTable tblDuLieu, Object value, boolean selected, boolean focused, int row, int column) {
             Component component = super.getTableCellRendererComponent(
-                    table, value, selected, focused, row, column);
+                    tblDuLieu, value, selected, focused, row, column);
             setHorizontalAlignment(SwingConstants.CENTER);
-            setForeground(selected ? table.getSelectionForeground() : GREEN);
-            setFont(table.getFont().deriveFont(Font.BOLD));
+            setForeground(selected ? tblDuLieu.getSelectionForeground() : GREEN);
+            setFont(tblDuLieu.getFont().deriveFont(Font.BOLD));
             return component;
         }
     }
 
+    // Quy định cách hiển thị ô hoặc thành phần nút thao tác.
     private static class ButtonRenderer extends JButton implements TableCellRenderer {
+        // Khởi tạo đối tượng với trạng thái ban đầu.
         private ButtonRenderer() {
             setText("Xem thêm");
             setFocusable(false);
         }
 
+        // Thiết lập thành phần dùng để vẽ một ô của bảng.
+        // Tham số tblDuLieu: bảng dữ liệu.
+        // Tham số lblValue: giá trị.
+        // Tham số selected: trạng thái được chọn.
+        // Tham số focused: trạng thái có tiêu điểm.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: đối tượng/giá trị kiểu Component.
         @Override
         public Component getTableCellRendererComponent(
-                JTable table, Object value, boolean selected, boolean focused, int row, int column) {
+                JTable tblDuLieu, Object value, boolean selected, boolean focused, int row, int column) {
             return this;
         }
     }
 
+    // Nhóm dữ liệu hoặc chức năng hành động trên dòng dùng trong TraCuuLichSuHoaDon.
     private interface RowAction {
+        // Thực hiện hành động ứng với dòng được chọn.
+        // Tham số row: chỉ số dòng.
         void perform(int row);
     }
 
+    // Bộ chỉnh sửa và xử lý tương tác cho ô của bảng.
     private static class ButtonEditor extends AbstractCellEditor implements TableCellEditor {
-        private final JButton button = new JButton("Xem thêm");
-        private final JTable table;
+        // btnThaoTac: Nút thao tác: Xem thêm.
+        private final JButton btnThaoTac = new JButton("Xem thêm");
+        // tblDuLieu: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
+        private final JTable tblDuLieu;
+        // rowAction: Đối tượng hành động trên dòng có kiểu RowAction.
         private final RowAction rowAction;
+        // row: Lưu chỉ số dòng.
         private int row;
 
-        private ButtonEditor(JTable table, RowAction rowAction) {
-            this.table = table;
+        // Khởi tạo đối tượng từ các giá trị được truyền vào.
+        // Tham số tblDuLieu: bảng dữ liệu.
+        // Tham số rowAction: hành động trên dòng.
+        private ButtonEditor(JTable tblDuLieu, RowAction rowAction) {
+            this.tblDuLieu = tblDuLieu;
             this.rowAction = rowAction;
-            button.setFocusable(false);
-            button.addActionListener(new ActionListener() {
+            btnThaoTac.setFocusable(false);
+            // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+            btnThaoTac.addActionListener(new ActionListener() {
+                // Xử lý hành động được phát ra từ nút, menu hoặc phím tắt.
+                // Tham số event: thông tin sự kiện.
                 @Override
                 public void actionPerformed(ActionEvent event) {
                     fireEditingStopped();
                     ButtonEditor.this.rowAction.perform(
-                            ButtonEditor.this.table.convertRowIndexToModel(ButtonEditor.this.row));
+                            ButtonEditor.this.tblDuLieu.convertRowIndexToModel(ButtonEditor.this.row));
                 }
             });
         }
 
+        // Chuẩn bị thành phần chỉnh sửa hoặc nút thao tác trong ô của bảng.
+        // Tham số tblDuLieu: bảng dữ liệu.
+        // Tham số lblValue: giá trị.
+        // Tham số selected: trạng thái được chọn.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: đối tượng/giá trị kiểu Component.
         @Override
         public Component getTableCellEditorComponent(
-                JTable table, Object value, boolean selected, int row, int column) {
+                JTable tblDuLieu, Object value, boolean selected, int row, int column) {
             this.row = row;
-            return button;
+            return btnThaoTac;
         }
 
+        // Trả về giá trị của bộ chỉnh sửa ô hiện tại.
         @Override
         public Object getCellEditorValue() {
             return "Xem thêm";

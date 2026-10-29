@@ -11,9 +11,14 @@ import java.util.zip.ZipOutputStream;
 
 /** Xuat .xlsx chuan Office Open XML, khong can thu vien ben ngoai. */
 public final class XlsxExporter {
+    // Ẩn hàm khởi tạo vì lớp chỉ cung cấp các hàm tiện ích dùng chung.
     private XlsxExporter() {
     }
 
+    // Xuất dữ liệu ra tệp theo định dạng do lớp cung cấp.
+    // Tham số tep: tệp đầu ra.
+    // Tham số tenCot: các tiêu đề cột.
+    // Tham số duLieu: dữ liệu.
     public static void xuat(Path tep, String[] tenCot, List<String[]> duLieu) throws IOException {
         if (tenCot == null || tenCot.length == 0)
             throw new IllegalArgumentException("Thiếu cột Excel");
@@ -67,6 +72,7 @@ public final class XlsxExporter {
                             <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
                             </styleSheet>
                             """);
+            // sb: Bộ đệm ghép các đoạn chuỗi để tạo bộ đệm chuỗi.
             StringBuilder sb = new StringBuilder(8192);
             sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>")
                     .append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
@@ -87,6 +93,11 @@ public final class XlsxExporter {
         }
     }
 
+    // Ghi dữ liệu một dòng vào XML của trang tính.
+    // Tham số out: đầu ra.
+    // Tham số row: chỉ số dòng.
+    // Tham số ds: danh sách.
+    // Tham số tieuDe: tiêu đề.
     private static void ghiDong(StringBuilder out, int row, String[] ds, boolean tieuDe) {
         out.append("<row r=\"").append(row).append("\">");
         for (int col = 0; col < ds.length; col++) {
@@ -101,7 +112,11 @@ public final class XlsxExporter {
         out.append("</row>");
     }
 
+    // Chuyển chỉ số cột sang tên cột Excel như A, B hoặc AA.
+    // Tham số i: i.
+    // Kết quả: chuỗi kết quả.
     private static String cotExcel(int i) {
+        // s: Bộ đệm ghép các đoạn chuỗi để tạo chuỗi đầu vào.
         StringBuilder s = new StringBuilder();
         while (i > 0) {
             i--;
@@ -111,11 +126,18 @@ public final class XlsxExporter {
         return s.toString();
     }
 
+    // Mã hóa ký tự đặc biệt để tạo nội dung XML hợp lệ.
+    // Tham số s: chuỗi đầu vào.
+    // Kết quả: chuỗi kết quả.
     private static String xml(String s) {
         return s.replace("&", "&amp;").replace("<", "&lt;")
                 .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
     }
 
+    // Ghi một mục nội dung vào tệp ZIP cấu thành tệp XLSX.
+    // Tham số zip: tệp ZIP.
+    // Tham số name: tên.
+    // Tham số text: nội dung chữ.
     private static void ghi(ZipOutputStream zip, String name, String text) throws IOException {
         zip.putNextEntry(new ZipEntry(name));
         zip.write(text.getBytes(StandardCharsets.UTF_8));

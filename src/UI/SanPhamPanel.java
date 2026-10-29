@@ -23,26 +23,39 @@ import java.util.List;
  */
 public class SanPhamPanel extends JPanel {
 
+    // dao: Đối tượng truy cập dữ liệu sản phẩm.
     private final SanPhamDAO dao = new SanPhamDAO();
 
+    // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
             new String[] { "Mã SP", "Tên sản phẩm", "Danh mục",
                     "Nhà cung cấp", "Giá nhập", "Giá bán", "Tồn" },
             0) {
+        // Không cho phép sửa trực tiếp các ô trong bảng.
+        // Tham số row: chỉ số dòng.
+        // Tham số col: chỉ số cột.
+        // Kết quả: false, bảng chỉ dùng để xem.
         @Override
         public boolean isCellEditable(int row, int col) {
             return false;
         }
     };
 
-    private final JTable bang = new JTable(model);
+    // tblDuLieu2: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
+    private final JTable tblDuLieu2 = new JTable(model);
+    // txtTim: Ô nhập/hiển thị văn bản tìm.
     private final JTextField txtTim = UIStyle.o(16);
-    private final JComboBox<Muc> cboDanhMuc = new JComboBox<>();
-    private final JLabel lbSoLuong = new JLabel("0 sản phẩm");
+    // cmbDanhMuc: Hộp lựa chọn danh mục.
+    private final JComboBox<Muc> cmbDanhMuc = new JComboBox<>();
+    // lblSoLuong2: Nhãn hiển thị: 0 sản phẩm.
+    private final JLabel lblSoLuong2 = new JLabel("0 sản phẩm");
 
+    // dsHienTai: Lưu danh sách hiện tại; phần tử có kiểu SanPham.
     private ArrayList<SanPham> dsHienTai = new ArrayList<>();
+    // dangNapCombo: Cờ cho biết đang nạp danh sách lựa chọn.
     private boolean dangNapCombo = false;
 
+    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public SanPhamPanel() {
 
         setLayout(new BorderLayout());
@@ -59,106 +72,129 @@ public class SanPhamPanel extends JPanel {
     // GIAO DIEN
     // =========================================================
 
+    // Tạo phần đầu.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel taoPhanDau() {
 
-        JLabel tieuDe = new JLabel("Quản lý sản phẩm");
-        tieuDe.setFont(UIStyle.font(Font.BOLD, 26));
+        // lblTieuDe2: Nhãn hiển thị: Quản lý sản phẩm.
+        JLabel lblTieuDe2 = new JLabel("Quản lý sản phẩm");
+        lblTieuDe2.setFont(UIStyle.font(Font.BOLD, 26));
 
+        // btnThem: Nút thao tác thêm.
         JButton btnThem = UIStyle.nutXanh("+ Thêm sản phẩm");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnThem.addActionListener(e -> them());
 
-        JPanel hang = new JPanel(new BorderLayout());
-        hang.setOpaque(false);
-        hang.setBorder(new EmptyBorder(0, 0, 15, 0));
-        hang.add(tieuDe, BorderLayout.WEST);
-        hang.add(btnThem, BorderLayout.EAST);
+        // pnlHang: Khung chứa thành phần giao diện hàng.
+        JPanel pnlHang = new JPanel(new BorderLayout());
+        pnlHang.setOpaque(false);
+        pnlHang.setBorder(new EmptyBorder(0, 0, 15, 0));
+        pnlHang.add(lblTieuDe2, BorderLayout.WEST);
+        pnlHang.add(btnThem, BorderLayout.EAST);
 
-        return hang;
+        return pnlHang;
     }
 
+    // Tạo phần bảng dữ liệu.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel taoPhanBang() {
 
-        JPanel the = UIStyle.the();
-        the.setLayout(new BorderLayout(0, 10));
+        // pnlThe: Khung chứa thành phần giao diện thẻ.
+        JPanel pnlThe = UIStyle.the();
+        pnlThe.setLayout(new BorderLayout(0, 10));
 
-        cboDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
-        cboDanhMuc.addActionListener(e -> {
+        cmbDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        cmbDanhMuc.addActionListener(e -> {
             if (!dangNapCombo) {
                 napBang();
             }
         });
 
+        // btnTim: Nút thao tác tìm.
         JButton btnTim = UIStyle.nutChinh("Tìm kiếm");
+        // btnSua: Nút thao tác sửa.
         JButton btnSua = UIStyle.nutPhu("Sửa");
+        // btnXoa: Nút thao tác xóa.
         JButton btnXoa = UIStyle.nutXoa("Xóa");
 
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnTim.addActionListener(e -> napBang());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         txtTim.addActionListener(e -> napBang());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnSua.addActionListener(e -> sua());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnXoa.addActionListener(e -> xoa());
 
-        JPanel thanhCongCu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        thanhCongCu.setOpaque(false);
-        thanhCongCu.add(UIStyle.nhan("Mã / tên:"));
-        thanhCongCu.add(txtTim);
-        thanhCongCu.add(cboDanhMuc);
-        thanhCongCu.add(btnTim);
-        thanhCongCu.add(btnSua);
-        thanhCongCu.add(btnXoa);
+        // pnlThanhCongCu: Khung chứa thành phần giao diện thanh công cụ.
+        JPanel pnlThanhCongCu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        pnlThanhCongCu.setOpaque(false);
+        pnlThanhCongCu.add(UIStyle.nhan("Mã / tên:"));
+        pnlThanhCongCu.add(txtTim);
+        pnlThanhCongCu.add(cmbDanhMuc);
+        pnlThanhCongCu.add(btnTim);
+        pnlThanhCongCu.add(btnSua);
+        pnlThanhCongCu.add(btnXoa);
 
-        lbSoLuong.setFont(UIStyle.font(Font.BOLD, 13));
-        lbSoLuong.setBorder(new EmptyBorder(0, 2, 0, 0));
+        lblSoLuong2.setFont(UIStyle.font(Font.BOLD, 13));
+        lblSoLuong2.setBorder(new EmptyBorder(0, 2, 0, 0));
 
-        JPanel phanTren = new JPanel();
-        phanTren.setOpaque(false);
-        phanTren.setLayout(new BoxLayout(phanTren, BoxLayout.Y_AXIS));
-        thanhCongCu.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lbSoLuong.setAlignmentX(Component.LEFT_ALIGNMENT);
-        phanTren.add(thanhCongCu);
-        phanTren.add(Box.createVerticalStrut(8));
-        phanTren.add(lbSoLuong);
+        // pnlPhanTren: Khung chứa thành phần giao diện phần trên.
+        JPanel pnlPhanTren = new JPanel();
+        pnlPhanTren.setOpaque(false);
+        pnlPhanTren.setLayout(new BoxLayout(pnlPhanTren, BoxLayout.Y_AXIS));
+        pnlThanhCongCu.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblSoLuong2.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnlPhanTren.add(pnlThanhCongCu);
+        pnlPhanTren.add(Box.createVerticalStrut(8));
+        pnlPhanTren.add(lblSoLuong2);
 
-        UIStyle.taoBang(bang, 4, 5, 6);
-        bang.addMouseListener(new MouseAdapter() {
+        UIStyle.taoBang(tblDuLieu2, 4, 5, 6);
+        tblDuLieu2.addMouseListener(new MouseAdapter() {
+            // Xử lý thao tác nhấn chuột trên thành phần đã gắn listener.
+            // Tham số e: thông tin sự kiện.
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && bang.getSelectedRow() >= 0) {
+                if (e.getClickCount() == 2 && tblDuLieu2.getSelectedRow() >= 0) {
                     sua();
                 }
             }
         });
 
-        the.add(phanTren, BorderLayout.NORTH);
-        the.add(UIStyle.cuon(bang), BorderLayout.CENTER);
+        pnlThe.add(pnlPhanTren, BorderLayout.NORTH);
+        pnlThe.add(UIStyle.cuon(tblDuLieu2), BorderLayout.CENTER);
 
-        return the;
+        return pnlThe;
     }
 
     // =========================================================
     // DU LIEU
     // =========================================================
 
+    // Nạp lại dữ liệu và cập nhật nội dung màn hình.
     public void napLai() {
         napCombo();
         napBang();
     }
 
+    // Nạp hộp lựa chọn.
     private void napCombo() {
 
         try {
-            Muc dangChon = (Muc) cboDanhMuc.getSelectedItem();
+            Muc dangChon = (Muc) cmbDanhMuc.getSelectedItem();
             String maDangChon = dangChon == null ? null : dangChon.ma;
 
             dangNapCombo = true;
-            cboDanhMuc.removeAllItems();
-            cboDanhMuc.addItem(new Muc(null, "Tất cả danh mục"));
+            cmbDanhMuc.removeAllItems();
+            cmbDanhMuc.addItem(new Muc(null, "Tất cả danh mục"));
 
             for (DanhMuc dm : dao.layDanhSachDanhMuc()) {
                 Muc m = new Muc(dm.getMaDanhMuc(),
                         dm.getTenDanhMuc());
-                cboDanhMuc.addItem(m);
+                cmbDanhMuc.addItem(m);
                 if (m.ma.equals(maDangChon)) {
-                    cboDanhMuc.setSelectedItem(m);
+                    cmbDanhMuc.setSelectedItem(m);
                 }
             }
 
@@ -169,10 +205,12 @@ public class SanPhamPanel extends JPanel {
         }
     }
 
+    // Nạp bảng dữ liệu.
     private void napBang() {
 
         try {
-            Muc muc = (Muc) cboDanhMuc.getSelectedItem();
+            Muc muc = (Muc) cmbDanhMuc.getSelectedItem();
+            // maDanhMuc: Lưu mã danh mục.
             String maDanhMuc = muc == null ? null : muc.ma;
 
             dsHienTai = dao.timKiem(txtTim.getText(), maDanhMuc, null);
@@ -190,16 +228,20 @@ public class SanPhamPanel extends JPanel {
                 });
             }
 
-            lbSoLuong.setText(dsHienTai.size() + " sản phẩm");
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
+            lblSoLuong2.setText(dsHienTai.size() + " sản phẩm");
 
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
         }
     }
 
+    // Lấy đối tượng tương ứng với dòng đang được chọn.
+    // Kết quả: đối tượng/giá trị kiểu SanPham.
     private SanPham dangChon() {
 
-        int row = bang.getSelectedRow();
+        // row: Lưu chỉ số dòng.
+        int row = tblDuLieu2.getSelectedRow();
 
         if (row < 0) {
             UIStyle.canhBao(this, "Vui lòng chọn một sản phẩm trong bảng.");
@@ -213,10 +255,12 @@ public class SanPhamPanel extends JPanel {
     // CHUC NANG
     // =========================================================
 
+    // Xử lý yêu cầu thêm dữ liệu từ giao diện.
     private void them() {
         moForm(null);
     }
 
+    // Xử lý yêu cầu sửa bản ghi đang chọn.
     private void sua() {
         SanPham sp = dangChon();
         if (sp != null) {
@@ -224,10 +268,14 @@ public class SanPhamPanel extends JPanel {
         }
     }
 
+    // Mở biểu mẫu.
+    // Tham số sp: sản phẩm cần xử lý.
     private void moForm(SanPham sp) {
 
         try {
+            // dsDanhMuc: Lưu danh sách danh mục; phần tử có kiểu DanhMuc.
             ArrayList<DanhMuc> dsDanhMuc = dao.layDanhSachDanhMuc();
+            // dsNcc: Lưu danh sách NCC; phần tử có kiểu NhaCungCap.
             ArrayList<NhaCungCap> dsNcc = dao.layDanhSachNhaCungCap();
 
             if (dsDanhMuc.isEmpty() || dsNcc.isEmpty()) {
@@ -236,14 +284,14 @@ public class SanPhamPanel extends JPanel {
                 return;
             }
 
-            SanPhamDialog dlg = new SanPhamDialog(
+            SanPhamDialog winDlg = new SanPhamDialog(
                     SwingUtilities.getWindowAncestor(this),
                     sp,
                     sp == null ? "" : null, // them moi: ma de trong, nguoi dung tu nhap
                     dsDanhMuc, dsNcc);
-            dlg.setVisible(true);
+            winDlg.setVisible(true);
 
-            if (dlg.isDaLuu()) {
+            if (winDlg.isDaLuu()) {
                 napBang();
             }
 
@@ -252,6 +300,7 @@ public class SanPhamPanel extends JPanel {
         }
     }
 
+    // Xử lý yêu cầu xóa bản ghi đang chọn.
     private void xoa() {
 
         SanPham sp = dangChon();
@@ -261,6 +310,7 @@ public class SanPhamPanel extends JPanel {
 
         try {
             // Da co phieu nhap / hoa don / kiem ke thi khong xoa duoc (khoa ngoai)
+            // lichSu: Lưu lịch sử.
             int lichSu = dao.demLichSu(sp.getMaSanPham());
             if (lichSu > 0) {
                 UIStyle.canhBao(this, "Sản phẩm \"" + sp.getTenSanPham()
@@ -289,14 +339,20 @@ public class SanPhamPanel extends JPanel {
 
     /** Muc cua combobox: hien ten, giu ma (ma = null nghia la "tat ca"). */
     private static class Muc {
+        // ma: Lưu mã.
         final String ma;
+        // ten: Lưu tên.
         final String ten;
 
+        // Khởi tạo đối tượng từ các giá trị được truyền vào.
+        // Tham số ma: mã.
+        // Tham số ten: tên.
         Muc(String ma, String ten) {
             this.ma = ma;
             this.ten = ten;
         }
 
+        // Trả về chuỗi đại diện của đối tượng để hiển thị.
         @Override
         public String toString() {
             return ten;
@@ -308,65 +364,79 @@ public class SanPhamPanel extends JPanel {
     // =========================================================
 
     /**
-     * Form Them / Sua san pham - dung cac cot cua bang SanPham:
+     * Form Them / Sua san pham - dung cac cot cua tblDuLieu2 SanPham:
      * ma, ten, giaNhap, giaBan, maDanhMuc, maNhaCungCap.
      * Ton kho khong phai cot cua SanPham, nen o "Them so luong" duoc luu thanh
      * 1 phieu nhap kho hoan tat (ton = tong nhap - ban +/- kiem ke van khop).
      */
     private static class SanPhamDialog extends JDialog {
 
+        // dao: Đối tượng truy cập dữ liệu sản phẩm.
         private final SanPhamDAO dao = new SanPhamDAO();
+        // dangSua: Cờ cho biết đang ở chế độ sửa.
         private final boolean dangSua;
 
+        // txtMa: Ô nhập/hiển thị văn bản mã.
         private final JTextField txtMa = UIStyle.o(22);
+        // txtTen: Ô nhập/hiển thị văn bản tên.
         private final JTextField txtTen = UIStyle.o(22);
+        // txtGiaNhap: Ô nhập/hiển thị văn bản giá nhập.
         private final JTextField txtGiaNhap = UIStyle.o(22);
+        // txtGiaBan: Ô nhập/hiển thị văn bản giá bán.
         private final JTextField txtGiaBan = UIStyle.o(22);
         // Thông tin HSD theo lịch sử nhập kho, chỉ được xem khi mở chi tiết/sửa.
+        // txtHanSuDung: Ô nhập/hiển thị văn bản hạn sử dụng.
         private final JTextField txtHanSuDung = UIStyle.oChiDoc("Chưa có dữ liệu");
+        // spnThem: Ô chọn giá trị bằng nút tăng/giảm thêm.
         private final JSpinner spnThem = new JSpinner(new SpinnerNumberModel(0, 0, 1_000_000, 1));
-        private final JComboBox<DanhMuc> cboDanhMuc = new JComboBox<>();
-        private final JComboBox<NhaCungCap> cboNhaCungCap = new JComboBox<>();
-        private final JComboBox<String> cboNhomTuoi = new JComboBox<>(new String[] {
+        // cmbDanhMuc: Hộp lựa chọn danh mục.
+        private final JComboBox<DanhMuc> cmbDanhMuc = new JComboBox<>();
+        // cmbNhaCungCap: Hộp lựa chọn nhà cung cấp.
+        private final JComboBox<NhaCungCap> cmbNhaCungCap = new JComboBox<>();
+        // cmbNhomTuoi: Hộp lựa chọn nhóm tuổi.
+        private final JComboBox<String> cmbNhomTuoi = new JComboBox<>(new String[] {
                 "Mọi độ tuổi", "Con non", "Trưởng thành", "Cao tuổi", "Chưa xác định" });
-        private final JComboBox<String> cboKichThuoc = new JComboBox<>(new String[] {
+        // cmbKichThuoc: Hộp lựa chọn kích thước.
+        private final JComboBox<String> cmbKichThuoc = new JComboBox<>(new String[] {
                 "Mọi kích thước", "Nhỏ", "Trung bình", "Lớn", "Chưa xác định" });
 
+        // daLuu: Cờ cho biết dữ liệu đã được lưu.
         private boolean daLuu = false;
 
         /** sp = null: them moi. maMoi: ma goi y khi them. */
-        public SanPhamDialog(Window cha, SanPham sp, String maMoi,
+        public SanPhamDialog(Window winCha, SanPham sp, String maMoi,
                 List<DanhMuc> dsDanhMuc,
                 List<NhaCungCap> dsNhaCungCap) {
 
-            super(cha, sp == null ? "Thêm sản phẩm" : "Sửa sản phẩm",
+            super(winCha, sp == null ? "Thêm sản phẩm" : "Sửa sản phẩm",
                     ModalityType.APPLICATION_MODAL);
 
             dangSua = sp != null;
 
             for (DanhMuc dm : dsDanhMuc) {
-                cboDanhMuc.addItem(dm);
+                cmbDanhMuc.addItem(dm);
             }
             for (NhaCungCap n : dsNhaCungCap) {
-                cboNhaCungCap.addItem(n);
+                cmbNhaCungCap.addItem(n);
             }
 
-            cboDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
-            cboNhaCungCap.setFont(UIStyle.font(Font.PLAIN, 13));
-            cboNhomTuoi.setFont(UIStyle.font(Font.PLAIN, 13));
-            cboKichThuoc.setFont(UIStyle.font(Font.PLAIN, 13));
+            cmbDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
+            cmbNhaCungCap.setFont(UIStyle.font(Font.PLAIN, 13));
+            cmbNhomTuoi.setFont(UIStyle.font(Font.PLAIN, 13));
+            cmbKichThuoc.setFont(UIStyle.font(Font.PLAIN, 13));
 
-            JPanel form = new JPanel(new GridBagLayout());
-            form.setBorder(new EmptyBorder(20, 25, 10, 25));
+            // pnlForm2: Khung chứa thành phần giao diện biểu mẫu.
+            JPanel pnlForm2 = new JPanel(new GridBagLayout());
+            pnlForm2.setBorder(new EmptyBorder(20, 25, 10, 25));
 
-            UIStyle.hang(form, 0, "Mã sản phẩm", txtMa, false);
-            UIStyle.hang(form, 1, "Tên sản phẩm", txtTen, false);
-            UIStyle.hang(form, 2, "Giá nhập", txtGiaNhap, false);
-            UIStyle.hang(form, 3, "Giá bán", txtGiaBan, false);
-            UIStyle.hang(form, 4, "Danh mục", cboDanhMuc, false);
-            UIStyle.hang(form, 5, "Nhà cung cấp", cboNhaCungCap, false);
-            UIStyle.hang(form, 6, "Độ tuổi phù hợp", cboNhomTuoi, false);
-            UIStyle.hang(form, 7, "Kích thước phù hợp", cboKichThuoc, false);
+            UIStyle.hang(pnlForm2, 0, "Mã sản phẩm", txtMa, false);
+            UIStyle.hang(pnlForm2, 1, "Tên sản phẩm", txtTen, false);
+            UIStyle.hang(pnlForm2, 2, "Giá nhập", txtGiaNhap, false);
+            UIStyle.hang(pnlForm2, 3, "Giá bán", txtGiaBan, false);
+            UIStyle.hang(pnlForm2, 4, "Danh mục", cmbDanhMuc, false);
+            UIStyle.hang(pnlForm2, 5, "Nhà cung cấp", cmbNhaCungCap, false);
+            UIStyle.hang(pnlForm2, 6, "Độ tuổi phù hợp", cmbNhomTuoi, false);
+            UIStyle.hang(pnlForm2, 7, "Kích thước phù hợp", cmbKichThuoc, false);
 
             spnThem.setFont(UIStyle.font(Font.PLAIN, 13));
             int dongTiep = 8;
@@ -379,96 +449,121 @@ public class SanPhamPanel extends JPanel {
                         "Hạn sử dụng sớm nhất trong các phiếu nhập đã hoàn tất; "
                                 + "sản phẩm có thể có nhiều lô/HSD khác nhau. "
                                 + "Chỉnh hạn dùng tại nghiệp vụ nhập kho, không phải ở đây.");
-                UIStyle.hang(form, dongTiep++, "Hạn sử dụng (sớm nhất)", txtHanSuDung, false);
-                UIStyle.hang(form, dongTiep++, "Tồn hiện tại",
+                UIStyle.hang(pnlForm2, dongTiep++, "Hạn sử dụng (sớm nhất)", txtHanSuDung, false);
+                UIStyle.hang(pnlForm2, dongTiep++, "Tồn hiện tại",
                         UIStyle.oChiDoc(String.valueOf(sp.getTonKho())), false);
             }
-            UIStyle.hang(form, dongTiep,
+            UIStyle.hang(pnlForm2, dongTiep,
                     sp == null ? "Số lượng ban đầu" : "Thêm số lượng", spnThem, false);
 
             if (dangSua) {
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMa.setText(sp.getMaSanPham());
                 txtMa.setEditable(false);
                 txtMa.setBackground(UIStyle.READONLY);
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtTen.setText(sp.getTenSanPham());
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtGiaNhap.setText(String.valueOf((long) sp.getGiaNhap()));
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtGiaBan.setText(String.valueOf((long) sp.getGiaBan()));
                 chonDanhMuc(sp.getMaDanhMuc());
                 chonNhaCungCap(sp.getMaNhaCungCap());
                 try {
+                    // han: Lưu hạn dưới dạng dữ liệu thời gian.
                     java.time.LocalDate han = dao.layHanSuDungSomNhat(sp.getMaSanPham());
                     if (han == null) {
+                        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                         txtHanSuDung.setText("Chưa có dữ liệu");
                     } else {
+                        // Định dạng dữ liệu thành chuỗi rồi hiển thị trong control bằng setText().
                         txtHanSuDung.setText(han.format(
                                 java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
                     }
                 } catch (SQLException ex) {
+                    // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                     txtHanSuDung.setText("Không tải được dữ liệu");
                     UIStyle.loi(this, ex);
                 }
                 try {
+                    // thongTin: Mảng lưu thông tin.
                     String[] thongTin = dao.layThongTinGoiY(sp.getMaSanPham());
                     if (thongTin != null) {
-                        chonGiaTri(cboNhomTuoi, thongTin[1]);
-                        chonGiaTri(cboKichThuoc, thongTin[2]);
+                        chonGiaTri(cmbNhomTuoi, thongTin[1]);
+                        chonGiaTri(cmbKichThuoc, thongTin[2]);
                     }
                 } catch (SQLException ex) {
                     UIStyle.loi(this, ex);
                 }
             } else {
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMa.setText(maMoi);
             }
 
+            // btnHuy: Nút thao tác hủy.
             JButton btnHuy = UIStyle.nutPhu("Hủy");
+            // btnLuu: Nút thao tác lưu.
             JButton btnLuu = UIStyle.nutXanh("Lưu");
+            // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
             btnHuy.addActionListener(e -> dispose());
+            // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
             btnLuu.addActionListener(e -> luu());
 
-            JPanel nut = UIStyle.hangNut(btnHuy, btnLuu);
-            nut.setBorder(new EmptyBorder(5, 25, 20, 25));
+            // pnlNut2: Khung chứa thành phần giao diện nút.
+            JPanel pnlNut2 = UIStyle.hangNut(btnHuy, btnLuu);
+            pnlNut2.setBorder(new EmptyBorder(5, 25, 20, 25));
 
             setLayout(new BorderLayout());
-            add(form, BorderLayout.CENTER);
-            add(nut, BorderLayout.SOUTH);
+            add(pnlForm2, BorderLayout.CENTER);
+            add(pnlNut2, BorderLayout.SOUTH);
 
             getRootPane().setDefaultButton(btnLuu);
 
             pack();
             setResizable(false);
-            setLocationRelativeTo(cha);
+            setLocationRelativeTo(winCha);
         }
 
+        // Chọn danh mục.
+        // Tham số ma: mã.
         private void chonDanhMuc(String ma) {
-            for (int i = 0; i < cboDanhMuc.getItemCount(); i++) {
-                if (cboDanhMuc.getItemAt(i).getMaDanhMuc().equals(ma)) {
-                    cboDanhMuc.setSelectedIndex(i);
+            for (int i = 0; i < cmbDanhMuc.getItemCount(); i++) {
+                if (cmbDanhMuc.getItemAt(i).getMaDanhMuc().equals(ma)) {
+                    cmbDanhMuc.setSelectedIndex(i);
                     return;
                 }
             }
         }
 
+        // Chọn nhà cung cấp.
+        // Tham số ma: mã.
         private void chonNhaCungCap(String ma) {
-            for (int i = 0; i < cboNhaCungCap.getItemCount(); i++) {
-                if (cboNhaCungCap.getItemAt(i).getMaNhaCungCap().equals(ma)) {
-                    cboNhaCungCap.setSelectedIndex(i);
+            for (int i = 0; i < cmbNhaCungCap.getItemCount(); i++) {
+                if (cmbNhaCungCap.getItemAt(i).getMaNhaCungCap().equals(ma)) {
+                    cmbNhaCungCap.setSelectedIndex(i);
                     return;
                 }
             }
         }
 
-        private void chonGiaTri(JComboBox<String> combo, String giaTri) {
-            for (int i = 0; i < combo.getItemCount(); i++) {
-                if (combo.getItemAt(i).equals(giaTri)) {
-                    combo.setSelectedIndex(i);
+        // Chọn giá trị.
+        // Tham số cmbLuaChon: hộp lựa chọn.
+        // Tham số giaTri: giá trị.
+        private void chonGiaTri(JComboBox<String> cmbLuaChon, String giaTri) {
+            for (int i = 0; i < cmbLuaChon.getItemCount(); i++) {
+                if (cmbLuaChon.getItemAt(i).equals(giaTri)) {
+                    cmbLuaChon.setSelectedIndex(i);
                     return;
                 }
             }
         }
 
+        // Kiểm tra dữ liệu nhập và lưu thông tin của biểu mẫu.
         private void luu() {
 
+            // ma: Đọc nội dung chữ từ ô nhập để xử lý mã.
             String ma = txtMa.getText().trim();
+            // ten: Đọc nội dung chữ từ ô nhập để xử lý tên.
             String ten = txtTen.getText().trim();
 
             if (ma.isEmpty() || ten.isEmpty()) {
@@ -486,7 +581,9 @@ public class SanPhamPanel extends JPanel {
                 return;
             }
 
+            // giaNhap: Lưu giá nhập.
             long giaNhap;
+            // giaBan: Lưu giá bán.
             long giaBan;
 
             try {
@@ -503,8 +600,8 @@ public class SanPhamPanel extends JPanel {
                 return;
             }
 
-            DanhMuc dm = (DanhMuc) cboDanhMuc.getSelectedItem();
-            NhaCungCap ncc = (NhaCungCap) cboNhaCungCap.getSelectedItem();
+            DanhMuc dm = (DanhMuc) cmbDanhMuc.getSelectedItem();
+            NhaCungCap ncc = (NhaCungCap) cmbNhaCungCap.getSelectedItem();
 
             if (dm == null || ncc == null) {
                 UIStyle.canhBao(this,
@@ -527,8 +624,8 @@ public class SanPhamPanel extends JPanel {
                     dao.them(sp);
                 }
                 dao.luuThongTinGoiY(ma, dm.getTenDanhMuc(), ten,
-                        (String) cboNhomTuoi.getSelectedItem(),
-                        (String) cboKichThuoc.getSelectedItem());
+                        (String) cmbNhomTuoi.getSelectedItem(),
+                        (String) cmbKichThuoc.getSelectedItem());
 
                 int them = (Integer) spnThem.getValue();
                 if (them > 0) {
@@ -544,6 +641,8 @@ public class SanPhamPanel extends JPanel {
             }
         }
 
+        // Kiểm tra dữ liệu đã được lưu.
+        // Kết quả: true/false theo điều kiện xử lý.
         public boolean isDaLuu() {
             return daLuu;
         }

@@ -44,34 +44,57 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
+// Giao diện/chức năng thống kê doanh thu của ứng dụng.
 public class ThongKeDoanhThu extends JPanel {
 
+    // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
+    // BLUE: Màu dùng cho giao diện: xanh dương.
     private static final Color BLUE = new Color(45, 125, 205);
+    // BORDER: Màu dùng cho giao diện: viền.
     private static final Color BORDER = new Color(210, 220, 230);
+    // MUTED: Màu dùng cho giao diện: màu chữ phụ.
     private static final Color MUTED = new Color(105, 116, 130);
+    // MONEY: Bộ định dạng số/tiền dùng để hiển thị dữ liệu trên giao diện.
     private static final NumberFormat MONEY =
             NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    // DAY_FORMAT: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời gian và chuỗi.
     private static final DateTimeFormatter DAY_FORMAT =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    // MONTH_FORMAT: Bộ định dạng ngày/giờ theo mẫu MM/yyyy để chuyển giữa dữ liệu thời gian và chuỗi.
     private static final DateTimeFormatter MONTH_FORMAT =
             DateTimeFormatter.ofPattern("MM/yyyy");
 
+    // dao: Đối tượng truy cập dữ liệu thống kê doanh thu.
     private final ThongKeDoanhThuDAO dao = new ThongKeDoanhThuDAO();
-    private final JComboBox<CheDo> cboCheDo = new JComboBox<>(CheDo.values());
+    // cmbCheDo: Hộp lựa chọn chế độ thống kê.
+    private final JComboBox<CheDo> cmbCheDo = new JComboBox<>(CheDo.values());
+    // lblKy: Nhãn hiển thị kỳ.
     private final JLabel lblKy = new JLabel();
+    // lblTongDoanhThu: Nhãn hiển thị: —.
     private final JLabel lblTongDoanhThu = new JLabel("—", SwingConstants.CENTER);
+    // lblTongHoaDon: Nhãn hiển thị: —.
     private final JLabel lblTongHoaDon = new JLabel("—", SwingConstants.CENTER);
+    // lblTrungBinh: Nhãn hiển thị: —.
     private final JLabel lblTrungBinh = new JLabel("—", SwingConstants.CENTER);
+    // lblTrangThai: Nhãn hiển thị:  .
     private final JLabel lblTrangThai = new JLabel(" ");
+    // btnTruoc: Nút thao tác: ‹.
     private final JButton btnTruoc = new JButton("‹");
+    // btnSau: Nút thao tác: ›.
     private final JButton btnSau = new JButton("›");
+    // bangModel: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final BangMatHangModel bangModel = new BangMatHangModel();
+    // tblMatHang: Bảng hiển thị dữ liệu mặt hàng.
     private final JTable tblMatHang = new JTable(bangModel);
-    private final BieuDoPanel bieuDo = new BieuDoPanel();
+    // pnlBieuDo: Đối tượng biểu đồ có kiểu BieuDoPanel.
+    private final BieuDoPanel pnlBieuDo = new BieuDoPanel();
+    // ngayThamChieu: Lưu ngày tham chiếu dưới dạng dữ liệu thời gian.
     private LocalDate ngayThamChieu = LocalDate.now();
+    // baoCao: Đối tượng báo cáo có kiểu BaoCao.
     private BaoCao baoCao;
 
+    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public ThongKeDoanhThu() {
         setLayout(new BorderLayout(0, 12));
         setBackground(new Color(229, 241, 252));
@@ -79,111 +102,145 @@ public class ThongKeDoanhThu extends JPanel {
         add(taoTieuDe(), BorderLayout.NORTH);
         add(taoNoiDung(), BorderLayout.CENTER);
 
-        cboCheDo.addActionListener(e -> capNhatBaoCao());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        cmbCheDo.addActionListener(e -> capNhatBaoCao());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnTruoc.addActionListener(e -> dichKy(-1));
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnSau.addActionListener(e -> dichKy(1));
         capNhatBaoCao();
     }
 
+    // Làm mới dữ liệu hoặc trạng thái của màn hình.
     public void lamMoi() {
         capNhatBaoCao();
     }
 
+    // Tạo tiêu đề.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel taoTieuDe() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        JLabel title = new JLabel("Thống kê doanh thu");
-        title.setForeground(NAVY);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 25));
-        panel.add(title, BorderLayout.WEST);
-        return panel;
+        // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+        JPanel pnlKhung = new JPanel(new BorderLayout());
+        pnlKhung.setOpaque(false);
+        // lblTitle2: Nhãn hiển thị: Thống kê doanh thu.
+        JLabel lblTitle2 = new JLabel("Thống kê doanh thu");
+        lblTitle2.setForeground(NAVY);
+        lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 25));
+        pnlKhung.add(lblTitle2, BorderLayout.WEST);
+        return pnlKhung;
     }
 
+    // Tạo nội dung.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel taoNoiDung() {
-        JPanel content = new JPanel(new BorderLayout(0, 12));
-        content.setBackground(new Color(229, 241, 252));
+        // pnlContent: Khung chứa thành phần giao diện nội dung.
+        JPanel pnlContent = new JPanel(new BorderLayout(0, 12));
+        pnlContent.setBackground(new Color(229, 241, 252));
 
-        JPanel toolbar = new JPanel(new BorderLayout(10, 0));
-        toolbar.setOpaque(false);
-        JPanel kyChon = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        kyChon.setOpaque(false);
-        kyChon.add(new JLabel("Xem theo:"));
-        cboCheDo.setFocusable(false);
-        cboCheDo.setPreferredSize(new Dimension(100, 28));
-        kyChon.add(cboCheDo);
+        // pnlToolbar: Khung chứa thành phần giao diện thanh công cụ.
+        JPanel pnlToolbar = new JPanel(new BorderLayout(10, 0));
+        pnlToolbar.setOpaque(false);
+        // pnlKyChon: Khung chứa thành phần giao diện kỳ chọn.
+        JPanel pnlKyChon = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        pnlKyChon.setOpaque(false);
+        pnlKyChon.add(new JLabel("Xem theo:"));
+        cmbCheDo.setFocusable(false);
+        cmbCheDo.setPreferredSize(new Dimension(100, 28));
+        pnlKyChon.add(cmbCheDo);
         btnTruoc.setToolTipText("Kỳ trước");
         btnSau.setToolTipText("Kỳ tiếp theo");
-        kyChon.add(btnTruoc);
-        kyChon.add(lblKy);
-        kyChon.add(btnSau);
-        toolbar.add(kyChon, BorderLayout.WEST);
+        pnlKyChon.add(btnTruoc);
+        pnlKyChon.add(lblKy);
+        pnlKyChon.add(btnSau);
+        pnlToolbar.add(pnlKyChon, BorderLayout.WEST);
 
+        // btnPdf: Nút thao tác: Xuất file.
         JButton btnPdf = new JButton("Xuất file");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnPdf.addActionListener(e -> xuatPdf());
-        toolbar.add(btnPdf, BorderLayout.EAST);
+        pnlToolbar.add(btnPdf, BorderLayout.EAST);
 
-        JPanel stats = new JPanel(new java.awt.GridLayout(1, 3, 12, 0));
-        stats.setOpaque(false);
-        stats.add(taoTheChiSo("Tổng doanh thu", lblTongDoanhThu));
-        stats.add(taoTheChiSo("Tổng số hóa đơn", lblTongHoaDon));
-        stats.add(taoTheChiSo("Doanh thu trung bình/HD", lblTrungBinh));
-        JPanel headerContent = new JPanel(new BorderLayout(0, 12));
-        headerContent.setOpaque(false);
-        headerContent.add(toolbar, BorderLayout.NORTH);
-        headerContent.add(stats, BorderLayout.CENTER);
+        // pnlStats: Khung chứa thành phần giao diện thống kê.
+        JPanel pnlStats = new JPanel(new java.awt.GridLayout(1, 3, 12, 0));
+        pnlStats.setOpaque(false);
+        pnlStats.add(taoTheChiSo("Tổng doanh thu", lblTongDoanhThu));
+        pnlStats.add(taoTheChiSo("Tổng số hóa đơn", lblTongHoaDon));
+        pnlStats.add(taoTheChiSo("Doanh thu trung bình/HD", lblTrungBinh));
+        // pnlHeaderContent: Khung chứa thành phần giao diện đầu trang nội dung.
+        JPanel pnlHeaderContent = new JPanel(new BorderLayout(0, 12));
+        pnlHeaderContent.setOpaque(false);
+        pnlHeaderContent.add(pnlToolbar, BorderLayout.NORTH);
+        pnlHeaderContent.add(pnlStats, BorderLayout.CENTER);
 
-        JPanel chartCard = taoTheNoiDung("Biểu đồ doanh thu");
-        chartCard.add(bieuDo, BorderLayout.CENTER);
-        JPanel tableCard = taoTheNoiDung("Doanh thu theo mặt hàng");
+        // pnlChartCard: Khung chứa thành phần giao diện biểu đồ thẻ.
+        JPanel pnlChartCard = taoTheNoiDung("Biểu đồ doanh thu");
+        pnlChartCard.add(pnlBieuDo, BorderLayout.CENTER);
+        // pnlTableCard: Khung chứa thành phần giao diện bảng thẻ.
+        JPanel pnlTableCard = taoTheNoiDung("Doanh thu theo mặt hàng");
         cauHinhBang();
-        JScrollPane scroll = new JScrollPane(tblMatHang);
-        scroll.setBorder(BorderFactory.createLineBorder(BORDER));
-        tableCard.add(scroll, BorderLayout.CENTER);
+        // scrCuon2: Khung cuộn khung cuộn.
+        JScrollPane scrCuon2 = new JScrollPane(tblMatHang);
+        scrCuon2.setBorder(BorderFactory.createLineBorder(BORDER));
+        pnlTableCard.add(scrCuon2, BorderLayout.CENTER);
 
-        JPanel results = new JPanel(new java.awt.GridLayout(1, 2, 14, 0));
-        results.setOpaque(false);
-        results.add(chartCard);
-        results.add(tableCard);
+        // pnlResults: Khung chứa thành phần giao diện kết quả.
+        JPanel pnlResults = new JPanel(new java.awt.GridLayout(1, 2, 14, 0));
+        pnlResults.setOpaque(false);
+        pnlResults.add(pnlChartCard);
+        pnlResults.add(pnlTableCard);
 
-        JPanel center = new JPanel(new BorderLayout(0, 10));
-        center.setOpaque(false);
-        center.add(headerContent, BorderLayout.NORTH);
-        center.add(results, BorderLayout.CENTER);
+        // pnlCenter2: Khung chứa thành phần giao diện trung tâm.
+        JPanel pnlCenter2 = new JPanel(new BorderLayout(0, 10));
+        pnlCenter2.setOpaque(false);
+        pnlCenter2.add(pnlHeaderContent, BorderLayout.NORTH);
+        pnlCenter2.add(pnlResults, BorderLayout.CENTER);
 
         lblTrangThai.setForeground(MUTED);
-        content.add(center, BorderLayout.CENTER);
-        content.add(lblTrangThai, BorderLayout.SOUTH);
-        return content;
+        pnlContent.add(pnlCenter2, BorderLayout.CENTER);
+        pnlContent.add(lblTrangThai, BorderLayout.SOUTH);
+        return pnlContent;
     }
 
-    private JPanel taoTheChiSo(String tieuDe, JLabel giaTri) {
-        JPanel card = new JPanel(new BorderLayout(4, 4));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
+    // Tạo thẻ chi số.
+    // Tham số tieuDe: tiêu đề.
+    // Tham số lblGiaTri2: giá trị.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    private JPanel taoTheChiSo(String tieuDe, JLabel lblGiaTri2) {
+        // pnlCard: Khung chứa thành phần giao diện thẻ.
+        JPanel pnlCard = new JPanel(new BorderLayout(4, 4));
+        pnlCard.setBackground(Color.WHITE);
+        pnlCard.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        JLabel label = new JLabel(tieuDe, SwingConstants.CENTER);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        giaTri.setForeground(Color.BLACK);
-        giaTri.setFont(new Font("Segoe UI", Font.BOLD, 21));
-        card.add(label, BorderLayout.NORTH);
-        card.add(giaTri, BorderLayout.CENTER);
-        card.setPreferredSize(new Dimension(180, 62));
-        return card;
+        // lblNhan2: Nhãn hiển thị nhãn.
+        JLabel lblNhan2 = new JLabel(tieuDe, SwingConstants.CENTER);
+        lblNhan2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblGiaTri2.setForeground(Color.BLACK);
+        lblGiaTri2.setFont(new Font("Segoe UI", Font.BOLD, 21));
+        pnlCard.add(lblNhan2, BorderLayout.NORTH);
+        pnlCard.add(lblGiaTri2, BorderLayout.CENTER);
+        pnlCard.setPreferredSize(new Dimension(180, 62));
+        return pnlCard;
     }
 
+    // Tạo thẻ nội dung.
+    // Tham số tieuDe: tiêu đề.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
     private JPanel taoTheNoiDung(String tieuDe) {
-        JPanel panel = new JPanel(new BorderLayout(0, 8));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
+        // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+        JPanel pnlKhung = new JPanel(new BorderLayout(0, 8));
+        pnlKhung.setBackground(Color.WHITE);
+        pnlKhung.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 BorderFactory.createEmptyBorder(9, 10, 10, 10)));
-        JLabel label = new JLabel(tieuDe);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        panel.add(label, BorderLayout.NORTH);
-        return panel;
+        // lblNhan2: Nhãn hiển thị nhãn.
+        JLabel lblNhan2 = new JLabel(tieuDe);
+        lblNhan2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        pnlKhung.add(lblNhan2, BorderLayout.NORTH);
+        return pnlKhung;
     }
 
+    // Thiết lập cột, kích thước và cách hiển thị dữ liệu của bảng.
     private void cauHinhBang() {
         tblMatHang.setRowHeight(25);
         tblMatHang.setFillsViewportHeight(true);
@@ -192,10 +249,18 @@ public class ThongKeDoanhThu extends JPanel {
         tblMatHang.getTableHeader().setBackground(new Color(245, 247, 250));
         tblMatHang.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         tblMatHang.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            // Thiết lập thành phần dùng để vẽ một ô của bảng.
+            // Tham số tblDuLieu: bảng dữ liệu.
+            // Tham số value: giá trị.
+            // Tham số selected: trạng thái được chọn.
+            // Tham số focus: trạng thái có tiêu điểm.
+            // Tham số row: chỉ số dòng.
+            // Tham số col: chỉ số cột.
+            // Kết quả: đối tượng/giá trị kiểu java.awt.Component.
             @Override
             public java.awt.Component getTableCellRendererComponent(
-                    JTable table, Object value, boolean selected, boolean focus, int row, int col) {
-                super.getTableCellRendererComponent(table, value, selected, focus, row, col);
+                    JTable tblDuLieu, Object value, boolean selected, boolean focus, int row, int col) {
+                super.getTableCellRendererComponent(tblDuLieu, value, selected, focus, row, col);
                 setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
                 setHorizontalAlignment(col == 1 || col == 4
                         ? SwingConstants.RIGHT : SwingConstants.LEFT);
@@ -204,29 +269,40 @@ public class ThongKeDoanhThu extends JPanel {
         });
     }
 
+    // Cập nhật báo cáo.
     private void capNhatBaoCao() {
-        CheDo cheDo = (CheDo) cboCheDo.getSelectedItem();
+        CheDo cheDo = (CheDo) cmbCheDo.getSelectedItem();
         if (cheDo == null) {
             return;
         }
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblKy.setText(nhanKy(cheDo, ngayThamChieu));
         btnSau.setEnabled(laKyTruocHienTai(cheDo, ngayThamChieu));
+        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblTrangThai.setText("Đang tải số liệu...");
         try {
             baoCao = dao.layBaoCao(cheDo, ngayThamChieu);
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTongDoanhThu.setText(dinhDangTien(baoCao.getTongDoanhThu()) + " ₫");
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTongHoaDon.setText(String.valueOf(baoCao.getTongHoaDon()));
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTrungBinh.setText(dinhDangTien(baoCao.getDoanhThuTrungBinh()) + " ₫");
             bangModel.setBaoCao(baoCao);
-            bieuDo.setBaoCao(baoCao, cheDo);
+            pnlBieuDo.setBaoCao(baoCao, cheDo);
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTrangThai.setText(" ");
         } catch (SQLException ex) {
             baoCao = null;
             bangModel.setBaoCao(null);
-            bieuDo.setBaoCao(null, cheDo);
+            pnlBieuDo.setBaoCao(null, cheDo);
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTongDoanhThu.setText("—");
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTongHoaDon.setText("—");
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTrungBinh.setText("—");
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTrangThai.setText("Không tải được thống kê doanh thu.");
             JOptionPane.showMessageDialog(this,
                     "Không tải được thống kê doanh thu.\n" + ex.getMessage(),
@@ -234,8 +310,10 @@ public class ThongKeDoanhThu extends JPanel {
         }
     }
 
+    // Dịch chuyển kỳ.
+    // Tham số soKy: số kỳ cần dịch chuyển.
     private void dichKy(int soKy) {
-        CheDo cheDo = (CheDo) cboCheDo.getSelectedItem();
+        CheDo cheDo = (CheDo) cmbCheDo.getSelectedItem();
         if (cheDo == null) {
             return;
         }
@@ -255,6 +333,10 @@ public class ThongKeDoanhThu extends JPanel {
         capNhatBaoCao();
     }
 
+    // Kiểm tra kỳ thống kê có nằm trước kỳ hiện tại hay không.
+    // Tham số cheDo: chế độ thống kê.
+    // Tham số ngay: ngày.
+    // Kết quả: true/false theo điều kiện xử lý.
     private boolean laKyTruocHienTai(CheDo cheDo, LocalDate ngay) {
         switch (cheDo) {
             case NGAY:
@@ -268,6 +350,10 @@ public class ThongKeDoanhThu extends JPanel {
         }
     }
 
+    // Tạo nhãn cho kỳ thống kê được chọn.
+    // Tham số cheDo: chế độ thống kê.
+    // Tham số ngay: ngày.
+    // Kết quả: chuỗi kết quả.
     private String nhanKy(CheDo cheDo, LocalDate ngay) {
         switch (cheDo) {
             case NGAY:
@@ -281,10 +367,16 @@ public class ThongKeDoanhThu extends JPanel {
         }
     }
 
+    // Định dạng số tiền thành chuỗi hiển thị.
+    // Tham số amount: số tiền.
+    // Kết quả: chuỗi kết quả.
     private String dinhDangTien(BigDecimal amount) {
         return MONEY.format(amount);
     }
 
+    // Tính tỷ trong.
+    // Tham số doanhThu: doanh thu.
+    // Kết quả: đối tượng/giá trị kiểu BigDecimal.
     private BigDecimal tinhTyTrong(BigDecimal doanhThu) {
         if (baoCao == null || baoCao.getTongDoanhThu().signum() == 0) {
             return BigDecimal.ZERO;
@@ -293,22 +385,25 @@ public class ThongKeDoanhThu extends JPanel {
                 .divide(baoCao.getTongDoanhThu(), 1, RoundingMode.HALF_UP);
     }
 
+    // Xuất PDF.
     private void xuatPdf() {
         if (baoCao == null) {
             JOptionPane.showMessageDialog(this, "Chưa có số liệu để xuất.",
                     "Xuất thống kê", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        CheDo cheDo = (CheDo) cboCheDo.getSelectedItem();
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu thống kê doanh thu PDF");
-        chooser.setSelectedFile(new java.io.File("ThongKeDoanhThu-" + nhanKy(cheDo, ngayThamChieu)
+        CheDo cheDo = (CheDo) cmbCheDo.getSelectedItem();
+        // fchChonTep: Hộp chọn tệp bộ chọn.
+        JFileChooser fchChonTep = new JFileChooser();
+        fchChonTep.setDialogTitle("Lưu thống kê doanh thu PDF");
+        fchChonTep.setSelectedFile(new java.io.File("ThongKeDoanhThu-" + nhanKy(cheDo, ngayThamChieu)
                 .replace('/', '-') + ".pdf"));
-        chooser.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
-        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+        fchChonTep.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
+        if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
-        Path file = chooser.getSelectedFile().toPath();
+        // file: Đường dẫn tệp dùng cho tệp.
+        Path file = fchChonTep.getSelectedFile().toPath();
         if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
             file = file.resolveSibling(file.getFileName() + ".pdf");
         }
@@ -324,26 +419,34 @@ public class ThongKeDoanhThu extends JPanel {
         }
     }
 
+    // Tạo PDF.
+    // Kết quả: đối tượng/giá trị kiểu byte[].
     private byte[] taoPdf() throws IOException {
+        // width: Lưu chiều rộng.
         final int width = 842;
+        // height: Lưu chiều cao.
         final int height = 595;
         final int firstPageRows = 11;
         final int followingPageRows = 17;
         int extraRows = Math.max(0, baoCao.getMatHangs().size() - firstPageRows);
         int pageCount = 1 + (extraRows + followingPageRows - 1) / followingPageRows;
+        // objects: Lưu các đối tượng; phần tử có kiểu byte[].
         List<byte[]> objects = new ArrayList<>();
         objects.add(null);
         objects.add(null);
+        // pageReferences: Bộ đệm ghép các đoạn chuỗi để tạo trang các tham chiếu.
         StringBuilder pageReferences = new StringBuilder();
-        CheDo cheDo = (CheDo) cboCheDo.getSelectedItem();
+        CheDo cheDo = (CheDo) cmbCheDo.getSelectedItem();
 
         for (int page = 0; page < pageCount; page++) {
             int pageObject = 3 + page * 3;
             int contentObject = pageObject + 1;
             int imageObject = pageObject + 2;
             pageReferences.append(pageObject).append(" 0 R ");
+            // image: Ảnh trong bộ nhớ dùng cho hình ảnh.
             java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(
                     width * 2, height * 2, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            // graphics: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
             Graphics2D graphics = image.createGraphics();
             try {
                 graphics.scale(2, 2);
@@ -351,7 +454,9 @@ public class ThongKeDoanhThu extends JPanel {
             } finally {
                 graphics.dispose();
             }
+            // compressedImage: Mảng lưu đã nén ảnh.
             byte[] compressedImage = nenAnhRgb(image);
+            // pnlContent: Mảng lưu nội dung.
             byte[] content = ascii("q\n" + width + " 0 0 " + height + " 0 0 cm\n/Im0 Do\nQ\n");
             objects.add(ascii(pageObject + " 0 obj\n"
                     + "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
@@ -372,6 +477,12 @@ public class ThongKeDoanhThu extends JPanel {
         return assemblePdf(objects);
     }
 
+    // Vẽ PDF trạng.
+    // Tham số g: ngữ cảnh vẽ.
+    // Tham số page: trang.
+    // Tham số cheDo: chế độ thống kê.
+    // Tham số firstPageRows: đầu tiên trang các dòng.
+    // Tham số followingPageRows: tiếp theo trang các dòng.
     private void vePdfTrang(
             Graphics2D g, int page, CheDo cheDo, int firstPageRows, int followingPageRows) {
         g.setColor(Color.WHITE);
@@ -389,7 +500,9 @@ public class ThongKeDoanhThu extends JPanel {
                 + dinhDangTien(baoCao.getDoanhThuTrungBinh()) + " đ", 540, 88);
 
         int first;
+        // count: Lưu số phần tử.
         int count;
+        // y: Lưu tọa độ dọc.
         int y;
         if (page == 0) {
             veBieuDoPdf(g, 36, 111, 770, 140, cheDo);
@@ -431,6 +544,13 @@ public class ThongKeDoanhThu extends JPanel {
         g.drawString("Trang " + (page + 1), 770, 578);
     }
 
+    // Vẽ biểu đồ PDF.
+    // Tham số g: ngữ cảnh vẽ.
+    // Tham số x: tọa độ ngang.
+    // Tham số y: tọa độ dọc.
+    // Tham số width: chiều rộng.
+    // Tham số height: chiều cao.
+    // Tham số cheDo: chế độ thống kê.
     private void veBieuDoPdf(Graphics2D g, int x, int y, int width, int height, CheDo cheDo) {
         g.setColor(new Color(247, 249, 251));
         g.fillRoundRect(x, y, width, height, 8, 8);
@@ -442,6 +562,7 @@ public class ThongKeDoanhThu extends JPanel {
         if (baoCao.getBieuDo().isEmpty()) {
             return;
         }
+        // max: Giá trị tối đa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
         BigDecimal max = BigDecimal.ZERO;
         for (DongBieuDo row : baoCao.getBieuDo()) {
             max = max.max(row.getDoanhThu());
@@ -458,6 +579,7 @@ public class ThongKeDoanhThu extends JPanel {
             g.setColor(new Color(218, 224, 230));
             g.drawLine(plotX, gridY, plotX + plotWidth, gridY);
         }
+        // points: Lưu các điểm; phần tử có kiểu DongBieuDo.
         List<DongBieuDo> points = baoCao.getBieuDo();
         int gap = points.size() >= 20 ? 2 : 5;
         int barWidth = Math.max(2, (plotWidth - gap * (points.size() - 1)) / points.size());
@@ -471,20 +593,30 @@ public class ThongKeDoanhThu extends JPanel {
             if (points.size() <= 12 || i % 4 == 0) {
                 g.setColor(MUTED);
                 g.setFont(new Font("Segoe UI", Font.PLAIN, 8));
-                g.drawString(bieuDo.nhanMoc(cheDo, point.getThuTu()),
+                g.drawString(pnlBieuDo.nhanMoc(cheDo, point.getThuTu()),
                         barX, plotY + plotHeight + 14);
             }
         }
     }
 
+    // Cắt chuỗi.
+    // Tham số text: nội dung chữ.
+    // Tham số maxLength: tối đa độ dài.
+    // Kết quả: chuỗi kết quả.
     private String catChuoi(String text, int maxLength) {
         return text.length() <= maxLength ? text : text.substring(0, maxLength - 1) + "…";
     }
 
+    // Nén dữ liệu màu RGB của ảnh để nhúng vào PDF.
+    // Tham số image: hình ảnh.
+    // Kết quả: đối tượng/giá trị kiểu byte[].
     private byte[] nenAnhRgb(java.awt.image.BufferedImage image) throws IOException {
+        // compressed: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
         ByteArrayOutputStream compressed = new ByteArrayOutputStream();
         try (DeflaterOutputStream deflater = new DeflaterOutputStream(compressed)) {
+            // pixels: Mảng lưu các điểm ảnh.
             int[] pixels = new int[image.getWidth()];
+            // row: Mảng lưu chỉ số dòng.
             byte[] row = new byte[image.getWidth() * 3];
             for (int y = 0; y < image.getHeight(); y++) {
                 image.getRGB(0, y, image.getWidth(), 1, pixels, 0, image.getWidth());
@@ -501,7 +633,13 @@ public class ThongKeDoanhThu extends JPanel {
         return compressed.toByteArray();
     }
 
+    // Tạo đối tượng stream trong cấu trúc tệp PDF.
+    // Tham số number: số.
+    // Tham số dictionary: từ điển.
+    // Tham số data: dữ liệu.
+    // Kết quả: đối tượng/giá trị kiểu byte[].
     private byte[] streamObject(int number, String dictionary, byte[] data) throws IOException {
+        // object: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
         ByteArrayOutputStream object = new ByteArrayOutputStream();
         object.write(ascii(number + " 0 obj\n" + dictionary
                 + " /Length " + data.length + " >>\nstream\n"));
@@ -510,9 +648,14 @@ public class ThongKeDoanhThu extends JPanel {
         return object.toByteArray();
     }
 
+    // Ghép các đối tượng và bảng tham chiếu thành tệp PDF hoàn chỉnh.
+    // Tham số objects: các đối tượng.
+    // Kết quả: đối tượng/giá trị kiểu byte[].
     private byte[] assemblePdf(List<byte[]> objects) throws IOException {
+        // pdf: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
         ByteArrayOutputStream pdf = new ByteArrayOutputStream();
         pdf.write(ascii("%PDF-1.4\n"));
+        // offsets: Lưu các vị trí byte; phần tử có kiểu Integer.
         List<Integer> offsets = new ArrayList<>();
         offsets.add(0);
         for (byte[] object : objects) {
@@ -529,31 +672,44 @@ public class ThongKeDoanhThu extends JPanel {
         return pdf.toByteArray();
     }
 
+    // Chuyển chuỗi nội dung PDF thành mảng byte ASCII.
+    // Tham số text: nội dung chữ.
+    // Kết quả: đối tượng/giá trị kiểu byte[].
     private byte[] ascii(String text) {
         return text.getBytes(StandardCharsets.ISO_8859_1);
     }
 
+    // Khung giao diện dành cho biểu đồ khung.
     private final class BieuDoPanel extends JPanel {
+        // data: Đối tượng dữ liệu có kiểu BaoCao.
         private BaoCao data;
+        // cheDo: Đối tượng chế độ thống kê có kiểu CheDo.
         private CheDo cheDo = CheDo.NGAY;
 
+        // Khởi tạo đối tượng với trạng thái ban đầu.
         private BieuDoPanel() {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(380, 270));
         }
 
+        // Cập nhật báo cáo.
+        // Tham số data: dữ liệu.
+        // Tham số cheDo: chế độ thống kê.
         private void setBaoCao(BaoCao data, CheDo cheDo) {
             this.data = data;
             this.cheDo = cheDo;
             repaint();
         }
 
+        // Vẽ nội dung tùy chỉnh lên thành phần giao diện.
+        // Tham số graphics: ngữ cảnh vẽ.
         @Override
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
             if (data == null || data.getBieuDo().isEmpty()) {
                 return;
             }
+            // g: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
             Graphics2D g = (Graphics2D) graphics.create();
             try {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -564,6 +720,7 @@ public class ThongKeDoanhThu extends JPanel {
                 int bottom = 42;
                 int chartWidth = Math.max(1, getWidth() - left - right);
                 int chartHeight = Math.max(1, getHeight() - top - bottom);
+                // max: Giá trị tối đa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
                 BigDecimal max = BigDecimal.ZERO;
                 for (DongBieuDo row : data.getBieuDo()) {
                     max = max.max(row.getDoanhThu());
@@ -574,7 +731,9 @@ public class ThongKeDoanhThu extends JPanel {
 
                 g.setFont(new Font("Segoe UI", Font.PLAIN, 10));
                 for (int line = 0; line <= 4; line++) {
+                    // y: Lưu tọa độ dọc.
                     int y = top + chartHeight - chartHeight * line / 4;
+                    // value: Giá trị giá trị dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
                     BigDecimal value = max.multiply(BigDecimal.valueOf(line))
                             .divide(BigDecimal.valueOf(4), 0, RoundingMode.HALF_UP);
                     g.setColor(new Color(226, 230, 235));
@@ -582,6 +741,7 @@ public class ThongKeDoanhThu extends JPanel {
                     g.setColor(MUTED);
                     g.drawString(catChuoi(dinhDangTien(value), 9), 1, y + 4);
                 }
+                // count: Lưu số phần tử.
                 int count = data.getBieuDo().size();
                 int gap = count >= 20 ? 2 : 5;
                 int barWidth = Math.max(2, (chartWidth - gap * (count - 1)) / count);
@@ -589,13 +749,16 @@ public class ThongKeDoanhThu extends JPanel {
                     DongBieuDo row = data.getBieuDo().get(i);
                     int barHeight = row.getDoanhThu().multiply(BigDecimal.valueOf(chartHeight))
                             .divide(max, 0, RoundingMode.HALF_UP).intValue();
+                    // x: Lưu tọa độ ngang.
                     int x = left + i * (barWidth + gap);
+                    // y: Lưu tọa độ dọc.
                     int y = top + chartHeight - barHeight;
                     g.setColor(BLUE);
                     g.fillRect(x, y, barWidth, barHeight);
                     if (hienNhanMoc(i, count)) {
                         g.setColor(MUTED);
                         g.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+                        // lblNhan2: Lưu nhãn.
                         String label = nhanMoc(cheDo, row.getThuTu());
                         int textX = x + (barWidth - g.getFontMetrics().stringWidth(label)) / 2;
                         g.drawString(label, textX, top + chartHeight + 17);
@@ -610,6 +773,10 @@ public class ThongKeDoanhThu extends JPanel {
             }
         }
 
+        // Hiển thị nhân mốc.
+        // Tham số index: chỉ số phần tử.
+        // Tham số count: số phần tử.
+        // Kết quả: true/false theo điều kiện xử lý.
         private boolean hienNhanMoc(int index, int count) {
             if (count <= 12) {
                 return true;
@@ -620,6 +787,10 @@ public class ThongKeDoanhThu extends JPanel {
             return index % 5 == 0 || index == count - 1;
         }
 
+        // Tạo nhãn của mốc trên biểu đồ.
+        // Tham số cheDo: chế độ thống kê.
+        // Tham số moc: mốc.
+        // Kết quả: chuỗi kết quả.
         private String nhanMoc(CheDo cheDo, int moc) {
             if (cheDo == CheDo.NGAY) {
                 return String.format(Locale.ROOT, "%02dh", moc);
@@ -632,31 +803,44 @@ public class ThongKeDoanhThu extends JPanel {
         }
     }
 
+    // Mô hình dữ liệu cho bảng bảng mặt hàng.
     private final class BangMatHangModel extends AbstractTableModel {
+        // cot: Mảng lưu cột.
         private final String[] cot = { "STT", "Danh mục / Sản phẩm", "Số lượng",
                 "Doanh thu", "Tỷ trọng (%)" };
+        // rows: Danh sách chứa các phần tử kiểu DongMatHang.
         private List<DongMatHang> rows = new ArrayList<>();
 
+        // Cập nhật báo cáo.
+        // Tham số baoCao: báo cáo.
         private void setBaoCao(BaoCao baoCao) {
             rows = baoCao == null ? new ArrayList<>() : baoCao.getMatHangs();
             fireTableDataChanged();
         }
 
+        // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
         public int getRowCount() {
             return rows.size();
         }
 
+        // Trả về số cột của mô hình bảng.
         @Override
         public int getColumnCount() {
             return cot.length;
         }
 
+        // Trả về tiêu đề của cột theo chỉ số.
+        // Tham số column: chỉ số cột.
         @Override
         public String getColumnName(int column) {
             return cot[column];
         }
 
+        // Lấy giá trị hiển thị tại một dòng và cột của bảng.
+        // Tham số rowIndex: chỉ số dòng.
+        // Tham số columnIndex: chỉ số cột.
+        // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             DongMatHang row = rows.get(rowIndex);

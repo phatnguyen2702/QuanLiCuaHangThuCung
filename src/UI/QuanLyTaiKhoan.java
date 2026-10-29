@@ -11,50 +11,68 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 
+// Giao diện/chức năng quản lý tài khoản của ứng dụng.
 public class QuanLyTaiKhoan extends JPanel {
 
         // =========================================================
         // MAU
         // =========================================================
 
+        // NAVY: Màu dùng cho giao diện: xanh đậm.
         private final Color NAVY = new Color(18, 48, 82);
+        // BG: Màu dùng cho giao diện: nền.
         private final Color BG = new Color(245, 247, 250);
+        // GREEN: Màu dùng cho giao diện: xanh lá.
         private final Color GREEN = new Color(72, 196, 62);
+        // RED: Màu dùng cho giao diện: đỏ.
         private final Color RED = new Color(210, 70, 70);
+        // ORANGE: Màu dùng cho giao diện: cam.
         private final Color ORANGE = new Color(230, 150, 50);
 
         // =========================================================
         // FORM
         // =========================================================
 
+        // txtMaNV: Ô nhập/hiển thị văn bản mã nhân viên.
         private JTextField txtMaNV;
+        // txtHoTen: Ô nhập/hiển thị văn bản họ tên.
         private JTextField txtHoTen;
+        // txtSoDienThoai: Ô nhập/hiển thị văn bản số điện thoại.
         private JTextField txtSoDienThoai;
+        // txtEmail: Ô nhập/hiển thị văn bản email.
         private JTextField txtEmail;
+        // txtMatKhau: Ô nhập mật khẩu có che ký tự mật khẩu.
         private JPasswordField txtMatKhau;
 
-        private JComboBox<String> cboGioiTinh;
-        private JComboBox<String> cboVaiTro;
+        // cmbGioiTinh2: Hộp lựa chọn giới tính.
+        private JComboBox<String> cmbGioiTinh2;
+        // cmbVaiTro: Hộp lựa chọn vai trò.
+        private JComboBox<String> cmbVaiTro;
 
+        // txtTimKiem: Ô nhập/hiển thị văn bản tìm kiếm.
         private JTextField txtTimKiem;
 
         // =========================================================
         // TABLE
         // =========================================================
 
-        private JTable table;
+        // tblDuLieu: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
+        private JTable tblDuLieu;
+        // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
         private DefaultTableModel model;
 
         // =========================================================
         // DAO
         // =========================================================
 
+        // taiKhoanDAO: Đối tượng truy cập dữ liệu tài khoản.
         private TaiKhoanDAO taiKhoanDAO;
 
         // =========================================================
         // CONSTRUCTOR
         // =========================================================
 
+        // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
         public QuanLyTaiKhoan() {
 
                 taiKhoanDAO = new TaiKhoanDAO();
@@ -80,113 +98,125 @@ public class QuanLyTaiKhoan extends JPanel {
         // TITLE
         // =========================================================
 
+        // Tạo tiêu đề.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createTitle() {
 
-                JPanel panel = new JPanel(
+                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung = new JPanel(
                                 new BorderLayout());
 
-                panel.setBackground(
+                pnlKhung.setBackground(
                                 Color.WHITE);
 
-                panel.setBorder(
+                pnlKhung.setBorder(
                                 new EmptyBorder(
                                                 18,
                                                 25,
                                                 18,
                                                 25));
 
-                JLabel title = new JLabel(
+                // lblTitle2: Nhãn hiển thị: QUẢN LÝ TÀI KHOẢN.
+                JLabel lblTitle2 = new JLabel(
                                 "QUẢN LÝ TÀI KHOẢN");
 
-                title.setFont(
+                lblTitle2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 24));
 
-                title.setForeground(
+                lblTitle2.setForeground(
                                 NAVY);
 
-                JLabel sub = new JLabel(
+                // lblSub: Nhãn hiển thị: Quản lý thông tin tài khoản nhân viên.
+                JLabel lblSub = new JLabel(
                                 "Quản lý thông tin tài khoản nhân viên");
 
-                sub.setFont(
+                lblSub.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.PLAIN,
                                                 13));
 
-                sub.setForeground(
+                lblSub.setForeground(
                                 Color.GRAY);
 
-                JPanel text = new JPanel();
+                // pnlText: Khung chứa thành phần giao diện nội dung chữ.
+                JPanel pnlText = new JPanel();
 
-                text.setOpaque(false);
+                pnlText.setOpaque(false);
 
-                text.setLayout(
+                pnlText.setLayout(
                                 new BoxLayout(
-                                                text,
+                                                pnlText,
                                                 BoxLayout.Y_AXIS));
 
-                text.add(title);
+                pnlText.add(lblTitle2);
 
-                text.add(
+                pnlText.add(
                                 Box.createVerticalStrut(5));
 
-                text.add(sub);
+                pnlText.add(lblSub);
 
-                panel.add(
-                                text,
+                pnlKhung.add(
+                                pnlText,
                                 BorderLayout.WEST);
 
-                return panel;
+                return pnlKhung;
         }
 
         // =========================================================
         // CENTER
         // =========================================================
 
+        // Tạo trung tâm.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createCenter() {
 
-                JPanel panel = new JPanel(
+                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung = new JPanel(
                                 new BorderLayout(
                                                 15,
                                                 15));
 
-                panel.setBackground(
+                pnlKhung.setBackground(
                                 BG);
 
-                panel.setBorder(
+                pnlKhung.setBorder(
                                 new EmptyBorder(
                                                 20,
                                                 25,
                                                 20,
                                                 25));
 
-                panel.add(
+                pnlKhung.add(
                                 createForm(),
                                 BorderLayout.NORTH);
 
-                panel.add(
+                pnlKhung.add(
                                 createTablePanel(),
                                 BorderLayout.CENTER);
 
-                return panel;
+                return pnlKhung;
         }
 
         // =========================================================
         // FORM
         // =========================================================
 
+        // Tạo biểu mẫu.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createForm() {
 
-                JPanel panel = new JPanel(
+                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung = new JPanel(
                                 new GridBagLayout());
 
-                panel.setBackground(
+                pnlKhung.setBackground(
                                 Color.WHITE);
 
-                panel.setBorder(
+                pnlKhung.setBorder(
                                 BorderFactory.createCompoundBorder(
                                                 BorderFactory.createLineBorder(
                                                                 new Color(
@@ -199,6 +229,7 @@ public class QuanLyTaiKhoan extends JPanel {
                                                                 15,
                                                                 15)));
 
+                // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
                 GridBagConstraints gbc = new GridBagConstraints();
 
                 gbc.insets = new Insets(
@@ -217,7 +248,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridy = 0;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Mã nhân viên:"),
                                 gbc);
@@ -232,7 +263,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 1;
                 gbc.weightx = 1;
 
-                panel.add(
+                pnlKhung.add(
                                 txtMaNV,
                                 gbc);
 
@@ -243,7 +274,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 2;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Họ tên:"),
                                 gbc);
@@ -256,7 +287,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 3;
                 gbc.weightx = 1;
 
-                panel.add(
+                pnlKhung.add(
                                 txtHoTen,
                                 gbc);
 
@@ -268,7 +299,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridy = 1;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Số điện thoại:"),
                                 gbc);
@@ -281,7 +312,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 1;
                 gbc.weightx = 1;
 
-                panel.add(
+                pnlKhung.add(
                                 txtSoDienThoai,
                                 gbc);
 
@@ -292,7 +323,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 2;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Email:"),
                                 gbc);
@@ -305,7 +336,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 3;
                 gbc.weightx = 1;
 
-                panel.add(
+                pnlKhung.add(
                                 txtEmail,
                                 gbc);
 
@@ -317,7 +348,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridy = 2;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Mật khẩu:"),
                                 gbc);
@@ -330,7 +361,7 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 1;
                 gbc.weightx = 1;
 
-                panel.add(
+                pnlKhung.add(
                                 txtMatKhau,
                                 gbc);
 
@@ -341,24 +372,31 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 2;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Giới tính:"),
                                 gbc);
 
-                cboGioiTinh = new JComboBox<>(
+                cmbGioiTinh2 = new JComboBox<>(
                                 new String[] {
                                                 "Nam",
                                                 "Nu"
                                 });
 
                 styleComboBox(
-                                cboGioiTinh);
-                cboGioiTinh.setRenderer(new DefaultListCellRenderer() {
+                                cmbGioiTinh2);
+                cmbGioiTinh2.setRenderer(new DefaultListCellRenderer() {
+                        // Thiết lập thành phần dùng để hiển thị một mục trong danh sách.
+                        // Tham số lstDanhSach: danh sách.
+                        // Tham số value: giá trị.
+                        // Tham số index: chỉ số phần tử.
+                        // Tham số selected: trạng thái được chọn.
+                        // Tham số focused: trạng thái có tiêu điểm.
+                        // Kết quả: đối tượng/giá trị kiểu Component.
                         @Override
-                        public Component getListCellRendererComponent(JList<?> list, Object value,
+                        public Component getListCellRendererComponent(JList<?> lstDanhSach, Object value,
                                         int index, boolean selected, boolean focused) {
-                                super.getListCellRendererComponent(list, value, index, selected, focused);
+                                super.getListCellRendererComponent(lstDanhSach, value, index, selected, focused);
                                 setText(hienThiGioiTinh(value == null ? "" : value.toString()));
                                 return this;
                         }
@@ -367,8 +405,8 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 3;
                 gbc.weightx = 1;
 
-                panel.add(
-                                cboGioiTinh,
+                pnlKhung.add(
+                                cmbGioiTinh2,
                                 gbc);
 
                 // -----------------------------------------------------
@@ -379,12 +417,12 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridy = 3;
                 gbc.weightx = 0;
 
-                panel.add(
+                pnlKhung.add(
                                 createLabel(
                                                 "Vai trò:"),
                                 gbc);
 
-                cboVaiTro = new JComboBox<>(
+                cmbVaiTro = new JComboBox<>(
                                 new String[] {
                                                 "Quan ly",
                                                 "Thu ngan",
@@ -393,12 +431,19 @@ public class QuanLyTaiKhoan extends JPanel {
                                 });
 
                 styleComboBox(
-                                cboVaiTro);
-                cboVaiTro.setRenderer(new DefaultListCellRenderer() {
+                                cmbVaiTro);
+                cmbVaiTro.setRenderer(new DefaultListCellRenderer() {
+                        // Thiết lập thành phần dùng để hiển thị một mục trong danh sách.
+                        // Tham số lstDanhSach: danh sách.
+                        // Tham số value: giá trị.
+                        // Tham số index: chỉ số phần tử.
+                        // Tham số selected: trạng thái được chọn.
+                        // Tham số focused: trạng thái có tiêu điểm.
+                        // Kết quả: đối tượng/giá trị kiểu Component.
                         @Override
-                        public Component getListCellRendererComponent(JList<?> list, Object value,
+                        public Component getListCellRendererComponent(JList<?> lstDanhSach, Object value,
                                         int index, boolean selected, boolean focused) {
-                                super.getListCellRendererComponent(list, value, index, selected, focused);
+                                super.getListCellRendererComponent(lstDanhSach, value, index, selected, focused);
                                 setText(hienThiVaiTro(value == null ? "" : value.toString()));
                                 return this;
                         }
@@ -407,56 +452,63 @@ public class QuanLyTaiKhoan extends JPanel {
                 gbc.gridx = 1;
                 gbc.weightx = 1;
 
-                panel.add(
-                                cboVaiTro,
+                pnlKhung.add(
+                                cmbVaiTro,
                                 gbc);
 
                 // -----------------------------------------------------
                 // BUTTON
                 // -----------------------------------------------------
 
-                JPanel buttons = createButtonPanel();
+                // pnlButtons: Khung chứa thành phần giao diện các nút.
+                JPanel pnlButtons = createButtonPanel();
 
                 gbc.gridx = 2;
                 gbc.gridy = 3;
                 gbc.gridwidth = 2;
                 gbc.weightx = 1;
 
-                panel.add(
-                                buttons,
+                pnlKhung.add(
+                                pnlButtons,
                                 gbc);
 
-                return panel;
+                return pnlKhung;
         }
 
         // =========================================================
         // LABEL
         // =========================================================
 
+        // Tạo nhãn.
+        // Tham số pnlText: nội dung chữ.
+        // Kết quả: đối tượng/giá trị kiểu JLabel.
         private JLabel createLabel(
                         String text) {
 
-                JLabel label = new JLabel(text);
+                // lblNhan2: Nhãn hiển thị nhãn.
+                JLabel lblNhan2 = new JLabel(text);
 
-                label.setFont(
+                lblNhan2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 12));
 
-                label.setForeground(
+                lblNhan2.setForeground(
                                 new Color(
                                                 60,
                                                 60,
                                                 60));
 
-                return label;
+                return lblNhan2;
         }
 
         // =========================================================
         // TEXT FIELD STYLE
         // =========================================================
 
+        // Áp dụng kiểu hiển thị cho trường nhập liệu.
+        // Tham số component: thành phần giao diện.
         private void styleTextField(
                         JComponent component) {
 
@@ -476,15 +528,17 @@ public class QuanLyTaiKhoan extends JPanel {
         // COMBO BOX STYLE
         // =========================================================
 
+        // Áp dụng kiểu hiển thị cho hộp lựa chọn.
+        // Tham số cmbLuaChon: hộp lựa chọn.
         private void styleComboBox(
-                        JComboBox<String> combo) {
+                        JComboBox<String> cmbLuaChon) {
 
-                combo.setPreferredSize(
+                cmbLuaChon.setPreferredSize(
                                 new Dimension(
                                                 220,
                                                 34));
 
-                combo.setFont(
+                cmbLuaChon.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.PLAIN,
@@ -495,101 +549,120 @@ public class QuanLyTaiKhoan extends JPanel {
         // BUTTON PANEL
         // =========================================================
 
+        // Tạo khung chứa các nút.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createButtonPanel() {
 
-                JPanel panel = new JPanel(
+                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung = new JPanel(
                                 new FlowLayout(
                                                 FlowLayout.RIGHT,
                                                 8,
                                                 0));
 
-                panel.setBackground(
+                pnlKhung.setBackground(
                                 Color.WHITE);
 
+                // btnThem: Nút thao tác thêm.
                 JButton btnThem = createActionButton(
                                 "Thêm",
                                 GREEN);
 
+                // btnSua: Nút thao tác sửa.
                 JButton btnSua = createActionButton(
                                 "Sửa",
                                 NAVY);
 
+                // btnXoa: Nút thao tác xóa.
                 JButton btnXoa = createActionButton(
                                 "Xóa",
                                 RED);
 
+                // btnLamMoi: Nút thao tác làm mới.
                 JButton btnLamMoi = createActionButton(
                                 "Làm mới",
                                 ORANGE);
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnThem.addActionListener(
                                 e -> them());
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnSua.addActionListener(
                                 e -> sua());
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnXoa.addActionListener(
                                 e -> xoa());
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnLamMoi.addActionListener(
                                 e -> lamMoi());
 
-                panel.add(btnThem);
-                panel.add(btnSua);
-                panel.add(btnXoa);
-                panel.add(btnLamMoi);
+                pnlKhung.add(btnThem);
+                pnlKhung.add(btnSua);
+                pnlKhung.add(btnXoa);
+                pnlKhung.add(btnLamMoi);
 
-                return panel;
+                return pnlKhung;
         }
 
         // =========================================================
         // ACTION BUTTON
         // =========================================================
 
+        // Tạo nút thao tác.
+        // Tham số pnlText: nội dung chữ.
+        // Tham số color: màu sắc.
+        // Kết quả: đối tượng/giá trị kiểu JButton.
         private JButton createActionButton(
                         String text,
                         Color color) {
 
-                JButton button = new JButton(text);
+                // btnThaoTac: Nút thao tác nút thao tác.
+                JButton btnThaoTac = new JButton(text);
 
-                button.setBackground(
+                btnThaoTac.setBackground(
                                 color);
 
-                button.setForeground(
+                btnThaoTac.setForeground(
                                 Color.WHITE);
 
-                button.setFont(
+                btnThaoTac.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 12));
 
-                button.setFocusPainted(false);
-                button.setBorderPainted(false);
+                btnThaoTac.setFocusPainted(false);
+                btnThaoTac.setBorderPainted(false);
 
-                button.setPreferredSize(
+                btnThaoTac.setPreferredSize(
                                 new Dimension(
                                                 85,
                                                 34));
 
-                return button;
+                return btnThaoTac;
         }
 
         // =========================================================
         // TABLE PANEL
         // =========================================================
 
+        // Tạo khung chứa bảng.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createTablePanel() {
 
-                JPanel panel = new JPanel(
+                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung = new JPanel(
                                 new BorderLayout(
                                                 10,
                                                 10));
 
-                panel.setBackground(
+                pnlKhung.setBackground(
                                 Color.WHITE);
 
-                panel.setBorder(
+                pnlKhung.setBorder(
                                 BorderFactory.createCompoundBorder(
                                                 BorderFactory.createLineBorder(
                                                                 new Color(
@@ -606,38 +679,42 @@ public class QuanLyTaiKhoan extends JPanel {
                 // TITLE + SEARCH
                 // -----------------------------------------------------
 
-                JPanel top = new JPanel(
+                // pnlTop2: Khung chứa thành phần giao diện trên.
+                JPanel pnlTop2 = new JPanel(
                                 new BorderLayout());
 
-                top.setBackground(
+                pnlTop2.setBackground(
                                 Color.WHITE);
 
-                JLabel title = new JLabel(
+                // lblTitle2: Nhãn hiển thị: DANH SÁCH TÀI KHOẢN.
+                JLabel lblTitle2 = new JLabel(
                                 "DANH SÁCH TÀI KHOẢN");
 
-                title.setFont(
+                lblTitle2.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 16));
 
-                title.setForeground(
+                lblTitle2.setForeground(
                                 NAVY);
 
-                top.add(
-                                title,
+                pnlTop2.add(
+                                lblTitle2,
                                 BorderLayout.WEST);
 
-                JPanel search = new JPanel(
+                // pnlSearch: Khung chứa thành phần giao diện tìm kiếm.
+                JPanel pnlSearch = new JPanel(
                                 new FlowLayout(
                                                 FlowLayout.RIGHT,
                                                 5,
                                                 0));
 
-                search.setBackground(
+                pnlSearch.setBackground(
                                 Color.WHITE);
 
-                JLabel lbSearch = new JLabel(
+                // lblSearch: Nhãn hiển thị: Tìm kiếm:.
+                JLabel lblSearch = new JLabel(
                                 "Tìm kiếm:");
 
                 txtTimKiem = new JTextField(18);
@@ -647,10 +724,12 @@ public class QuanLyTaiKhoan extends JPanel {
                                                 180,
                                                 32));
 
+                // btnTim: Nút thao tác tìm.
                 JButton btnTim = createSmallButton(
                                 "Tìm",
                                 NAVY);
 
+                // btnTatCa: Nút thao tác toàn bộ dữ liệu.
                 JButton btnTatCa = createSmallButton(
                                 "Tất cả",
                                 new Color(
@@ -658,23 +737,25 @@ public class QuanLyTaiKhoan extends JPanel {
                                                 110,
                                                 120));
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnTim.addActionListener(
                                 e -> timKiem());
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnTatCa.addActionListener(
                                 e -> loadData());
 
-                search.add(lbSearch);
-                search.add(txtTimKiem);
-                search.add(btnTim);
-                search.add(btnTatCa);
+                pnlSearch.add(lblSearch);
+                pnlSearch.add(txtTimKiem);
+                pnlSearch.add(btnTim);
+                pnlSearch.add(btnTatCa);
 
-                top.add(
-                                search,
+                pnlTop2.add(
+                                pnlSearch,
                                 BorderLayout.EAST);
 
-                panel.add(
-                                top,
+                pnlKhung.add(
+                                pnlTop2,
                                 BorderLayout.NORTH);
 
                 // -----------------------------------------------------
@@ -693,6 +774,10 @@ public class QuanLyTaiKhoan extends JPanel {
                                 },
                                 0) {
 
+                        // Không cho phép sửa trực tiếp các ô trong bảng.
+                        // Tham số row: chỉ số dòng.
+                        // Tham số column: chỉ số cột.
+                        // Kết quả: false, bảng chỉ dùng để xem.
                         @Override
                         public boolean isCellEditable(
                                         int row,
@@ -702,38 +787,38 @@ public class QuanLyTaiKhoan extends JPanel {
                         }
                 };
 
-                table = new JTable(model);
+                tblDuLieu = new JTable(model);
 
-                table.setRowHeight(30);
+                tblDuLieu.setRowHeight(30);
 
-                table.setFont(
+                tblDuLieu.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.PLAIN,
                                                 12));
 
-                table.getTableHeader()
+                tblDuLieu.getTableHeader()
                                 .setFont(
                                                 new Font(
                                                                 "Segoe UI",
                                                                 Font.BOLD,
                                                                 12));
 
-                table.getTableHeader()
+                tblDuLieu.getTableHeader()
                                 .setBackground(
                                                 NAVY);
 
-                table.getTableHeader()
+                tblDuLieu.getTableHeader()
                                 .setForeground(
                                                 Color.WHITE);
 
-                table.setSelectionMode(
+                tblDuLieu.setSelectionMode(
                                 ListSelectionModel.SINGLE_SELECTION);
 
-                table.setAutoCreateRowSorter(
+                tblDuLieu.setAutoCreateRowSorter(
                                 true);
 
-                table.getSelectionModel()
+                tblDuLieu.getSelectionModel()
                                 .addListSelectionListener(
                                                 e -> {
 
@@ -742,56 +827,64 @@ public class QuanLyTaiKhoan extends JPanel {
                                                         }
                                                 });
 
-                JScrollPane scroll = new JScrollPane(table);
+                // scrCuon2: Khung cuộn khung cuộn.
+                JScrollPane scrCuon2 = new JScrollPane(tblDuLieu);
 
-                panel.add(
-                                scroll,
+                pnlKhung.add(
+                                scrCuon2,
                                 BorderLayout.CENTER);
 
-                return panel;
+                return pnlKhung;
         }
 
         // =========================================================
         // SMALL BUTTON
         // =========================================================
 
+        // Tạo nút nhỏ.
+        // Tham số pnlText: nội dung chữ.
+        // Tham số color: màu sắc.
+        // Kết quả: đối tượng/giá trị kiểu JButton.
         private JButton createSmallButton(
                         String text,
                         Color color) {
 
-                JButton button = new JButton(text);
+                // btnThaoTac: Nút thao tác nút thao tác.
+                JButton btnThaoTac = new JButton(text);
 
-                button.setBackground(
+                btnThaoTac.setBackground(
                                 color);
 
-                button.setForeground(
+                btnThaoTac.setForeground(
                                 Color.WHITE);
 
-                button.setFont(
+                btnThaoTac.setFont(
                                 new Font(
                                                 "Segoe UI",
                                                 Font.BOLD,
                                                 11));
 
-                button.setFocusPainted(false);
-                button.setBorderPainted(false);
+                btnThaoTac.setFocusPainted(false);
+                btnThaoTac.setBorderPainted(false);
 
-                button.setPreferredSize(
+                btnThaoTac.setPreferredSize(
                                 new Dimension(
                                                 65,
                                                 32));
 
-                return button;
+                return btnThaoTac;
         }
 
         // =========================================================
         // LOAD DATA
         // =========================================================
 
+        // Đọc dữ liệu qua DAO và cập nhật bảng trên giao diện.
         private void loadData() {
 
                 model.setRowCount(0);
 
+                // lstDanhSach: Danh sách chứa các phần tử kiểu TaiKhoan.
                 ArrayList<TaiKhoan> list = taiKhoanDAO.getAll();
 
                 for (TaiKhoan tk : list) {
@@ -813,36 +906,43 @@ public class QuanLyTaiKhoan extends JPanel {
         // HIEN THI DU LIEU
         // =========================================================
 
+        // Hiển thị thị dữ liệu.
         private void hienThiDuLieu() {
 
-                int selectedRow = table.getSelectedRow();
+                int selectedRow = tblDuLieu.getSelectedRow();
 
                 if (selectedRow < 0) {
                         return;
                 }
 
-                int row = table.convertRowIndexToModel(
+                // row: Lưu chỉ số dòng.
+                int row = tblDuLieu.convertRowIndexToModel(
                                 selectedRow);
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMaNV.setText(
                                 valueAt(row, 0));
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtHoTen.setText(
                                 valueAt(row, 1));
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtSoDienThoai.setText(
                                 valueAt(row, 2));
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtEmail.setText(
                                 valueAt(row, 3));
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMatKhau.setText(
                                 valueAt(row, 4));
 
-                cboGioiTinh.setSelectedItem(
+                cmbGioiTinh2.setSelectedItem(
                                 maGioiTinh(valueAt(row, 5)));
 
-                cboVaiTro.setSelectedItem(
+                cmbVaiTro.setSelectedItem(
                                 maVaiTro(valueAt(row, 6)));
 
                 // Khong cho sua ma nhan vien
@@ -853,6 +953,10 @@ public class QuanLyTaiKhoan extends JPanel {
         // VALUE TABLE
         // =========================================================
 
+        // Đọc nội dung tại một ô của bảng và chuyển thành chuỗi.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: chuỗi kết quả.
         private String valueAt(
                         int row,
                         int column) {
@@ -870,8 +974,9 @@ public class QuanLyTaiKhoan extends JPanel {
         // THEM
         // =========================================================
 
+        // Xử lý yêu cầu thêm dữ liệu từ giao diện.
         private void them() {
-                if (table.getSelectedRow() >= 0) {
+                if (tblDuLieu.getSelectedRow() >= 0) {
                         JOptionPane.showMessageDialog(this,
                                         "Đang chọn nhân viên cũ. Nhấn Làm mới để thêm nhân viên mới.");
                         return;
@@ -899,13 +1004,14 @@ public class QuanLyTaiKhoan extends JPanel {
         // SUA
         // =========================================================
 
+        // Xử lý yêu cầu sửa bản ghi đang chọn.
         private void sua() {
 
                 if (!kiemTraDuLieu()) {
                         return;
                 }
 
-                if (table.getSelectedRow() < 0) {
+                if (tblDuLieu.getSelectedRow() < 0) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -944,9 +1050,10 @@ public class QuanLyTaiKhoan extends JPanel {
         // XOA
         // =========================================================
 
+        // Xử lý yêu cầu xóa bản ghi đang chọn.
         private void xoa() {
 
-                if (table.getSelectedRow() < 0) {
+                if (tblDuLieu.getSelectedRow() < 0) {
 
                         JOptionPane.showMessageDialog(
                                         this,
@@ -957,6 +1064,7 @@ public class QuanLyTaiKhoan extends JPanel {
                         return;
                 }
 
+                // ma: Đọc nội dung chữ từ ô nhập để xử lý mã.
                 String ma = txtMaNV.getText()
                                 .trim();
 
@@ -998,8 +1106,10 @@ public class QuanLyTaiKhoan extends JPanel {
         // TIM KIEM
         // =========================================================
 
+        // Tìm kiểm.
         private void timKiem() {
 
+                // keyword: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
                 String keyword = txtTimKiem.getText()
                                 .trim()
                                 .toLowerCase();
@@ -1013,6 +1123,7 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 model.setRowCount(0);
 
+                // lstDanhSach: Danh sách chứa các phần tử kiểu TaiKhoan.
                 ArrayList<TaiKhoan> list = taiKhoanDAO.getAll();
 
                 for (TaiKhoan tk : list) {
@@ -1055,6 +1166,9 @@ public class QuanLyTaiKhoan extends JPanel {
         // SAFE STRING
         // =========================================================
 
+        // Thay null bằng chuỗi rỗng và chuyển chuỗi sang chữ thường để tìm kiếm.
+        // Tham số value: giá trị.
+        // Kết quả: chuỗi kết quả.
         private String safe(
                         String value) {
 
@@ -1069,32 +1183,45 @@ public class QuanLyTaiKhoan extends JPanel {
         // LAM MOI
         // =========================================================
 
+        // Làm mới dữ liệu hoặc trạng thái của màn hình.
         private void lamMoi() {
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMaNV.setText(MaTuDongDAO.goiY(MaTuDongDAO.Loai.NHAN_VIEN));
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtHoTen.setText("");
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtSoDienThoai.setText("");
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtEmail.setText("");
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMatKhau.setText("");
 
-                cboGioiTinh.setSelectedIndex(0);
-                cboVaiTro.setSelectedIndex(0);
+                cmbGioiTinh2.setSelectedIndex(0);
+                cmbVaiTro.setSelectedIndex(0);
 
+                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtTimKiem.setText("");
 
                 txtMaNV.setEditable(false);
 
-                table.clearSelection();
+                tblDuLieu.clearSelection();
         }
 
         // =========================================================
         // KIEM TRA DU LIEU
         // =========================================================
 
+        // Kiểm tra các trường nhập trước khi thêm hoặc cập nhật dữ liệu.
+        // Kết quả: true/false theo điều kiện xử lý.
         private boolean kiemTraDuLieu() {
+                // hoTen: Đọc nội dung chữ từ ô nhập để xử lý họ tên.
                 String hoTen = txtHoTen.getText().trim();
+                // sdt: Đọc nội dung chữ từ ô nhập để xử lý số điện thoại.
                 String sdt = txtSoDienThoai.getText().trim();
+                // email: Đọc nội dung chữ từ ô nhập để xử lý email.
                 String email = txtEmail.getText().trim();
+                // matKhau: Lưu mật khẩu.
                 String matKhau = new String(txtMatKhau.getPassword());
 
                 if (hoTen.length() < 2 || hoTen.length() > 100
@@ -1114,10 +1241,10 @@ public class QuanLyTaiKhoan extends JPanel {
                         return baoLoiTruong(txtMatKhau,
                                         "Mật khẩu phải có ít nhất 6 ký tự (không giới hạn loại ký tự).");
                 }
-                if (cboGioiTinh.getSelectedItem() == null
-                                || !("Nam".equals(cboGioiTinh.getSelectedItem())
-                                                || "Nu".equals(cboGioiTinh.getSelectedItem()))
-                                || cboVaiTro.getSelectedItem() == null) {
+                if (cmbGioiTinh2.getSelectedItem() == null
+                                || !("Nam".equals(cmbGioiTinh2.getSelectedItem())
+                                                || "Nu".equals(cmbGioiTinh2.getSelectedItem()))
+                                || cmbVaiTro.getSelectedItem() == null) {
                         JOptionPane.showMessageDialog(this, "Giới tính chỉ được chọn Nam/Nữ và phải chọn vai trò.",
                                         "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                         return false;
@@ -1125,6 +1252,10 @@ public class QuanLyTaiKhoan extends JPanel {
                 return true;
         }
 
+        // Thông báo lỗi và đưa tiêu điểm về trường nhập cần sửa.
+        // Tham số truong: trường nhập liệu.
+        // Tham số thongBao: thống báo.
+        // Kết quả: true/false theo điều kiện xử lý.
         private boolean baoLoiTruong(JComponent truong, String thongBao) {
                 JOptionPane.showMessageDialog(this, thongBao,
                                 "Dữ liệu nhân viên không hợp lệ", JOptionPane.WARNING_MESSAGE);
@@ -1136,6 +1267,8 @@ public class QuanLyTaiKhoan extends JPanel {
         // FORM -> ENTITY
         // =========================================================
 
+        // Tạo đối tượng tài khoản từ dữ liệu trên biểu mẫu.
+        // Kết quả: đối tượng/giá trị kiểu TaiKhoan.
         private TaiKhoan getTaiKhoanFromForm() {
 
                 return new TaiKhoan(
@@ -1145,13 +1278,16 @@ public class QuanLyTaiKhoan extends JPanel {
                                 txtEmail.getText().trim(),
                                 new String(
                                                 txtMatKhau.getPassword()),
-                                cboGioiTinh.getSelectedItem()
+                                cmbGioiTinh2.getSelectedItem()
                                                 .toString(),
-                                cboVaiTro.getSelectedItem()
+                                cmbVaiTro.getSelectedItem()
                                                 .toString());
         }
 
         // Chỉ đổi tên hiển thị, KHÔNG thay giá trị dùng để lưu trong CSDL.
+        // Hiển thị thị giới tính.
+        // Tham số s: chuỗi đầu vào.
+        // Kết quả: chuỗi kết quả.
         private String hienThiGioiTinh(String s) {
                 if (s == null)
                         return "";
@@ -1162,6 +1298,9 @@ public class QuanLyTaiKhoan extends JPanel {
                 };
         }
 
+        // Chuyển nội dung giới tính trên giao diện sang mã lưu trữ.
+        // Tham số s: chuỗi đầu vào.
+        // Kết quả: chuỗi kết quả.
         private String maGioiTinh(String s) {
                 return switch (hienThiGioiTinh(s)) {
                         case "Nữ" -> "Nu";
@@ -1169,9 +1308,13 @@ public class QuanLyTaiKhoan extends JPanel {
                 };
         }
 
+        // Hiển thị thị vai trò.
+        // Tham số s: chuỗi đầu vào.
+        // Kết quả: chuỗi kết quả.
         private String hienThiVaiTro(String s) {
                 if (s == null)
                         return "";
+                // vaiTro: Lưu vai trò.
                 String vaiTro = s.trim().toLowerCase(java.util.Locale.ROOT);
                 return switch (vaiTro) {
                         case "quan ly", "quản lý" -> "Quản lý";
@@ -1182,6 +1325,9 @@ public class QuanLyTaiKhoan extends JPanel {
                 };
         }
 
+        // Chuyển nội dung vai trò trên giao diện sang mã lưu trữ.
+        // Tham số s: chuỗi đầu vào.
+        // Kết quả: chuỗi kết quả.
         private String maVaiTro(String s) {
                 return switch (hienThiVaiTro(s)) {
                         case "Quản lý" -> "Quan ly";
