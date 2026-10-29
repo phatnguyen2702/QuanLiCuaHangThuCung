@@ -19,9 +19,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+// Lớp truy cập cơ sở dữ liệu cho thanh toán.
 public class ThanhToanDao {
 
+    // Tìm mặt hàng theo mã.
+    // Tham số ma: mã.
+    // Kết quả: đối tượng/giá trị kiểu List<ThanhToan>.
     public List<ThanhToan> timMatHangTheoMa(String ma) throws SQLException {
+        // ketQua: Lưu kết quả; phần tử có kiểu ThanhToan.
         List<ThanhToan> ketQua = new ArrayList<>();
         for (ThanhToan item : timMatHang(ma)) {
             if (item.getMaHang().equalsIgnoreCase(ma.trim())) ketQua.add(item);
@@ -29,22 +34,34 @@ public class ThanhToanDao {
         return ketQua;
     }
 
+    // Lấy danh sách mã sản phẩm.
+    // Kết quả: đối tượng/giá trị kiểu List<String>.
     public List<String> layDanhSachMaSanPham() throws SQLException {
+        // ds: Danh sách chứa các phần tử kiểu String.
         List<String> ds = new ArrayList<>();
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT maSanPham FROM SanPham ORDER BY maSanPham";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) ds.add(rs.getString(1));
         }
         return ds;
     }
 
+    // Lấy danh sách sản phẩm.
+    // Kết quả: đối tượng/giá trị kiểu Map<String, String>.
     public Map<String, String> layDanhSachSanPham() throws SQLException {
+        // sanPhams: Bảng ánh xạ khóa đến giá trị dùng cho các sản phẩm.
         Map<String, String> sanPhams = new LinkedHashMap<>();
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT maSanPham, tenSanPham FROM SanPham ORDER BY maSanPham";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
                 sanPhams.put(rs.getString("maSanPham"), rs.getString("tenSanPham"));
             }
@@ -52,29 +69,44 @@ public class ThanhToanDao {
         return sanPhams;
     }
 
+    // Lấy danh sách mã khách hàng.
+    // Kết quả: đối tượng/giá trị kiểu List<String>.
     public List<String> layDanhSachMaKhachHang() throws SQLException {
+        // ds: Danh sách chứa các phần tử kiểu String.
         List<String> ds = new ArrayList<>();
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement("SELECT maKhachHang FROM KhachHang ORDER BY maKhachHang");
                 ResultSet rs = ps.executeQuery()) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) ds.add(rs.getString(1));
         }
         return ds;
     }
 
+    // Tìm mặt hàng.
+    // Tham số tuKhoa: từ khóa tìm kiếm.
+    // Kết quả: đối tượng/giá trị kiểu List<ThanhToan>.
     public List<ThanhToan> timMatHang(String tuKhoa) throws SQLException {
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, "
                 + "giaBan AS donGia FROM SanPham "
                 + "WHERE maSanPham = ? OR tenSanPham LIKE ?";
+        // matHangs: Lưu các mặt hàng; phần tử có kiểu ThanhToan.
         List<ThanhToan> matHangs = new ArrayList<>();
 
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
+            // keyword: Lưu từ khóa tìm kiếm.
             String keyword = tuKhoa.trim();
             ps.setString(1, keyword);
             ps.setString(2, "%" + keyword + "%");
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
+                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (rs.next()) {
+                    // donGia: Giá trị đơn giá dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
                     BigDecimal donGia = rs.getBigDecimal("donGia");
                     if (donGia == null || donGia.signum() < 0) {
                         throw new SQLException("Mặt hàng " + rs.getString("maHang")
@@ -88,8 +120,12 @@ public class ThanhToanDao {
         return matHangs;
     }
 
+    // Lấy phiếu dịch vụ đang xử lý.
+    // Tham số maKhachHang: mã khách hàng.
+    // Kết quả: đối tượng/giá trị kiểu Map<String, List<ThanhToan>>.
     public Map<String, List<ThanhToan>> layPhieuDichVuDangXuLy(String maKhachHang)
             throws SQLException {
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT p.maPhieuDichVu, p.maThuCung, dv.maDichVu, dv.tenDichVu, "
                 + "ctdv.soLuong, ctdv.donGia "
                 + "FROM PhieuDichVu p "
@@ -97,13 +133,19 @@ public class ThanhToanDao {
                 + "JOIN DichVu dv ON dv.maDichVu = ctdv.maDichVu "
                 + "WHERE p.maKhachHang = ? AND p.trangThai = 0 "
                 + "ORDER BY p.maPhieuDichVu, dv.maDichVu";
+        // phieuDichVus: Bảng ánh xạ khóa đến giá trị dùng cho các phiếu dịch vụ.
         Map<String, List<ThanhToan>> phieuDichVus = new LinkedHashMap<>();
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maKhachHang);
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
+                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (rs.next()) {
+                    // maPhieuDichVu: Lưu mã phiếu dịch vụ.
                     String maPhieuDichVu = rs.getString("maPhieuDichVu");
+                    // donGia: Giá trị đơn giá dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
                     BigDecimal donGia = rs.getBigDecimal("donGia");
                     if (donGia == null || donGia.signum() < 0) {
                         throw new SQLException("Dịch vụ trong phiếu " + maPhieuDichVu
@@ -121,15 +163,22 @@ public class ThanhToanDao {
         return phieuDichVus;
     }
 
+    // Tìm khách hàng.
+    // Tham số maHoacSoDienThoai: mã hoặc số điện thoại.
+    // Kết quả: đối tượng/giá trị kiểu ThanhToan.KhachHang.
     public ThanhToan.KhachHang timKhachHang(String maHoacSoDienThoai)
             throws SQLException {
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT TOP 1 maKhachHang, hoTen, soDienThoai "
                 + "FROM KhachHang WHERE maKhachHang = ? OR soDienThoai = ?";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
+            // keyword: Lưu từ khóa tìm kiếm.
             String keyword = maHoacSoDienThoai.trim();
             ps.setString(1, keyword);
             ps.setString(2, keyword);
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     return null;
@@ -142,20 +191,28 @@ public class ThanhToanDao {
         }
     }
 
+    // Tìm voucher.
+    // Tham số maHoacTen: mã hoặc tên.
+    // Kết quả: đối tượng/giá trị kiểu ThanhToan.Voucher.
     public ThanhToan.Voucher timVoucher(String maHoacTen) throws SQLException {
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT maVoucher, tenVoucher, phanTramGiam, dieuKien "
                 + "FROM Vocher "
                 + "WHERE trangThai = 1 AND (UPPER(maVoucher) = UPPER(?) "
                 + "OR UPPER(tenVoucher) = UPPER(?))";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
+            // keyword: Lưu từ khóa tìm kiếm.
             String keyword = maHoacTen.trim();
             ps.setString(1, keyword);
             ps.setString(2, keyword);
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     return null;
                 }
+                // phanTramGiam: Giá trị phần trăm giảm giá dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
                 BigDecimal phanTramGiam = rs.getBigDecimal("phanTramGiam");
                 if (phanTramGiam == null
                         || phanTramGiam.signum() < 0
@@ -171,27 +228,39 @@ public class ThanhToanDao {
         }
     }
 
+    // Kiểm tra khách hàng đã có thẻ thành viên hay chưa.
+    // Tham số maKhachHang: mã khách hàng.
+    // Kết quả: true/false theo điều kiện xử lý.
     public boolean laKhachHangThanhVien(String maKhachHang) throws SQLException {
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT 1 FROM TheThanhVien WHERE maKhachHang = ?";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maKhachHang);
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
     }
 
+    // Lấy phương thức thanh toán thanh toán.
+    // Kết quả: đối tượng/giá trị kiểu List<ThanhToan.PhuongThuc>.
     public List<ThanhToan.PhuongThuc> layPhuongThucThanhToan()
             throws SQLException {
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT maPhuongThuc, tenPhuongThuc "
                 + "FROM PhuongThucThanhToan "
                 + "WHERE trangThai = 1 AND maPhuongThuc <> 'PT003' "
                 + "ORDER BY maPhuongThuc";
+        // phuongThucs: Lưu các phương thức thanh toán; phần tử có kiểu ThanhToan.PhuongThuc.
         List<ThanhToan.PhuongThuc> phuongThucs = new ArrayList<>();
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
                 phuongThucs.add(new ThanhToan.PhuongThuc(
                         rs.getString("maPhuongThuc"),
@@ -201,6 +270,10 @@ public class ThanhToanDao {
         return phuongThucs;
     }
 
+    // Tạo mã hóa đơn.
+    // Tham số maKhachHang: mã khách hàng.
+    // Tham số ngayLap: ngày giờ lập hóa đơn.
+    // Kết quả: chuỗi kết quả.
     public String taoMaHoaDon(String maKhachHang, LocalDateTime ngayLap)
             throws SQLException {
     PhanQuyen.yeuCau(PhanQuyen.Quyen.THANH_TOAN);
@@ -214,10 +287,12 @@ public class ThanhToanDao {
                     "Mã khách hàng phải có ít nhất 3 chữ số để tạo mã hóa đơn.");
         }
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "UPDATE BoDemHoaDon "
                 + "SET giaTri = CASE WHEN giaTri >= 9999 THEN 1 ELSE giaTri + 1 END "
                 + "OUTPUT INSERTED.giaTri "
                 + "WHERE id = 1";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -226,6 +301,7 @@ public class ThanhToanDao {
                         "Không cấp được số thứ tự hóa đơn. Hãy kiểm tra bộ đếm hóa đơn.");
             }
 
+            // thuTuMua: Lưu thứ tự mua hàng.
             int thuTuMua = rs.getInt(1);
             return "HD" + chuSoMaKhachHang.substring(0, 3)
                     + ngayLap.format(DateTimeFormatter.ofPattern("ddMMyy", Locale.ROOT))
@@ -233,6 +309,17 @@ public class ThanhToanDao {
         }
     }
 
+    // Tạo hóa đơn.
+    // Tham số maHoaDon: mã hóa đơn.
+    // Tham số maNhanVien: mã nhân viên.
+    // Tham số maKhachHang: mã khách hàng.
+    // Tham số maVoucher: mã voucher.
+    // Tham số maPhuongThuc: mã phương thức thanh toán.
+    // Tham số ngayLap: ngày giờ lập hóa đơn.
+    // Tham số phanTramGiam: phần trăm giảm giá.
+    // Tham số chiTiet: chi tiết.
+    // Tham số maPhieuDichVus: mã phiếu dịch dịch vụ.
+    // Kết quả: chuỗi kết quả.
     public String taoHoaDon(
             String maHoaDon,
             String maNhanVien,
@@ -254,29 +341,37 @@ public class ThanhToanDao {
         if (maHoaDon == null || !maHoaDon.matches("HD\\d{13}")) {
             throw new IllegalArgumentException("Mã hóa đơn không hợp lệ.");
         }
+        // insertHoaDon: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String insertHoaDon = "INSERT INTO HoaDon "
                 + "(maHoaDon, ngayLap, maPhuongThuc, maKhachHang, maNhanVien, maVoucher) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
+        // insertChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String insertChiTiet = "INSERT INTO ChiTietHoaDon "
                 + "(maHoaDon, maThuCung, maSanPham, maDichVu, soLuong, donGia, phanTramGiam) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        // completeServiceTicket: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String completeServiceTicket = "UPDATE PhieuDichVu SET trangThai = 1 "
                 + "WHERE maPhieuDichVu = ? AND maKhachHang = ? AND trangThai = 0";
 
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection()) {
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
             try {
                 // Kiem tra ton ngay trong giao dich va khoa dong san pham den khi hoa don duoc ghi.
+                // soLuongCan: Bảng ánh xạ khóa đến giá trị dùng cho số lượng cần.
                 java.util.Map<String, Integer> soLuongCan = new java.util.LinkedHashMap<>();
                 for (ThanhToan item : chiTiet) {
                     if (item.getMaSanPham() != null) {
                         soLuongCan.merge(item.getMaSanPham(), item.getSoLuong(), Integer::sum);
                     }
                 }
+                // sqlTon: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
                 String sqlTon = "SELECT " + SanPhamDAO.BIEU_THUC_TON + " AS tonKho FROM SanPham sp WITH (UPDLOCK, HOLDLOCK) WHERE sp.maSanPham=?";
                 try (PreparedStatement psTon = con.prepareStatement(sqlTon)) {
                     for (var entry : soLuongCan.entrySet()) {
                         psTon.setString(1, entry.getKey());
+                        // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
                         try (ResultSet rs = psTon.executeQuery()) {
                             if (!rs.next() || rs.getInt("tonKho") < entry.getValue()) {
                                 throw new SQLException("Sản phẩm " + entry.getKey()
@@ -323,10 +418,12 @@ public class ThanhToanDao {
                         }
                     }
                 }
+                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
                 return maHoaDon;
             } catch (SQLException | RuntimeException e) {
                 try {
+                    // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
                     con.rollback();
                 } catch (SQLException rollbackError) {
                     e.addSuppressed(rollbackError);

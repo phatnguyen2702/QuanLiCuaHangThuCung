@@ -17,30 +17,39 @@ import java.util.List;
  */
 public class KiemKeDAO {
 
+    // Bổ sung các cột hỗ trợ thời điểm kiểm kê nếu cơ sở dữ liệu chưa có.
     private void damBaoCotKiemKe() throws SQLException {
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = ConnectDB.connectDB.getConnection(); Statement st = con.createStatement()) {
             st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayBatDau') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayBatDau DATETIME2 NULL");
             st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayChot') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayChot DATETIME2 NULL");
         }
     }
 
+    // Lấy mã mới để hiển thị khi lập bản ghi.
+    // Kết quả: chuỗi kết quả.
     public String taoMaMoi() throws SQLException {
         return taoMa("PhieuKiemKe", "maPhieuKiemKe", "KK", 3);
     }
 
     // Luu phieu + chi tiet trong 1 giao dich
+    // Lưu dữ liệu kiểm kê trong cơ sở dữ liệu.
+    // Tham số phieu: phiếu.
+    // Tham số chiTiet: chi tiết.
     public void luu(PhieuKiemKe phieu,
                     List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
 
         damBaoCotKiemKe();
 
+        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sqlPhieu = """
                 INSERT INTO PhieuKiemKe
                 (maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
+        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuKiemKe
                 (maPhieuKiemKe, maSanPham, soLuongHeThong,
@@ -48,8 +57,10 @@ public class KiemKeDAO {
                 VALUES (?, ?, ?, ?, ?)
                 """;
 
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection()) {
 
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
 
             try {
@@ -86,19 +97,26 @@ public class KiemKeDAO {
                     ps.executeBatch();
                 }
 
+                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
 
             } catch (SQLException e) {
+                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
                 con.rollback();
                 throw e;
             }
         }
     }
 
+    // Lưu nhập.
+    // Tham số phieu: phiếu.
+    // Tham số chiTiet: chi tiết.
     public void luuNhap(PhieuKiemKe phieu, List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
     PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
         damBaoCotKiemKe();
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection()) {
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
             try {
                 int capNhat;
@@ -123,19 +141,27 @@ public class KiemKeDAO {
                     }
                     ps.executeBatch();
                 }
+                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
             } catch (SQLException e) { con.rollback(); throw e; }
         }
     }
 
+    // Lấy danh sách phiếu đang lưu ở trạng thái nháp.
+    // Kết quả: đối tượng/giá trị kiểu ArrayList<PhieuKiemKe>.
     public ArrayList<PhieuKiemKe> dsPhieuNhap() throws SQLException {
         damBaoCotKiemKe();
+        // ds: Danh sách chứa các phần tử kiểu PhieuKiemKe.
         ArrayList<PhieuKiemKe> ds = new ArrayList<>();
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot FROM PhieuKiemKe WHERE ISNULL(trangThai,0)=0 ORDER BY ngayKiemKe DESC";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection c = ConnectDB.connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql); ResultSet r = p.executeQuery()) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (r.next()) {
                 PhieuKiemKe x = new PhieuKiemKe();
                 x.setMaPhieuKiemKe(r.getString(1));
+                // t: Lưu bảng/thành phần được xử lý dưới dạng dữ liệu thời gian.
                 Timestamp t = r.getTimestamp(2); x.setNgayKiemKe(t == null ? null : t.toLocalDateTime());
                 x.setTrangThai(r.getBoolean(3)); x.setMaNhanVien(r.getString(4));
                 t = r.getTimestamp(5); x.setNgayBatDau(t == null ? null : t.toLocalDateTime());
@@ -146,9 +172,15 @@ public class KiemKeDAO {
         return ds;
     }
 
+    // Lấy chi tiết.
+    // Tham số maPhieu: mã phiếu.
+    // Kết quả: đối tượng/giá trị kiểu ArrayList<ChiTietPhieuKiemKe>.
     public ArrayList<ChiTietPhieuKiemKe> layChiTiet(String maPhieu) throws SQLException {
+        // ds: Danh sách chứa các phần tử kiểu ChiTietPhieuKiemKe.
         ArrayList<ChiTietPhieuKiemKe> ds = new ArrayList<>();
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT k.maSanPham,s.tenSanPham,k.soLuongHeThong,k.soLuongThucTe,k.trangThai FROM ChiTietPhieuKiemKe k JOIN SanPham s ON s.maSanPham=k.maSanPham WHERE k.maPhieuKiemKe=? ORDER BY k.maSanPham";
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection c=connectDB.getConnection(); PreparedStatement p=c.prepareStatement(sql)) {
             p.setString(1,maPhieu); try(ResultSet r=p.executeQuery()) { while(r.next()) {
                 ChiTietPhieuKiemKe x=new ChiTietPhieuKiemKe(); x.setMaPhieuKiemKe(maPhieu); x.setMaSanPham(r.getString(1));
@@ -162,8 +194,10 @@ public class KiemKeDAO {
     /** Toan bo san pham kem ton kho he thong (cong thuc ton lay tu SanPhamDAO de luon khop). */
     public ArrayList<SanPham> laySanPhamKemTon() throws SQLException {
 
+        // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
                 SELECT sp.maSanPham,
                        sp.tenSanPham,
@@ -178,6 +212,7 @@ public class KiemKeDAO {
             PreparedStatement ps = con.prepareStatement(sql);
             ResultSet rs = ps.executeQuery()
         ) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
                 SanPham sp = new SanPham();
                 sp.setMaSanPham(rs.getString("maSanPham"));
@@ -191,6 +226,12 @@ public class KiemKeDAO {
     }
 
     // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co roi cong 1
+    // Tạo mã mới từ bảng, cột, tiền tố và số chữ số được yêu cầu.
+    // Tham số bang: bảng dữ liệu.
+    // Tham số cot: cột.
+    // Tham số tienTo: tiền tố mã.
+    // Tham số soChuSo: số chữ số của mã.
+    // Kết quả: chuỗi kết quả.
     private static String taoMa(String bang, String cot,
                                 String tienTo, int soChuSo) throws SQLException {
 
@@ -202,7 +243,9 @@ public class KiemKeDAO {
                     "SELECT " + cot + " FROM " + bang);
             ResultSet rs = ps.executeQuery()
         ) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
+                // ma: Lưu mã.
                 String ma = rs.getString(1);
 
                 if (ma != null && ma.startsWith(tienTo)) {

@@ -11,113 +11,150 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Locale;
 
-// Man Quan ly khach hang: tim kiem, them / sua / xoa, lam moi, chon 1 dong de xem thong tin
+// Man Quan ly khach hang: tim kiem, them / sua / btnXoa2, lam moi, chon 1 dong de xem thong tin
+// Giao diện/chức năng quản lý khách hàng của ứng dụng.
 public class QuanLyKhachHang extends JPanel {
 
+        // COLS: Mảng lưu các cột.
         private static final String[] COLS = { "Mã KH", "Họ tên", "Số điện thoại", "Số thú cưng", "Tổng chi" };
 
+        // khachHangDAO: Đối tượng truy cập dữ liệu khách hàng.
         private final KhachHangDAO khachHangDAO = new KhachHangDAO();
+        // chiTietDAO: Đối tượng truy cập dữ liệu khách hàng chi tiết.
         private final KhachHangChiTietDAO chiTietDAO = new KhachHangChiTietDAO();
 
+        // txtTim: Ô nhập/hiển thị văn bản tìm.
         private final JTextField txtTim = UIStyle.o(16);
+        // lblDem: Nhãn hiển thị đếm.
         private final JLabel lblDem = UIStyle.nhan("0 khách hàng");
 
+        // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
         private final javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(COLS, 0) {
+                // Không cho phép sửa trực tiếp các ô pnlTrong bảng.
+                // Tham số pnlKhung3: chỉ số dòng.
+                // Tham số cmbC: chỉ số cột.
+                // Kết quả: false, bảng chỉ dùng để xem.
                 @Override
                 public boolean isCellEditable(int r, int c) {
                         return false;
                 }
         };
 
-        private final JTable table = new JTable(model);
+        // tblDuLieu: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
+        private final JTable tblDuLieu = new JTable(model);
 
         // dòng i của bảng <-> dsHienThi.get(i)
+        // dsHienThi: Lưu danh sách đang hiển thị; phần tử có kiểu KhachHang.
         private ArrayList<KhachHang> dsHienThi = new ArrayList<>();
-        private final String maNV;
-
         // ----- khung thông tin chi tiết (hiện khi chọn 1 dòng) -----
+        // cardCT: Bộ bố trí cho phép chuyển giữa các màn hình pnlTrong cùng một vùng
+        // chứa.
         private final CardLayout cardCT = new CardLayout();
-        private final JPanel khungCT = new JPanel(cardCT);
+        // pnlKhungCT: Khung chứa thành phần giao diện khung chi tiết.
+        private final JPanel pnlKhungCT = new JPanel(cardCT);
 
-        private final JLabel vMa = giaTri();
-        private final JLabel vTen = giaTri();
-        private final JLabel vSdt = giaTri();
-        private final JLabel vTong = giaTri();
-        private final JLabel vThuCung = new JLabel();
+        // lblVMa: Nhãn hiển thị mã.
+        private final JLabel lblVMa = giaTri();
+        // lblVTen: Nhãn hiển thị tên.
+        private final JLabel lblVTen = giaTri();
+        // lblVSdt: Nhãn hiển thị số điện thoại.
+        private final JLabel lblVSdt = giaTri();
+        // lblVTong: Nhãn hiển thị tổng.
+        private final JLabel lblVTong = giaTri();
+        // lblVThuCung: Nhãn hiển thị thú cưng.
+        private final JLabel lblVThuCung = new JLabel();
 
+        // Khởi tạo đối tượng với trạng thái ban đầu.
         public QuanLyKhachHang() {
                 this(null);
         }
 
+        // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
+        // Tham số maNV: mã nhân viên.
         public QuanLyKhachHang(String maNV) {
-                this.maNV = maNV;
-
                 setLayout(new BorderLayout(0, 14));
                 setBackground(UIStyle.LIGHT_BLUE);
                 setBorder(new EmptyBorder(18, 24, 18, 24));
 
                 // ---------------- tiêu đề + nút Thêm ----------------
-                JLabel tieuDe = new JLabel("Quản lý khách hàng");
+                // lblTieuDe2: Nhãn hiển thị: Quản lý khách hàng.
+                JLabel lblTieuDe2 = new JLabel("Quản lý khách hàng");
 
-                tieuDe.setFont(UIStyle.font(Font.BOLD, 26));
-                tieuDe.setForeground(new Color(40, 40, 40));
+                lblTieuDe2.setFont(UIStyle.font(Font.BOLD, 26));
+                lblTieuDe2.setForeground(new Color(40, 40, 40));
 
+                // btnThem: Nút thao tác thêm.
                 JButton btnThem = UIStyle.nutXanh("+  Thêm khách hàng");
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnThem.addActionListener(e -> moDialog(null));
 
-                JPanel dau = new JPanel(new BorderLayout());
+                // pnlDau2: Khung chứa thành phần giao diện đầu.
+                JPanel pnlDau2 = new JPanel(new BorderLayout());
 
-                dau.setOpaque(false);
-                dau.add(tieuDe, BorderLayout.WEST);
-                dau.add(btnThem, BorderLayout.EAST);
+                pnlDau2.setOpaque(false);
+                pnlDau2.add(lblTieuDe2, BorderLayout.WEST);
+                pnlDau2.add(btnThem, BorderLayout.EAST);
 
                 // ---------------- hàng tìm kiếm + nút ----------------
+                // btnTim: Nút thao tác tìm.
                 JButton btnTim = UIStyle.nutChinh("Tìm kiếm");
+                // btnSua: Nút thao tác sửa.
                 JButton btnSua = UIStyle.nutPhu("Sửa");
+                // btnXoa: Nút thao tác xóa.
                 JButton btnXoa = UIStyle.nutXoa("Xóa");
+                // btnLamMoi: Nút thao tác làm mới.
                 JButton btnLamMoi = UIStyle.nutPhu("Làm mới");
 
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnTim.addActionListener(e -> taiLai(maDangChon()));
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 txtTim.addActionListener(e -> taiLai(maDangChon()));
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnSua.addActionListener(e -> sua());
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnXoa.addActionListener(e -> xoa());
+                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnLamMoi.addActionListener(e -> lamMoiTatCa());
 
-                JPanel loc = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+                // pnlLoc2: Khung chứa thành phần giao diện lọc.
+                JPanel pnlLoc2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
 
-                loc.setOpaque(false);
-                loc.add(UIStyle.nhan("Mã / tên / SĐT:"));
-                loc.add(txtTim);
-                loc.add(btnTim);
-                loc.add(btnSua);
-                loc.add(btnXoa);
-                loc.add(btnLamMoi);
+                pnlLoc2.setOpaque(false);
+                pnlLoc2.add(UIStyle.nhan("Mã / tên / SĐT:"));
+                pnlLoc2.add(txtTim);
+                pnlLoc2.add(btnTim);
+                pnlLoc2.add(btnSua);
+                pnlLoc2.add(btnXoa);
+                pnlLoc2.add(btnLamMoi);
 
-                JPanel hangTren = new JPanel(new BorderLayout(0, 8));
+                // pnlHangTren: Khung chứa thành phần giao diện hàng trên.
+                JPanel pnlHangTren = new JPanel(new BorderLayout(0, 8));
 
-                hangTren.setOpaque(false);
-                hangTren.add(loc, BorderLayout.NORTH);
-                hangTren.add(lblDem, BorderLayout.SOUTH);
+                pnlHangTren.setOpaque(false);
+                pnlHangTren.add(pnlLoc2, BorderLayout.NORTH);
+                pnlHangTren.add(lblDem, BorderLayout.SOUTH);
 
                 // ---------------- bảng ----------------
-                UIStyle.taoBang(table, 6, 7);
+                UIStyle.taoBang(tblDuLieu, 6, 7);
 
+                // w: Mảng lưu chiều rộng.
                 int[] w = { 70, 160, 110, 230, 120 };
 
                 for (int i = 0; i < w.length; i++) {
-                        table.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
+                        tblDuLieu.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
                 }
 
-                table.getSelectionModel().addListSelectionListener(e -> {
+                tblDuLieu.getSelectionModel().addListSelectionListener(e -> {
                         if (!e.getValueIsAdjusting()) {
                                 hienThongTin();
                         }
                 });
 
-                table.addMouseListener(new java.awt.event.MouseAdapter() {
+                tblDuLieu.addMouseListener(new java.awt.event.MouseAdapter() {
+                        // Xử lý thao tác nhấn chuột trên thành phần đã gắn listener.
+                        // Tham số e: thông tin sự kiện.
                         @Override
                         public void mouseClicked(java.awt.event.MouseEvent e) {
                                 if (e.getClickCount() == 2 && dongDangChon() != null) {
@@ -127,45 +164,51 @@ public class QuanLyKhachHang extends JPanel {
                 });
 
                 // ---------------- khung thông tin chi tiết ----------------
-                khungCT.setOpaque(false);
+                pnlKhungCT.setOpaque(false);
 
-                JLabel goiY = new JLabel("Chọn một khách hàng trong bảng để xem thông tin chi tiết.");
+                // lblGoiY: Nhãn hiển thị: Chọn một khách hàng pnlTrong bảng để xem thông tin
+                // chi tiết..
+                JLabel lblGoiY = new JLabel("Chọn một khách hàng trong bảng để xem thông tin chi tiết.");
 
-                goiY.setFont(UIStyle.font(Font.PLAIN, 13));
-                goiY.setForeground(Color.GRAY);
+                lblGoiY.setFont(UIStyle.font(Font.PLAIN, 13));
+                lblGoiY.setForeground(Color.GRAY);
 
-                JPanel trong = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
+                // pnlTrong: Khung chứa thành phần giao diện pnlTrong.
+                JPanel pnlTrong = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
 
-                trong.setOpaque(false);
-                trong.add(goiY);
+                pnlTrong.setOpaque(false);
+                pnlTrong.add(lblGoiY);
 
-                khungCT.add(trong, "TRONG");
-                khungCT.add(taoNoiDungChiTiet(), "CO");
-                khungCT.setPreferredSize(new Dimension(100, 150));
+                pnlKhungCT.add(pnlTrong, "TRONG");
+                pnlKhungCT.add(taoNoiDungChiTiet(), "CO");
+                pnlKhungCT.setPreferredSize(new Dimension(100, 150));
 
-                JPanel chiTiet = new JPanel(new BorderLayout(0, 6));
+                // pnlChiTiet: Khung chứa thành phần giao diện chi tiết.
+                JPanel pnlChiTiet = new JPanel(new BorderLayout(0, 6));
 
-                chiTiet.setOpaque(false);
-                chiTiet.setBorder(new javax.swing.border.MatteBorder(1, 0, 0, 0, UIStyle.LINE));
+                pnlChiTiet.setOpaque(false);
+                pnlChiTiet.setBorder(new javax.swing.border.MatteBorder(1, 0, 0, 0, UIStyle.LINE));
 
-                JLabel tdCT = UIStyle.nhan("Thông tin khách hàng");
+                // lblTdCT: Nhãn hiển thị tiêu đề chi tiết.
+                JLabel lblTdCT = UIStyle.nhan("Thông tin khách hàng");
 
-                tdCT.setBorder(new EmptyBorder(8, 0, 0, 0));
+                lblTdCT.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-                chiTiet.add(tdCT, BorderLayout.NORTH);
-                chiTiet.add(khungCT, BorderLayout.CENTER);
+                pnlChiTiet.add(lblTdCT, BorderLayout.NORTH);
+                pnlChiTiet.add(pnlKhungCT, BorderLayout.CENTER);
 
                 // ---------------- thẻ trắng chứa tất cả ----------------
-                JPanel the = UIStyle.the();
+                // pnlThe: Khung chứa thành phần giao diện thẻ.
+                JPanel pnlThe = UIStyle.the();
 
-                the.setLayout(new BorderLayout(0, 10));
+                pnlThe.setLayout(new BorderLayout(0, 10));
 
-                the.add(hangTren, BorderLayout.NORTH);
-                the.add(UIStyle.cuon(table), BorderLayout.CENTER);
-                the.add(chiTiet, BorderLayout.SOUTH);
+                pnlThe.add(pnlHangTren, BorderLayout.NORTH);
+                pnlThe.add(UIStyle.cuon(tblDuLieu), BorderLayout.CENTER);
+                pnlThe.add(pnlChiTiet, BorderLayout.SOUTH);
 
-                add(dau, BorderLayout.NORTH);
-                add(the, BorderLayout.CENTER);
+                add(pnlDau2, BorderLayout.NORTH);
+                add(pnlThe, BorderLayout.CENTER);
 
                 taiLai(null);
         }
@@ -174,78 +217,96 @@ public class QuanLyKhachHang extends JPanel {
         // GIAO DIỆN PHỤ
         // =========================================================
 
+        // Tạo nhãn giá trị theo kiểu trình bày của màn hình.
+        // Kết quả: đối tượng/giá trị kiểu JLabel.
         private static JLabel giaTri() {
 
-                JLabel l = new JLabel("-");
+                // lblNhan3: Nhãn hiển thị: -.
+                JLabel lblNhan3 = new JLabel("-");
 
-                l.setFont(UIStyle.font(Font.BOLD, 13));
+                lblNhan3.setFont(UIStyle.font(Font.BOLD, 13));
 
-                return l;
+                return lblNhan3;
         }
 
-        private static JPanel cap(String tieuDe, JLabel gt) {
+        // Ghép tiêu đề và nhãn giá trị thành một nhóm thông tin.
+        // Tham số lblTieuDe2: tiêu đề.
+        // Tham số lblGt: giá trị.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
+        private static JPanel cap(String tieuDe, JLabel lblGt) {
 
-                JPanel p = new JPanel();
+                // pnlKhung2: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung2 = new JPanel();
 
-                p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-                p.setOpaque(false);
+                pnlKhung2.setLayout(new BoxLayout(pnlKhung2, BoxLayout.Y_AXIS));
+                pnlKhung2.setOpaque(false);
 
-                JLabel l = new JLabel(tieuDe);
+                // lblNhan3: Nhãn dùng để hiển thị chữ hoặc giá trị trên giao diện.
+                JLabel lblNhan3 = new JLabel(tieuDe);
 
-                l.setFont(UIStyle.font(Font.PLAIN, 12));
-                l.setForeground(Color.GRAY);
-                l.setAlignmentX(Component.LEFT_ALIGNMENT);
+                lblNhan3.setFont(UIStyle.font(Font.PLAIN, 12));
+                lblNhan3.setForeground(Color.GRAY);
+                lblNhan3.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-                gt.setAlignmentX(Component.LEFT_ALIGNMENT);
+                lblGt.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-                p.add(l);
-                p.add(Box.createVerticalStrut(2));
-                p.add(gt);
+                pnlKhung2.add(lblNhan3);
+                pnlKhung2.add(Box.createVerticalStrut(2));
+                pnlKhung2.add(lblGt);
 
-                return p;
+                return pnlKhung2;
         }
 
+        // Tạo nội dung chi tiết.
+        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel taoNoiDungChiTiet() {
 
-                JPanel luoi = new JPanel(new GridLayout(2, 3, 18, 8));
+                // pnlLuoi2: Khung chứa thành phần giao diện lưới ngày.
+                JPanel pnlLuoi2 = new JPanel(new GridLayout(2, 3, 18, 8));
 
-                luoi.setOpaque(false);
+                pnlLuoi2.setOpaque(false);
 
-                luoi.add(cap("Mã khách hàng", vMa));
-                luoi.add(cap("Họ tên", vTen));
-                luoi.add(cap("Số điện thoại", vSdt));
-                luoi.add(cap("Tổng chi / mua gần nhất", vTong));
+                pnlLuoi2.add(cap("Mã khách hàng", lblVMa));
+                pnlLuoi2.add(cap("Họ tên", lblVTen));
+                pnlLuoi2.add(cap("Số điện thoại", lblVSdt));
+                pnlLuoi2.add(cap("Tổng chi / mua gần nhất", lblVTong));
 
-                vThuCung.setFont(UIStyle.font(Font.PLAIN, 13));
+                lblVThuCung.setFont(UIStyle.font(Font.PLAIN, 13));
 
-                JPanel pets = new JPanel(new BorderLayout(0, 2));
+                // pnlPets: Khung chứa thành phần giao diện thú cưng.
+                JPanel pnlPets = new JPanel(new BorderLayout(0, 2));
 
-                pets.setOpaque(false);
+                pnlPets.setOpaque(false);
 
-                JLabel l = new JLabel("Thú cưng");
+                // lblNhan3: Nhãn hiển thị: Thú cưng.
+                JLabel lblNhan3 = new JLabel("Thú cưng");
 
-                l.setFont(UIStyle.font(Font.PLAIN, 12));
-                l.setForeground(Color.GRAY);
+                lblNhan3.setFont(UIStyle.font(Font.PLAIN, 12));
+                lblNhan3.setForeground(Color.GRAY);
 
-                pets.add(l, BorderLayout.NORTH);
-                pets.add(vThuCung, BorderLayout.CENTER);
+                pnlPets.add(lblNhan3, BorderLayout.NORTH);
+                pnlPets.add(lblVThuCung, BorderLayout.CENTER);
 
-                JPanel p = new JPanel(new BorderLayout(0, 8));
+                // pnlKhung2: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                JPanel pnlKhung2 = new JPanel(new BorderLayout(0, 8));
 
-                p.setOpaque(false);
-                p.add(luoi, BorderLayout.NORTH);
-                p.add(pets, BorderLayout.CENTER);
+                pnlKhung2.setOpaque(false);
+                pnlKhung2.add(pnlLuoi2, BorderLayout.NORTH);
+                pnlKhung2.add(pnlPets, BorderLayout.CENTER);
 
-                return p;
+                return pnlKhung2;
         }
 
         // =========================================================
         // DỮ LIỆU
         // =========================================================
 
+        // Lấy dòng đang được chọn trên bảng.
+        // Kết quả: đối tượng/giá trị kiểu KhachHang.
         private KhachHang dongDangChon() {
 
-                int row = table.getSelectedRow();
+                // row: Lưu chỉ số dòng.
+                int row = tblDuLieu.getSelectedRow();
 
                 if (row < 0 || row >= dsHienThi.size()) {
                         return null;
@@ -254,6 +315,8 @@ public class QuanLyKhachHang extends JPanel {
                 return dsHienThi.get(row);
         }
 
+        // Lấy mã của bản ghi đang được chọn.
+        // Kết quả: chuỗi kết quả.
         private String maDangChon() {
 
                 KhachHang k = dongDangChon();
@@ -262,27 +325,32 @@ public class QuanLyKhachHang extends JPanel {
         }
 
         // Gọi khi mở màn hình (TrangChu): nạp lại dữ liệu, giữ dòng đang chọn
+        // Làm mới dữ liệu hoặc trạng thái của màn hình.
         public void lamMoi() {
 
                 taiLai(maDangChon());
         }
 
         // Nút "Làm mới": xóa bộ lọc, bỏ chọn, nạp lại từ CSDL
+        // Làm mới bộ lọc và tải lại dữ liệu màn hình.
         private void lamMoiTatCa() {
 
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
                 txtTim.setText("");
 
-                table.clearSelection();
+                tblDuLieu.clearSelection();
 
                 taiLai(null);
         }
 
         // Nạp bảng theo từ khóa; chonMa != null thì chọn lại dòng đó nếu còn
+        // Tải lại danh sách và chọn lại bản ghi theo mã nếu có.
+        // Tham số chonMa: mã cần chọn lại.
         public void taiLai(String chonMa) {
 
                 dsHienThi = khachHangDAO.timKiem(txtTim.getText());
 
-                table.clearSelection();
+                tblDuLieu.clearSelection();
 
                 model.setRowCount(0);
 
@@ -296,6 +364,7 @@ public class QuanLyKhachHang extends JPanel {
                                         UIStyle.tien(k.getTongChi()) });
                 }
 
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
                 lblDem.setText(dsHienThi.size() + " khách hàng");
 
                 if (chonMa != null) {
@@ -304,9 +373,9 @@ public class QuanLyKhachHang extends JPanel {
 
                                 if (dsHienThi.get(i).getMaKhachHang().equals(chonMa)) {
 
-                                        table.setRowSelectionInterval(i, i);
+                                        tblDuLieu.setRowSelectionInterval(i, i);
 
-                                        table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                                        tblDuLieu.scrollRectToVisible(tblDuLieu.getCellRect(i, 0, true));
 
                                         break;
                                 }
@@ -317,25 +386,32 @@ public class QuanLyKhachHang extends JPanel {
         }
 
         // Hiện thông tin của dòng đang chọn ở khung bên dưới bảng
+        // Hiển thị thông tin.
         private void hienThongTin() {
 
                 KhachHang k = dongDangChon();
 
                 if (k == null) {
 
-                        cardCT.show(khungCT, "TRONG");
+                        cardCT.show(pnlKhungCT, "TRONG");
 
                         return;
                 }
 
-                vMa.setText(k.getMaKhachHang());
-                vTen.setText(k.getHoTen());
-                vSdt.setText(k.getSoDienThoai());
-                vTong.setText(UIStyle.tien(k.getTongChi())
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
+                lblVMa.setText(k.getMaKhachHang());
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
+                lblVTen.setText(k.getHoTen());
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
+                lblVSdt.setText(k.getSoDienThoai());
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
+                lblVTong.setText(UIStyle.tien(k.getTongChi())
                                 + (k.getGanNhat() == null ? "" : "  /  " + k.getGanNhat()));
 
+                // sb: Bộ đệm ghép các đoạn chuỗi để tạo bộ đệm chuỗi.
                 StringBuilder sb = new StringBuilder("<html><body style='width:760px'>");
 
+                // pnlPets: Lưu thú cưng; phần tử có kiểu String[].
                 ArrayList<String[]> pets = chiTietDAO.getThuCung(k.getMaKhachHang());
 
                 if (pets.isEmpty()) {
@@ -346,6 +422,7 @@ public class QuanLyKhachHang extends JPanel {
 
                         for (int i = 0; i < pets.size(); i++) {
 
+                                // pnlKhung2: Mảng lưu pnlKhung2.
                                 String[] p = pets.get(i);
 
                                 if (i > 0) {
@@ -370,15 +447,17 @@ public class QuanLyKhachHang extends JPanel {
                         }
                 }
 
-                vThuCung.setText(sb.append("</body></html>").toString());
+                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
+                lblVThuCung.setText(sb.append("</body></html>").toString());
 
-                cardCT.show(khungCT, "CO");
+                cardCT.show(pnlKhungCT, "CO");
         }
 
         // =========================================================
         // THÊM / SỬA / XÓA
         // =========================================================
 
+        // Xử lý yêu cầu sửa bản ghi đang chọn.
         private void sua() {
 
                 KhachHang k = dongDangChon();
@@ -393,6 +472,7 @@ public class QuanLyKhachHang extends JPanel {
                 moDialog(k);
         }
 
+        // Xử lý yêu cầu xóa bản ghi đang chọn.
         private void xoa() {
 
                 KhachHang k = dongDangChon();
@@ -422,16 +502,18 @@ public class QuanLyKhachHang extends JPanel {
         }
 
         // goc = null -> thêm mới; goc != null -> sửa khách đó
+        // Mở hộp thoại.
+        // Tham số goc: đối tượng gốc trước khi chỉnh sửa.
         private void moDialog(KhachHang goc) {
 
-                KhachHangDialog dlg = new KhachHangDialog(
+                KhachHangDialog winDlg = new KhachHangDialog(
                                 SwingUtilities.getWindowAncestor(this),
                                 goc, khachHangDAO, chiTietDAO);
 
-                dlg.setVisible(true);
+                winDlg.setVisible(true);
 
-                if (dlg.isDaLuu()) {
-                        taiLai(dlg.getMaDaLuu());
+                if (winDlg.isDaLuu()) {
+                        taiLai(winDlg.getMaDaLuu());
                 }
         }
 
@@ -439,34 +521,55 @@ public class QuanLyKhachHang extends JPanel {
         // HỘP THOẠI THÊM / SỬA KHÁCH HÀNG (class lồng)
         // =========================================================
 
+        // Hộp thoại nhập hoặc chỉnh sửa khách hàng.
         public static class KhachHangDialog extends JDialog {
 
                 // Giá trị lưu vào CSDL (dùng Unicode escape cho chắc chắn)
+                // LOAI: Mảng lưu loài.
                 private static final String[] LOAI = { "Ch\u00f3", "M\u00e8o", "Kh\u00e1c" };
+                // GIOI_TINH: Mảng lưu tính.
                 private static final String[] GIOI_TINH = { "\u0110\u1ef1c", "C\u00e1i" };
 
+                // VIEN: Màu dùng cho giao diện: viên.
                 private static final Color VIEN = new Color(110, 130, 160);
+                // XAM: Màu dùng cho giao diện: xám.
                 private static final Color XAM = new Color(110, 120, 135);
+                // F14: Phông chữ dùng cho 14.
                 private static final Font F14 = new Font("Segoe UI", Font.PLAIN, 14);
+                // NHAN: Phông chữ dùng cho nhân.
                 private static final Font NHAN = new Font("Segoe UI", Font.BOLD, 12);
 
+                // khachHangDAO: Đối tượng truy cập dữ liệu khách hàng.
                 private final KhachHangDAO khachHangDAO;
+                // chiTietDAO: Đối tượng truy cập dữ liệu khách hàng chi tiết.
                 private final KhachHangChiTietDAO chiTietDAO;
 
+                // goc: Đối tượng đối tượng gốc trước khi chỉnh sửa có kiểu KhachHang.
                 private final KhachHang goc;
 
+                // daLuu: Cờ cho biết dữ liệu đã được lưu.
                 private boolean daLuu = false;
+                // maDaLuu: Lưu mã bản ghi vừa lưu.
                 private String maDaLuu = null;
 
+                // txtTen: Ô nhập/hiển thị văn bản tên.
                 private final JTextField txtTen = new JTextField();
+                // txtSdt: Ô nhập/hiển thị văn bản số điện thoại.
                 private final JTextField txtSdt = new JTextField();
-                private final JPanel petsBox = new JPanel();
+                // pnlPetsBox: Khung chứa thành phần giao diện khung danh sách thú cưng.
+                private final JPanel pnlPetsBox = new JPanel();
+                // rows: Danh sách chứa các phần tử kiểu PetRow.
                 private final ArrayList<PetRow> rows = new ArrayList<>();
 
-                public KhachHangDialog(Window owner, KhachHang goc,
+                // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
+                // Tham số winOwner: cửa sổ sở hữu.
+                // Tham số goc: đối tượng gốc trước khi chỉnh sửa.
+                // Tham số khachHangDAO: đối tượng truy cập dữ liệu khách hàng.
+                // Tham số chiTietDAO: đối tượng truy cập dữ liệu khách hàng chi tiết.
+                public KhachHangDialog(Window winOwner, KhachHang goc,
                                 KhachHangDAO khachHangDAO, KhachHangChiTietDAO chiTietDAO) {
 
-                        super(owner, goc == null ? "Thêm Khách Hàng" : "Sửa Khách Hàng",
+                        super(winOwner, goc == null ? "Thêm Khách Hàng" : "Sửa Khách Hàng",
                                         Dialog.ModalityType.APPLICATION_MODAL);
 
                         this.goc = goc;
@@ -475,91 +578,108 @@ public class QuanLyKhachHang extends JPanel {
 
                         setSize(760, goc == null ? 490 : 330);
                         setResizable(false);
-                        setLocationRelativeTo(owner);
+                        setLocationRelativeTo(winOwner);
 
                         kieu(txtTen);
                         kieu(txtSdt);
 
-                        JPanel body = new JPanel();
+                        // pnlBody: Khung chứa thành phần giao diện nội dung.
+                        JPanel pnlBody = new JPanel();
 
-                        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-                        body.setOpaque(false);
-                        body.setBorder(new EmptyBorder(24, 40, 10, 40));
+                        pnlBody.setLayout(new BoxLayout(pnlBody, BoxLayout.Y_AXIS));
+                        pnlBody.setOpaque(false);
+                        pnlBody.setBorder(new EmptyBorder(24, 40, 10, 40));
 
-                        them(body, muc(goc == null ? "Thông tin Khách hàng"
+                        them(pnlBody, muc(goc == null ? "Thông tin Khách hàng"
                                         : "Thông tin Khách hàng (" + goc.getMaKhachHang() + ")"));
-                        them(body, Box.createVerticalStrut(8));
-                        them(body, hai(cot("Họ và tên: *", txtTen), cot("Số điện thoại: *", txtSdt)));
+                        them(pnlBody, Box.createVerticalStrut(8));
+                        them(pnlBody, hai(cot("Họ và tên: *", txtTen), cot("Số điện thoại: *", txtSdt)));
                         // Thú cưng: chỉ nhập khi thêm mới
                         if (goc == null) {
 
-                                petsBox.setLayout(new BoxLayout(petsBox, BoxLayout.Y_AXIS));
-                                petsBox.setOpaque(false);
+                                pnlPetsBox.setLayout(new BoxLayout(pnlPetsBox, BoxLayout.Y_AXIS));
+                                pnlPetsBox.setOpaque(false);
 
-                                JPanel petsWrap = new JPanel(new BorderLayout());
+                                // pnlPetsWrap: Khung chứa thành phần giao diện thú cưng bọc.
+                                JPanel pnlPetsWrap = new JPanel(new BorderLayout());
 
-                                petsWrap.setBackground(Color.WHITE);
-                                petsWrap.add(petsBox, BorderLayout.NORTH);
+                                pnlPetsWrap.setBackground(Color.WHITE);
+                                pnlPetsWrap.add(pnlPetsBox, BorderLayout.NORTH);
 
-                                JScrollPane sp = new JScrollPane(petsWrap);
+                                // scrSp: Khung cuộn SP.
+                                JScrollPane scrSp = new JScrollPane(pnlPetsWrap);
 
-                                sp.setBorder(new LineBorder(new Color(220, 226, 235)));
-                                sp.setPreferredSize(new Dimension(100, 130));
-                                sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
-                                sp.getVerticalScrollBar().setUnitIncrement(16);
+                                scrSp.setBorder(new LineBorder(new Color(220, 226, 235)));
+                                scrSp.setPreferredSize(new Dimension(100, 130));
+                                scrSp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
+                                scrSp.getVerticalScrollBar().setUnitIncrement(16);
 
+                                // btnThemTc: Nút thao tác thêm TC.
                                 JButton btnThemTc = nut("+ Thêm thú cưng", new Color(15, 42, 68));
 
+                                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                                 btnThemTc.addActionListener(e -> themDongThuCung());
 
-                                them(body, Box.createVerticalStrut(14));
-                                them(body, muc("Thú cưng"));
-                                them(body, Box.createVerticalStrut(6));
-                                them(body, sp);
-                                them(body, Box.createVerticalStrut(6));
-                                them(body, btnThemTc);
+                                them(pnlBody, Box.createVerticalStrut(14));
+                                them(pnlBody, muc("Thú cưng"));
+                                them(pnlBody, Box.createVerticalStrut(6));
+                                them(pnlBody, scrSp);
+                                them(pnlBody, Box.createVerticalStrut(6));
+                                them(pnlBody, btnThemTc);
                         }
 
-                        JPanel top = new JPanel(new BorderLayout());
+                        // pnlTop2: Khung chứa thành phần giao diện trên.
+                        JPanel pnlTop2 = new JPanel(new BorderLayout());
 
-                        top.setOpaque(false);
-                        top.add(body, BorderLayout.NORTH);
+                        pnlTop2.setOpaque(false);
+                        pnlTop2.add(pnlBody, BorderLayout.NORTH);
 
                         // ---------------- nút ----------------
+                        // btnHuy: Nút thao tác hủy.
                         JButton btnHuy = nut("Hủy", new Color(138, 144, 153));
+                        // btnLuu: Nút thao tác lưu.
                         JButton btnLuu = nut(goc == null ? "Thêm mới" : "Lưu thay đổi", new Color(15, 42, 68));
 
+                        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                         btnHuy.addActionListener(e -> dispose());
+                        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                         btnLuu.addActionListener(e -> luu());
 
-                        JPanel hangNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+                        // pnlHangNut: Khung chứa thành phần giao diện hàng nút.
+                        JPanel pnlHangNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
 
-                        hangNut.setOpaque(false);
-                        hangNut.setBorder(new EmptyBorder(6, 40, 24, 40));
-                        hangNut.add(btnHuy);
-                        hangNut.add(btnLuu);
+                        pnlHangNut.setOpaque(false);
+                        pnlHangNut.setBorder(new EmptyBorder(6, 40, 24, 40));
+                        pnlHangNut.add(btnHuy);
+                        pnlHangNut.add(btnLuu);
 
-                        JPanel root = new JPanel(new BorderLayout());
+                        // pnlRoot: Khung chứa thành phần giao diện khung gốc.
+                        JPanel pnlRoot = new JPanel(new BorderLayout());
 
-                        root.setBackground(Color.WHITE);
-                        root.add(top, BorderLayout.CENTER);
-                        root.add(hangNut, BorderLayout.SOUTH);
+                        pnlRoot.setBackground(Color.WHITE);
+                        pnlRoot.add(pnlTop2, BorderLayout.CENTER);
+                        pnlRoot.add(pnlHangNut, BorderLayout.SOUTH);
 
-                        setContentPane(root);
+                        setContentPane(pnlRoot);
 
                         // ---- đổ dữ liệu khi sửa ----
                         if (goc != null) {
 
+                                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
                                 txtTen.setText(goc.getHoTen());
+                                // Cập nhật nội dung chữ hiển thị pnlTrong control bằng setText().
                                 txtSdt.setText(goc.getSoDienThoai());
                         }
                 }
 
+                // Kiểm tra dữ liệu đã được lưu.
+                // Kết quả: true/false theo điều kiện xử lý.
                 public boolean isDaLuu() {
 
                         return daLuu;
                 }
 
+                // Trả về mã bản ghi vừa lưu của đối tượng.
                 public String getMaDaLuu() {
 
                         return maDaLuu;
@@ -567,98 +687,133 @@ public class QuanLyKhachHang extends JPanel {
 
                 // ---------------- thành phần giao diện ----------------
 
+                // Tạo một cột gồm nhãn và trường nhập.
+                // Tham số nhan: nhãn.
+                // Tham số cmbC: cột/thành phần được xử lý.
+                // Kết quả: đối tượng/giá trị kiểu JPanel.
                 private static JPanel cot(String nhan, JComponent c) {
 
-                        JPanel p = new JPanel(new BorderLayout(0, 4));
+                        // pnlKhung2: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                        JPanel pnlKhung2 = new JPanel(new BorderLayout(0, 4));
 
-                        p.setOpaque(false);
+                        pnlKhung2.setOpaque(false);
 
-                        JLabel l = new JLabel(nhan);
+                        // lblNhan3: Nhãn dùng để hiển thị chữ hoặc giá trị trên giao diện.
+                        JLabel lblNhan3 = new JLabel(nhan);
 
-                        l.setFont(NHAN);
-                        l.setForeground(XAM);
+                        lblNhan3.setFont(NHAN);
+                        lblNhan3.setForeground(XAM);
 
-                        p.add(l, BorderLayout.NORTH);
-                        p.add(c, BorderLayout.CENTER);
+                        pnlKhung2.add(lblNhan3, BorderLayout.NORTH);
+                        pnlKhung2.add(c, BorderLayout.CENTER);
 
-                        return p;
+                        return pnlKhung2;
                 }
 
+                // Ghép hai thành phần thành một hàng hai cột.
+                // Tham số a: a.
+                // Tham số btnThaoTac2: btnThaoTac2.
+                // Kết quả: đối tượng/giá trị kiểu JPanel.
                 private static JPanel hai(JComponent a, JComponent b) {
 
-                        JPanel p = new JPanel(new GridLayout(1, 2, 20, 0));
+                        // pnlKhung2: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                        JPanel pnlKhung2 = new JPanel(new GridLayout(1, 2, 20, 0));
 
-                        p.setOpaque(false);
+                        pnlKhung2.setOpaque(false);
 
-                        p.add(a);
-                        p.add(b);
+                        pnlKhung2.add(a);
+                        pnlKhung2.add(b);
 
-                        return p;
+                        return pnlKhung2;
                 }
 
+                // Tạo nhãn tiêu đề cho một mục của biểu mẫu.
+                // Tham số text: nội dung chữ.
+                // Kết quả: đối tượng/giá trị kiểu JLabel.
                 private static JLabel muc(String text) {
 
-                        JLabel l = new JLabel(text);
+                        // lblNhan3: Nhãn dùng để hiển thị chữ hoặc giá trị trên giao diện.
+                        JLabel lblNhan3 = new JLabel(text);
 
-                        l.setFont(new Font("Segoe UI", Font.BOLD, 15));
-                        l.setForeground(new Color(20, 30, 45));
+                        lblNhan3.setFont(new Font("Segoe UI", Font.BOLD, 15));
+                        lblNhan3.setForeground(new Color(20, 30, 45));
 
-                        return l;
+                        return lblNhan3;
                 }
 
-                private static void kieu(JTextField t) {
+                // Áp dụng kiểu hiển thị chung cho ô nhập văn bản.
+                // Tham số txtVanBan: bảng/thành phần được xử lý.
+                private static void kieu(JTextField txtVanBan) {
 
-                        t.setFont(F14);
+                        txtVanBan.setFont(F14);
 
-                        t.setBorder(new CompoundBorder(
+                        txtVanBan.setBorder(new CompoundBorder(
                                         new LineBorder(VIEN, 1),
                                         new EmptyBorder(6, 10, 6, 10)));
 
-                        t.setPreferredSize(new Dimension(100, 36));
+                        txtVanBan.setPreferredSize(new Dimension(100, 36));
                 }
 
-                private static void kieuCbo(JComboBox<?> c) {
+                // Áp dụng kiểu hiển thị chung cho hộp lựa chọn.
+                // Tham số cmbC: cột/thành phần được xử lý.
+                private static void kieuCbo(JComboBox<?> cmbC) {
 
-                        c.setFont(F14);
-                        c.setBackground(Color.WHITE);
-                        c.setPreferredSize(new Dimension(100, 36));
+                        cmbC.setFont(F14);
+                        cmbC.setBackground(Color.WHITE);
+                        cmbC.setPreferredSize(new Dimension(100, 36));
                 }
 
+                // Tạo nút thao tác với nội dung và màu sắc được chỉ định.
+                // Tham số text: nội dung chữ.
+                // Tham số nen: màu nền.
+                // Kết quả: đối tượng/giá trị kiểu JButton.
                 private static JButton nut(String text, Color nen) {
 
-                        JButton b = new JButton(text);
+                        // btnThaoTac2: Nút nhận thao tác nhấn của người dùng.
+                        JButton btnThaoTac2 = new JButton(text);
 
-                        b.setFont(new Font("Segoe UI", Font.BOLD, 14));
-                        b.setForeground(Color.WHITE);
-                        b.setBackground(nen);
-                        b.setOpaque(true);
-                        b.setBorderPainted(false);
-                        b.setFocusPainted(false);
-                        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                        b.setPreferredSize(new Dimension(Math.max(110, b.getPreferredSize().width + 10), 38));
+                        btnThaoTac2.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                        btnThaoTac2.setForeground(Color.WHITE);
+                        btnThaoTac2.setBackground(nen);
+                        btnThaoTac2.setOpaque(true);
+                        btnThaoTac2.setBorderPainted(false);
+                        btnThaoTac2.setFocusPainted(false);
+                        btnThaoTac2.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                        btnThaoTac2.setPreferredSize(
+                                        new Dimension(Math.max(110, btnThaoTac2.getPreferredSize().width + 10), 38));
 
-                        return b;
+                        return btnThaoTac2;
                 }
 
-                private static void them(JPanel p, Component c) {
+                // Thêm thành phần vào khung giao diện và bố trí vị trí hiển thị.
+                // Tham số pnlKhung2: pnlKhung2.
+                // Tham số cmbC: cột/thành phần được xử lý.
+                private static void them(JPanel pnlKhung2, Component c) {
 
                         if (c instanceof JComponent) {
                                 ((JComponent) c).setAlignmentX(Component.LEFT_ALIGNMENT);
                         }
 
-                        p.add(c);
+                        pnlKhung2.add(c);
                 }
 
                 // ---------------- dòng thú cưng (chỉ khi thêm mới) ----------------
 
+                // Khung giao diện dành cho thú cưng dòng.
                 private class PetRow extends JPanel {
 
-                        final JTextField ten = new JTextField();
-                        final JTextField giong = new JTextField();
-                        final JTextField canNang = new JTextField();
-                        final JComboBox<String> loai = new JComboBox<>(LOAI);
-                        final JComboBox<String> gioiTinh = new JComboBox<>(GIOI_TINH);
+                        // txtTen2: Ô nhập/hiển thị văn bản tên.
+                        final JTextField txtTen2 = new JTextField();
+                        // txtGiong2: Ô nhập/hiển thị văn bản giống thú cưng.
+                        final JTextField txtGiong2 = new JTextField();
+                        // txtCanNang2: Ô nhập/hiển thị văn bản cân nặng.
+                        final JTextField txtCanNang2 = new JTextField();
+                        // cmbLoai: Hộp lựa chọn loài/loại.
+                        final JComboBox<String> cmbLoai = new JComboBox<>(LOAI);
+                        // cmbGioiTinh: Hộp lựa chọn giới tính.
+                        final JComboBox<String> cmbGioiTinh = new JComboBox<>(GIOI_TINH);
 
+                        // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
                         PetRow() {
 
                                 super(new GridLayout(1, 6, 8, 0));
@@ -669,63 +824,72 @@ public class QuanLyKhachHang extends JPanel {
 
                                 setBorder(new EmptyBorder(4, 6, 4, 6));
 
-                                kieu(ten);
-                                kieu(giong);
-                                kieu(canNang);
+                                kieu(txtTen2);
+                                kieu(txtGiong2);
+                                kieu(txtCanNang2);
 
-                                kieuCbo(loai);
-                                kieuCbo(gioiTinh);
+                                kieuCbo(cmbLoai);
+                                kieuCbo(cmbGioiTinh);
 
-                                JButton xoa = nut("Xóa", new Color(210, 70, 70));
+                                // btnXoa2: Nút thao tác xóa.
+                                JButton btnXoa2 = nut("Xóa", new Color(210, 70, 70));
 
-                                xoa.setPreferredSize(new Dimension(60, 36));
+                                btnXoa2.setPreferredSize(new Dimension(60, 36));
 
-                                xoa.addActionListener(e -> {
-                                        petsBox.remove(this);
+                                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+                                btnXoa2.addActionListener(e -> {
+                                        pnlPetsBox.remove(this);
                                         rows.remove(this);
-                                        petsBox.revalidate();
-                                        petsBox.repaint();
+                                        pnlPetsBox.revalidate();
+                                        pnlPetsBox.repaint();
                                 });
 
-                                JPanel xp = new JPanel(new BorderLayout(0, 4));
+                                // pnlXp: Khung dùng để nhóm và bố trí các thành phần giao diện.
+                                JPanel pnlXp = new JPanel(new BorderLayout(0, 4));
 
-                                xp.setOpaque(false);
+                                pnlXp.setOpaque(false);
 
-                                xp.add(new JLabel(" "), BorderLayout.NORTH);
-                                xp.add(xoa, BorderLayout.CENTER);
+                                pnlXp.add(new JLabel(" "), BorderLayout.NORTH);
+                                pnlXp.add(btnXoa2, BorderLayout.CENTER);
 
-                                add(cot("Tên: *", ten));
-                                add(cot("Loại:", loai));
-                                add(cot("Giống:", giong));
-                                add(cot("Giới tính:", gioiTinh));
-                                add(cot("Cân nặng (kg):", canNang));
-                                add(xp);
+                                add(cot("Tên: *", txtTen2));
+                                add(cot("Loại:", cmbLoai));
+                                add(cot("Giống:", txtGiong2));
+                                add(cot("Giới tính:", cmbGioiTinh));
+                                add(cot("Cân nặng (kg):", txtCanNang2));
+                                add(pnlXp);
                         }
                 }
 
+                // Thêm dòng thú cưng.
                 private void themDongThuCung() {
 
-                        PetRow r = new PetRow();
+                        PetRow pnlKhung3 = new PetRow();
 
-                        rows.add(r);
+                        rows.add(pnlKhung3);
 
-                        petsBox.add(r);
+                        pnlPetsBox.add(pnlKhung3);
 
-                        petsBox.revalidate();
-                        petsBox.repaint();
+                        pnlPetsBox.revalidate();
+                        pnlPetsBox.repaint();
                 }
 
                 // ---------------- lưu ----------------
 
+                // Hiển thị thông báo lỗi từ ngoại lệ nhận được.
+                // Tham số msg: thông báo.
                 private void loi(String msg) {
 
                         JOptionPane.showMessageDialog(this, msg, "Dữ liệu chưa hợp lệ",
                                         JOptionPane.WARNING_MESSAGE);
                 }
 
+                // Kiểm tra dữ liệu nhập và lưu thông tin của biểu mẫu.
                 private void luu() {
 
+                        // txtTen2: Đọc nội dung chữ từ ô nhập để xử lý tên.
                         String ten = txtTen.getText().trim();
+                        // sdt: Đọc nội dung chữ từ ô nhập để xử lý số điện thoại.
                         String sdt = txtSdt.getText().replaceAll("\\s", "");
 
                         if (ten.isEmpty() || ten.length() > 50) {
@@ -758,7 +922,8 @@ public class QuanLyKhachHang extends JPanel {
                                         return;
                                 }
 
-                                JOptionPane.showMessageDialog(this, "Đã cập nhật khách hàng " + goc.getMaKhachHang() + ".");
+                                JOptionPane.showMessageDialog(this,
+                                                "Đã cập nhật khách hàng " + goc.getMaKhachHang() + ".");
 
                                 daLuu = true;
                                 maDaLuu = goc.getMaKhachHang();
@@ -769,12 +934,15 @@ public class QuanLyKhachHang extends JPanel {
                         }
 
                         // ---------- THÊM ----------
+                        // pnlPets: Lưu thú cưng; phần tử có kiểu KhachHangDAO.ThuCungMoi.
                         ArrayList<KhachHangDAO.ThuCungMoi> pets = new ArrayList<>();
 
-                        for (PetRow r : rows) {
+                        for (PetRow pnlKhung3 : rows) {
 
-                                String tenTC = r.ten.getText().trim();
-                                String giong = r.giong.getText().trim();
+                                // tenTC: Đọc nội dung chữ từ ô nhập để xử lý tên TC.
+                                String tenTC = pnlKhung3.txtTen2.getText().trim();
+                                // txtGiong2: Đọc nội dung chữ từ ô nhập để xử lý giống thú cưng.
+                                String giong = pnlKhung3.txtGiong2.getText().trim();
 
                                 if (tenTC.isEmpty() || tenTC.length() > 50) {
                                         loi("Mỗi thú cưng cần có tên (bấm Xóa nếu không dùng).");
@@ -788,7 +956,8 @@ public class QuanLyKhachHang extends JPanel {
 
                                 Double kg = null;
 
-                                String s = r.canNang.getText().trim().replace(',', '.');
+                                // s: Đọc nội dung chữ từ ô nhập để xử lý chuỗi đầu vào.
+                                String s = pnlKhung3.txtCanNang2.getText().trim().replace(',', '.');
 
                                 if (!s.isEmpty()) {
 
@@ -805,10 +974,12 @@ public class QuanLyKhachHang extends JPanel {
                                         }
                                 }
 
-                                pets.add(new KhachHangDAO.ThuCungMoi(tenTC, (String) r.loai.getSelectedItem(),
-                                                giong, (String) r.gioiTinh.getSelectedItem(), kg));
+                                pets.add(new KhachHangDAO.ThuCungMoi(tenTC,
+                                                (String) pnlKhung3.cmbLoai.getSelectedItem(),
+                                                giong, (String) pnlKhung3.cmbGioiTinh.getSelectedItem(), kg));
                         }
 
+                        // ma: Lưu mã.
                         String ma = khachHangDAO.them(kh, pets);
 
                         if (ma == null) {

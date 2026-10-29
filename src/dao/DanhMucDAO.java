@@ -20,10 +20,15 @@ import java.util.Map;
 public class DanhMucDAO {
 
     // Lay danh muc kem so san pham, loc theo ma hoac ten
+    // Tìm kiểm.
+    // Tham số tuKhoa: từ khóa tìm kiếm.
+    // Kết quả: đối tượng/giá trị kiểu ArrayList<DanhMuc>.
     public ArrayList<DanhMuc> timKiem(String tuKhoa) throws SQLException {
 
+        // list: Danh sách chứa các phần tử kiểu DanhMuc.
         ArrayList<DanhMuc> list = new ArrayList<>();
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
                 SELECT dm.maDanhMuc,
                        dm.tenDanhMuc,
@@ -52,7 +57,9 @@ public class DanhMucDAO {
             ps.setString(1, kw);
             ps.setString(2, kw);
 
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
+                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (rs.next()) {
                     DanhMuc dm = new DanhMuc();
                     dm.setMaDanhMuc(rs.getString("maDanhMuc"));
@@ -68,12 +75,17 @@ public class DanhMucDAO {
         return list;
     }
 
+    // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
+    // Kết quả: đối tượng/giá trị kiểu ArrayList<DanhMuc>.
     public ArrayList<DanhMuc> getAll() throws SQLException {
         return timKiem("");
     }
 
+    // Đếm toàn bộ dữ liệu.
+    // Kết quả: giá trị số nguyên.
     public int demTatCa() throws SQLException {
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT COUNT(*) FROM DanhMuc";
 
         try (
@@ -85,13 +97,19 @@ public class DanhMucDAO {
         }
     }
 
+    // Lấy mã mới để hiển thị khi lập bản ghi.
+    // Kết quả: chuỗi kết quả.
     public String taoMaMoi() throws SQLException {
         return taoMa("DanhMuc", "maDanhMuc", "DM", 3);
     }
 
+    // Thêm dữ liệu danh mục trong cơ sở dữ liệu.
+    // Tham số dm: danh mục cần xử lý.
+    // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(DanhMuc dm) throws SQLException {
     PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
                 INSERT INTO DanhMuc (maDanhMuc, tenDanhMuc, moTa)
                 VALUES (?, ?, ?)
@@ -109,9 +127,13 @@ public class DanhMucDAO {
         }
     }
 
+    // Cập nhật dữ liệu danh mục trong cơ sở dữ liệu.
+    // Tham số dm: danh mục cần xử lý.
+    // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(DanhMuc dm) throws SQLException {
     PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
                 UPDATE DanhMuc
                 SET tenDanhMuc = ?,
@@ -137,6 +159,7 @@ public class DanhMucDAO {
      */
     public int[] demLienQuan(String maDanhMuc) throws SQLException {
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
                 SELECT (SELECT COUNT(*) FROM SanPham
                          WHERE maDanhMuc = ?),
@@ -159,6 +182,7 @@ public class DanhMucDAO {
                 ps.setString(i, maDanhMuc);
             }
 
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return new int[]{rs.getInt(1), rs.getInt(2),
@@ -170,12 +194,15 @@ public class DanhMucDAO {
     /** Chỉ xóa danh mục rỗng để không làm mất sản phẩm và lịch sử giao dịch. */
     public boolean xoa(String maDanhMuc) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection()) {
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
             try {
                 try (PreparedStatement check = con.prepareStatement(
                         "SELECT COUNT(*) FROM SanPham WHERE maDanhMuc=?")) {
                     check.setString(1, maDanhMuc);
+                    // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
                     try (ResultSet rs = check.executeQuery()) {
                         if (rs.next() && rs.getInt(1) > 0) {
                             throw new SQLException("Không thể xóa danh mục đang có sản phẩm. Hãy chuyển hoặc xóa sản phẩm trước.");
@@ -189,10 +216,12 @@ public class DanhMucDAO {
                     ok = ps.executeUpdate() > 0;
                 }
 
+                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
                 return ok;
 
             } catch (SQLException e) {
+                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
                 con.rollback();
                 throw e;
             }
@@ -206,8 +235,10 @@ public class DanhMucDAO {
     /** San pham thuoc 1 danh muc, kem ton kho hien tai. */
     public ArrayList<SanPham> timSanPhamTheoDanhMuc(String maDanhMuc) throws SQLException {
 
+        // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
 
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
                 SELECT sp.maSanPham,
                        sp.tenSanPham,
@@ -228,7 +259,9 @@ public class DanhMucDAO {
         ) {
             ps.setString(1, maDanhMuc);
 
+            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
+                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (rs.next()) {
                     SanPham sp = new SanPham();
                     sp.setMaSanPham(rs.getString("maSanPham"));
@@ -257,6 +290,7 @@ public class DanhMucDAO {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
         // Gom theo nha cung cap
+        // theoNcc: Bảng ánh xạ khóa đến giá trị dùng cho theo NCC.
         Map<String, List<Integer>> theoNcc = new LinkedHashMap<>();
 
         for (int i = 0; i < sanPham.size(); i++) {
@@ -270,12 +304,14 @@ public class DanhMucDAO {
             return;
         }
 
+        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sqlPhieu = """
                 INSERT INTO PhieuNhapKho
                 (maPhieuNhap, ngayNhap, trangThai, maNhanVien, maNhaCungCap)
                 VALUES (?, ?, 1, ?, ?)
                 """;
 
+        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuNhap
                 (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai)
@@ -286,13 +322,16 @@ public class DanhMucDAO {
         int so = Integer.parseInt(
                 taoMa("PhieuNhapKho", "maPhieuNhap", "PN", 3).substring(2));
 
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection()) {
 
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
 
             try {
                 for (Map.Entry<String, List<Integer>> e : theoNcc.entrySet()) {
 
+                    // maPhieu: Lưu mã phiếu.
                     String maPhieu = String.format("PN%03d", so++);
 
                     try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
@@ -315,9 +354,11 @@ public class DanhMucDAO {
                     }
                 }
 
+                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
 
             } catch (SQLException ex) {
+                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
                 con.rollback();
                 throw ex;
             }
@@ -325,6 +366,12 @@ public class DanhMucDAO {
     }
 
     // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co roi cong 1
+    // Tạo mã mới từ bảng, cột, tiền tố và số chữ số được yêu cầu.
+    // Tham số bang: bảng dữ liệu.
+    // Tham số cot: cột.
+    // Tham số tienTo: tiền tố mã.
+    // Tham số soChuSo: số chữ số của mã.
+    // Kết quả: chuỗi kết quả.
     private static String taoMa(String bang, String cot,
                                 String tienTo, int soChuSo) throws SQLException {
 
@@ -336,7 +383,9 @@ public class DanhMucDAO {
                     "SELECT " + cot + " FROM " + bang);
             ResultSet rs = ps.executeQuery()
         ) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
+                // ma: Lưu mã.
                 String ma = rs.getString(1);
 
                 if (ma != null && ma.startsWith(tienTo)) {

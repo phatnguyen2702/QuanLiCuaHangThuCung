@@ -14,84 +14,120 @@ import java.util.Set;
 
 /** Cảnh báo một dòng cho mỗi sản phẩm, dựa trên lô còn tồn gần hết hạn nhất. */
 public class CanhBaoHanSuDungPanel extends JPanel {
+    // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
             new String[]{"Mã SP", "Tên SP", "Danh mục", "Ngày nhập", "Hạn sử dụng", "Còn lại", "Trạng thái"}, 0) {
+        // Không cho phép sửa trực tiếp các ô trong bảng.
+        // Tham số row: chỉ số dòng.
+        // Tham số column: chỉ số cột.
+        // Kết quả: false, bảng chỉ dùng để xem.
         @Override public boolean isCellEditable(int row, int column) { return false; }
     };
-    private final JTable table = new JTable(model);
-    private final JComboBox<String> status = new JComboBox<>(new String[]{"Tất cả", "Đã hết hạn", "Sắp hết hạn (30 ngày)"});
-    private final JTextField search = new JTextField(18);
-    private final JLabel expiredCount = new JLabel("0");
-    private final JLabel soonCount = new JLabel("0");
-    private final JLabel totalCount = new JLabel("0");
+    // tblDuLieu: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
+    private final JTable tblDuLieu = new JTable(model);
+    // cmbStatus: Hộp lựa chọn trạng thái.
+    private final JComboBox<String> cmbStatus = new JComboBox<>(new String[]{"Tất cả", "Đã hết hạn", "Sắp hết hạn (30 ngày)"});
+    // txtSearch: Ô nhập/hiển thị văn bản tìm kiếm.
+    private final JTextField txtSearch = new JTextField(18);
+    // lblExpiredCount: Nhãn hiển thị: 0.
+    private final JLabel lblExpiredCount = new JLabel("0");
+    // lblSoonCount: Nhãn hiển thị: 0.
+    private final JLabel lblSoonCount = new JLabel("0");
+    // lblTotalCount: Nhãn hiển thị: 0.
+    private final JLabel lblTotalCount = new JLabel("0");
 
+    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public CanhBaoHanSuDungPanel() {
         setLayout(new BorderLayout(12, 12));
         setBackground(UIStyle.LIGHT_BLUE);
         setBorder(new EmptyBorder(22, 25, 22, 25));
 
-        JLabel title = new JLabel("Cảnh báo sản phẩm sắp hết hạn");
-        title.setFont(UIStyle.font(Font.BOLD, 24));
-        JButton refresh = UIStyle.nutChinh("Làm mới");
-        refresh.addActionListener(e -> napLai());
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-        header.add(title, BorderLayout.WEST);
-        header.add(refresh, BorderLayout.EAST);
+        // lblTitle2: Nhãn hiển thị: Cảnh báo sản phẩm sắp hết hạn.
+        JLabel lblTitle2 = new JLabel("Cảnh báo sản phẩm sắp hết hạn");
+        lblTitle2.setFont(UIStyle.font(Font.BOLD, 24));
+        // btnRefresh: Nút thao tác làm mới.
+        JButton btnRefresh = UIStyle.nutChinh("Làm mới");
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        btnRefresh.addActionListener(e -> napLai());
+        // pnlHeader2: Khung chứa thành phần giao diện đầu trang.
+        JPanel pnlHeader2 = new JPanel(new BorderLayout());
+        pnlHeader2.setOpaque(false);
+        pnlHeader2.add(lblTitle2, BorderLayout.WEST);
+        pnlHeader2.add(btnRefresh, BorderLayout.EAST);
 
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
-        filters.setOpaque(false);
-        filters.add(new JLabel("Trạng thái:"));
-        filters.add(status);
-        filters.add(new JLabel("Tên / mã sản phẩm:"));
-        filters.add(search);
-        JButton find = UIStyle.nutChinh("Tìm kiếm");
-        filters.add(find);
+        // pnlFilters: Khung chứa thành phần giao diện các bộ lọc.
+        JPanel pnlFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
+        pnlFilters.setOpaque(false);
+        pnlFilters.add(new JLabel("Trạng thái:"));
+        pnlFilters.add(cmbStatus);
+        pnlFilters.add(new JLabel("Tên / mã sản phẩm:"));
+        pnlFilters.add(txtSearch);
+        // btnFind: Nút thao tác tìm.
+        JButton btnFind = UIStyle.nutChinh("Tìm kiếm");
+        pnlFilters.add(btnFind);
 
-        JPanel stats = new JPanel(new GridLayout(1, 3, 14, 0));
-        stats.setOpaque(false);
-        stats.add(theThongKe("Đã hết hạn", expiredCount, new Color(255, 241, 243), new Color(240, 72, 92)));
-        stats.add(theThongKe("Sắp hết hạn (≤ 30 ngày)", soonCount, new Color(255, 249, 232), new Color(218, 145, 14)));
-        stats.add(theThongKe("Tổng số sản phẩm cần lưu ý", totalCount, new Color(237, 246, 255), new Color(31, 105, 181)));
+        // pnlStats: Khung chứa thành phần giao diện thống kê.
+        JPanel pnlStats = new JPanel(new GridLayout(1, 3, 14, 0));
+        pnlStats.setOpaque(false);
+        pnlStats.add(theThongKe("Đã hết hạn", lblExpiredCount, new Color(255, 241, 243), new Color(240, 72, 92)));
+        pnlStats.add(theThongKe("Sắp hết hạn (≤ 30 ngày)", lblSoonCount, new Color(255, 249, 232), new Color(218, 145, 14)));
+        pnlStats.add(theThongKe("Tổng số sản phẩm cần lưu ý", lblTotalCount, new Color(237, 246, 255), new Color(31, 105, 181)));
 
-        JPanel north = new JPanel();
-        north.setOpaque(false);
-        north.setLayout(new BoxLayout(north, BoxLayout.Y_AXIS));
-        north.add(header);
-        north.add(Box.createVerticalStrut(12));
-        north.add(filters);
-        north.add(Box.createVerticalStrut(10));
-        north.add(stats);
-        add(north, BorderLayout.NORTH);
+        // pnlNorth: Khung chứa thành phần giao diện phía trên.
+        JPanel pnlNorth = new JPanel();
+        pnlNorth.setOpaque(false);
+        pnlNorth.setLayout(new BoxLayout(pnlNorth, BoxLayout.Y_AXIS));
+        pnlNorth.add(pnlHeader2);
+        pnlNorth.add(Box.createVerticalStrut(12));
+        pnlNorth.add(pnlFilters);
+        pnlNorth.add(Box.createVerticalStrut(10));
+        pnlNorth.add(pnlStats);
+        add(pnlNorth, BorderLayout.NORTH);
 
-        UIStyle.taoBang(table, 1, 2, 3);
-        add(UIStyle.cuon(table), BorderLayout.CENTER);
-        find.addActionListener(e -> napLai());
-        search.addActionListener(e -> napLai());
-        status.addActionListener(e -> napLai());
+        UIStyle.taoBang(tblDuLieu, 1, 2, 3);
+        add(UIStyle.cuon(tblDuLieu), BorderLayout.CENTER);
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        btnFind.addActionListener(e -> napLai());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        txtSearch.addActionListener(e -> napLai());
+        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        cmbStatus.addActionListener(e -> napLai());
         napLai();
     }
 
-    private JPanel theThongKe(String title, JLabel value, Color background, Color accent) {
-        JPanel card = new JPanel(new BorderLayout(0, 8));
-        card.setBackground(background);
-        card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(accent.brighter()), new EmptyBorder(12, 15, 12, 15)));
-        JLabel caption = new JLabel(title);
-        caption.setForeground(accent.darker());
-        caption.setFont(UIStyle.font(Font.BOLD, 12));
-        value.setForeground(accent.darker());
-        value.setFont(UIStyle.font(Font.BOLD, 24));
-        card.add(caption, BorderLayout.NORTH);
-        card.add(value, BorderLayout.CENTER);
-        return card;
+    // Tạo thẻ hiển thị tiêu đề và giá trị thống kê.
+    // Tham số lblTitle2: tiêu đề.
+    // Tham số lblValue: giá trị.
+    // Tham số background: màu nền.
+    // Tham số accent: màu nhấn.
+    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    private JPanel theThongKe(String title, JLabel lblValue, Color background, Color accent) {
+        // pnlCard: Khung chứa thành phần giao diện thẻ.
+        JPanel pnlCard = new JPanel(new BorderLayout(0, 8));
+        pnlCard.setBackground(background);
+        pnlCard.setBorder(BorderFactory.createCompoundBorder(new LineBorder(accent.brighter()), new EmptyBorder(12, 15, 12, 15)));
+        // lblCaption: Nhãn hiển thị chú thích.
+        JLabel lblCaption = new JLabel(title);
+        lblCaption.setForeground(accent.darker());
+        lblCaption.setFont(UIStyle.font(Font.BOLD, 12));
+        lblValue.setForeground(accent.darker());
+        lblValue.setFont(UIStyle.font(Font.BOLD, 24));
+        pnlCard.add(lblCaption, BorderLayout.NORTH);
+        pnlCard.add(lblValue, BorderLayout.CENTER);
+        return pnlCard;
     }
 
+    // Nạp lại dữ liệu và cập nhật nội dung màn hình.
     public void napLai() {
         model.setRowCount(0);
+        // expired: Lưu hết hạn; phần tử có kiểu String.
         Set<String> expired = new HashSet<>();
+        // soon: Lưu sắp đến; phần tử có kiểu String.
         Set<String> soon = new HashSet<>();
-        String keyword = search.getText().trim().toLowerCase();
-        String selectedStatus = (String) status.getSelectedItem();
+        // keyword: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
+        String keyword = txtSearch.getText().trim().toLowerCase();
+        String selectedStatus = (String) cmbStatus.getSelectedItem();
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = """
             WITH Lots AS (
               SELECT ct.maSanPham, sp.tenSanPham, dm.tenDanhMuc, pn.maPhieuNhap,
@@ -127,6 +163,7 @@ public class CanhBaoHanSuDungPanel extends JPanel {
             ORDER BY hanSuDung, tenSanPham
             """;
 
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection connection = connectDB.getConnection(); Statement migration = connection.createStatement()) {
             migration.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
         } catch (SQLException ex) {
@@ -134,14 +171,17 @@ public class CanhBaoHanSuDungPanel extends JPanel {
             return;
         }
 
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection connection = connectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet result = statement.executeQuery()) {
+            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (result.next()) {
                 int days = result.getInt("ngayCon");
                 int quantity = result.getInt("conLai");
                 if (quantity <= 0) continue;
                 String code = result.getString("maSanPham");
+                // name: Lưu tên.
                 String name = result.getString("tenSanPham");
                 boolean isExpired = days < 0;
                 (isExpired ? expired : soon).add(code);
@@ -151,16 +191,23 @@ public class CanhBaoHanSuDungPanel extends JPanel {
                 model.addRow(new Object[]{code, name, result.getString("tenDanhMuc"), result.getDate("ngayNhap"),
                         result.getDate("hanSuDung"), quantity, isExpired ? "Đã hết hạn" : "Sắp hết hạn · " + days + " ngày"});
             }
-            expiredCount.setText(String.valueOf(expired.size()));
-            soonCount.setText(String.valueOf(soon.size()));
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
+            lblExpiredCount.setText(String.valueOf(expired.size()));
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
+            lblSoonCount.setText(String.valueOf(soon.size()));
+            // all: Lưu tất cả; phần tử có kiểu String.
             Set<String> all = new HashSet<>(expired);
             all.addAll(soon);
-            totalCount.setText(String.valueOf(all.size()));
+            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
+            lblTotalCount.setText(String.valueOf(all.size()));
         } catch (SQLException ex) {
             showError("Không tải được dữ liệu cảnh báo", ex);
         }
     }
 
+    // Hiển thị lỗi.
+    // Tham số lblTitle2: tiêu đề.
+    // Tham số ex: ngoại lệ cần xử lý.
     private void showError(String title, SQLException ex) {
         JOptionPane.showMessageDialog(this, title + ".\n" + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
