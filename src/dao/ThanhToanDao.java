@@ -84,6 +84,24 @@ public class ThanhToanDao {
         return ds;
     }
 
+    // Lấy danh sách khách hàng để hiển thị gợi ý mã và họ tên.
+    public List<ThanhToan.KhachHang> layDanhSachKhachHang() throws SQLException {
+        List<ThanhToan.KhachHang> ds = new ArrayList<>();
+        String sql = "SELECT maKhachHang, hoTen, soDienThoai "
+                + "FROM KhachHang ORDER BY maKhachHang";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ds.add(new ThanhToan.KhachHang(
+                        rs.getString("maKhachHang"),
+                        rs.getString("hoTen"),
+                        rs.getString("soDienThoai")));
+            }
+        }
+        return ds;
+    }
+
     // Tìm mặt hàng.
     // Tham số tuKhoa: từ khóa tìm kiếm.
     // Kết quả: đối tượng/giá trị kiểu List<ThanhToan>.
@@ -226,6 +244,32 @@ public class ThanhToanDao {
                         rs.getString("dieuKien"));
             }
         }
+    }
+
+    // Lấy danh sách voucher đang hoạt động để hiển thị gợi ý.
+    public List<ThanhToan.Voucher> layDanhSachVoucher() throws SQLException {
+        List<ThanhToan.Voucher> ds = new ArrayList<>();
+        String sql = "SELECT maVoucher, tenVoucher, phanTramGiam, dieuKien "
+                + "FROM Vocher WHERE trangThai = 1 ORDER BY maVoucher";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                BigDecimal phanTramGiam = rs.getBigDecimal("phanTramGiam");
+                if (phanTramGiam == null
+                        || phanTramGiam.signum() < 0
+                        || phanTramGiam.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    throw new SQLException("Phần trăm giảm của voucher "
+                            + rs.getString("maVoucher") + " không hợp lệ.");
+                }
+                ds.add(new ThanhToan.Voucher(
+                        rs.getString("maVoucher"),
+                        rs.getString("tenVoucher"),
+                        phanTramGiam,
+                        rs.getString("dieuKien")));
+            }
+        }
+        return ds;
     }
 
     // Kiểm tra khách hàng đã có thẻ thành viên hay chưa.
