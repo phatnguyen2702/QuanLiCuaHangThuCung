@@ -87,12 +87,14 @@ public class QuanLyThanhToan extends JPanel {
     private final Runnable capNhatPhieuDichVu;
     // chiTiet: Lưu chi tiết; phần tử có kiểu entity.ThanhToan.
     private final List<entity.ThanhToan> chiTiet = UI.PhienLamViec.gioHang();
-    // danhSachMaKhachHang: Lưu danh sách mã khách hàng; phần tử có kiểu String.
-    private final List<String> danhSachMaKhachHang = new ArrayList<>();
+    // danhSachKhachHang: Lưu danh sách khách hàng dùng để gợi ý.
+    private final List<entity.ThanhToan.KhachHang> danhSachKhachHang = new ArrayList<>();
     // danhSachMaSanPham: Lưu danh sách mã sản phẩm; phần tử có kiểu String.
     private final List<String> danhSachMaSanPham = new ArrayList<>();
     // tenSanPhamTheoMa: Bảng ánh xạ khóa đến giá trị dùng cho ánh xạ mã sản phẩm đến tên sản phẩm.
     private final Map<String, String> tenSanPhamTheoMa = new LinkedHashMap<>();
+    // danhSachVoucher: Danh sách voucher đang hoạt động.
+    private final List<entity.ThanhToan.Voucher> danhSachVoucher = new ArrayList<>();
     // maPhieuDichVuTrongDonHang: Lưu các mã phiếu dịch vụ trong đơn hàng; phần tử có kiểu String.
     private final List<String> maPhieuDichVuTrongDonHang = new ArrayList<>();
     // dichVuTuPhieuDaThem: Lưu các dòng dịch vụ được thêm từ phiếu; phần tử có kiểu entity.ThanhToan.
@@ -112,8 +114,8 @@ public class QuanLyThanhToan extends JPanel {
     private final JTextField txtKhachHangTomTat = new JTextField();
     // cmbMaSanPham: Hộp lựa chọn mã sản phẩm.
     private final JComboBox<String> cmbMaSanPham = new JComboBox<>();
-    // txtVoucher: Ô nhập/hiển thị văn bản voucher.
-    private final JTextField txtVoucher = new JTextField(12);
+    // cmbVoucher: Hộp gợi ý mã voucher.
+    private final JComboBox<String> cmbVoucher = new JComboBox<>();
     // txtTienKhachDua: Ô nhập/hiển thị văn bản số tiền khách đưa.
     private final JTextField txtTienKhachDua = new JTextField();
     // txtNgayLap: Ô nhập/hiển thị văn bản ngày giờ lập hóa đơn.
@@ -141,6 +143,8 @@ public class QuanLyThanhToan extends JPanel {
     private boolean dangCapNhatGoiYMaKhachHang;
     // dangCapNhatGoiYMaSanPham: Cờ cho biết đang cập nhật gợi ý mã sản phẩm.
     private boolean dangCapNhatGoiYMaSanPham;
+    // dangCapNhatGoiYVoucher: Cờ cho biết đang cập nhật gợi ý voucher.
+    private boolean dangCapNhatGoiYVoucher;
     // phuongThucHienTai: Đối tượng phương thức thanh toán hiện tại có kiểu entity.ThanhToan.PhuongThuc.
     private entity.ThanhToan.PhuongThuc phuongThucHienTai;
     // voucher: Đối tượng voucher có kiểu entity.ThanhToan.Voucher.
@@ -171,6 +175,7 @@ public class QuanLyThanhToan extends JPanel {
         add(createBody(), BorderLayout.CENTER);
         napDanhSachMaKhachHang();
         napDanhSachMaSanPham();
+        napDanhSachVoucher();
         napPhuongThucThanhToan();
         capNhatTien();
     }
@@ -458,7 +463,30 @@ public class QuanLyThanhToan extends JPanel {
         // pnlVoucherRow: Khung chứa thành phần giao diện voucher dòng.
         JPanel pnlVoucherRow = new JPanel(new BorderLayout(5, 0));
         pnlVoucherRow.setOpaque(false);
-        pnlVoucherRow.add(txtVoucher, BorderLayout.CENTER);
+        cmbVoucher.setEditable(true);
+        cmbVoucher.setToolTipText("Nhập mã hoặc tên voucher");
+        Component voucherEditor = cmbVoucher.getEditor().getEditorComponent();
+        if (voucherEditor instanceof JTextField) {
+            JTextField txtVoucher = (JTextField) voucherEditor;
+            txtVoucher.addActionListener(e -> apDungVoucher());
+            txtVoucher.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    capNhatGoiYVoucher();
+                }
+
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    capNhatGoiYVoucher();
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    capNhatGoiYVoucher();
+                }
+            });
+        }
+        pnlVoucherRow.add(cmbVoucher, BorderLayout.CENTER);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnApDungVoucher.addActionListener(e -> apDungVoucher());
         // pnlVoucherActions: Khung chứa thành phần giao diện voucher thao tác.
@@ -679,14 +707,40 @@ public class QuanLyThanhToan extends JPanel {
     // Nạp danh sách mã khách hàng.
     private void napDanhSachMaKhachHang() {
         try {
-            danhSachMaKhachHang.clear();
-            danhSachMaKhachHang.addAll(dao.layDanhSachMaKhachHang());
-            for (String ma : danhSachMaKhachHang) {
-                cmbMaKhachHang.addItem(ma);
+            danhSachKhachHang.clear();
+            danhSachKhachHang.addAll(dao.layDanhSachKhachHang());
+            String maDaiNhat = "KH000000";
+            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
+                cmbMaKhachHang.addItem(taoGoiYKhachHang(khachHang));
+                if (khachHang.getMaKhachHang().length() > maDaiNhat.length()) {
+                    maDaiNhat = khachHang.getMaKhachHang();
+                }
             }
+            cmbMaKhachHang.setPrototypeDisplayValue(maDaiNhat);
+            cmbMaKhachHang.setPreferredSize(cmbMaKhachHang.getPreferredSize());
             cmbMaKhachHang.setSelectedItem("");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             hienLoi("Không tải được danh sách mã khách hàng: " + e.getMessage());
+        }
+    }
+
+    // Nạp danh sách voucher đang hoạt động.
+    private void napDanhSachVoucher() {
+        try {
+            danhSachVoucher.clear();
+            danhSachVoucher.addAll(dao.layDanhSachVoucher());
+            String maDaiNhat = "VOUCHER000";
+            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
+                cmbVoucher.addItem(taoGoiYVoucher(item));
+                if (item.getMaVoucher().length() > maDaiNhat.length()) {
+                    maDaiNhat = item.getMaVoucher();
+                }
+            }
+            cmbVoucher.setPrototypeDisplayValue(maDaiNhat);
+            cmbVoucher.setPreferredSize(cmbVoucher.getPreferredSize());
+            cmbVoucher.setSelectedItem("");
+        } catch (SQLException e) {
+            hienLoi("Không tải được danh sách voucher: " + e.getMessage());
         }
     }
 
@@ -708,11 +762,21 @@ public class QuanLyThanhToan extends JPanel {
             JTextField txtEditor = (JTextField) editorComponent;
             // tuKhoa: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
             String tuKhoa = txtEditor.getText();
+            String maTimKiem = layMaKhachHangTuGoiY(tuKhoa);
             // goiY: Lưu gợi y; phần tử có kiểu String.
             List<String> goiY = new ArrayList<>();
-            for (String ma : danhSachMaKhachHang) {
-                if (maCoChuaTatCaKyTu(ma, tuKhoa.toLowerCase(Locale.ROOT))) {
-                    goiY.add(ma);
+            String tuKhoaDaChuanHoa = maTimKiem.toLowerCase(Locale.ROOT);
+            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
+                if (maCoChuaTatCaKyTu(
+                        khachHang.getMaKhachHang(), tuKhoaDaChuanHoa)) {
+                    goiY.add(taoGoiYKhachHang(khachHang));
+                }
+            }
+            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
+                if (khachHang.getMaKhachHang().equalsIgnoreCase(maTimKiem)) {
+                    goiY.clear();
+                    goiY.add(taoGoiYKhachHang(khachHang));
+                    break;
                 }
             }
 
@@ -732,13 +796,39 @@ public class QuanLyThanhToan extends JPanel {
                 dangCapNhatGoiYMaKhachHang = false;
             }
 
-            if (!tuKhoa.isEmpty() && !goiY.isEmpty()
-                    && !(goiY.size() == 1 && goiY.get(0).equalsIgnoreCase(tuKhoa))) {
+            boolean daChonGoiY = danhSachKhachHang.stream().anyMatch(khachHang ->
+                    khachHang.getMaKhachHang().equalsIgnoreCase(maTimKiem)
+                    && tuKhoa.equals(taoGoiYKhachHang(khachHang)));
+            if (!maTimKiem.isEmpty() && !goiY.isEmpty()
+                    && !daChonGoiY) {
                 cmbMaKhachHang.showPopup();
             } else if (cmbMaKhachHang.isPopupVisible()) {
                 cmbMaKhachHang.hidePopup();
             }
         });
+    }
+
+    // Tạo gợi ý khách hàng gồm mã và họ tên.
+    private String taoGoiYKhachHang(entity.ThanhToan.KhachHang khachHang) {
+        String ten = khachHang.getHoTen();
+        return ten == null || ten.isBlank()
+                ? khachHang.getMaKhachHang()
+                : khachHang.getMaKhachHang() + " - " + ten;
+    }
+
+    // Lấy mã khách hàng từ nội dung ô nhập hoặc gợi ý đã chọn.
+    private String layMaKhachHangTuGoiY(String tuKhoa) {
+        int separator = tuKhoa.indexOf(" - ");
+        if (separator > 0) {
+            String ma = tuKhoa.substring(0, separator);
+            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
+                if (khachHang.getMaKhachHang().equalsIgnoreCase(ma)
+                        && tuKhoa.equals(taoGoiYKhachHang(khachHang))) {
+                    return ma;
+                }
+            }
+        }
+        return tuKhoa.trim();
     }
 
     // Cập nhật gợi y mã sản phẩm.
@@ -794,6 +884,93 @@ public class QuanLyThanhToan extends JPanel {
                 cmbMaSanPham.hidePopup();
             }
         });
+    }
+
+    // Cập nhật gợi ý voucher.
+    private void capNhatGoiYVoucher() {
+        if (dangCapNhatGoiYVoucher) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> {
+            if (dangCapNhatGoiYVoucher) {
+                return;
+            }
+
+            Component editorComponent = cmbVoucher.getEditor().getEditorComponent();
+            if (!(editorComponent instanceof JTextField)) {
+                return;
+            }
+            JTextField txtEditor = (JTextField) editorComponent;
+            String tuKhoa = txtEditor.getText();
+            String maTimKiem = layMaVoucherTuGoiY(tuKhoa);
+            String tuKhoaDaChuanHoa = maTimKiem.toLowerCase(Locale.ROOT);
+            List<entity.ThanhToan.Voucher> goiY = new ArrayList<>();
+            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
+                if (maCoChuaTatCaKyTu(
+                        item.getMaVoucher(), tuKhoaDaChuanHoa)) {
+                    goiY.add(item);
+                }
+            }
+            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
+                if (item.getMaVoucher().equalsIgnoreCase(maTimKiem)) {
+                    goiY.clear();
+                    goiY.add(item);
+                    break;
+                }
+            }
+
+            int viTriConTro = txtEditor.getCaretPosition();
+            dangCapNhatGoiYVoucher = true;
+            try {
+                DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+                for (entity.ThanhToan.Voucher item : goiY) {
+                    model.addElement(taoGoiYVoucher(item));
+                }
+                cmbVoucher.setModel(model);
+                cmbVoucher.setSelectedItem(tuKhoa);
+                txtEditor.setText(tuKhoa);
+                txtEditor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
+            } finally {
+                dangCapNhatGoiYVoucher = false;
+            }
+
+            boolean daChonGoiY = danhSachVoucher.stream().anyMatch(item ->
+                    item.getMaVoucher().equalsIgnoreCase(maTimKiem)
+                    && tuKhoa.equals(taoGoiYVoucher(item)));
+            if (!maTimKiem.isEmpty() && !goiY.isEmpty() && !daChonGoiY) {
+                cmbVoucher.showPopup();
+            } else if (cmbVoucher.isPopupVisible()) {
+                cmbVoucher.hidePopup();
+            }
+        });
+    }
+
+    // Tạo gợi ý voucher gồm mã và tên.
+    private String taoGoiYVoucher(entity.ThanhToan.Voucher item) {
+        String ten = item.getTenVoucher();
+        return ten == null || ten.isBlank()
+                ? item.getMaVoucher() : item.getMaVoucher() + " - " + ten;
+    }
+
+    // Lấy mã voucher từ nội dung ô nhập hoặc gợi ý đã chọn.
+    private String layMaVoucherTuGoiY(String tuKhoa) {
+        int separator = tuKhoa.indexOf(" - ");
+        if (separator > 0) {
+            String ma = tuKhoa.substring(0, separator);
+            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
+                if (item.getMaVoucher().equalsIgnoreCase(ma)
+                        && tuKhoa.equals(taoGoiYVoucher(item))) {
+                    return ma;
+                }
+            }
+        }
+        return tuKhoa.trim();
+    }
+
+    // Lấy mã voucher đã nhập hoặc đã chọn.
+    private String layMaVoucherNhap() {
+        Object item = cmbVoucher.getEditor().getItem();
+        return item == null ? "" : layMaVoucherTuGoiY(item.toString());
     }
 
     // Tạo gợi y sản phẩm.
@@ -912,7 +1089,7 @@ public class QuanLyThanhToan extends JPanel {
     // Kết quả: chuỗi kết quả.
     private String layMaKhachHangNhap() {
         Object item = cmbMaKhachHang.getEditor().getItem();
-        return item == null ? "" : item.toString().trim();
+        return item == null ? "" : layMaKhachHangTuGoiY(item.toString());
     }
 
     // Mở chọn sản phẩm.
@@ -1042,7 +1219,7 @@ public class QuanLyThanhToan extends JPanel {
             dichVuTuPhieuDaThem.clear();
             voucher = null;
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-            txtVoucher.setText("");
+            cmbVoucher.getEditor().setItem("");
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             txtTienKhachDua.setText("");
             capNhatTien();
@@ -1052,7 +1229,7 @@ public class QuanLyThanhToan extends JPanel {
     // Áp dụng voucher.
     private void apDungVoucher() {
         // ma: Đọc nội dung chữ từ ô nhập để xử lý mã.
-        String ma = txtVoucher.getText().trim();
+        String ma = layMaVoucherNhap();
         if (ma.isEmpty()) {
             voucher = null;
             capNhatTien();
@@ -1191,7 +1368,7 @@ public class QuanLyThanhToan extends JPanel {
             txtKhachHangTomTat.setText("");
             voucher = null;
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-            txtVoucher.setText("");
+            cmbVoucher.getEditor().setItem("");
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             txtTienKhachDua.setText("");
             ngayLap = LocalDateTime.now();
