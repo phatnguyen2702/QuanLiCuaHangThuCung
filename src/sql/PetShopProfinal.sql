@@ -590,11 +590,11 @@ GO
 -- ===============================================================
 -- PET SHOP PRO - BO SUNG DU LIEU MAU CHO DATABASE HIEN CO
 -- Duoc tao tu: QuanLiCuaHangThuCung(8).zip / PetShopPro_final.sql
--- 12 dong cho 22 bang nghiep vu; bang BoDemHoaDon giu 1 dong.
+-- Bo sung du lieu mau cho cac bang nghiep vu, NGOAI TRU LichHen va ChiTietLichHen; bang BoDemHoaDon giu 1 dong.
 -- Idempotent: chay lai khong chen trung theo khoa mau.
 -- KHONG DROP TABLE / KHONG DELETE / KHONG UPDATE du lieu nghiep vu cu.
 -- TEST DATA ONLY: nhan vien moi co mat khau mau Demo@2026.
--- Lich Spa tuong lai duoc tinh theo ngay chay SQL Server.
+-- Khong them lich Spa mau tuong lai.
 -- ===============================================================
 USE [00];
 GO
@@ -1025,81 +1025,8 @@ BEGIN TRY
     ) AS v([maPhanCa], [ngayLamViec], [maNhanVien], [maCa])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.LichPhanCa AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhanCa] = v.[maPhanCa]);
 
-    -- LichHen : 12 ban ghi
-    IF EXISTS (SELECT 1 FROM dbo.LichHen AS d
-        INNER JOIN (VALUES
-            ('LH005', 'NV013', 'KH006', 'TC006'),
-            ('LH006', 'NV014', 'KH007', 'TC007'),
-            ('LH007', 'NV015', 'KH008', 'TC008'),
-            ('LH008', 'NV016', 'KH009', 'TC009'),
-            ('LH009', 'NV013', 'KH010', 'TC010'),
-            ('LH010', 'NV014', 'KH011', 'TC011'),
-            ('LH011', 'NV015', 'KH012', 'TC012'),
-            ('LH012', 'NV016', 'KH013', 'TC013'),
-            ('LH013', 'NV013', 'KH014', 'TC014'),
-            ('LH014', 'NV014', 'KH015', 'TC015'),
-            ('LH015', 'NV015', 'KH016', 'TC016'),
-            ('LH016', 'NV016', 'KH017', 'TC017')
-        ) AS v([maLichHen], [maNhanVien], [maKhachHang], [maThuCung])
-        ON d.[maLichHen] = v.[maLichHen]
-        WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maKhachHang]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maKhachHang]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maThuCung]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maThuCung]), N'')))
-        THROW 51044, N'Ma du lieu mau o bang LichHen da duoc dung cho thong tin khac. Khong chen de tranh sai lien ket.', 1;
-
-    INSERT INTO dbo.LichHen ([maLichHen], [ngayGioHen], [ghiChu], [trangThai], [maKhachHang], [maNhanVien], [maThuCung])
-    SELECT v.[maLichHen], v.[ngayGioHen], v.[ghiChu], v.[trangThai], v.[maKhachHang], v.[maNhanVien], v.[maThuCung]
-    FROM (VALUES
-        ('LH005', DATEADD(MINUTE, 600, DATEADD(DAY, 2, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 005', N'Xác nhận', 'KH006', 'NV013', 'TC006'),
-        ('LH006', DATEADD(MINUTE, 840, DATEADD(DAY, 3, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 006', N'Xác nhận', 'KH007', 'NV014', 'TC007'),
-        ('LH007', DATEADD(MINUTE, 1020, DATEADD(DAY, 4, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 007', N'Xác nhận', 'KH008', 'NV015', 'TC008'),
-        ('LH008', DATEADD(MINUTE, 600, DATEADD(DAY, 5, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 008', N'Xác nhận', 'KH009', 'NV016', 'TC009'),
-        ('LH009', DATEADD(MINUTE, 840, DATEADD(DAY, 6, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 009', N'Xác nhận', 'KH010', 'NV013', 'TC010'),
-        ('LH010', DATEADD(MINUTE, 1020, DATEADD(DAY, 7, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 010', N'Xác nhận', 'KH011', 'NV014', 'TC011'),
-        ('LH011', DATEADD(MINUTE, 600, DATEADD(DAY, 8, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 011', N'Xác nhận', 'KH012', 'NV015', 'TC012'),
-        ('LH012', DATEADD(MINUTE, 840, DATEADD(DAY, 9, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 012', N'Xác nhận', 'KH013', 'NV016', 'TC013'),
-        ('LH013', DATEADD(MINUTE, 1020, DATEADD(DAY, 10, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 013', N'Xác nhận', 'KH014', 'NV013', 'TC014'),
-        ('LH014', DATEADD(MINUTE, 600, DATEADD(DAY, 11, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 014', N'Xác nhận', 'KH015', 'NV014', 'TC015'),
-        ('LH015', DATEADD(MINUTE, 840, DATEADD(DAY, 12, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 015', N'Xác nhận', 'KH016', 'NV015', 'TC016'),
-        ('LH016', DATEADD(MINUTE, 1020, DATEADD(DAY, 13, CAST(CAST(GETDATE() AS date) AS datetime2))), N'Lịch Spa mẫu 016', N'Xác nhận', 'KH017', 'NV016', 'TC017')
-    ) AS v([maLichHen], [ngayGioHen], [ghiChu], [trangThai], [maKhachHang], [maNhanVien], [maThuCung])
-    WHERE NOT EXISTS (SELECT 1 FROM dbo.LichHen AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maLichHen] = v.[maLichHen]);
-
-    -- ChiTietLichHen : 12 ban ghi
-    IF EXISTS (SELECT 1 FROM dbo.ChiTietLichHen AS d
-        INNER JOIN (VALUES
-            ('LH005', 'DV006', 'NV013'),
-            ('LH006', 'DV007', 'NV014'),
-            ('LH007', 'DV008', 'NV015'),
-            ('LH008', 'DV009', 'NV016'),
-            ('LH009', 'DV010', 'NV013'),
-            ('LH010', 'DV011', 'NV014'),
-            ('LH011', 'DV012', 'NV015'),
-            ('LH012', 'DV013', 'NV016'),
-            ('LH013', 'DV014', 'NV013'),
-            ('LH014', 'DV015', 'NV014'),
-            ('LH015', 'DV016', 'NV015'),
-            ('LH016', 'DV017', 'NV016')
-        ) AS v([maLichHen], [maDichVu], [maNhanVien])
-        ON d.[maLichHen] = v.[maLichHen] AND d.[maDichVu] = v.[maDichVu]
-        WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')))
-        THROW 51044, N'Ma du lieu mau o bang ChiTietLichHen da duoc dung cho thong tin khac. Khong chen de tranh sai lien ket.', 1;
-
-    INSERT INTO dbo.ChiTietLichHen ([maLichHen], [maDichVu], [maNhanVien], [ghiChu])
-    SELECT v.[maLichHen], v.[maDichVu], v.[maNhanVien], v.[ghiChu]
-    FROM (VALUES
-        ('LH005', 'DV006', 'NV013', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH006', 'DV007', 'NV014', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH007', 'DV008', 'NV015', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH008', 'DV009', 'NV016', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH009', 'DV010', 'NV013', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH010', 'DV011', 'NV014', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH011', 'DV012', 'NV015', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH012', 'DV013', 'NV016', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH013', 'DV014', 'NV013', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH014', 'DV015', 'NV014', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH015', 'DV016', 'NV015', N'Dịch vụ theo lịch hẹn mẫu'),
-        ('LH016', 'DV017', 'NV016', N'Dịch vụ theo lịch hẹn mẫu')
-    ) AS v([maLichHen], [maDichVu], [maNhanVien], [ghiChu])
-    WHERE NOT EXISTS (SELECT 1 FROM dbo.ChiTietLichHen AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maLichHen] = v.[maLichHen] AND d.[maDichVu] = v.[maDichVu]);
+    -- KHONG tao 12 lich Spa mau (LH005-LH016) va chi tiet lich hen mau.
+    -- Lich Hen thuc te duoc tao tu chuc nang Quan ly lich hen.
 
     -- PhieuDichVu : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.PhieuDichVu AS d
