@@ -7,7 +7,6 @@ import dao.TaiKhoanDAO;
 import entity.TaiKhoan;
 
 import java.awt.*;
-import java.text.Normalizer;
 
 // Giao diện/chức năng đăng nhập của ứng dụng.
 public class DangNhap extends JFrame {
@@ -47,36 +46,6 @@ public class DangNhap extends JFrame {
                 add(pnlMainPanel);
         }
 
-        // =========================================================
-        // BO DAU + VIET THUONG + BO KHOANG TRANG
-        // =========================================================
-        // Tạo tên đăng nhập từ họ tên không dấu và ba ký tự cuối mã nhân viên.
-        // Tham số hoTen: họ tên.
-        // Tham số maNhanVien: mã nhân viên.
-        // Kết quả: chuỗi kết quả.
-        private String taoTaiKhoanKhongDau(String hoTen, String maNhanVien) {
-
-                String tenKhongDau = Normalizer.normalize(
-                                hoTen,
-                                Normalizer.Form.NFD);
-
-                tenKhongDau = tenKhongDau
-                                .replaceAll("\\p{M}", "")
-                                .replace("đ", "d")
-                                .replace("Đ", "D")
-                                .toLowerCase()
-                                .replaceAll("\\s+", "");
-
-                // Lay 3 so cuoi cua ma nhan vien
-                String baSoCuoi = maNhanVien.substring(
-                                maNhanVien.length() - 3);
-
-                return tenKhongDau + baSoCuoi;
-        }
-
-        // =========================================================
-        // LEFT PANEL
-        // =========================================================
         // Tạo khung bên trái.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createLeftPanel() {
@@ -89,66 +58,35 @@ public class DangNhap extends JFrame {
                                 new EmptyBorder(
                                                 35, 45, 30, 45));
 
-                // =====================================================
-                // KHU VUC NOI DUNG CHINH
-                // =====================================================
                 // pnlContent: Khung chứa thành phần giao diện nội dung.
                 JPanel pnlContent = new JPanel(new BorderLayout(0, 20));
                 pnlContent.setOpaque(false);
-
-                // =====================================================
-                // PHAN LOGO + TIEU DE
-                // =====================================================
                 // pnlBranding: Khung chứa thành phần giao diện thương hiệu.
                 JPanel pnlBranding = new JPanel();
                 pnlBranding.setOpaque(false);
 
-                pnlBranding.setLayout(
-                                new BoxLayout(
-                                                pnlBranding,
-                                                BoxLayout.Y_AXIS));
-
+                pnlBranding.setLayout(new BoxLayout(pnlBranding, BoxLayout.Y_AXIS));
                 // Logo
                 // lblLogo2: Nhãn hiển thị: 🐾.
                 JLabel lblLogo2 = new JLabel("🐾");
-                lblLogo2.setFont(
-                                new Font(
-                                                "Segoe UI Emoji",
-                                                Font.PLAIN,
-                                                48));
-                lblLogo2.setAlignmentX(
-                                Component.CENTER_ALIGNMENT);
-
+                lblLogo2.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+                lblLogo2.setAlignmentX(Component.CENTER_ALIGNMENT);
                 // Ten he thong
                 // lblTen: Nhãn hiển thị: PET SHOP PRO.
                 JLabel lblTen = new JLabel("PET SHOP PRO");
                 lblTen.setForeground(Color.WHITE);
-                lblTen.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                26));
-                lblTen.setAlignmentX(
-                                Component.CENTER_ALIGNMENT);
-
+                lblTen.setFont(new Font("Segoe UI", Font.BOLD, 26));
+                lblTen.setAlignmentX(Component.CENTER_ALIGNMENT);
                 // Tieu de
                 // lblTieuDe2: Nhãn hiển thị: HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG.
-                JLabel lblTieuDe2 = new JLabel(
-                                "HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
-                lblTieuDe2.setForeground(
-                                new Color(255, 105, 90));
-                lblTieuDe2.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                16));
-                lblTieuDe2.setAlignmentX(
-                                Component.CENTER_ALIGNMENT);
+                JLabel lblTieuDe2 = new JLabel("HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
+                lblTieuDe2.setForeground(new Color(255, 105, 90));
+                lblTieuDe2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                lblTieuDe2.setAlignmentX(Component.CENTER_ALIGNMENT);
                 // lblSlogan
                 // lblSlogan: Nhãn hiển thị khẩu hiệu.
                 JLabel lblSlogan = new JLabel(
-                                "<html>"
-                                                + "<div style='text-align:center;'>"
+                                "<html>" + "<div style='text-align:center;'>"
                                                 + "Vận hành gọn gàng<br>"
                                                 + "Chăm thú cưng tận tâm"
                                                 + "</div>"
@@ -156,37 +94,20 @@ public class DangNhap extends JFrame {
 
                 lblSlogan.setForeground(Color.WHITE);
                 lblSlogan.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.ITALIC,
-                                                18));
+                                new Font("Segoe UI", Font.ITALIC, 18));
 
                 lblSlogan.setAlignmentX(Component.CENTER_ALIGNMENT);
                 lblSlogan.setHorizontalAlignment(SwingConstants.CENTER);
 
                 pnlBranding.add(lblLogo2);
-                pnlBranding.add(
-                                Box.createVerticalStrut(2));
-
+                pnlBranding.add(Box.createVerticalStrut(2));
                 pnlBranding.add(lblTen);
-
-                pnlBranding.add(
-                                Box.createVerticalStrut(12));
-
+                pnlBranding.add(Box.createVerticalStrut(12));
                 pnlBranding.add(lblTieuDe2);
-
-                pnlBranding.add(
-                                Box.createVerticalStrut(12));
+                pnlBranding.add(Box.createVerticalStrut(12));
 
                 pnlBranding.add(lblSlogan);
-
-                pnlContent.add(
-                                pnlBranding,
-                                BorderLayout.NORTH);
-
-                // =====================================================
-                // KHUNG TINH NANG
-                // =====================================================
+                pnlContent.add(pnlBranding, BorderLayout.NORTH);
                 // pnlTinhNang: Khung chứa thành phần giao diện tính nặng.
                 JPanel pnlTinhNang = new JPanel(
                                 new GridBagLayout());
@@ -205,20 +126,16 @@ public class DangNhap extends JFrame {
                                 "Kho hàng - Theo dõi tồn và nhập hàng",
                                 "Báo cáo - Đối soát theo ca"
                 };
-
                 // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
                 // GridBagLayout.
                 GridBagConstraints gbc = new GridBagConstraints();
-
                 gbc.gridx = 0;
                 gbc.fill = GridBagConstraints.HORIZONTAL;
                 gbc.weightx = 1.0;
                 gbc.anchor = GridBagConstraints.WEST;
-                gbc.insets = new Insets(
-                                5, 0, 5, 0);
+                gbc.insets = new Insets(5, 0, 5, 0);
 
                 for (int i = 0; i < dsTinhNang.length; i++) {
-
                         // lblNhan2: Nhãn hiển thị nhãn.
                         JLabel lblNhan2 = new JLabel(
                                         "<html>"
