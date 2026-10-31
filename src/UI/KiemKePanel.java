@@ -12,15 +12,24 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseAdapter;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Man hinh "Kiem ke kho" - Kiem ke ton kho (nam trong khung TrangChu). */
-public class KiemKePanel extends JPanel {
+public class KiemKePanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
 
     // dao: Đối tượng truy cập dữ liệu kiểm kê.
     private final KiemKeDAO dao = new KiemKeDAO();
@@ -81,8 +90,8 @@ public class KiemKePanel extends JPanel {
         this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
-        setBackground(UIStyle.LIGHT_BLUE);
-        setBorder(new EmptyBorder(20, 25, 20, 25));
+        getContentPane().setBackground(UIStyle.LIGHT_BLUE);
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(20, 25, 20, 25));
 
         // pnlPhanDau: Khung chứa thành phần giao diện phần đầu.
         JPanel pnlPhanDau = new JPanel();

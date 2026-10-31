@@ -8,12 +8,22 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
 
 /** Cảnh báo một dòng cho mỗi sản phẩm, dựa trên lô còn tồn gần hết hạn nhất. */
-public class CanhBaoHanSuDungPanel extends JPanel {
+public class CanhBaoHanSuDungPanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
             new String[]{"Mã SP", "Tên SP", "Danh mục", "Ngày nhập", "Hạn sử dụng", "Còn lại", "Trạng thái"}, 0) {
@@ -39,8 +49,8 @@ public class CanhBaoHanSuDungPanel extends JPanel {
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public CanhBaoHanSuDungPanel() {
         setLayout(new BorderLayout(12, 12));
-        setBackground(UIStyle.LIGHT_BLUE);
-        setBorder(new EmptyBorder(22, 25, 22, 25));
+        getContentPane().setBackground(UIStyle.LIGHT_BLUE);
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(22, 25, 22, 25));
 
         // lblTitle2: Nhãn hiển thị: Cảnh báo sản phẩm sắp hết hạn.
         JLabel lblTitle2 = new JLabel("Cảnh báo sản phẩm sắp hết hạn");

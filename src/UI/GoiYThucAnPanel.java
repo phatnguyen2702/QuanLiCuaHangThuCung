@@ -9,6 +9,10 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.net.URL;
 import java.awt.image.BufferedImage;
@@ -19,7 +23,13 @@ import java.util.List;
 import java.util.Locale;
 
 /** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
-public class GoiYThucAnPanel extends JPanel {
+public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
     // cmbPet: Hộp lựa chọn thú cưng.
     private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", "Mèo" });
     // cmbAge: Hộp lựa chọn tuổi.
@@ -46,8 +56,8 @@ public class GoiYThucAnPanel extends JPanel {
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public GoiYThucAnPanel() {
         setLayout(new BorderLayout(12, 12));
-        setBackground(UIStyle.LIGHT_BLUE);
-        setBorder(new EmptyBorder(22, 25, 22, 25));
+        getContentPane().setBackground(UIStyle.LIGHT_BLUE);
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(22, 25, 22, 25));
 
         // lblTitle2: Nhãn hiển thị: Gợi ý thức ăn theo loại thú cưng.
         JLabel lblTitle2 = new JLabel("Gợi ý thức ăn theo loại thú cưng");

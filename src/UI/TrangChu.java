@@ -241,22 +241,22 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         switch (tab) {
             case 0 -> {
                 DanhMucPanel pnlKhung2 = new DanhMucPanel();
-                arrPnlManHinhKho[tab] = pnlKhung2;
+                arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
             case 1 -> {
                 SanPhamPanel pnlKhung2 = new SanPhamPanel();
-                arrPnlManHinhKho[tab] = pnlKhung2;
+                arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
             case 2 -> {
                 NhapKhoPanel pnlKhung2 = new NhapKhoPanel(this::moTraCuuNhapKho);
-                arrPnlManHinhKho[tab] = pnlKhung2;
+                arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
             default -> {
                 KiemKePanel pnlKhung2 = new KiemKePanel(this::moTraCuuKiemKe);
-                arrPnlManHinhKho[tab] = pnlKhung2;
+                arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
         }
@@ -347,8 +347,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở tra cứu nhập kho.
     private void moTraCuuNhapKho() {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
-                () -> pnlTraCuuNhapKho = new TraCuuKho(
-                        () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2))));
+                () -> {
+                    pnlTraCuuNhapKho = new TraCuuKho(
+                            () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2)));
+                    return pnlTraCuuNhapKho.getContentPane();
+                });
         if (pnlTraCuuNhapKho != null)
             pnlTraCuuNhapKho.lamMoi();
     }
@@ -356,8 +359,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở tra cứu kiểm kê.
     private void moTraCuuKiemKe() {
         hienManHinh("tracuukkkho", "Tra cứu kiểm kê kho", btnTimKiem,
-                () -> pnlTraCuuKiemKe = new TraCuuKKKho(
-                        () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(3))));
+                () -> {
+                    pnlTraCuuKiemKe = new TraCuuKKKho(
+                            () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(3)));
+                    return pnlTraCuuKiemKe.getContentPane();
+                });
         if (pnlTraCuuKiemKe != null)
             pnlTraCuuKiemKe.lamMoi();
     }
@@ -1219,7 +1225,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở cảnh báo hạn sử dụng.
     private void moCanhBaoHanSuDung() {
         hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnXuLy,
-                () -> pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel());
+                () -> { pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel(); return pnlCanhBaoHanSuDung.getContentPane(); });
         if (pnlCanhBaoHanSuDung != null) {
             pnlCanhBaoHanSuDung.napLai();
         }
@@ -1228,7 +1234,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở gợi ý thức ăn.
     private void moGoiYThucAn() {
         hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnXuLy,
-                () -> pnlGoiYThucAn = new GoiYThucAnPanel());
+                () -> { pnlGoiYThucAn = new GoiYThucAnPanel(); return pnlGoiYThucAn.getContentPane(); });
         if (pnlGoiYThucAn != null) {
             pnlGoiYThucAn.napLai();
         }

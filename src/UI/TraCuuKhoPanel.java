@@ -10,6 +10,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +23,13 @@ import java.util.Locale;
 import java.util.Objects;
 
 /** Tra cứu phiếu nhập kho hoặc phiếu kiểm kê kho. */
-public class TraCuuKhoPanel extends JPanel {
+public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
     // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
@@ -66,8 +76,8 @@ public class TraCuuKhoPanel extends JPanel {
         this.kiemKe = kiemKe;
         this.quayLai = quayLai;
         setLayout(new BorderLayout(0, 12));
-        setBackground(new Color(229, 241, 252));
-        setBorder(new EmptyBorder(20, 24, 20, 24));
+        getContentPane().setBackground(new Color(229, 241, 252));
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(20, 24, 20, 24));
         // lblTitle2: Nhãn hiển thị tiêu đề.
         JLabel lblTitle2 = new JLabel(kiemKe ? "Tra cứu kiểm kê kho" : "Tra cứu nhập kho");
         lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 25));
