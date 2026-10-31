@@ -215,9 +215,10 @@ public class ThanhToanDao {
     public ThanhToan.Voucher timVoucher(String maHoacTen) throws SQLException {
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
         String sql = "SELECT maVoucher, tenVoucher, phanTramGiam, dieuKien "
-                + "FROM Vocher "
-                + "WHERE trangThai = 1 AND (UPPER(maVoucher) = UPPER(?) "
-                + "OR UPPER(tenVoucher) = UPPER(?))";
+                + "FROM Vocher v "
+                + "WHERE " + dieuKienVoucherApDung("v")
+                + " AND (UPPER(v.maVoucher) = UPPER(?) "
+                + "OR UPPER(v.tenVoucher) = UPPER(?))";
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -250,7 +251,8 @@ public class ThanhToanDao {
     public List<ThanhToan.Voucher> layDanhSachVoucher() throws SQLException {
         List<ThanhToan.Voucher> ds = new ArrayList<>();
         String sql = "SELECT maVoucher, tenVoucher, phanTramGiam, dieuKien "
-                + "FROM Vocher WHERE trangThai = 1 ORDER BY maVoucher";
+                + "FROM Vocher v WHERE " + dieuKienVoucherApDung("v")
+                + " ORDER BY v.maVoucher";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -270,6 +272,18 @@ public class ThanhToanDao {
             }
         }
         return ds;
+    }
+
+    private static String dieuKienVoucherApDung(String alias) {
+        return alias + ".trangThai = 1 "
+                + "AND (" + alias + ".ngayBatDau IS NULL "
+                + "OR " + alias + ".ngayBatDau <= CAST(GETDATE() AS DATE)) "
+                + "AND (" + alias + ".ngayKetThuc IS NULL "
+                + "OR " + alias + ".ngayKetThuc >= CAST(GETDATE() AS DATE)) "
+                + "AND (" + alias + ".soLuongToiDa IS NULL "
+                + "OR (SELECT COUNT(*) FROM HoaDon h "
+                + "WHERE h.maVoucher = " + alias + ".maVoucher) < "
+                + alias + ".soLuongToiDa)";
     }
 
     // Kiểm tra khách hàng đã có thẻ thành viên hay chưa.
@@ -402,6 +416,21 @@ public class ThanhToanDao {
             // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
             try {
+                if (maVoucher != null) {
+                    String sqlVoucher = "SELECT v.maVoucher FROM Vocher v WITH (UPDLOCK, HOLDLOCK) "
+                            + "WHERE v.maVoucher = ? AND " + dieuKienVoucherApDung("v");
+                    try (PreparedStatement psVoucher = con.prepareStatement(sqlVoucher)) {
+                        psVoucher.setString(1, maVoucher);
+                        try (ResultSet rs = psVoucher.executeQuery()) {
+                            if (!rs.next()) {
+                                throw new SQLException(
+                                        "Voucher không còn hiệu lực, chưa đến ngày bắt đầu "
+                                                + "hoặc đã hết lượt sử dụng.");
+                            }
+                        }
+                    }
+                }
+
                 // Kiem tra ton ngay trong giao dich va khoa dong san pham den khi hoa don duoc ghi.
                 // soLuongCan: Bảng ánh xạ khóa đến giá trị dùng cho số lượng cần.
                 java.util.Map<String, Integer> soLuongCan = new java.util.LinkedHashMap<>();

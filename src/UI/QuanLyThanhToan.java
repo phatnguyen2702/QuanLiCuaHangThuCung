@@ -1387,7 +1387,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         try {
             entity.ThanhToan.Voucher timDuoc = dao.timVoucher(ma);
             if (timDuoc == null) {
-                hienLoi("Mã voucher không tồn tại hoặc đã hết hiệu lực.");
+                hienLoi("Voucher không tồn tại, chưa đến ngày bắt đầu, đã hết hạn "
+                        + "hoặc đã hết lượt sử dụng.");
                 return;
             }
             String loiDieuKien = kiemTraDieuKienVoucher(timDuoc);
@@ -1424,6 +1425,15 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         }
         if (voucher != null) {
             try {
+                entity.ThanhToan.Voucher voucherMoi = dao.timVoucher(voucher.getMaVoucher());
+                if (voucherMoi == null) {
+                    voucher = null;
+                    capNhatTien();
+                    hienLoi("Voucher không còn hiệu lực, chưa đến ngày bắt đầu "
+                            + "hoặc đã hết lượt sử dụng.");
+                    return;
+                }
+                voucher = voucherMoi;
                 String loiDieuKien = kiemTraDieuKienVoucher(voucher);
                 if (loiDieuKien != null) {
                     hienLoi(loiDieuKien);
