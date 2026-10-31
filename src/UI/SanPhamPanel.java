@@ -13,6 +13,10 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +32,7 @@ public class SanPhamPanel extends JPanel {
 
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[] { "Mã SP", "Tên sản phẩm", "Danh mục",
+            new String[] { "Ảnh", "Mã SP", "Tên sản phẩm", "Danh mục",
                     "Nhà cung cấp", "Giá nhập", "Giá bán", "Tồn" },
             0) {
         // Không cho phép sửa trực tiếp các ô trong bảng.
@@ -54,6 +58,44 @@ public class SanPhamPanel extends JPanel {
     private ArrayList<SanPham> dsHienTai = new ArrayList<>();
     // dangNapCombo: Cờ cho biết đang nạp danh sách lựa chọn.
     private boolean dangNapCombo = false;
+
+    /** Renderer ảnh lấy cùng quy ước mã sản phẩm như màn gợi ý thức ăn. */
+    private static class ImageRenderer extends JLabel implements javax.swing.table.TableCellRenderer {
+        ImageRenderer() {
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean selected, boolean focus, int row, int column) {
+            setBackground(selected ? table.getSelectionBackground() : table.getBackground());
+            String code = value == null ? "" : value.toString();
+            Icon icon = loadProductImage(code, 76, 64);
+            setIcon(icon);
+            setText(icon == null ? "Chưa có ảnh" : "");
+            setFont(table.getFont().deriveFont(10f));
+            return this;
+        }
+    }
+
+    private static Icon loadProductImage(String code, int maxWidth, int maxHeight) {
+        if (code == null || !code.matches("[A-Za-z0-9_-]+")) return null;
+        for (String ext : new String[] { ".png", ".jpg", ".jpeg" }) {
+            File file = new File("src/img/products", code + ext);
+            if (!file.isFile()) file = new File("img/products", code + ext);
+            if (!file.isFile()) continue;
+            ImageIcon source = new ImageIcon(file.getAbsolutePath());
+            if (source.getIconWidth() <= 0 || source.getIconHeight() <= 0) continue;
+            double scale = Math.min((double) maxWidth / source.getIconWidth(),
+                    (double) maxHeight / source.getIconHeight());
+            int w = Math.max(1, (int) (source.getIconWidth() * scale));
+            int h = Math.max(1, (int) (source.getIconHeight() * scale));
+            Image scaled = source.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaled);
+        }
+        return null;
+    }
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public SanPhamPanel() {
@@ -150,7 +192,11 @@ public class SanPhamPanel extends JPanel {
         pnlPhanTren.add(Box.createVerticalStrut(8));
         pnlPhanTren.add(lblSoLuong2);
 
-        UIStyle.taoBang(tblDuLieu2, 4, 5, 6);
+        UIStyle.taoBang(tblDuLieu2, 5, 6, 7);
+        tblDuLieu2.setRowHeight(84);
+        tblDuLieu2.getColumnModel().getColumn(0).setPreferredWidth(96);
+        tblDuLieu2.getColumnModel().getColumn(0).setMaxWidth(110);
+        tblDuLieu2.getColumnModel().getColumn(0).setCellRenderer(new ImageRenderer());
         tblDuLieu2.addMouseListener(new MouseAdapter() {
             // Xử lý thao tác nhấn chuột trên thành phần đã gắn listener.
             // Tham số e: thông tin sự kiện.
@@ -219,6 +265,7 @@ public class SanPhamPanel extends JPanel {
             for (SanPham sp : dsHienTai) {
                 model.addRow(new Object[] {
                         sp.getMaSanPham(),
+                        sp.getMaSanPham(),
                         sp.getTenSanPham(),
                         sp.getTenDanhMuc(),
                         sp.getTenNhaCungCap(),
@@ -248,7 +295,7 @@ public class SanPhamPanel extends JPanel {
             return null;
         }
 
-        return dsHienTai.get(row);
+        return dsHienTai.get(tblDuLieu2.convertRowIndexToModel(row));
     }
 
     // =========================================================
@@ -309,19 +356,10 @@ public class SanPhamPanel extends JPanel {
         }
 
         try {
-            // Da co phieu nhap / hoa don / kiem ke thi khong xoa duoc (khoa ngoai)
-            // lichSu: Lưu lịch sử.
-            int lichSu = dao.demLichSu(sp.getMaSanPham());
-            if (lichSu > 0) {
-                UIStyle.canhBao(this, "Sản phẩm \"" + sp.getTenSanPham()
-                        + "\" đã phát sinh " + lichSu
-                        + " dòng nhập kho / hóa đơn / kiểm kê nên không thể xóa.\n"
-                        + "Muốn xóa cả sản phẩm lẫn lịch sử, hãy xóa ở màn hình Danh mục.");
-                return;
-            }
-
             if (!UIStyle.xacNhan(this,
-                    "Xóa sản phẩm \"" + sp.getTenSanPham() + "\"?")) {
+                    "Xóa sản phẩm \"" + sp.getTenSanPham()
+                            + "\" cùng các dòng nhập kho, hóa đơn, kiểm kê và gợi ý thức ăn liên quan?\n"
+                            + "Thao tác này không thể hoàn tác.")) {
                 return;
             }
 
@@ -384,6 +422,8 @@ public class SanPhamPanel extends JPanel {
         private final JTextField txtGiaNhap = UIStyle.o(22);
         // txtGiaBan: Ô nhập/hiển thị văn bản giá bán.
         private final JTextField txtGiaBan = UIStyle.o(22);
+        private final JLabel lblAnh = new JLabel("Chưa có ảnh", SwingConstants.CENTER);
+        private File anhDaChon;
         // Thông tin HSD theo lịch sử nhập kho, chỉ được xem khi mở chi tiết/sửa.
         // txtHanSuDung: Ô nhập/hiển thị văn bản hạn sử dụng.
         private final JTextField txtHanSuDung = UIStyle.oChiDoc("Chưa có dữ liệu");
@@ -438,8 +478,18 @@ public class SanPhamPanel extends JPanel {
             UIStyle.hang(pnlForm2, 6, "Độ tuổi phù hợp", cmbNhomTuoi, false);
             UIStyle.hang(pnlForm2, 7, "Kích thước phù hợp", cmbKichThuoc, false);
 
+            JButton btnChonAnh = UIStyle.nutPhu("Chọn ảnh...");
+            JPanel pnlAnh = new JPanel(new BorderLayout(8, 0));
+            pnlAnh.setOpaque(false);
+            lblAnh.setPreferredSize(new Dimension(120, 82));
+            lblAnh.setBorder(BorderFactory.createLineBorder(new Color(210, 220, 230)));
+            pnlAnh.add(lblAnh, BorderLayout.WEST);
+            pnlAnh.add(btnChonAnh, BorderLayout.CENTER);
+            UIStyle.hang(pnlForm2, 8, "Ảnh sản phẩm", pnlAnh, false);
+            btnChonAnh.addActionListener(e -> chonAnh());
+
             spnThem.setFont(UIStyle.font(Font.PLAIN, 13));
-            int dongTiep = 8;
+            int dongTiep = 9;
             if (sp != null) {
                 // Hạn sử dụng thuộc CHI TIẾT PHIẾU NHẬP; không chỉnh ở hồ sơ sản phẩm.
                 txtHanSuDung.setEditable(false);
@@ -463,6 +513,7 @@ public class SanPhamPanel extends JPanel {
                 txtMa.setBackground(UIStyle.READONLY);
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtTen.setText(sp.getTenSanPham());
+                hienThiAnh(sp.getMaSanPham());
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtGiaNhap.setText(String.valueOf((long) sp.getGiaNhap()));
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
@@ -522,6 +573,44 @@ public class SanPhamPanel extends JPanel {
             pack();
             setResizable(false);
             setLocationRelativeTo(winCha);
+        }
+
+        private void chonAnh() {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Chọn ảnh sản phẩm");
+            chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                    "Ảnh (PNG, JPG, JPEG)", "png", "jpg", "jpeg"));
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                anhDaChon = chooser.getSelectedFile();
+                ImageIcon original = new ImageIcon(anhDaChon.getAbsolutePath());
+                Image scaled = original.getImage().getScaledInstance(110, 72, Image.SCALE_SMOOTH);
+                lblAnh.setIcon(new ImageIcon(scaled));
+                lblAnh.setText("");
+            }
+        }
+
+        private void hienThiAnh(String code) {
+            Icon icon = loadProductImage(code, 110, 72);
+            if (icon != null) {
+                lblAnh.setIcon(icon);
+                lblAnh.setText("");
+            }
+        }
+
+        private void luuAnh(String code) throws IOException {
+            if (anhDaChon == null) return;
+            File folder = new File("src/img/products");
+            if (!folder.exists() && !folder.mkdirs()) {
+                throw new IOException("Không tạo được thư mục lưu ảnh sản phẩm.");
+            }
+            String name = anhDaChon.getName().toLowerCase(java.util.Locale.ROOT);
+            String ext = name.endsWith(".png") ? ".png"
+                    : (name.endsWith(".jpeg") ? ".jpeg" : ".jpg");
+            Files.copy(anhDaChon.toPath(), new File(folder, code + ext).toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+            for (String other : new String[] { ".png", ".jpg", ".jpeg" }) {
+                if (!other.equals(ext)) Files.deleteIfExists(new File(folder, code + other).toPath());
+            }
         }
 
         // Chọn danh mục.
@@ -623,6 +712,7 @@ public class SanPhamPanel extends JPanel {
                 } else {
                     dao.them(sp);
                 }
+                luuAnh(ma);
                 dao.luuThongTinGoiY(ma, dm.getTenDanhMuc(), ten,
                         (String) cmbNhomTuoi.getSelectedItem(),
                         (String) cmbKichThuoc.getSelectedItem());
@@ -638,6 +728,9 @@ public class SanPhamPanel extends JPanel {
 
             } catch (SQLException ex) {
                 UIStyle.loi(this, ex);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Không lưu được ảnh: " + ex.getMessage(),
+                        "Lỗi ảnh sản phẩm", JOptionPane.ERROR_MESSAGE);
             }
         }
 
