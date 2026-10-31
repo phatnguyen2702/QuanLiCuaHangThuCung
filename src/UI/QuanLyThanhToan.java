@@ -19,6 +19,10 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -44,6 +48,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -63,7 +68,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 // Giao diện/chức năng quản lý thanh toán của ứng dụng.
-public class QuanLyThanhToan extends JPanel {
+public class QuanLyThanhToan extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -81,6 +86,8 @@ public class QuanLyThanhToan extends JPanel {
     private final ThanhToanDao dao = new ThanhToanDao();
     // maNhanVien: Lưu mã nhân viên.
     private final String maNhanVien;
+    // pnlNoiDung: Phần giao diện được TrangChu nhúng vào CardLayout.
+    private final JPanel pnlNoiDung = new JPanel(new BorderLayout(10, 12));
     // moLichSuHoaDon: Hành động được gọi khi cần mở lịch sử hóa đơn.
     private final Runnable moLichSuHoaDon;
     // capNhatPhieuDichVu: Hành động được gọi khi cần cập nhật danh sách phiếu dịch vụ.
@@ -132,6 +139,9 @@ public class QuanLyThanhToan extends JPanel {
     private final JTable tblDonHang = new JTable(tableModel);
     // pnlPaymentMethodsPanel: Khung chứa thành phần giao diện khung phương thức thanh toán.
     private final JPanel pnlPaymentMethodsPanel = new JPanel(new GridLayout(1, 0, 8, 0));
+    // phuongThucTheoNut: Phương thức thanh toán tương ứng với từng nút chọn.
+    private final Map<JToggleButton, entity.ThanhToan.PhuongThuc> phuongThucTheoNut =
+            new LinkedHashMap<>();
     // btnApDungVoucher: Nút thao tác: Áp dụng.
     private final JButton btnApDungVoucher = new JButton("Áp dụng");
 
@@ -168,16 +178,100 @@ public class QuanLyThanhToan extends JPanel {
         this.maNhanVien = maNhanVien;
         this.moLichSuHoaDon = moLichSuHoaDon;
         this.capNhatPhieuDichVu = capNhatPhieuDichVu;
-        setLayout(new BorderLayout(10, 12));
-        setBackground(LIGHT_BLUE);
-        setBorder(BorderFactory.createEmptyBorder(12, 18, 16, 18));
-        add(createTitle(), BorderLayout.NORTH);
-        add(createBody(), BorderLayout.CENTER);
+        setTitle("Thanh toán hóa đơn");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        pnlNoiDung.setBackground(LIGHT_BLUE);
+        pnlNoiDung.setBorder(BorderFactory.createEmptyBorder(12, 18, 16, 18));
+        pnlNoiDung.add(createTitle(), BorderLayout.NORTH);
+        pnlNoiDung.add(createBody(), BorderLayout.CENTER);
+        setContentPane(pnlNoiDung);
+        tblDonHang.addMouseListener(this);
         napDanhSachMaKhachHang();
         napDanhSachMaSanPham();
         napDanhSachVoucher();
         napPhuongThucThanhToan();
         capNhatTien();
+    }
+
+    /** Trả về panel nội dung để TrangChu tiếp tục hiển thị bằng CardLayout. */
+    public JPanel getContentPanel() {
+        return pnlNoiDung;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent event) {
+        switch (event.getActionCommand()) {
+            case "OPEN_INVOICE_HISTORY":
+                moLichSuHoaDon.run();
+                break;
+            case "CANCEL_INVOICE":
+                huyHoaDon();
+                break;
+            case "CHOOSE_PRODUCT":
+                moChonSanPham();
+                break;
+            case "CONFIRM_CUSTOMER":
+                xacNhanKhachHang();
+                break;
+            case "APPLY_VOUCHER":
+                apDungVoucher();
+                break;
+            case "REMOVE_PRODUCT":
+                xoaSanPham();
+                break;
+            case "COMPLETE_PAYMENT":
+                thanhToan();
+                break;
+            case "SELECT_PAYMENT_METHOD":
+                capNhatPhuongThucThanhToan(event.getSource());
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void capNhatPhuongThucThanhToan(Object source) {
+        if (!(source instanceof JToggleButton)) {
+            return;
+        }
+        JToggleButton selectedButton = (JToggleButton) source;
+        entity.ThanhToan.PhuongThuc selectedMethod = phuongThucTheoNut.get(selectedButton);
+        if (selectedMethod == null) {
+            return;
+        }
+        phuongThucHienTai = selectedMethod;
+        for (Component component : pnlPaymentMethodsPanel.getComponents()) {
+            if (component instanceof JToggleButton) {
+                JToggleButton methodButton = (JToggleButton) component;
+                methodButton.setBackground(methodButton.isSelected()
+                        ? new Color(215, 231, 244) : Color.WHITE);
+            }
+        }
+        capNhatTien();
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent event) {
+        int row = tblDonHang.rowAtPoint(event.getPoint());
+        if (row >= 0) {
+            tblDonHang.setRowSelectionInterval(row, row);
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent event) {
     }
 
     /** Đồng bộ bảng và tổng tiền khi quay lại thanh toán sau khi sửa giỏ hàng. */
@@ -205,7 +299,8 @@ public class QuanLyThanhToan extends JPanel {
         btnLichSu.setForeground(NAVY);
         btnLichSu.setFocusPainted(false);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnLichSu.addActionListener(e -> moLichSuHoaDon.run());
+        btnLichSu.setActionCommand("OPEN_INVOICE_HISTORY");
+        btnLichSu.addActionListener(this);
         pnlActions.add(btnLichSu);
 
         // btnHuy: Nút thao tác: Hủy hóa đơn  ×.
@@ -213,7 +308,8 @@ public class QuanLyThanhToan extends JPanel {
         btnHuy.setForeground(NAVY);
         btnHuy.setFocusPainted(false);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnHuy.addActionListener(e -> huyHoaDon());
+        btnHuy.setActionCommand("CANCEL_INVOICE");
+        btnHuy.addActionListener(this);
         pnlActions.add(btnHuy);
         pnlKhung.add(pnlActions, BorderLayout.EAST);
         return pnlKhung;
@@ -265,7 +361,8 @@ public class QuanLyThanhToan extends JPanel {
             // txtMaSanPham: Ô nhập/hiển thị văn bản mã sản phẩm.
             JTextField txtMaSanPham = (JTextField) editor;
             // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-            txtMaSanPham.addActionListener(e -> moChonSanPham());
+            txtMaSanPham.setActionCommand("CHOOSE_PRODUCT");
+            txtMaSanPham.addActionListener(this);
             txtMaSanPham.getDocument().addDocumentListener(new DocumentListener() {
                 // Cập nhật trạng thái liên quan khi người dùng thêm ký tự vào ô văn bản.
                 // Tham số e: thông tin sự kiện.
@@ -297,7 +394,8 @@ public class QuanLyThanhToan extends JPanel {
         // btnTim: Nút thao tác: Xác nhận.
         JButton btnTim = new JButton("Xác nhận");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTim.addActionListener(e -> moChonSanPham());
+        btnTim.setActionCommand("CHOOSE_PRODUCT");
+        btnTim.addActionListener(this);
         // pnlDatePanel: Khung chứa thành phần giao diện ngày khung.
         JPanel pnlDatePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         pnlDatePanel.setOpaque(false);
@@ -369,7 +467,8 @@ public class QuanLyThanhToan extends JPanel {
             // txtMaKhachHang: Ô nhập/hiển thị văn bản mã khách hàng.
             JTextField txtMaKhachHang = (JTextField) editor;
             // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-            txtMaKhachHang.addActionListener(e -> xacNhanKhachHang());
+            txtMaKhachHang.setActionCommand("CONFIRM_CUSTOMER");
+            txtMaKhachHang.addActionListener(this);
             txtMaKhachHang.getDocument().addDocumentListener(new DocumentListener() {
                 // Cập nhật trạng thái liên quan khi người dùng thêm ký tự vào ô văn bản.
                 // Tham số e: thông tin sự kiện.
@@ -400,7 +499,8 @@ public class QuanLyThanhToan extends JPanel {
         JButton btnXacNhan = new JButton("Xác nhận");
         btnXacNhan.setMargin(new Insets(3, 8, 3, 8));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnXacNhan.addActionListener(e -> xacNhanKhachHang());
+        btnXacNhan.setActionCommand("CONFIRM_CUSTOMER");
+        btnXacNhan.addActionListener(this);
         pnlKhung.add(btnXacNhan, gbc);
         gbc.gridx = 3;
         gbc.weightx = 0;
@@ -468,7 +568,8 @@ public class QuanLyThanhToan extends JPanel {
         Component voucherEditor = cmbVoucher.getEditor().getEditorComponent();
         if (voucherEditor instanceof JTextField) {
             JTextField txtVoucher = (JTextField) voucherEditor;
-            txtVoucher.addActionListener(e -> apDungVoucher());
+            txtVoucher.setActionCommand("APPLY_VOUCHER");
+            txtVoucher.addActionListener(this);
             txtVoucher.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
                 public void insertUpdate(DocumentEvent e) {
@@ -488,14 +589,16 @@ public class QuanLyThanhToan extends JPanel {
         }
         pnlVoucherRow.add(cmbVoucher, BorderLayout.CENTER);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnApDungVoucher.addActionListener(e -> apDungVoucher());
+        btnApDungVoucher.setActionCommand("APPLY_VOUCHER");
+        btnApDungVoucher.addActionListener(this);
         // pnlVoucherActions: Khung chứa thành phần giao diện voucher thao tác.
         JPanel pnlVoucherActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         pnlVoucherActions.setOpaque(false);
         // btnXoa: Nút thao tác: Xóa sản phẩm.
         JButton btnXoa = new JButton("Xóa sản phẩm");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnXoa.addActionListener(e -> xoaSanPham());
+        btnXoa.setActionCommand("REMOVE_PRODUCT");
+        btnXoa.addActionListener(this);
         pnlVoucherActions.add(btnApDungVoucher);
         pnlVoucherActions.add(btnXoa);
         pnlVoucherRow.add(pnlVoucherActions, BorderLayout.EAST);
@@ -615,7 +718,8 @@ public class QuanLyThanhToan extends JPanel {
         btnThanhToan.setFocusPainted(false);
         btnThanhToan.setPreferredSize(new Dimension(100, 48));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnThanhToan.addActionListener(e -> thanhToan());
+        btnThanhToan.setActionCommand("COMPLETE_PAYMENT");
+        btnThanhToan.addActionListener(this);
         pnlKhung.add(btnThanhToan, BorderLayout.SOUTH);
         return pnlKhung;
     }
@@ -643,6 +747,7 @@ public class QuanLyThanhToan extends JPanel {
                     dao.layPhuongThucThanhToan();
             ButtonGroup group = new ButtonGroup();
             pnlPaymentMethodsPanel.removeAll();
+            phuongThucTheoNut.clear();
             phuongThucHienTai = null;
             for (entity.ThanhToan.PhuongThuc phuongThuc : phuongThucs) {
                 // tglThaoTac: Nút bật/tắt nút thao tác.
@@ -654,18 +759,9 @@ public class QuanLyThanhToan extends JPanel {
                 tglThaoTac.setBorder(BorderFactory.createLineBorder(BORDER));
                 tglThaoTac.setPreferredSize(new Dimension(95, 48));
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                tglThaoTac.addActionListener(e -> {
-                    phuongThucHienTai = phuongThuc;
-                    for (Component component : pnlPaymentMethodsPanel.getComponents()) {
-                        if (component instanceof JToggleButton) {
-                            // tglMethodButton: Nút bật/tắt phương thức nút.
-                            JToggleButton tglMethodButton = (JToggleButton) component;
-                            tglMethodButton.setBackground(tglMethodButton.isSelected()
-                                    ? new Color(215, 231, 244) : Color.WHITE);
-                        }
-                    }
-                    capNhatTien();
-                });
+                tglThaoTac.setActionCommand("SELECT_PAYMENT_METHOD");
+                tglThaoTac.addActionListener(this);
+                phuongThucTheoNut.put(tglThaoTac, phuongThuc);
                 group.add(tglThaoTac);
                 pnlPaymentMethodsPanel.add(tglThaoTac);
                 if (phuongThucHienTai == null) {
@@ -1147,7 +1243,7 @@ public class QuanLyThanhToan extends JPanel {
             gbc.gridwidth = 2;
             pnlAddDialog.add(lblPrice, gbc);
             int choice = JOptionPane.showConfirmDialog(
-                    this, pnlAddDialog, "Thêm sản phẩm",
+                    pnlNoiDung, pnlAddDialog, "Thêm sản phẩm",
                     JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
             if (choice == JOptionPane.OK_OPTION) {
                 themSanPham(sanPham, (Integer) spnQuantity.getValue());
@@ -1201,7 +1297,7 @@ public class QuanLyThanhToan extends JPanel {
             return;
         }
         int confirm = JOptionPane.showConfirmDialog(
-                this, "Bạn muốn hủy hóa đơn hiện tại?",
+                pnlNoiDung, "Bạn muốn hủy hóa đơn hiện tại?",
                 "Xác nhận hủy", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             chiTiet.clear();
@@ -1248,7 +1344,7 @@ public class QuanLyThanhToan extends JPanel {
             }
             voucher = timDuoc;
             capNhatTien();
-            JOptionPane.showMessageDialog(this, "Đã áp dụng " + voucher.getTenVoucher()
+            JOptionPane.showMessageDialog(pnlNoiDung, "Đã áp dụng " + voucher.getTenVoucher()
                     + " (" + voucher.getPhanTramGiam().stripTrailingZeros().toPlainString()
                     + "%).");
         } catch (SQLException e) {
@@ -1311,7 +1407,7 @@ public class QuanLyThanhToan extends JPanel {
 
         if (!chuyenKhoan) {
             int confirm = JOptionPane.showConfirmDialog(
-                    this, "Xác nhận thanh toán " + dinhDangTien(tongThanhToan) + "?",
+                    pnlNoiDung, "Xác nhận thanh toán " + dinhDangTien(tongThanhToan) + "?",
                     "Thanh toán", JOptionPane.YES_NO_OPTION);
             if (confirm != JOptionPane.YES_OPTION) {
                 return;
@@ -1411,7 +1507,7 @@ public class QuanLyThanhToan extends JPanel {
         pnlContent.add(pnlDetails, BorderLayout.SOUTH);
 
         int choice = JOptionPane.showOptionDialog(
-                this,
+                pnlNoiDung,
                 pnlContent,
                 "Mã QR minh họa",
                 JOptionPane.YES_NO_OPTION,
@@ -1525,7 +1621,7 @@ public class QuanLyThanhToan extends JPanel {
         fchChonTep.setDialogTitle("Lưu hóa đơn dạng TXT");
         fchChonTep.setSelectedFile(new java.io.File("HoaDon-" + maHoaDon + ".txt"));
         fchChonTep.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
-        if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+        if (fchChonTep.showSaveDialog(pnlNoiDung) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
@@ -1536,7 +1632,7 @@ public class QuanLyThanhToan extends JPanel {
         }
         if (Files.exists(file)
                 && JOptionPane.showConfirmDialog(
-                        this,
+                        pnlNoiDung,
                         "Tệp đã tồn tại. Bạn có muốn ghi đè không?",
                         "Xác nhận ghi đè",
                         JOptionPane.YES_NO_OPTION,
@@ -1546,7 +1642,7 @@ public class QuanLyThanhToan extends JPanel {
         try {
             Files.write(file, noiDung.getBytes(StandardCharsets.UTF_8));
             JOptionPane.showMessageDialog(
-                    this,
+                    pnlNoiDung,
                     "Đã lưu hóa đơn:\n" + file.toAbsolutePath(),
                     "Xuất hóa đơn thành công",
                     JOptionPane.INFORMATION_MESSAGE);
@@ -1566,7 +1662,7 @@ public class QuanLyThanhToan extends JPanel {
         txaPreview.setCaretPosition(0);
 
         int action = JOptionPane.showOptionDialog(
-                this,
+                pnlNoiDung,
                 new JScrollPane(txaPreview),
                 "Thanh toán thành công",
                 JOptionPane.YES_NO_OPTION,
@@ -1705,7 +1801,7 @@ public class QuanLyThanhToan extends JPanel {
     // Hiển thị lỗi.
     // Tham số message: thông báo.
     private void hienLoi(String message) {
-        JOptionPane.showMessageDialog(this, message, "Thanh toán",
+        JOptionPane.showMessageDialog(pnlNoiDung, message, "Thanh toán",
                 JOptionPane.ERROR_MESSAGE);
     }
 
