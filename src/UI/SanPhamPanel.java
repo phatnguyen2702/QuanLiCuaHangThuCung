@@ -343,7 +343,7 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
             SanPhamDialog winDlg = new SanPhamDialog(
                     SwingUtilities.getWindowAncestor(this),
                     sp,
-                    sp == null ? "" : null, // them moi: ma de trong, nguoi dung tu nhap
+                    sp == null ? dao.taoMaMoi() : null,
                     dsDanhMuc, dsNcc);
             winDlg.setVisible(true);
 

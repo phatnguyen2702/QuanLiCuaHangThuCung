@@ -37,8 +37,6 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     // kiemKe: Cờ cho biết kiểm kê.
     private final boolean kiemKe;
-    // quayLai: Hành động được gọi khi cần quay lại màn hình trước.
-    private final Runnable quayLai;
     // txtTuKhoa: Ô nhập/hiển thị văn bản từ khóa tìm kiếm.
     private final JTextField txtTuKhoa = new JTextField(20);
     // txtTuNgay: Ô nhập/hiển thị văn bản ngày bắt đầu bộ lọc.
@@ -74,7 +72,6 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     // Tham số quayLai: quay lại màn hình trước.
     public TraCuuKhoPanel(boolean kiemKe, Runnable quayLai) {
         this.kiemKe = kiemKe;
-        this.quayLai = quayLai;
         setLayout(new BorderLayout(0, 12));
         getContentPane().setBackground(new Color(229, 241, 252));
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(20, 24, 20, 24));
