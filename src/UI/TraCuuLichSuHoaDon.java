@@ -540,7 +540,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
             List<String> goiY = new ArrayList<>();
             String tuKhoaChuanHoa = tuKhoa.toLowerCase(Locale.ROOT);
             for (String ma : danhSachMaHoaDon) {
-                if (maCoChuaTatCaKyTu(ma, tuKhoaChuanHoa)) {
+                if (ma.toLowerCase(Locale.ROOT).contains(tuKhoaChuanHoa)) {
                     goiY.add(ma);
                 }
             }
@@ -570,20 +570,6 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         });
     }
 
-    // Kiểm tra mã có chứa đủ các ký tự của từ khóa đã chuẩn hóa hay không.
-    // Tham số ma: mã.
-    // Tham số tuKhoaChuanHoa: từ khóa tìm kiếm chuẩn hóa.
-    // Kết quả: true/false theo điều kiện xử lý.
-    private boolean maCoChuaTatCaKyTu(String ma, String tuKhoaChuanHoa) {
-        String maChuanHoa = ma.toLowerCase(Locale.ROOT);
-        for (int i = 0; i < tuKhoaChuanHoa.length(); i++) {
-            if (maChuanHoa.indexOf(tuKhoaChuanHoa.charAt(i)) < 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     // Nạp danh sách.
     private void napDanhSach() {
         try {
@@ -592,11 +578,11 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
             String tuKhoa = layTuKhoa();
             // hoaDons: Dữ liệu hóa đơn tra cứu.
             List<HoaDonTraCuu> hoaDons = dao.timHoaDon(tuKhoa);
-            if (tuKhoa.isEmpty()) {
-                danhSachMaHoaDon.clear();
-                for (HoaDonTraCuu hoaDon : hoaDons) {
-                    danhSachMaHoaDon.add(hoaDon.getMaHoaDon());
-                }
+            List<HoaDonTraCuu> hoaDonGoiY = tuKhoa.isEmpty()
+                    ? hoaDons : dao.timHoaDon("");
+            danhSachMaHoaDon.clear();
+            for (HoaDonTraCuu hoaDon : hoaDonGoiY) {
+                danhSachMaHoaDon.add(hoaDon.getMaHoaDon());
             }
             invoiceTableModel.setInvoices(hoaDons);
             capNhatThongKe(thongKe);

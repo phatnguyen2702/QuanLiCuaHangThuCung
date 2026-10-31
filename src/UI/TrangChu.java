@@ -372,6 +372,8 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                     return pnlThanhToan.getContentPanel();
                 });
         if (pnlThanhToan != null) {
+            pnlThanhToan.napDanhSachMaKhachHang();
+            pnlThanhToan.napDanhSachGoiYSanPhamVaVoucher();
             pnlThanhToan.napGioHang();
         }
     }
