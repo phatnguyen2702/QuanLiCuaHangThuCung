@@ -119,9 +119,8 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                 pnlPnl.setBorder(new EmptyBorder(10, 10, 10, 10));
                 pnlPnl.add(taoPnlLoc(), BorderLayout.NORTH);
 
-                mdlPhanCa = new DefaultTableModel(new String[] {
-                                "Mã PC", "Ngày làm việc", "Mã NV", "Họ tên", "Mã ca", "Ca làm"
-                }, 0) {
+                mdlPhanCa = new DefaultTableModel(
+                                new String[] { "Mã PC", "Ngày làm việc", "Mã NV", "Họ tên", "Mã ca", "Ca làm" }, 0) {
                         // Không cho phép sửa trực tiếp các ô trong bảng.
                         // Tham số row: chỉ số dòng.
                         // Tham số col: chỉ số cột.
@@ -686,38 +685,74 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                         cmbLocCa.setSelectedIndex(0);
         }
 
-        // Xuất Excel.
+        // Xuất Excel theo NGÀY ĐANG CHỌN ở bộ lọc, không theo ngày hiện tại.
+        // Không phụ thuộc vào việc người dùng đã nhấn nút Lọc hay chưa.
         private void xuatExcel() {
-                // fchChonTep: Hộp chọn tệp bộ chọn.
+                LocalDate ngayXuat = docNgay(txtLocNgay.getText());
+                if (ngayXuat == null) {
+                        // Nếu chưa chọn ngày lọc, yêu cầu chọn ngày cần xuất.
+                        // false: cho phép xuất cả lịch phân ca của ngày trong quá khứ.
+                        LocalDate chon = LichChonNgay.chonNgay(this, null, false);
+                        if (chon == null)
+                                return;
+                        ngayXuat = chon;
+                        txtLocNgay.setText(ngayXuat.format(DINH_DANG_NGAY));
+                }
+
+                // Lọc dữ liệu thực tế theo ngày được chọn, không lấy các dòng đang
+                // hiển thị (bảng có thể chưa được cập nhật sau khi đổi ngày lọc).
+                String maNV = maDaChon(cmbLocNhanVien);
+                String maCa = maDaChon(cmbLocCa);
+                List<String[]> rows = new ArrayList<>();
+                try {
+                        for (LichPhanCa pc : dao.getAll()) {
+                                if (!ngayXuat.equals(pc.getNgayLamViec()))
+                                        continue;
+                                if (!maNV.isEmpty() && !"Tất cả".equals(maNV)
+                                                && !maNV.equalsIgnoreCase(pc.getMaNhanVien()))
+                                        continue;
+                                if (!maCa.isEmpty() && !"Tất cả".equals(maCa)
+                                                && !maCa.equalsIgnoreCase(pc.getMaCa()))
+                                        continue;
+                                rows.add(new String[] {
+                                                pc.getMaPhanCa(),
+                                                pc.getNgayLamViec().format(DINH_DANG_NGAY),
+                                                pc.getMaNhanVien(),
+                                                pc.getHoTen(),
+                                                pc.getMaCa(),
+                                                pc.getThongTinCa()
+                                });
+                        }
+                } catch (RuntimeException ex) {
+                        baoLoi(ex);
+                        return;
+                }
+                if (rows.isEmpty()) {
+                        canhBao("Không có phân ca để xuất trong ngày "
+                                        + ngayXuat.format(DINH_DANG_NGAY) + ".");
+                        return;
+                }
+
                 JFileChooser fchChonTep = new JFileChooser();
-                fchChonTep.setDialogTitle("Lưu lịch phân ca thành Excel");
+                fchChonTep.setDialogTitle("Xuất lịch phân ca ngày " + ngayXuat.format(DINH_DANG_NGAY));
                 fchChonTep.setFileFilter(new FileNameExtensionFilter("Excel Workbook (*.xlsx)", "xlsx"));
-                fchChonTep.setSelectedFile(new File("LichPhanCa_" + LocalDate.now() + ".xlsx"));
+                fchChonTep.setSelectedFile(new File("LichPhanCa_" + ngayXuat + ".xlsx"));
                 if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
                         return;
-                // f: Đường dẫn tệp dùng cho f.
+
                 File f = fchChonTep.getSelectedFile();
                 if (!f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".xlsx"))
                         f = new File(f.getParentFile(), f.getName() + ".xlsx");
                 if (f.exists() && JOptionPane.showConfirmDialog(this, "Tệp đã tồn tại. Ghi đè?",
                                 "Xác nhận", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
                         return;
-                // rows: Danh sách chứa các phần tử kiểu String[].
-                List<String[]> rows = new ArrayList<>();
-                for (int r = 0; r < tblPhanCa.getRowCount(); r++) {
-                        // row: Mảng lưu chỉ số dòng.
-                        String[] row = new String[tblPhanCa.getColumnCount()];
-                        for (int c = 0; c < row.length; c++) {
-                                Object value = tblPhanCa.getValueAt(r, c);
-                                row[c] = value == null ? "" : value.toString();
-                        }
-                        rows.add(row);
-                }
-                // cols: Mảng lưu các cột.
+
                 String[] cols = { "Mã phân ca", "Ngày làm việc", "Mã nhân viên", "Họ tên", "Mã ca", "Ca làm" };
                 try {
                         XlsxExporter.xuat(f.toPath(), cols, rows);
-                        thongBao("Đã xuất " + rows.size() + " phân ca sang Excel:\n" + f.getAbsolutePath());
+                        thongBao("Đã xuất " + rows.size() + " phân ca ngày "
+                                        + ngayXuat.format(DINH_DANG_NGAY)
+                                        + " sang Excel:\n" + f.getAbsolutePath());
                 } catch (IOException ex) {
                         baoLoi(ex);
                 }
