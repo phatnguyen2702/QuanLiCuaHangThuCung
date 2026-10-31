@@ -591,11 +591,17 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
 
         try {
 
+            if (dao.demLichSu(sp.getMaSanPham()) > 0) {
+                UIStyle.canhBao(this,
+                        "Không thể xóa sản phẩm đã phát sinh lịch sử nhập kho, hóa đơn hoặc kiểm kê.");
+                return;
+            }
+
             if (!UIStyle.xacNhan(this,
 
                     "Xóa sản phẩm \"" + sp.getTenSanPham()
 
-                            + "\" cùng các dòng nhập kho, hóa đơn, kiểm kê và gợi ý thức ăn liên quan?\n"
+                            + "\"? Chỉ sản phẩm chưa có giao dịch nào mới được xóa.\n"
 
                             + "Thao tác này không thể hoàn tác.")) {
 
@@ -934,12 +940,6 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
 
                 txtMa.setText(maMoi);
-<<<<<<< HEAD
-                txtMa.setEditable(false);
-                txtMa.setBackground(UIStyle.READONLY);
-=======
-
->>>>>>> f7ba22cdb6347eee35b298e8235bf9e48a390e4e
             }
 
             // Mã sản phẩm tự sinh và không thể chỉnh sửa ở cả hai chế độ.
@@ -1131,9 +1131,9 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
 
             String ten = txtTen.getText().trim();
 
-            if (ma.isEmpty() || ten.isEmpty()) {
+            if (ten.isEmpty()) {
 
-                UIStyle.canhBao(this, "Vui lòng nhập mã và tên sản phẩm.");
+                UIStyle.canhBao(this, "Vui lòng nhập tên sản phẩm.");
 
                 return;
 
@@ -1214,49 +1214,27 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
                     dm.getMaDanhMuc(), ncc.getMaNhaCungCap());
 
             try {
-
-                if (dangSua) {
-
-                    dao.sua(sp);
-
-                } else {
-
-                    dao.them(sp);
-
-                }
-
-                luuAnh(ma);
-
-                dao.luuThongTinGoiY(ma, dm.getTenDanhMuc(), ten,
-
-                        (String) cmbNhomTuoi.getSelectedItem(),
-
-                        (String) cmbKichThuoc.getSelectedItem());
-
                 int them = (Integer) spnThem.getValue();
+                dao.luuSanPhamDayDu(sp, dangSua, dm.getTenDanhMuc(),
+                        (String) cmbNhomTuoi.getSelectedItem(),
+                        (String) cmbKichThuoc.getSelectedItem(), them, PhienLamViec.maNV);
 
-                if (them > 0) {
-
-                    dao.nhapBoSung(
-
-                            List.of(sp), List.of(them), PhienLamViec.maNV);
-
+                String loiAnh = null;
+                try {
+                    luuAnh(ma);
+                } catch (IOException ex) {
+                    loiAnh = ex.getMessage();
                 }
 
                 daLuu = true;
-
                 dispose();
-
+                if (loiAnh != null) {
+                    JOptionPane.showMessageDialog(getOwner(),
+                            "Thông tin sản phẩm đã được lưu, nhưng ảnh chưa lưu được: " + loiAnh,
+                            "Lưu ảnh thất bại", JOptionPane.WARNING_MESSAGE);
+                }
             } catch (SQLException ex) {
-
                 UIStyle.loi(this, ex);
-
-            } catch (IOException ex) {
-
-                JOptionPane.showMessageDialog(this, "Không lưu được ảnh: " + ex.getMessage(),
-
-                        "Lỗi ảnh sản phẩm", JOptionPane.ERROR_MESSAGE);
-
             }
 
         }
