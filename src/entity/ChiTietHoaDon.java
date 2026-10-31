@@ -1,56 +1,46 @@
 package entity;
 
-// Lớp dữ liệu biểu diễn một dòng chi tiết hóa đơn.
+// Lớp dữ liệu biểu diễn các thuộc tính lưu trữ của một dòng chi tiết hóa đơn.
 public class ChiTietHoaDon {
-    private final String maHang;
-    private final String tenHang;
-    private final String loaiHang;
-    private final String tenThuCung;
+    private final String maHoaDon;
+    private final String maThuCung;
+    private final String maDichVu;
+    private final String maSanPham;
     private final int soLuong;
     private final double donGia;
     private final double phanTramGiam;
 
     public ChiTietHoaDon(
-            String maHang,
-            String tenHang,
-            String loaiHang,
+            String maHoaDon,
+            String maThuCung,
+            String maDichVu,
+            String maSanPham,
             int soLuong,
             double donGia,
             double phanTramGiam) {
-        this(maHang, tenHang, loaiHang, soLuong, donGia, phanTramGiam, null);
-    }
-
-    public ChiTietHoaDon(
-            String maHang,
-            String tenHang,
-            String loaiHang,
-            int soLuong,
-            double donGia,
-            double phanTramGiam,
-            String tenThuCung) {
-        this.maHang = maHang;
-        this.tenHang = tenHang;
-        this.loaiHang = loaiHang;
-        this.tenThuCung = tenThuCung;
+        this.maHoaDon = maHoaDon;
+        this.maThuCung = maThuCung;
+        this.maDichVu = maDichVu;
+        this.maSanPham = maSanPham;
         this.soLuong = soLuong;
         this.donGia = donGia;
         this.phanTramGiam = phanTramGiam;
     }
 
-    public String getMaHang() {
-        return maHang;
+    public String getMaHoaDon() {
+        return maHoaDon;
     }
 
-    public String getTenHang() {
-        return tenHang;
+    public String getMaThuCung() {
+        return maThuCung;
     }
 
-    public String getLoaiHang() {
-        return loaiHang;
+    public String getMaDichVu() {
+        return maDichVu;
     }
 
-    public String getTenThuCung() {
-        return tenThuCung;
+    public String getMaSanPham() {
+        return maSanPham;
     }
 
     public int getSoLuong() {

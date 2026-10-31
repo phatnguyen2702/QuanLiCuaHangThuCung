@@ -47,8 +47,8 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
 import dao.HoaDonDAO;
-import entity.ChiTietHoaDon;
-import entity.HoaDon;
+import entity.ChiTietHoaDonTraCuu;
+import entity.HoaDonTraCuu;
 
 // Giao diện/chức năng tra cứu lịch sử hóa đơn của ứng dụng.
 public class TraCuuLichSuHoaDon extends JPanel {
@@ -115,8 +115,8 @@ public class TraCuuLichSuHoaDon extends JPanel {
     private final JLabel lblTongTien = new JLabel();
     // lblPhuongThuc: Nhãn hiển thị phương thức thanh toán.
     private final JLabel lblPhuongThuc = new JLabel();
-    // hoaDonDangXem: Đối tượng hóa đơn đang xem có kiểu HoaDon.
-    private HoaDon hoaDonDangXem;
+    // hoaDonDangXem: Dữ liệu hóa đơn đang xem.
+    private HoaDonTraCuu hoaDonDangXem;
     // dangCapNhatGoiYMaHoaDon: Cờ cho biết đang cập nhật gợi ý mã hóa đơn.
     private boolean dangCapNhatGoiYMaHoaDon;
 
@@ -522,11 +522,11 @@ public class TraCuuLichSuHoaDon extends JPanel {
             HoaDonDAO.ThongKe thongKe = dao.layThongKe();
             // tuKhoa: Lưu từ khóa tìm kiếm.
             String tuKhoa = layTuKhoa();
-            // hoaDons: Lưu các hóa đơn; phần tử có kiểu HoaDon.
-            List<HoaDon> hoaDons = dao.timHoaDon(tuKhoa);
+            // hoaDons: Dữ liệu hóa đơn tra cứu.
+            List<HoaDonTraCuu> hoaDons = dao.timHoaDon(tuKhoa);
             if (tuKhoa.isEmpty()) {
                 danhSachMaHoaDon.clear();
-                for (HoaDon hoaDon : hoaDons) {
+                for (HoaDonTraCuu hoaDon : hoaDons) {
                     danhSachMaHoaDon.add(hoaDon.getMaHoaDon());
                 }
             }
@@ -556,12 +556,12 @@ public class TraCuuLichSuHoaDon extends JPanel {
 
     // Mở chi tiết.
     // Tham số selected: trạng thái được chọn.
-    private void moChiTiet(HoaDon selected) {
+    private void moChiTiet(HoaDonTraCuu selected) {
         if (selected == null) {
             return;
         }
         try {
-            HoaDon fullInvoice = dao.layChiTietHoaDon(selected.getMaHoaDon());
+            HoaDonTraCuu fullInvoice = dao.layChiTietHoaDon(selected.getMaHoaDon());
             if (fullInvoice == null) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -585,7 +585,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
 
     // Hiển thị thông tin chi tiết.
     // Tham số invoice: hóa đơn.
-    private void hienThongTinChiTiet(HoaDon invoice) {
+    private void hienThongTinChiTiet(HoaDonTraCuu invoice) {
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblMaHoaDon.setText(invoice.getMaHoaDon());
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
@@ -610,10 +610,10 @@ public class TraCuuLichSuHoaDon extends JPanel {
     // Lấy tên thú cưng.
     // Tham số invoice: hóa đơn.
     // Kết quả: chuỗi kết quả.
-    private String layTenThuCung(HoaDon invoice) {
+    private String layTenThuCung(HoaDonTraCuu invoice) {
         // names: Lưu các tên; phần tử có kiểu String.
         List<String> names = new ArrayList<>();
-        for (ChiTietHoaDon detail : invoice.getChiTiet()) {
+        for (ChiTietHoaDonTraCuu detail : invoice.getChiTiet()) {
             if ("Thú cưng".equals(detail.getLoaiHang())) {
                 names.add(detail.getTenHang());
             } else if (detail.getTenThuCung() != null
@@ -674,7 +674,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
     // Tạo nội dung hóa đơn.
     // Tham số invoice: hóa đơn.
     // Kết quả: chuỗi kết quả.
-    private String taoNoiDungHoaDon(HoaDon invoice) {
+    private String taoNoiDungHoaDon(HoaDonTraCuu invoice) {
         // text: Bộ đệm ghép các đoạn chuỗi để tạo nội dung chữ.
         StringBuilder text = new StringBuilder();
         text.append("PET SHOP PRO\n");
@@ -690,9 +690,9 @@ public class TraCuuLichSuHoaDon extends JPanel {
         text.append("STT | Mã hàng | Loại | Tên hàng | Thú cưng | SL | Đơn giá | Thành tiền\n");
         text.append("------------------------------------------------------------\n");
         // details: Lưu các dòng chi tiết hóa đơn.
-        List<ChiTietHoaDon> details = invoice.getChiTiet();
+        List<ChiTietHoaDonTraCuu> details = invoice.getChiTiet();
         for (int index = 0; index < details.size(); index++) {
-            ChiTietHoaDon item = details.get(index);
+            ChiTietHoaDonTraCuu item = details.get(index);
             text.append(index + 1).append(" | ")
                     .append(safe(item.getMaHang())).append(" | ")
                     .append(safe(item.getLoaiHang())).append(" | ")
@@ -730,8 +730,8 @@ public class TraCuuLichSuHoaDon extends JPanel {
                 "MÃ", "THỜI GIAN", "KHÁCH HÀNG", "TỔNG TIỀN",
                 "THANH TOÁN", "TRẠNG THÁI", ""
         };
-        // invoices: Lưu danh sách hóa đơn; phần tử có kiểu HoaDon.
-        private List<HoaDon> invoices = new ArrayList<>();
+        // invoices: Dữ liệu hóa đơn hiển thị trên bảng.
+        private List<HoaDonTraCuu> invoices = new ArrayList<>();
 
         // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
@@ -767,7 +767,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int row, int column) {
-            HoaDon invoice = invoices.get(row);
+            HoaDonTraCuu invoice = invoices.get(row);
             switch (column) {
                 case 0:
                     return invoice.getMaHoaDon();
@@ -790,14 +790,14 @@ public class TraCuuLichSuHoaDon extends JPanel {
 
         // Lấy hóa đơn.
         // Tham số row: chỉ số dòng.
-        // Kết quả: đối tượng/giá trị kiểu HoaDon.
-        private HoaDon getInvoice(int row) {
+        // Kết quả: dữ liệu hóa đơn tại dòng được chọn.
+        private HoaDonTraCuu getInvoice(int row) {
             return row < 0 || row >= invoices.size() ? null : invoices.get(row);
         }
 
         // Cập nhật danh sách hóa đơn.
         // Tham số invoices: danh sách hóa đơn.
-        private void setInvoices(List<HoaDon> invoices) {
+        private void setInvoices(List<HoaDonTraCuu> invoices) {
             this.invoices = new ArrayList<>(invoices);
             fireTableDataChanged();
         }
@@ -811,7 +811,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
                 "Số lượng", "Đơn giá", "Thành tiền"
         };
         // details: Lưu các dòng chi tiết hóa đơn.
-        private List<ChiTietHoaDon> details = new ArrayList<>();
+        private List<ChiTietHoaDonTraCuu> details = new ArrayList<>();
 
         // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
@@ -838,7 +838,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int row, int column) {
-            ChiTietHoaDon detail = details.get(row);
+            ChiTietHoaDonTraCuu detail = details.get(row);
             switch (column) {
                 case 0:
                     return row + 1;
@@ -863,7 +863,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
 
         // Cập nhật các dòng chi tiết.
         // Tham số details: các dòng chi tiết.
-        private void setDetails(List<ChiTietHoaDon> details) {
+        private void setDetails(List<ChiTietHoaDonTraCuu> details) {
             this.details = new ArrayList<>(details);
             fireTableDataChanged();
         }
