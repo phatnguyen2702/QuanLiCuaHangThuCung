@@ -23,11 +23,6 @@ import java.util.ArrayList;
 
 // Giao diện/chức năng quản lý ca làm của ứng dụng.
 public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener {
-
-        // ==============================
-        // MAU
-        // ==============================
-
         // NAVY: Màu dùng cho giao diện: xanh đậm.
         private final Color NAVY = new Color(18, 48, 82);
         // BG: Màu dùng cho giao diện: nền.
@@ -42,11 +37,6 @@ public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener
         // gian và chuỗi.
         private static final DateTimeFormatter FORMAT_GIO = DateTimeFormatter.ofPattern("HH:mm")
                         .withResolverStyle(ResolverStyle.STRICT);
-
-        // ==============================
-        // FORM
-        // ==============================
-
         // txtMaCa: Ô nhập/hiển thị văn bản mã ca.
         private JTextField txtMaCa;
         // txtTenCa: Ô nhập/hiển thị văn bản tên ca.
@@ -55,91 +45,41 @@ public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener
         private JFormattedTextField txtGioBatDau;
         // txtGioKetThuc: Ô nhập theo định dạng giờ kết thúc.
         private JFormattedTextField txtGioKetThuc;
-
         // txtTimKiem: Ô nhập/hiển thị văn bản tìm kiếm.
         private JTextField txtTimKiem;
-
         // Các nút xử lý chung tại actionPerformed().
         private JButton btnThem, btnSua, btnXoa, btnLamMoi, btnTim, btnTatCa;
-
-        // ==============================
-        // TABLE
-        // ==============================
-
         // tblDuLieu: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
         private JTable tblDuLieu;
         // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
         private DefaultTableModel model;
-
-        // ==============================
-        // DAO
-        // ==============================
-
         // caLamDAO: Đối tượng truy cập dữ liệu ca làm.
         private CaLamDAO caLamDAO;
 
-        // ==============================
-        // CONSTRUCTOR
-        // ==============================
-
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
         public QuanLyCaLam() {
-
                 caLamDAO = new CaLamDAO();
-
                 setLayout(new BorderLayout());
-
                 setBackground(BG);
-
-                add(
-                                createTitle(),
-                                BorderLayout.NORTH);
-
-                add(
-                                createCenter(),
-                                BorderLayout.CENTER);
-
+                add(createTitle(), BorderLayout.NORTH);
+                add(createCenter(), BorderLayout.CENTER);
                 loadData();
                 lamMoi();
         }
 
-        // ==============================
-        // TITLE
-        // ==============================
-
         // Tạo tiêu đề.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createTitle() {
-
                 // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
-                JPanel pnlKhung = new JPanel(
-                                new BorderLayout());
-
+                JPanel pnlKhung = new JPanel(new BorderLayout());
                 pnlKhung.setBackground(Color.WHITE);
-
-                pnlKhung.setBorder(
-                                new EmptyBorder(
-                                                18,
-                                                25,
-                                                18,
-                                                25));
-
+                pnlKhung.setBorder(new EmptyBorder(18, 25, 18, 25));
                 // lblTitle2: Nhãn hiển thị: QUẢN LÝ CA LÀM.
-                JLabel lblTitle2 = new JLabel(
-                                "QUẢN LÝ CA LÀM");
-
-                lblTitle2.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                24));
-
+                JLabel lblTitle2 = new JLabel("QUẢN LÝ CA LÀM");
+                lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 24));
                 lblTitle2.setForeground(NAVY);
-
                 // lblSub: Nhãn hiển thị: Quản lý thông tin ca làm việc.
-                JLabel lblSub = new JLabel(
-                                "Quản lý thông tin ca làm việc");
-
+                JLabel lblSub = new JLabel("Quản lý thông tin ca làm việc");
                 lblSub.setFont(
                                 new Font(
                                                 "Segoe UI",
