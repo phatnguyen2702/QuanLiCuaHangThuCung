@@ -14,7 +14,9 @@ import java.util.List;
 
 import ConnectDB.connectDB;
 import entity.ChiTietHoaDon;
+import entity.ChiTietHoaDonTraCuu;
 import entity.HoaDon;
+import entity.HoaDonTraCuu;
 
 // Lớp truy cập cơ sở dữ liệu cho hóa đơn.
 public class HoaDonDAO {
@@ -99,11 +101,12 @@ public class HoaDonDAO {
 
     // Tìm hóa đơn.
     // Tham số tuKhoa: từ khóa tìm kiếm.
-    // Kết quả: đối tượng/giá trị kiểu List<HoaDon>.
-    public List<HoaDon> timHoaDon(String tuKhoa) throws SQLException {
+    // Kết quả: danh sách dữ liệu hóa đơn dùng để hiển thị khi tra cứu.
+    public List<HoaDonTraCuu> timHoaDon(String tuKhoa) throws SQLException {
     PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
-        String sql = "SELECT hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
+        String sql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
+                + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
                 + "COALESCE(SUM(ct.soLuong * ct.donGia * "
                 + " (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
@@ -113,13 +116,14 @@ public class HoaDonDAO {
                 + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
                 + "WHERE (? = '' OR hd.maHoaDon LIKE ? OR kh.hoTen LIKE ? "
                 + "OR kh.soDienThoai LIKE ?) "
-                + "GROUP BY hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
+                + "GROUP BY hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
+                + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc "
                 + "ORDER BY hd.ngayLap DESC, hd.maHoaDon DESC";
         // keyword: Lưu từ khóa tìm kiếm.
         String keyword = tuKhoa == null ? "" : tuKhoa.trim();
-        // hoaDons: Lưu các hóa đơn; phần tử có kiểu HoaDon.
-        List<HoaDon> hoaDons = new ArrayList<>();
+        // hoaDons: Dữ liệu hóa đơn dùng để hiển thị trên màn tra cứu.
+        List<HoaDonTraCuu> hoaDons = new ArrayList<>();
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -133,15 +137,19 @@ public class HoaDonDAO {
                 while (rs.next()) {
                     // ngayLap: Lưu ngày giờ lập hóa đơn dưới dạng dữ liệu thời gian.
                     Timestamp ngayLap = rs.getTimestamp("ngayLap");
-                    hoaDons.add(new HoaDon(
-                            rs.getString("maHoaDon"),
-                            ngayLap == null ? null : ngayLap.toLocalDateTime(),
-                            rs.getString("maKhachHang"),
+                    String maHoaDon = rs.getString("maHoaDon");
+                    String maKhachHang = rs.getString("maKhachHang");
+                    hoaDons.add(new HoaDonTraCuu(
+                            new HoaDon(
+                                    maHoaDon,
+                                    ngayLap == null ? null : ngayLap.toLocalDateTime(),
+                                    rs.getString("maPhuongThuc"),
+                                    maKhachHang),
                             rs.getString("hoTen"),
                             rs.getString("soDienThoai"),
                             rs.getString("tenPhuongThuc"),
                             rs.getBigDecimal("tongTien"),
-                            Collections.<ChiTietHoaDon>emptyList()));
+                            Collections.<ChiTietHoaDonTraCuu>emptyList()));
                 }
             }
         }
@@ -150,11 +158,12 @@ public class HoaDonDAO {
 
     // Lấy chi tiết hóa đơn.
     // Tham số maHoaDon: mã hóa đơn.
-    // Kết quả: đối tượng/giá trị kiểu HoaDon.
-    public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
+    // Kết quả: dữ liệu hóa đơn dùng để hiển thị chi tiết.
+    public HoaDonTraCuu layChiTietHoaDon(String maHoaDon) throws SQLException {
     PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
         // headerSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
-        String headerSql = "SELECT hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
+        String headerSql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
+                + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
                 + "COALESCE(SUM(ct.soLuong * ct.donGia * "
                 + " (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
@@ -163,10 +172,11 @@ public class HoaDonDAO {
                 + "JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc "
                 + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
                 + "WHERE hd.maHoaDon = ? "
-                + "GROUP BY hd.maHoaDon, hd.ngayLap, kh.maKhachHang, kh.hoTen, "
+                + "GROUP BY hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
+                + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc";
         // detailSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
-        String detailSql = "SELECT COALESCE(sp.maSanPham, dv.maDichVu, tc.maThuCung) AS maHang, "
+        String detailSql = "SELECT ct.maHoaDon, ct.maThuCung, ct.maDichVu, ct.maSanPham, "
                 + "COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không xác định') AS tenHang, "
                 + "CASE WHEN sp.maSanPham IS NOT NULL THEN N'Sản phẩm' "
                 + "WHEN dv.maDichVu IS NOT NULL THEN N'Dịch vụ' ELSE N'Thú cưng' END AS loaiHang, "
@@ -183,6 +193,7 @@ public class HoaDonDAO {
         try (Connection con = connectDB.getConnection()) {
             // maKhachHang: Lưu mã khách hàng.
             String maKhachHang;
+            String maPhuongThuc;
             String tenKhachHang;
             // soDienThoai: Lưu số điện thoại.
             String soDienThoai;
@@ -200,6 +211,7 @@ public class HoaDonDAO {
                         return null;
                     }
                     maKhachHang = rs.getString("maKhachHang");
+                    maPhuongThuc = rs.getString("maPhuongThuc");
                     tenKhachHang = rs.getString("hoTen");
                     soDienThoai = rs.getString("soDienThoai");
                     tenPhuongThuc = rs.getString("tenPhuongThuc");
@@ -209,28 +221,35 @@ public class HoaDonDAO {
             }
 
             // chiTiet: Lưu các dòng chi tiết hóa đơn.
-            List<ChiTietHoaDon> chiTiet = new ArrayList<>();
+            List<ChiTietHoaDonTraCuu> chiTiet = new ArrayList<>();
             try (PreparedStatement ps = con.prepareStatement(detailSql)) {
                 ps.setString(1, maHoaDon);
                 // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
                 try (ResultSet rs = ps.executeQuery()) {
                     // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                     while (rs.next()) {
-                        chiTiet.add(new ChiTietHoaDon(
-                                rs.getString("maHang"),
-                                rs.getString("tenHang"),
-                                rs.getString("loaiHang"),
+                        ChiTietHoaDon detail = new ChiTietHoaDon(
+                                rs.getString("maHoaDon"),
+                                rs.getString("maThuCung"),
+                                rs.getString("maDichVu"),
+                                rs.getString("maSanPham"),
                                 rs.getInt("soLuong"),
                                 rs.getDouble("donGia"),
-                                rs.getDouble("phanTramGiam"),
+                                rs.getDouble("phanTramGiam"));
+                        chiTiet.add(new ChiTietHoaDonTraCuu(
+                                detail,
+                                rs.getString("tenHang"),
+                                rs.getString("loaiHang"),
                                 rs.getString("tenThuCungDichVu")));
                     }
                 }
             }
-            return new HoaDon(
-                    maHoaDon,
-                    ngayLap == null ? null : ngayLap.toLocalDateTime(),
-                    maKhachHang,
+            return new HoaDonTraCuu(
+                    new HoaDon(
+                            maHoaDon,
+                            ngayLap == null ? null : ngayLap.toLocalDateTime(),
+                            maPhuongThuc,
+                            maKhachHang),
                     tenKhachHang,
                     soDienThoai,
                     tenPhuongThuc,
