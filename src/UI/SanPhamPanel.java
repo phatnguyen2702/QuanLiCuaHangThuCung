@@ -558,6 +558,8 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
             } else {
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtMa.setText(maMoi);
+                txtMa.setEditable(false);
+                txtMa.setBackground(UIStyle.READONLY);
             }
 
             // btnHuy: Nút thao tác hủy.
