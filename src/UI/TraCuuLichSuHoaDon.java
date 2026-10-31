@@ -10,6 +10,8 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +31,7 @@ import javax.swing.JButton;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -51,7 +54,7 @@ import entity.ChiTietHoaDonTraCuu;
 import entity.HoaDonTraCuu;
 
 // Giao diện/chức năng tra cứu lịch sử hóa đơn của ứng dụng.
-public class TraCuuLichSuHoaDon extends JPanel {
+public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -71,6 +74,8 @@ public class TraCuuLichSuHoaDon extends JPanel {
     private final HoaDonDAO dao = new HoaDonDAO();
     // quayLai: Hành động được gọi khi cần quay lại màn hình trước.
     private final Runnable quayLai;
+    // pnlNoiDung: Phần giao diện được TrangChu nhúng vào CardLayout.
+    private final JPanel pnlNoiDung = new JPanel(new BorderLayout());
     // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng chứa.
     private final CardLayout cardLayout = new CardLayout();
     // pnlScreens: Khung chứa thành phần giao diện các màn hình.
@@ -124,13 +129,72 @@ public class TraCuuLichSuHoaDon extends JPanel {
     // Tham số quayLai: quay lại màn hình trước.
     public TraCuuLichSuHoaDon(Runnable quayLai) {
         this.quayLai = quayLai;
-        setLayout(new BorderLayout());
-        setBackground(LIGHT_BLUE);
-        setBorder(BorderFactory.createEmptyBorder(14, 18, 18, 18));
+        setTitle("Tra cứu lịch sử hóa đơn");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        pnlNoiDung.setBackground(LIGHT_BLUE);
+        pnlNoiDung.setBorder(BorderFactory.createEmptyBorder(14, 18, 18, 18));
         pnlScreens.setOpaque(false);
         pnlScreens.add(createListScreen(), "LIST");
         pnlScreens.add(createDetailScreen(), "DETAIL");
-        add(pnlScreens, BorderLayout.CENTER);
+        pnlNoiDung.add(pnlScreens, BorderLayout.CENTER);
+        setContentPane(pnlNoiDung);
+    }
+
+    /** Trả về panel nội dung để TrangChu tiếp tục hiển thị bằng CardLayout. */
+    public JPanel getContentPanel() {
+        return pnlNoiDung;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent event) {
+        switch (event.getActionCommand()) {
+            case "RETURN_TO_PAYMENT":
+                quayLai.run();
+                break;
+            case "SEARCH_INVOICES":
+                timKiem();
+                break;
+            case "REFRESH_INVOICES":
+                cmbMaHoaDon.getEditor().setItem("");
+                napDanhSach();
+                break;
+            case "EXPORT_INVOICE":
+                xuatHoaDon();
+                break;
+            case "SHOW_INVOICE_LIST":
+                cardLayout.show(pnlScreens, "LIST");
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent event) {
+        if (event.getClickCount() != 2) {
+            return;
+        }
+        int row = tblHoaDon.rowAtPoint(event.getPoint());
+        int column = tblHoaDon.columnAtPoint(event.getPoint());
+        if (row >= 0 && column >= 0 && column != 6) {
+            moChiTiet(invoiceTableModel.getInvoice(tblHoaDon.convertRowIndexToModel(row)));
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent event) {
     }
 
     // Hiển thị danh sách.
@@ -167,7 +231,8 @@ public class TraCuuLichSuHoaDon extends JPanel {
         // btnQuayLai: Nút thao tác: Quay lại.
         JButton btnQuayLai = new JButton("Quay lại");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnQuayLai.addActionListener(e -> quayLai.run());
+        btnQuayLai.setActionCommand("RETURN_TO_PAYMENT");
+        btnQuayLai.addActionListener(this);
         pnlActions.add(btnQuayLai);
         pnlDanhSach.add(pnlActions, BorderLayout.SOUTH);
         pnlContent.add(pnlDanhSach, BorderLayout.CENTER);
@@ -242,7 +307,8 @@ public class TraCuuLichSuHoaDon extends JPanel {
             // txtMaHoaDon: Ô nhập/hiển thị văn bản mã hóa đơn.
             JTextField txtMaHoaDon = (JTextField) editor;
             // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-            txtMaHoaDon.addActionListener(e -> timKiem());
+            txtMaHoaDon.setActionCommand("SEARCH_INVOICES");
+            txtMaHoaDon.addActionListener(this);
             txtMaHoaDon.getDocument().addDocumentListener(new DocumentListener() {
                 // Cập nhật trạng thái liên quan khi người dùng thêm ký tự vào ô văn bản.
                 // Tham số e: thông tin sự kiện.
@@ -271,17 +337,16 @@ public class TraCuuLichSuHoaDon extends JPanel {
         // btnTimKiem: Nút thao tác: Xác nhận.
         JButton btnTimKiem = new JButton("Xác nhận");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTimKiem.addActionListener(e -> timKiem());
+        btnTimKiem.setActionCommand("SEARCH_INVOICES");
+        btnTimKiem.addActionListener(this);
         pnlSearch.add(btnTimKiem, BorderLayout.EAST);
         pnlKhung.add(pnlSearch, BorderLayout.CENTER);
 
         // btnLamMoi: Nút thao tác: Làm mới.
         JButton btnLamMoi = new JButton("Làm mới");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnLamMoi.addActionListener(e -> {
-            cmbMaHoaDon.getEditor().setItem("");
-            napDanhSach();
-        });
+        btnLamMoi.setActionCommand("REFRESH_INVOICES");
+        btnLamMoi.addActionListener(this);
         pnlKhung.add(btnLamMoi, BorderLayout.EAST);
         return pnlKhung;
     }
@@ -295,6 +360,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
 
     // Cấu hình hóa đơn bảng.
     private void configureInvoiceTable() {
+        tblHoaDon.addMouseListener(this);
         tblHoaDon.setRowHeight(30);
         tblHoaDon.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblHoaDon.setFillsViewportHeight(true);
@@ -434,11 +500,13 @@ public class TraCuuLichSuHoaDon extends JPanel {
         // btnXuatHoaDon: Nút thao tác: Xuất hóa đơn.
         JButton btnXuatHoaDon = new JButton("Xuất hóa đơn");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnXuatHoaDon.addActionListener(e -> xuatHoaDon());
+        btnXuatHoaDon.setActionCommand("EXPORT_INVOICE");
+        btnXuatHoaDon.addActionListener(this);
         // btnQuayLai: Nút thao tác: Quay lại.
         JButton btnQuayLai = new JButton("Quay lại");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnQuayLai.addActionListener(e -> cardLayout.show(pnlScreens, "LIST"));
+        btnQuayLai.setActionCommand("SHOW_INVOICE_LIST");
+        btnQuayLai.addActionListener(this);
         pnlActions.add(btnXuatHoaDon);
         pnlActions.add(btnQuayLai);
         pnlFooter2.add(pnlActions, BorderLayout.SOUTH);
@@ -534,7 +602,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
             capNhatThongKe(thongKe);
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(
-                    this,
+                    pnlNoiDung,
                     "Không thể tải danh sách hóa đơn.\n" + e.getMessage(),
                     "Lỗi tra cứu hóa đơn",
                     JOptionPane.ERROR_MESSAGE);
@@ -564,7 +632,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
             HoaDonTraCuu fullInvoice = dao.layChiTietHoaDon(selected.getMaHoaDon());
             if (fullInvoice == null) {
                 JOptionPane.showMessageDialog(
-                        this,
+                        pnlNoiDung,
                         "Hóa đơn không còn tồn tại trong hệ thống.",
                         "Không tìm thấy hóa đơn",
                         JOptionPane.WARNING_MESSAGE);
@@ -576,7 +644,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
             cardLayout.show(pnlScreens, "DETAIL");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(
-                    this,
+                    pnlNoiDung,
                     "Không thể tải chi tiết hóa đơn.\n" + e.getMessage(),
                     "Lỗi tra cứu hóa đơn",
                     JOptionPane.ERROR_MESSAGE);
@@ -634,7 +702,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         fchChonTep.setDialogTitle("Lưu hóa đơn TXT");
         fchChonTep.setSelectedFile(new java.io.File(hoaDonDangXem.getMaHoaDon() + ".txt"));
         fchChonTep.setFileFilter(new FileNameExtensionFilter("Tệp văn bản (*.txt)", "txt"));
-        if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+        if (fchChonTep.showSaveDialog(pnlNoiDung) != JFileChooser.APPROVE_OPTION) {
             return;
         }
 
@@ -645,7 +713,7 @@ public class TraCuuLichSuHoaDon extends JPanel {
         }
         if (Files.exists(file)
                 && JOptionPane.showConfirmDialog(
-                        this,
+                        pnlNoiDung,
                         "Tệp đã tồn tại. Bạn có muốn ghi đè không?",
                         "Xác nhận ghi đè",
                         JOptionPane.YES_NO_OPTION,
@@ -658,13 +726,13 @@ public class TraCuuLichSuHoaDon extends JPanel {
                     file,
                     taoNoiDungHoaDon(hoaDonDangXem).getBytes(StandardCharsets.UTF_8));
             JOptionPane.showMessageDialog(
-                    this,
+                    pnlNoiDung,
                     "Đã lưu hóa đơn TXT:\n" + file.toAbsolutePath(),
                     "Xuất hóa đơn thành công",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(
-                    this,
+                    pnlNoiDung,
                     "Không thể lưu hóa đơn.\n" + e.getMessage(),
                     "Lỗi xuất hóa đơn",
                     JOptionPane.ERROR_MESSAGE);

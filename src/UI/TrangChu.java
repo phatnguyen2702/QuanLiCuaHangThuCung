@@ -226,7 +226,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moThongKeDoanhThu() {
         boolean daTaoManHinh = pnlThongKeDoanhThu != null;
         hienManHinh("thongkedoanhthu", "Thống kê doanh thu", btnThongKe,
-                () -> pnlThongKeDoanhThu = new ThongKeDoanhThu());
+                () -> {
+                    pnlThongKeDoanhThu = new ThongKeDoanhThu();
+                    return pnlThongKeDoanhThu.getContentPanel();
+                });
         if (daTaoManHinh && pnlThongKeDoanhThu != null) {
             pnlThongKeDoanhThu.lamMoi();
         }
@@ -327,8 +330,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở tra cứu hóa đơn.
     private void moTraCuuHoaDon() {
         hienManHinh("hoadon", "Tra cứu lịch sử hóa đơn", btnTimKiem,
-                () -> pnlTraCuuHoaDon = new TraCuuLichSuHoaDon(
-                        () -> chuyenTuNhom(btnXuLy, this::moThanhToan)));
+                () -> {
+                    pnlTraCuuHoaDon = new TraCuuLichSuHoaDon(
+                            () -> chuyenTuNhom(btnXuLy, this::moThanhToan));
+                    return pnlTraCuuHoaDon.getContentPanel();
+                });
         if (pnlTraCuuHoaDon != null) {
             try {
                 pnlTraCuuHoaDon.hienDanhSach();
@@ -359,9 +365,12 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở thanh toán.
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
-                () -> pnlThanhToan = new QuanLyThanhToan(maNV,
-                        () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon),
-                        this::capNhatDanhSachPhieuDichVu));
+                () -> {
+                    pnlThanhToan = new QuanLyThanhToan(maNV,
+                            () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon),
+                            this::capNhatDanhSachPhieuDichVu);
+                    return pnlThanhToan.getContentPanel();
+                });
         if (pnlThanhToan != null) {
             pnlThanhToan.napGioHang();
         }

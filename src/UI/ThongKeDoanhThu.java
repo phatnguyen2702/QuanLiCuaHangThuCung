@@ -14,6 +14,10 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -34,6 +38,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -45,7 +50,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 // Giao diện/chức năng thống kê doanh thu của ứng dụng.
-public class ThongKeDoanhThu extends JPanel {
+public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -67,6 +72,8 @@ public class ThongKeDoanhThu extends JPanel {
 
     // dao: Đối tượng truy cập dữ liệu thống kê doanh thu.
     private final ThongKeDoanhThuDAO dao = new ThongKeDoanhThuDAO();
+    // pnlNoiDung: Phần giao diện được TrangChu nhúng vào CardLayout.
+    private final JPanel pnlNoiDung = new JPanel(new BorderLayout(0, 12));
     // cmbCheDo: Hộp lựa chọn chế độ thống kê.
     private final JComboBox<CheDo> cmbCheDo = new JComboBox<>(CheDo.values());
     // lblKy: Nhãn hiển thị kỳ.
@@ -83,6 +90,8 @@ public class ThongKeDoanhThu extends JPanel {
     private final JButton btnTruoc = new JButton("‹");
     // btnSau: Nút thao tác: ›.
     private final JButton btnSau = new JButton("›");
+    // btnPdf: Nút thao tác xuất file.
+    private final JButton btnPdf = new JButton("Xuất file");
     // bangModel: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final BangMatHangModel bangModel = new BangMatHangModel();
     // tblMatHang: Bảng hiển thị dữ liệu mặt hàng.
@@ -96,19 +105,65 @@ public class ThongKeDoanhThu extends JPanel {
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public ThongKeDoanhThu() {
-        setLayout(new BorderLayout(0, 12));
-        setBackground(new Color(229, 241, 252));
-        setBorder(BorderFactory.createEmptyBorder(14, 18, 16, 18));
-        add(taoTieuDe(), BorderLayout.NORTH);
-        add(taoNoiDung(), BorderLayout.CENTER);
+        setTitle("Thống kê doanh thu");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        pnlNoiDung.setBackground(new Color(229, 241, 252));
+        pnlNoiDung.setBorder(BorderFactory.createEmptyBorder(14, 18, 16, 18));
+        setContentPane(pnlNoiDung);
+        pnlNoiDung.add(taoTieuDe(), BorderLayout.NORTH);
+        pnlNoiDung.add(taoNoiDung(), BorderLayout.CENTER);
 
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        cmbCheDo.addActionListener(e -> capNhatBaoCao());
+        cmbCheDo.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTruoc.addActionListener(e -> dichKy(-1));
+        btnTruoc.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnSau.addActionListener(e -> dichKy(1));
+        btnSau.addActionListener(this);
+        tblMatHang.addMouseListener(this);
         capNhatBaoCao();
+    }
+
+    /** Trả về panel nội dung để TrangChu tiếp tục hiển thị màn hình bằng CardLayout. */
+    public JPanel getContentPanel() {
+        return pnlNoiDung;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent event) {
+        Object source = event.getSource();
+        if (source == cmbCheDo) {
+            capNhatBaoCao();
+        } else if (source == btnTruoc) {
+            dichKy(-1);
+        } else if (source == btnSau) {
+            dichKy(1);
+        } else if (source == btnPdf) {
+            xuatPdf();
+        }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent event) {
+        int row = tblMatHang.rowAtPoint(event.getPoint());
+        if (row >= 0) {
+            tblMatHang.setRowSelectionInterval(row, row);
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent event) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent event) {
     }
 
     // Làm mới dữ liệu hoặc trạng thái của màn hình.
@@ -155,9 +210,8 @@ public class ThongKeDoanhThu extends JPanel {
         pnlToolbar.add(pnlKyChon, BorderLayout.WEST);
 
         // btnPdf: Nút thao tác: Xuất file.
-        JButton btnPdf = new JButton("Xuất file");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnPdf.addActionListener(e -> xuatPdf());
+        btnPdf.addActionListener(this);
         pnlToolbar.add(btnPdf, BorderLayout.EAST);
 
         // pnlStats: Khung chứa thành phần giao diện thống kê.
@@ -304,7 +358,7 @@ public class ThongKeDoanhThu extends JPanel {
             lblTrungBinh.setText("—");
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTrangThai.setText("Không tải được thống kê doanh thu.");
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(pnlNoiDung,
                     "Không tải được thống kê doanh thu.\n" + ex.getMessage(),
                     "Lỗi thống kê", JOptionPane.ERROR_MESSAGE);
         }
@@ -388,7 +442,7 @@ public class ThongKeDoanhThu extends JPanel {
     // Xuất PDF.
     private void xuatPdf() {
         if (baoCao == null) {
-            JOptionPane.showMessageDialog(this, "Chưa có số liệu để xuất.",
+            JOptionPane.showMessageDialog(pnlNoiDung, "Chưa có số liệu để xuất.",
                     "Xuất thống kê", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -399,7 +453,7 @@ public class ThongKeDoanhThu extends JPanel {
         fchChonTep.setSelectedFile(new java.io.File("ThongKeDoanhThu-" + nhanKy(cheDo, ngayThamChieu)
                 .replace('/', '-') + ".pdf"));
         fchChonTep.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
-        if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+        if (fchChonTep.showSaveDialog(pnlNoiDung) != JFileChooser.APPROVE_OPTION) {
             return;
         }
         // file: Đường dẫn tệp dùng cho tệp.
@@ -409,11 +463,11 @@ public class ThongKeDoanhThu extends JPanel {
         }
         try {
             Files.write(file, taoPdf());
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(pnlNoiDung,
                     "Đã xuất thống kê:\n" + file.toAbsolutePath(),
                     "Xuất thống kê", JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(pnlNoiDung,
                     "Không thể xuất file.\n" + ex.getMessage(),
                     "Lỗi xuất", JOptionPane.ERROR_MESSAGE);
         }
