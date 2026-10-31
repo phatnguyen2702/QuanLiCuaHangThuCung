@@ -390,6 +390,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         JPanel pnlSearchField = new JPanel(new BorderLayout(6, 0));
         pnlSearchField.setOpaque(false);
         pnlSearchField.add(new JLabel("Tìm sản phẩm"), BorderLayout.WEST);
+        cmbMaSanPham.setToolTipText("Nhập mã hoặc tên sản phẩm");
         pnlSearchField.add(cmbMaSanPham, BorderLayout.CENTER);
         // btnTim: Nút thao tác: Xác nhận.
         JButton btnTim = new JButton("Xác nhận");
@@ -779,42 +780,68 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
     // Nạp danh sách mã sản phẩm.
     private void napDanhSachMaSanPham() {
+        Object giaTriDangNhap = cmbMaSanPham.getEditor().getItem();
         try {
-            danhSachMaSanPham.clear();
-            tenSanPhamTheoMa.clear();
-            tenSanPhamTheoMa.putAll(dao.layDanhSachSanPham());
-            danhSachMaSanPham.addAll(tenSanPhamTheoMa.keySet());
+            Map<String, String> sanPhamMoi = dao.layDanhSachSanPham();
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String mauHienThi = "";
-            for (String ma : danhSachMaSanPham) {
-                String goiY = taoGoiYSanPham(ma);
-                cmbMaSanPham.addItem(goiY);
+            for (Map.Entry<String, String> sanPham : sanPhamMoi.entrySet()) {
+                String goiY = sanPham.getKey();
+                if (sanPham.getValue() != null && !sanPham.getValue().isBlank()) {
+                    goiY += " - " + sanPham.getValue();
+                }
+                model.addElement(goiY);
                 if (goiY.length() > mauHienThi.length()) {
                     mauHienThi = goiY;
                 }
             }
+            tenSanPhamTheoMa.clear();
+            tenSanPhamTheoMa.putAll(sanPhamMoi);
+            danhSachMaSanPham.clear();
+            danhSachMaSanPham.addAll(sanPhamMoi.keySet());
+            dangCapNhatGoiYMaSanPham = true;
+            try {
+                cmbMaSanPham.setModel(model);
+                cmbMaSanPham.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+                cmbMaSanPham.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+            } finally {
+                dangCapNhatGoiYMaSanPham = false;
+            }
             cmbMaSanPham.setPrototypeDisplayValue(mauHienThi);
-            cmbMaSanPham.setSelectedItem("");
             cmbMaSanPham.setPreferredSize(cmbMaSanPham.getPreferredSize());
+            if (giaTriDangNhap != null && !giaTriDangNhap.toString().isBlank()) {
+                capNhatGoiYMaSanPham();
+            }
         } catch (Exception e) {
             hienLoi("Không tải được danh sách mã sản phẩm: " + e.getMessage());
         }
     }
 
     // Nạp danh sách mã khách hàng.
-    private void napDanhSachMaKhachHang() {
+    public void napDanhSachMaKhachHang() {
+        Object giaTriDangNhap = cmbMaKhachHang.getEditor().getItem();
         try {
-            danhSachKhachHang.clear();
-            danhSachKhachHang.addAll(dao.layDanhSachKhachHang());
+            List<entity.ThanhToan.KhachHang> danhSachMoi = dao.layDanhSachKhachHang();
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "KH000000";
-            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
-                cmbMaKhachHang.addItem(taoGoiYKhachHang(khachHang));
+            for (entity.ThanhToan.KhachHang khachHang : danhSachMoi) {
+                model.addElement(taoGoiYKhachHang(khachHang));
                 if (khachHang.getMaKhachHang().length() > maDaiNhat.length()) {
                     maDaiNhat = khachHang.getMaKhachHang();
                 }
             }
+            danhSachKhachHang.clear();
+            danhSachKhachHang.addAll(danhSachMoi);
+            dangCapNhatGoiYMaKhachHang = true;
+            try {
+                cmbMaKhachHang.setModel(model);
+                cmbMaKhachHang.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+                cmbMaKhachHang.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+            } finally {
+                dangCapNhatGoiYMaKhachHang = false;
+            }
             cmbMaKhachHang.setPrototypeDisplayValue(maDaiNhat);
             cmbMaKhachHang.setPreferredSize(cmbMaKhachHang.getPreferredSize());
-            cmbMaKhachHang.setSelectedItem("");
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách mã khách hàng: " + e.getMessage());
         }
@@ -822,22 +849,42 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
     // Nạp danh sách voucher đang hoạt động.
     private void napDanhSachVoucher() {
+        Object giaTriDangNhap = cmbVoucher.getEditor().getItem();
         try {
-            danhSachVoucher.clear();
-            danhSachVoucher.addAll(dao.layDanhSachVoucher());
+            List<entity.ThanhToan.Voucher> voucherMoi = dao.layDanhSachVoucher();
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "VOUCHER000";
-            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
-                cmbVoucher.addItem(taoGoiYVoucher(item));
+            for (entity.ThanhToan.Voucher item : voucherMoi) {
+                String goiY = taoGoiYVoucher(item);
+                model.addElement(goiY);
                 if (item.getMaVoucher().length() > maDaiNhat.length()) {
                     maDaiNhat = item.getMaVoucher();
                 }
             }
+            danhSachVoucher.clear();
+            danhSachVoucher.addAll(voucherMoi);
+            dangCapNhatGoiYVoucher = true;
+            try {
+                cmbVoucher.setModel(model);
+                cmbVoucher.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+                cmbVoucher.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+            } finally {
+                dangCapNhatGoiYVoucher = false;
+            }
             cmbVoucher.setPrototypeDisplayValue(maDaiNhat);
             cmbVoucher.setPreferredSize(cmbVoucher.getPreferredSize());
-            cmbVoucher.setSelectedItem("");
+            if (giaTriDangNhap != null && !giaTriDangNhap.toString().isBlank()) {
+                capNhatGoiYVoucher();
+            }
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách voucher: " + e.getMessage());
         }
+    }
+
+    /** Làm mới dữ liệu gợi ý khi mở lại màn hình thanh toán. */
+    public void napDanhSachGoiYSanPhamVaVoucher() {
+        napDanhSachMaSanPham();
+        napDanhSachVoucher();
     }
 
     // Cập nhật gợi y mã khách hàng.
@@ -946,11 +993,14 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             // tuKhoa: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
             String tuKhoa = txtEditor.getText();
             String maTimKiem = layMaSanPhamTuGoiY(tuKhoa);
+            String tenTimKiem = maTimKiem.toLowerCase(Locale.ROOT);
             // goiY: Lưu gợi y; phần tử có kiểu String.
             List<String> goiY = new ArrayList<>();
             String tuKhoaKhongPhanBietHoaThuong = maTimKiem.toLowerCase(Locale.ROOT);
             for (String ma : danhSachMaSanPham) {
-                if (maCoChuaTatCaKyTu(ma, tuKhoaKhongPhanBietHoaThuong)) {
+                String ten = tenSanPhamTheoMa.get(ma);
+                if (maCoChuaTatCaKyTu(ma, tuKhoaKhongPhanBietHoaThuong)
+                        || (ten != null && ten.toLowerCase(Locale.ROOT).contains(tenTimKiem))) {
                     goiY.add(ma);
                 }
             }
@@ -1002,8 +1052,11 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             String tuKhoaDaChuanHoa = maTimKiem.toLowerCase(Locale.ROOT);
             List<entity.ThanhToan.Voucher> goiY = new ArrayList<>();
             for (entity.ThanhToan.Voucher item : danhSachVoucher) {
-                if (maCoChuaTatCaKyTu(
-                        item.getMaVoucher(), tuKhoaDaChuanHoa)) {
+                String tenVoucher = item.getTenVoucher();
+                if (maCoChuaTatCaKyTu(item.getMaVoucher(), tuKhoaDaChuanHoa)
+                        || (tenVoucher != null
+                                && tenVoucher.toLowerCase(Locale.ROOT)
+                                        .contains(tuKhoaDaChuanHoa))) {
                     goiY.add(item);
                 }
             }
