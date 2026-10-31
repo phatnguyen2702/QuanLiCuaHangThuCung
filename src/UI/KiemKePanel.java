@@ -19,6 +19,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseAdapter;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,6 +70,7 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
     private final JLabel lblBatDau = new JLabel("Thời điểm kiểm kê: —");
     // ngayBatDau: Lưu thời điểm bắt đầu dưới dạng dữ liệu thời gian.
     private LocalDateTime ngayBatDau = LocalDateTime.now();
+    private final javax.swing.Timer tmrDemThoiGian;
 
     // Toan bo san pham cua phieu dang kiem
     // tatCa: Lưu toàn bộ dữ liệu; phần tử có kiểu ChiTietPhieuKiemKe.
@@ -113,7 +116,15 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
         add(pnlPhanDau, BorderLayout.NORTH);
         add(taoPhanBang(), BorderLayout.CENTER);
 
+        tmrDemThoiGian = new javax.swing.Timer(1000, e -> capNhatThoiGianKiemKe());
         phieuMoi();
+        tmrDemThoiGian.start();
+    }
+
+    @Override
+    public void dispose() {
+        tmrDemThoiGian.stop();
+        super.dispose();
     }
 
     // =========================================================
@@ -302,9 +313,7 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTieuDe3.setText("Kiểm kê kho — " + maPhieu);
             ngayBatDau = LocalDateTime.now();
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-            lblBatDau.setText("Thời điểm kiểm kê: "
-                    + ngayBatDau.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+            capNhatThoiGianKiemKe();
 
             tatCa.clear();
 
@@ -325,6 +334,15 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
         }
+    }
+
+    private void capNhatThoiGianKiemKe() {
+        long giay = Math.max(0, Duration.between(ngayBatDau, LocalDateTime.now()).getSeconds());
+        long gio = giay / 3600;
+        long phut = (giay % 3600) / 60;
+        long giayLe = giay % 60;
+        lblBatDau.setText("Bắt đầu: " + ngayBatDau.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+                + "  |  Thời gian kiểm kê: " + String.format("%02d:%02d:%02d", gio, phut, giayLe));
     }
 
     // Hỏi xác nhận phiếu mới.

@@ -151,8 +151,8 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
         them(pnlKhung, c, 2, 0, new JLabel("Đến ngày (dd/MM/yyyy)"));
         them(pnlKhung, c, 3, 0, new JLabel(kiemKe ? "Kết quả kiểm kê" : "Trạng thái"));
         them(pnlKhung, c, 0, 1, txtTuKhoa);
-        them(pnlKhung, c, 1, 1, txtTuNgay);
-        them(pnlKhung, c, 2, 1, txtDenNgay);
+        them(pnlKhung, c, 1, 1, taoOChonNgay(txtTuNgay));
+        them(pnlKhung, c, 2, 1, taoOChonNgay(txtDenNgay));
         them(pnlKhung, c, 3, 1, kiemKe ? cmbKetQuaKiemKe : cmbTrangThai2);
         if (!kiemKe) {
             them(pnlKhung, c, 4, 0, new JLabel("Nhà cung cấp"));
@@ -191,8 +191,31 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     private void them(JPanel pnlKhung, GridBagConstraints c, int x, int y, Component component) {
         c.gridx = x;
         c.gridy = y;
-        c.weightx = component instanceof JTextField ? 1 : 0;
+        c.weightx = component instanceof JTextField || component instanceof JPanel ? 1 : 0;
         pnlKhung.add(component, c);
+    }
+
+    private JPanel taoOChonNgay(JTextField field) {
+        JPanel panel = new JPanel(new BorderLayout(4, 0));
+        panel.setOpaque(false);
+        JButton button = new JButton("Chọn ngày");
+        button.setToolTipText("Mở lịch để chọn ngày");
+        button.addActionListener(e -> hienLich(field, button));
+        panel.add(field, BorderLayout.CENTER);
+        panel.add(button, BorderLayout.EAST);
+        return panel;
+    }
+
+    private void hienLich(JTextField field, Component anchor) {
+        LocalDate selected = null;
+        try {
+            if (!field.getText().trim().isEmpty()) selected = parseDate(field.getText());
+        } catch (IllegalArgumentException ignored) { }
+        NhapKhoPanel.LichChonHanSuDung lich =
+                new NhapKhoPanel.LichChonHanSuDung(selected, date -> {
+                    field.setText(date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu")));
+                });
+        lich.show(anchor, 0, anchor.getHeight());
     }
 
     // Nạp nhà cung cấp.

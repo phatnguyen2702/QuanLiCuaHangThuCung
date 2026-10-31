@@ -52,8 +52,8 @@ public class CanhBaoHanSuDungPanel extends JFrame implements ActionListener, Mou
         getContentPane().setBackground(UIStyle.LIGHT_BLUE);
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(22, 25, 22, 25));
 
-        // lblTitle2: Nhãn hiển thị: Cảnh báo sản phẩm sắp hết hạn.
-        JLabel lblTitle2 = new JLabel("Cảnh báo sản phẩm sắp hết hạn");
+        // lblTitle2: Nhãn hiển thị: Tra cứu hạn sử dụng sản phẩm.
+        JLabel lblTitle2 = new JLabel("Tra cứu hạn sử dụng sản phẩm");
         lblTitle2.setFont(UIStyle.font(Font.BOLD, 24));
         // btnRefresh: Nút thao tác làm mới.
         JButton btnRefresh = UIStyle.nutChinh("Làm mới");
