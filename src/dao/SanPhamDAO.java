@@ -408,9 +408,19 @@ public class SanPhamDAO {
             // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
             try {
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
-                    ps.setString(1, maSanPham);
-                    ps.executeUpdate();
+                // Xóa các dòng tham chiếu trước để không vi phạm khóa ngoại.
+                String[] bangLienQuan = {
+                        "dbo.GoiYThucAn",
+                        "dbo.ChiTietHoaDon",
+                        "dbo.ChiTietPhieuNhap",
+                        "dbo.ChiTietPhieuKiemKe"
+                };
+                for (String bang : bangLienQuan) {
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "DELETE FROM " + bang + " WHERE maSanPham=?")) {
+                        ps.setString(1, maSanPham);
+                        ps.executeUpdate();
+                    }
                 }
                 boolean deleted;
                 try (PreparedStatement ps = con.prepareStatement("DELETE FROM SanPham WHERE maSanPham=?")) {
