@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import ConnectDB.connectDB;
+import entity.ChiTietHoaDon;
 import entity.HoaDon;
 
 // Lớp truy cập cơ sở dữ liệu cho hóa đơn.
@@ -140,7 +141,7 @@ public class HoaDonDAO {
                             rs.getString("soDienThoai"),
                             rs.getString("tenPhuongThuc"),
                             rs.getBigDecimal("tongTien"),
-                            Collections.<HoaDon.ChiTiet>emptyList()));
+                            Collections.<ChiTietHoaDon>emptyList()));
                 }
             }
         }
@@ -207,21 +208,21 @@ public class HoaDonDAO {
                 }
             }
 
-            // chiTiet: Lưu chi tiết; phần tử có kiểu HoaDon.ChiTiet.
-            List<HoaDon.ChiTiet> chiTiet = new ArrayList<>();
+            // chiTiet: Lưu các dòng chi tiết hóa đơn.
+            List<ChiTietHoaDon> chiTiet = new ArrayList<>();
             try (PreparedStatement ps = con.prepareStatement(detailSql)) {
                 ps.setString(1, maHoaDon);
                 // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
                 try (ResultSet rs = ps.executeQuery()) {
                     // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                     while (rs.next()) {
-                        chiTiet.add(new HoaDon.ChiTiet(
+                        chiTiet.add(new ChiTietHoaDon(
                                 rs.getString("maHang"),
                                 rs.getString("tenHang"),
                                 rs.getString("loaiHang"),
                                 rs.getInt("soLuong"),
-                                rs.getBigDecimal("donGia"),
-                                rs.getBigDecimal("phanTramGiam"),
+                                rs.getDouble("donGia"),
+                                rs.getDouble("phanTramGiam"),
                                 rs.getString("tenThuCungDichVu")));
                     }
                 }
