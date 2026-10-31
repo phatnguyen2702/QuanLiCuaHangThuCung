@@ -148,7 +148,7 @@ public final class PhanQuyen {
             case KIEM_KE -> "Kiểm kê kho";
             case TRA_CUU_NHAP_KHO -> "Tra cứu nhập kho";
             case TRA_CUU_KIEM_KE -> "Tra cứu kiểm kê kho";
-            case CANH_BAO_HAN_SU_DUNG -> "Cảnh báo hàng sắp hết hạn";
+            case CANH_BAO_HAN_SU_DUNG -> "Tra cứu hạn sử dụng";
             case LICH_HEN_SPA -> "Quản lý lịch hẹn Spa";
             case PHIEU_DICH_VU -> "Quản lý phiếu dịch vụ";
             case THANH_TOAN -> "Thanh toán tại quầy";
@@ -211,7 +211,7 @@ public final class PhanQuyen {
             case "Kiểm kê kho" -> Quyen.KIEM_KE;
             case "Tra cứu nhập kho" -> Quyen.TRA_CUU_NHAP_KHO;
             case "Tra cứu kiểm kê kho" -> Quyen.TRA_CUU_KIEM_KE;
-            case "Cảnh báo sản phẩm sắp hết hạn" -> Quyen.CANH_BAO_HAN_SU_DUNG;
+            case "Tra cứu hạn sử dụng" -> Quyen.CANH_BAO_HAN_SU_DUNG;
             case "Lịch hẹn Spa" -> Quyen.LICH_HEN_SPA;
             case "Phiếu dịch vụ" -> Quyen.PHIEU_DICH_VU;
             case "Thanh toán hóa đơn" -> Quyen.THANH_TOAN;

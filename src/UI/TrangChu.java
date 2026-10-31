@@ -670,7 +670,6 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         themMuc(pmnP, "Lịch hẹn Spa", btnXuLy, this::moLichHen);
         themMuc(pmnP, "Phiếu dịch vụ", btnXuLy, this::moPhieuDichVu);
         pmnP.addSeparator();
-        themMuc(pmnP, "Cảnh báo sản phẩm sắp hết hạn", btnXuLy, this::moCanhBaoHanSuDung);
         themMuc(pmnP, "Gợi ý thức ăn theo loại thú cưng", btnXuLy, this::moGoiYThucAn);
         pmnP.addSeparator();
         themMuc(pmnP, "Thanh toán hóa đơn", btnXuLy, this::moThanhToan);
@@ -689,6 +688,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         themMuc(pmnP, "Tra cứu lịch sử hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
         themMuc(pmnP, "Tra cứu nhập kho", btnTimKiem, this::moTraCuuNhapKho);
         themMuc(pmnP, "Tra cứu kiểm kê kho", btnTimKiem, this::moTraCuuKiemKe);
+        themMuc(pmnP, "Tra cứu hạn sử dụng", btnTimKiem, this::moCanhBaoHanSuDung);
         return pmnP;
     }
 
@@ -1224,7 +1224,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
 
     // Mở cảnh báo hạn sử dụng.
     private void moCanhBaoHanSuDung() {
-        hienManHinh("canhbaohansudung", "Cảnh báo sản phẩm sắp hết hạn", btnXuLy,
+        hienManHinh("canhbaohansudung", "Tra cứu hạn sử dụng sản phẩm", btnTimKiem,
                 () -> { pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel(); return pnlCanhBaoHanSuDung.getContentPane(); });
         if (pnlCanhBaoHanSuDung != null) {
             pnlCanhBaoHanSuDung.napLai();
@@ -1234,7 +1234,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở gợi ý thức ăn.
     private void moGoiYThucAn() {
         hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnXuLy,
-                () -> { pnlGoiYThucAn = new GoiYThucAnPanel(); return pnlGoiYThucAn.getContentPane(); });
+                () -> { pnlGoiYThucAn = new GoiYThucAnPanel(this::moThanhToanTuGioHang); return pnlGoiYThucAn.getContentPane(); });
         if (pnlGoiYThucAn != null) {
             pnlGoiYThucAn.napLai();
         }
