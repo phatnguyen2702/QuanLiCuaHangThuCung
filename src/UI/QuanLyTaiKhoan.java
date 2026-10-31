@@ -9,10 +9,14 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 // Giao diện/chức năng quản lý tài khoản của ứng dụng.
-public class QuanLyTaiKhoan extends JPanel {
+public class QuanLyTaiKhoan extends JPanel implements ActionListener, MouseListener {
 
         // =========================================================
         // MAU
@@ -51,6 +55,9 @@ public class QuanLyTaiKhoan extends JPanel {
 
         // txtTimKiem: Ô nhập/hiển thị văn bản tìm kiếm.
         private JTextField txtTimKiem;
+
+        // Các nút xử lý chung tại actionPerformed().
+        private JButton btnThem, btnSua, btnXoa, btnLamMoi, btnTim, btnTatCa;
 
         // =========================================================
         // TABLE
@@ -229,7 +236,8 @@ public class QuanLyTaiKhoan extends JPanel {
                                                                 15,
                                                                 15)));
 
-                // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+                // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+                // GridBagLayout.
                 GridBagConstraints gbc = new GridBagConstraints();
 
                 gbc.insets = new Insets(
@@ -564,40 +572,36 @@ public class QuanLyTaiKhoan extends JPanel {
                                 Color.WHITE);
 
                 // btnThem: Nút thao tác thêm.
-                JButton btnThem = createActionButton(
+                btnThem = createActionButton(
                                 "Thêm",
                                 GREEN);
 
                 // btnSua: Nút thao tác sửa.
-                JButton btnSua = createActionButton(
+                btnSua = createActionButton(
                                 "Sửa",
                                 NAVY);
 
                 // btnXoa: Nút thao tác xóa.
-                JButton btnXoa = createActionButton(
+                btnXoa = createActionButton(
                                 "Xóa",
                                 RED);
 
                 // btnLamMoi: Nút thao tác làm mới.
-                JButton btnLamMoi = createActionButton(
+                btnLamMoi = createActionButton(
                                 "Làm mới",
                                 ORANGE);
 
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnThem.addActionListener(
-                                e -> them());
+                btnThem.addActionListener(this);
 
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnSua.addActionListener(
-                                e -> sua());
+                btnSua.addActionListener(this);
 
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnXoa.addActionListener(
-                                e -> xoa());
+                btnXoa.addActionListener(this);
 
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnLamMoi.addActionListener(
-                                e -> lamMoi());
+                btnLamMoi.addActionListener(this);
 
                 pnlKhung.add(btnThem);
                 pnlKhung.add(btnSua);
@@ -725,12 +729,12 @@ public class QuanLyTaiKhoan extends JPanel {
                                                 32));
 
                 // btnTim: Nút thao tác tìm.
-                JButton btnTim = createSmallButton(
+                btnTim = createSmallButton(
                                 "Tìm",
                                 NAVY);
 
                 // btnTatCa: Nút thao tác toàn bộ dữ liệu.
-                JButton btnTatCa = createSmallButton(
+                btnTatCa = createSmallButton(
                                 "Tất cả",
                                 new Color(
                                                 100,
@@ -738,12 +742,10 @@ public class QuanLyTaiKhoan extends JPanel {
                                                 120));
 
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnTim.addActionListener(
-                                e -> timKiem());
+                btnTim.addActionListener(this);
 
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnTatCa.addActionListener(
-                                e -> loadData());
+                btnTatCa.addActionListener(this);
 
                 pnlSearch.add(lblSearch);
                 pnlSearch.add(txtTimKiem);
@@ -814,6 +816,8 @@ public class QuanLyTaiKhoan extends JPanel {
 
                 tblDuLieu.setSelectionMode(
                                 ListSelectionModel.SINGLE_SELECTION);
+
+                tblDuLieu.addMouseListener(this); // Không thay đổi listener chọn dòng.
 
                 tblDuLieu.setAutoCreateRowSorter(
                                 true);
@@ -1336,6 +1340,48 @@ public class QuanLyTaiKhoan extends JPanel {
                         case "Nhân viên Spa" -> "Nhan vien Spa";
                         default -> s;
                 };
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+                Object nguon = e.getSource();
+                if (nguon == btnThem) {
+                        them();
+                } else if (nguon == btnSua) {
+                        sua();
+                } else if (nguon == btnXoa) {
+                        xoa();
+                } else if (nguon == btnLamMoi) {
+                        lamMoi();
+                } else if (nguon == btnTim) {
+                        timKiem();
+                } else if (nguon == btnTatCa) {
+                        loadData();
+                }
+        }
+
+        // MouseListener: để sẵn các điểm xử lý chuột, không thay thế
+        // ListSelectionListener
+        // (chọn dòng JTable bằng bàn phím vẫn hoạt động như project gốc).
+        @Override
+        public void mouseClicked(MouseEvent e) {
+                // Không gọi lại hàm chọn dòng để tránh xử lý trùng sự kiện.
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
         }
 
 }

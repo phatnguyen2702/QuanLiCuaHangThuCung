@@ -3,6 +3,7 @@ package UI;
 import ConnectDB.connectDB;
 import dao.NhapKhoDAO;
 import entity.PhieuNhapKho;
+import util.PhieuNhapPdfExporter;
 import entity.ChiTietPhieuNhap;
 
 import javax.swing.*;

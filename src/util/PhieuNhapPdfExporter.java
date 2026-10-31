@@ -1,4 +1,4 @@
-package UI;
+package util;
 
 import dao.NhapKhoDAO;
 import entity.ChiTietPhieuNhap;
@@ -61,9 +61,11 @@ public final class PhieuNhapPdfExporter {
     private static final Color GREEN = new Color(22, 124, 73);
     // ORANGE: Màu dùng cho giao diện: cam.
     private static final Color ORANGE = new Color(159, 84, 23);
-    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
+    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
+    // liệu thời gian và chuỗi.
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    // DATE: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời gian và chuỗi.
+    // DATE: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời
+    // gian và chuỗi.
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     /** Hien hop thoai Save As, chi ghi de tep da ton tai neu nguoi dung dong y. */

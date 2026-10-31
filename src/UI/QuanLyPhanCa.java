@@ -11,6 +11,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -20,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Phân ca nhân viên: thêm, sửa, xóa, lọc, lịch chọn ngày và xuất Excel. */
-public class QuanLyPhanCa extends JPanel {
+public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListener {
         // NAVY: Màu dùng cho giao diện: xanh đậm.
         private static final Color NAVY = new Color(18, 48, 82);
         // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
@@ -33,7 +37,8 @@ public class QuanLyPhanCa extends JPanel {
         private static final Color RED = new Color(210, 70, 70);
         // BLUE: Màu dùng cho giao diện: xanh dương.
         private static final Color BLUE = new Color(91, 180, 235);
-        // DINH_DANG_NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/uuuu để chuyển giữa dữ liệu thời gian và chuỗi.
+        // DINH_DANG_NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/uuuu để chuyển giữa dữ
+        // liệu thời gian và chuỗi.
         private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/uuuu")
                         .withResolverStyle(ResolverStyle.STRICT);
 
@@ -60,6 +65,10 @@ public class QuanLyPhanCa extends JPanel {
         private JLabel lblTrangThai;
         // btnSua: Nút thao tác sửa.
         private JButton btnSua;
+        // Các nút chuyển qua xử lý tập trung tại actionPerformed().
+        private JButton btnChonNgay, btnXoaLocNgay, btnLoc;
+        private JButton btnXoa, btnExcel, btnLamMoiDanhSach;
+        private JButton btnLich, btnThem, btnBoChon;
         // maDangSua: Lưu mã bản ghi đang sửa.
         private String maDangSua;
 
@@ -126,6 +135,7 @@ public class QuanLyPhanCa extends JPanel {
                 tblPhanCa.setRowHeight(30);
                 tblPhanCa.setFont(fntNoiDung);
                 tblPhanCa.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                tblPhanCa.addMouseListener(this); // Không thay thế listener chọn dòng hiện tại.
                 tblPhanCa.setAutoCreateRowSorter(true);
                 tblPhanCa.setSelectionBackground(new Color(207, 222, 235));
                 tblPhanCa.setFillsViewportHeight(true);
@@ -166,31 +176,23 @@ public class QuanLyPhanCa extends JPanel {
                 txtLocNgay.setFont(fntNoiDung);
                 txtLocNgay.setToolTipText("Có thể lọc cả các ngày trong quá khứ");
                 // btnChonNgay: Nút thao tác chọn ngày.
-                JButton btnChonNgay = taoNut("Lịch", NAVY);
+                btnChonNgay = taoNut("Lịch", NAVY);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnChonNgay.addActionListener(e -> {
-                        // banDau: Lưu bán đầu dưới dạng dữ liệu thời gian.
-                        LocalDate banDau = docNgay(txtLocNgay.getText());
-                        // chon: Lưu chọn dưới dạng dữ liệu thời gian.
-                        LocalDate chon = LichChonNgay.chonNgay(this, banDau, false);
-                        if (chon != null)
-                                // Định dạng dữ liệu thành chuỗi rồi hiển thị trong control bằng setText().
-                                txtLocNgay.setText(chon.format(DINH_DANG_NGAY));
-                });
+                btnChonNgay.addActionListener(this);
                 // btnXoaLocNgay: Nút thao tác xóa lọc ngày.
-                JButton btnXoaLocNgay = taoNut("×", new Color(108, 117, 125));
+                btnXoaLocNgay = taoNut("×", new Color(108, 117, 125));
                 btnXoaLocNgay.setToolTipText("Bỏ lọc theo ngày");
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnXoaLocNgay.addActionListener(e -> txtLocNgay.setText(""));
+                btnXoaLocNgay.addActionListener(this);
 
                 cmbLocNhanVien = new JComboBox<>();
                 cmbLocNhanVien.setPreferredSize(new Dimension(145, 30));
                 cmbLocCa = new JComboBox<>();
                 cmbLocCa.setPreferredSize(new Dimension(110, 30));
                 // btnLoc: Nút thao tác lọc.
-                JButton btnLoc = taoNut("Lọc", GREEN);
+                btnLoc = taoNut("Lọc", GREEN);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnLoc.addActionListener(e -> locDuLieu());
+                btnLoc.addActionListener(this);
 
                 pnlPnl.add(new JLabel("Ngày làm việc"));
                 pnlPnl.add(txtLocNgay);
@@ -214,25 +216,21 @@ public class QuanLyPhanCa extends JPanel {
                 JPanel pnlTrai = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
                 pnlTrai.setOpaque(false);
                 // btnXoa: Nút thao tác xóa.
-                JButton btnXoa = taoNut("Xóa phân ca", RED);
+                btnXoa = taoNut("Xóa phân ca", RED);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnXoa.addActionListener(e -> xoa());
+                btnXoa.addActionListener(this);
                 // btnExcel: Nút thao tác Excel.
-                JButton btnExcel = taoNut("Xuất Excel", new Color(29, 133, 82));
+                btnExcel = taoNut("Xuất Excel", new Color(29, 133, 82));
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnExcel.addActionListener(e -> xuatExcel());
+                btnExcel.addActionListener(this);
                 pnlTrai.add(btnXoa);
                 pnlTrai.add(btnExcel);
                 pnlPnl.add(pnlTrai, BorderLayout.WEST);
                 // btnLamMoi: Nút thao tác làm mới.
-                JButton btnLamMoi = taoNut("↻ Làm mới", BLUE);
+                btnLamMoiDanhSach = taoNut("↻ Làm mới", BLUE);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnLamMoi.addActionListener(e -> {
-                        taiDanhMuc();
-                        taiDuLieu();
-                        lamMoiForm();
-                });
-                pnlPnl.add(btnLamMoi, BorderLayout.EAST);
+                btnLamMoiDanhSach.addActionListener(this);
+                pnlPnl.add(btnLamMoiDanhSach, BorderLayout.EAST);
                 return pnlPnl;
         }
 
@@ -276,30 +274,24 @@ public class QuanLyPhanCa extends JPanel {
                 pnlChonNgay.setBackground(Color.WHITE);
                 pnlChonNgay.setMaximumSize(new Dimension(Integer.MAX_VALUE, 29));
                 // btnLich: Nút thao tác lịch.
-                JButton btnLich = taoNut("Chọn lịch", NAVY);
+                btnLich = taoNut("Chọn lịch", NAVY);
                 btnLich.setMargin(new Insets(2, 6, 2, 6));
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnLich.addActionListener(e -> {
-                        // chon: Lưu chọn dưới dạng dữ liệu thời gian.
-                        LocalDate chon = LichChonNgay.chonNgay(this, docNgay(txtNgayLamViec.getText()), true);
-                        if (chon != null)
-                                // Định dạng dữ liệu thành chuỗi rồi hiển thị trong control bằng setText().
-                                txtNgayLamViec.setText(chon.format(DINH_DANG_NGAY));
-                });
+                btnLich.addActionListener(this);
                 pnlChonNgay.add(txtNgayLamViec, BorderLayout.CENTER);
                 pnlChonNgay.add(btnLich, BorderLayout.EAST);
                 themTruong(pnlPnl, "Ngày làm việc (từ hôm nay)", pnlChonNgay);
 
                 cmbNhanVien = new JComboBox<>();
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                cmbNhanVien.addActionListener(e -> capNhatHoTen());
+                cmbNhanVien.addActionListener(this);
                 themTruong(pnlPnl, "Nhân viên", cmbNhanVien);
                 txtHoTen = new JTextField();
                 txtHoTen.setEditable(false);
                 themTruong(pnlPnl, "Họ tên", txtHoTen);
                 cmbCa = new JComboBox<>();
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                cmbCa.addActionListener(e -> capNhatThongTinCa());
+                cmbCa.addActionListener(this);
                 themTruong(pnlPnl, "Ca làm việc", cmbCa);
                 txtThongTinCa = new JTextField();
                 txtThongTinCa.setEditable(false);
@@ -309,20 +301,20 @@ public class QuanLyPhanCa extends JPanel {
                 JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 0));
                 pnlNut.setOpaque(false);
                 // btnThem: Nút thao tác thêm.
-                JButton btnThem = taoNut("Thêm +", GREEN);
+                btnThem = taoNut("Thêm +", GREEN);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnThem.addActionListener(e -> them());
+                btnThem.addActionListener(this);
                 btnSua = taoNut("Sửa", NAVY);
                 btnSua.setEnabled(false);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnSua.addActionListener(e -> sua());
+                btnSua.addActionListener(this);
                 // btnLamMoi: Nút thao tác làm mới.
-                JButton btnLamMoi = taoNut("Bỏ chọn", new Color(108, 117, 125));
+                btnBoChon = taoNut("Bỏ chọn", new Color(108, 117, 125));
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-                btnLamMoi.addActionListener(e -> lamMoiForm());
+                btnBoChon.addActionListener(this);
                 pnlNut.add(btnThem);
                 pnlNut.add(btnSua);
-                pnlNut.add(btnLamMoi);
+                pnlNut.add(btnBoChon);
                 pnlNut.setAlignmentX(Component.LEFT_ALIGNMENT);
                 pnlPnl.add(Box.createVerticalStrut(8));
                 pnlPnl.add(pnlNut);
@@ -766,4 +758,68 @@ public class QuanLyPhanCa extends JPanel {
                 JOptionPane.showMessageDialog(this, "Có lỗi khi xử lý phân ca:\n" + ex.getMessage(),
                                 "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+                Object nguon = e.getSource();
+                if (nguon == btnChonNgay) {
+                        // Chọn ngày lọc: cho phép chọn cả ngày quá khứ.
+                        LocalDate banDau = docNgay(txtLocNgay.getText());
+                        LocalDate chon = LichChonNgay.chonNgay(this, banDau, false);
+                        if (chon != null) {
+                                txtLocNgay.setText(chon.format(DINH_DANG_NGAY));
+                        }
+                } else if (nguon == btnXoaLocNgay) {
+                        txtLocNgay.setText("");
+                } else if (nguon == btnLoc) {
+                        locDuLieu();
+                } else if (nguon == btnXoa) {
+                        xoa();
+                } else if (nguon == btnExcel) {
+                        xuatExcel();
+                } else if (nguon == btnLamMoiDanhSach) {
+                        taiDanhMuc();
+                        taiDuLieu();
+                        lamMoiForm();
+                } else if (nguon == btnLich) {
+                        // Chọn ngày phân ca: không cho phép chọn ngày đã qua.
+                        LocalDate chon = LichChonNgay.chonNgay(this, docNgay(txtNgayLamViec.getText()), true);
+                        if (chon != null) {
+                                txtNgayLamViec.setText(chon.format(DINH_DANG_NGAY));
+                        }
+                } else if (nguon == cmbNhanVien) {
+                        capNhatHoTen();
+                } else if (nguon == cmbCa) {
+                        capNhatThongTinCa();
+                } else if (nguon == btnThem) {
+                        them();
+                } else if (nguon == btnSua) {
+                        sua();
+                } else if (nguon == btnBoChon) {
+                        lamMoiForm();
+                }
+        }
+
+        // MouseListener: bảng vẫn dùng ListSelectionListener cho cả chuột và bàn phím.
+        // Không thực hiện lại xử lý chọn dòng trong mouseClicked để tránh chạy trùng.
+        @Override
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+        }
+
 }
