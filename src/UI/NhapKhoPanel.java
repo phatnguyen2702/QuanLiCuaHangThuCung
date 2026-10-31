@@ -12,6 +12,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,7 +27,13 @@ import java.util.List;
  * Cac pnlForm2 phu (nha cung cap, chi tiet nhap, phieu nhap nhap) la lop long o
  * cuoi file.
  */
-public class NhapKhoPanel extends JPanel {
+public class NhapKhoPanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
 
     // dao: Đối tượng truy cập dữ liệu nhập kho.
     private final NhapKhoDAO dao = new NhapKhoDAO();
@@ -88,8 +98,8 @@ public class NhapKhoPanel extends JPanel {
         this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
-        setBackground(UIStyle.LIGHT_BLUE);
-        setBorder(new EmptyBorder(20, 25, 20, 25));
+        getContentPane().setBackground(UIStyle.LIGHT_BLUE);
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(20, 25, 20, 25));
 
         // lblTieuDe2: Nhãn hiển thị: Lập phiếu nhập hàng.
         JLabel lblTieuDe2 = new JLabel("Lập phiếu nhập hàng");
