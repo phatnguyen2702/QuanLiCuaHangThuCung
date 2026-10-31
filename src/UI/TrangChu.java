@@ -6,6 +6,10 @@ import dao.LichHenDAO;
 import dao.TaiKhoanDAO;
 import entity.LichHen;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,11 +43,11 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 
 /**
- * Cua so chinh Pet Shop Pro - pmnMenu theo HUONG CHUC NANG.
+ * Cua so chinh Pet Shop Pro - pmnMenu theo hướng chức năng.
  * 5 btnNhom: He thong, Danh muc, Nghiep vu, Tim kiem, Thong ke.
  * Moi chuc nang mo JPanel trong CardLayout, khong mo JFrame moi.
  */
-public class TrangChu extends JFrame {
+public class TrangChu extends JFrame implements ActionListener, MouseListener {
 
     // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
     private final Color LIGHT_BLUE = new Color(229, 241, 252);
@@ -86,6 +90,9 @@ public class TrangChu extends JFrame {
     private JButton btnTimKiem;
     // btnThongKe: Nút thao tác thống kê.
     private JButton btnThongKe;
+    // Nút nhân viên và nút trên trang chủ sử dụng ActionListener của JFrame.
+    private JButton btnNhanVien, btnLamMoi, btnHoTro;
+
     // dsBtnMucChinh: Lưu danh sách nút mục chính; phần tử có kiểu JButton.
     private final ArrayList<JButton> dsBtnMucChinh = new ArrayList<>();
     // btnNhomDaChon: Nút thao tác nhóm đã chọn.
@@ -497,7 +504,7 @@ public class TrangChu extends JFrame {
 
         btnTrangChu = taoBtnNhom("TRANG CHỦ", "/img/trangchulogo.png");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTrangChu.addActionListener(e -> hienTrangChu());
+        btnTrangChu.addActionListener(this);
 
         btnHeThong = taoBtnNhom("HỆ THỐNG", "/img/caidatlogo.png");
         btnDanhMuc = taoBtnNhom("DANH MỤC", "/img/danhmuclogo.png");
@@ -519,20 +526,20 @@ public class TrangChu extends JFrame {
         dsBtnMucChinh.add(btnThongKe);
 
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnHeThong.addActionListener(e -> hienPopup(btnHeThong, taoMenuHeThong()));
+        btnHeThong.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnDanhMuc.addActionListener(e -> hienPopup(btnDanhMuc, taoMenuDanhMuc()));
+        btnDanhMuc.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnXuLy.addActionListener(e -> hienPopup(btnXuLy, taoMenuNghiepVu()));
+        btnXuLy.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTimKiem.addActionListener(e -> hienPopup(btnTimKiem, taoMenuTimKiem()));
+        btnTimKiem.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnThongKe.addActionListener(e -> hienPopup(btnThongKe, taoMenuThongKe()));
+        btnThongKe.addActionListener(this);
 
         pnlHeader2.add(pnlMenu, BorderLayout.CENTER);
 
         // btnNhanVien: Nút thao tác nhân viên.
-        JButton btnNhanVien = new JButton(hoTen == null ? "Tài khoản" : hoTen);
+        btnNhanVien = new JButton(hoTen == null ? "Tài khoản" : hoTen);
         btnNhanVien.setFont(UIStyle.font(Font.BOLD, 12));
         btnNhanVien.setForeground(Color.WHITE);
         btnNhanVien.setBackground(UIStyle.NAVY);
@@ -543,7 +550,7 @@ public class TrangChu extends JFrame {
         btnNhanVien.setToolTipText("Thông tin nhân viên / Đổi mật khẩu / Đăng xuất");
         btnNhanVien.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnNhanVien.addActionListener(e -> hienThongTinNhanVien(btnNhanVien));
+        btnNhanVien.addActionListener(this);
         pnlHeader2.add(btnNhanVien, BorderLayout.EAST);
 
         return pnlHeader2;
@@ -603,7 +610,7 @@ public class TrangChu extends JFrame {
         mniChucNang.setFont(UIStyle.font(Font.PLAIN, 13));
         mniChucNang.setBorder(new EmptyBorder(9, 14, 9, 14));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        mniChucNang.addActionListener(e -> {
+        dangKyHanhDong(mniChucNang, () -> {
             if (PhanQuyen.kiemTra(q, this))
                 chuyenTuNhom(btnNhom, hanhDong);
         });
@@ -696,7 +703,7 @@ public class TrangChu extends JFrame {
         mniDoiMatKhau.setFont(UIStyle.font(Font.PLAIN, 13));
         mniDoiMatKhau.setBorder(new EmptyBorder(9, 14, 9, 14));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        mniDoiMatKhau.addActionListener(e -> moDlgDoiMatKhau());
+        dangKyHanhDong(mniDoiMatKhau, () -> moDlgDoiMatKhau());
         pmnPopMenu.add(mniDoiMatKhau);
         pmnPopMenu.addSeparator();
         // mniDangXuat: Mục lệnh trong pmnMenu: Đăng xuất.
@@ -704,7 +711,7 @@ public class TrangChu extends JFrame {
         mniDangXuat.setFont(UIStyle.font(Font.PLAIN, 13));
         mniDangXuat.setBorder(new EmptyBorder(9, 14, 9, 14));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        mniDangXuat.addActionListener(e -> dangXuat());
+        dangKyHanhDong(mniDangXuat, () -> dangXuat());
         pmnPopMenu.add(mniDangXuat);
         pmnPopMenu.show(btnNguon,
                 -pmnPopMenu.getPreferredSize().width + btnNguon.getWidth(), btnNguon.getHeight());
@@ -780,7 +787,7 @@ public class TrangChu extends JFrame {
         chkHienMatKhau.setFont(UIStyle.font(Font.PLAIN, 12));
         char charEcho = txtMatKhauCu.getEchoChar();
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        chkHienMatKhau.addActionListener(e -> {
+        dangKyHanhDong(chkHienMatKhau, () -> {
             for (JPasswordField txtMatKhau : arrMatKhau) {
                 txtMatKhau.setEchoChar(chkHienMatKhau.isSelected() ? (char) 0 : charEcho);
             }
@@ -804,9 +811,9 @@ public class TrangChu extends JFrame {
         // btnLuuMatKhau: Nút thao tác lưu mật khẩu.
         JButton btnLuuMatKhau = UIStyle.nutChinh("Lưu mật khẩu");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnHuy.addActionListener(e -> winDoiMatKhau.dispose());
+        dangKyHanhDong(btnHuy, () -> winDoiMatKhau.dispose());
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnLuuMatKhau.addActionListener(e -> {
+        dangKyHanhDong(btnLuuMatKhau, () -> {
             // arrMatKhauCu: Mảng lưu mảng mật khẩu cũ.
             char[] arrMatKhauCu = txtMatKhauCu.getPassword();
             // arrMatKhauMoi: Mảng lưu mảng mật khẩu mới.
@@ -1012,16 +1019,16 @@ public class TrangChu extends JFrame {
         pnlThaoTac.setOpaque(false);
 
         // btnLamMoi: Nút thao tác làm mới.
-        JButton btnLamMoi = UIStyle.nutPhu(" Làm mới");
+        btnLamMoi = UIStyle.nutPhu(" Làm mới");
         btnLamMoi.setPreferredSize(new Dimension(135, 38));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnLamMoi.addActionListener(e -> lamMoiTrangChu());
+        btnLamMoi.addActionListener(this);
 
         // btnHoTro: Nút thao tác hỗ trợ.
-        JButton btnHoTro = UIStyle.nutPhu("? Hỗ trợ");
+        btnHoTro = UIStyle.nutPhu("? Hỗ trợ");
         btnHoTro.setPreferredSize(new Dimension(125, 38));
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnHoTro.addActionListener(e -> moModalHoTro());
+        btnHoTro.addActionListener(this);
 
         pnlThaoTac.add(btnLamMoi);
         pnlThaoTac.add(btnHoTro);
@@ -1543,7 +1550,7 @@ public class TrangChu extends JFrame {
         // btnDongHoTro: Nút thao tác dòng hỗ trợ.
         JButton btnDongHoTro = UIStyle.nutChinh("Đóng");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnDongHoTro.addActionListener(e -> winHoTro.dispose());
+        dangKyHanhDong(btnDongHoTro, () -> winHoTro.dispose());
         // pnlDuoi: Khung chứa thành phần giao diện dưới.
         JPanel pnlDuoi = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
         pnlDuoi.setBackground(Color.WHITE);
@@ -1577,7 +1584,7 @@ public class TrangChu extends JFrame {
         if (!btnTruyCap.isEnabled())
             btnTruyCap.setToolTipText("Vai trò hiện tại không có quyền");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTruyCap.addActionListener(e -> {
+        dangKyHanhDong(btnTruyCap, () -> {
             if (PhanQuyen.kiemTra(quyen, this))
                 hanhDong.run();
         });
@@ -2138,4 +2145,67 @@ public class TrangChu extends JFrame {
             return pnlKetQua;
         }
     }
+
+    // Đăng ký hành động cho nút/menu động (trong popup, dialog).
+    // putClientProperty gắn Runnable vào đúng control, không giữ tham chiếu popup
+    // cũ.
+    private void dangKyHanhDong(AbstractButton nut, Runnable hanhDong) {
+        nut.putClientProperty("petshop.hanhDong", hanhDong);
+        nut.addActionListener(this);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object nguon = e.getSource();
+        if (nguon == btnTrangChu) {
+            hienTrangChu();
+        } else if (nguon == btnHeThong) {
+            hienPopup(btnHeThong, taoMenuHeThong());
+        } else if (nguon == btnDanhMuc) {
+            hienPopup(btnDanhMuc, taoMenuDanhMuc());
+        } else if (nguon == btnXuLy) {
+            hienPopup(btnXuLy, taoMenuNghiepVu());
+        } else if (nguon == btnTimKiem) {
+            hienPopup(btnTimKiem, taoMenuTimKiem());
+        } else if (nguon == btnThongKe) {
+            hienPopup(btnThongKe, taoMenuThongKe());
+        } else if (nguon == btnNhanVien) {
+            hienThongTinNhanVien(btnNhanVien);
+        } else if (nguon == btnLamMoi) {
+            lamMoiTrangChu();
+        } else if (nguon == btnHoTro) {
+            moModalHoTro();
+        } else if (nguon instanceof JComponent control) {
+            // Các menu/dialog động giữ nguyên logic xử lý cũ.
+            Object handler = control.getClientProperty("petshop.hanhDong");
+            if (handler instanceof Runnable hanhDong) {
+                hanhDong.run();
+            }
+        }
+    }
+
+    // Giữ sẵn giao diện MouseListener cho các thao tác chuột khi cần bổ sung.
+    // Những màn hình này chưa yêu cầu xử lý chuột riêng, nên không đăng ký sự kiện
+    // thừa.
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        // Không gọi lại hàm chọn dòng để tránh xử lý trùng sự kiện.
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
 }

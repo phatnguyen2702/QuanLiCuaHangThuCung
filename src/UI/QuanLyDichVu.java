@@ -8,6 +8,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.NumberFormat;
@@ -15,7 +19,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 /** Man hinh Danh muc > Quan ly dich vu Spa. */
-public class QuanLyDichVu extends JPanel {
+public class QuanLyDichVu extends JPanel implements ActionListener, MouseListener {
+
+    // Các nút dùng chung trong actionPerformed().
+    private JButton btnTim, btnLamMoi, btnThem, btnSua, btnXoa, btnBoChon;
 
     // dao: Đối tượng truy cập dữ liệu dịch vụ.
     private final DichVuDAO dao = new DichVuDAO();
@@ -45,7 +52,8 @@ public class QuanLyDichVu extends JPanel {
     };
     // tblDichVu: Bảng hiển thị dữ liệu dịch vụ.
     private final JTable tblDichVu = new JTable(model);
-    // cardHanhDong: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng chứa.
+    // cardHanhDong: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng
+    // chứa.
     private final CardLayout cardHanhDong = new CardLayout();
     // pnlHanhDong: Khung chứa thành phần giao diện hành động.
     private final JPanel pnlHanhDong = new JPanel(cardHanhDong);
@@ -81,20 +89,15 @@ public class QuanLyDichVu extends JPanel {
         JPanel pnlBang = UIStyle.the();
         pnlBang.setLayout(new BorderLayout(0, 12));
         // btnTim: Nút thao tác tìm.
-        JButton btnTim = UIStyle.nutChinh("Tìm kiếm");
+        btnTim = UIStyle.nutChinh("Tìm kiếm");
         // btnLamMoi: Nút thao tác làm mới.
-        JButton btnLamMoi = UIStyle.nutPhu("Làm mới");
+        btnLamMoi = UIStyle.nutPhu("Làm mới");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTim.addActionListener(e -> taiLai(maDangSua));
+        btnTim.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        txtTim.addActionListener(e -> taiLai(maDangSua));
+        txtTim.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnLamMoi.addActionListener(e -> {
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-            txtTim.setText("");
-            boChon();
-            taiLai(null);
-        });
+        btnLamMoi.addActionListener(this);
         // pnlTim: Khung chứa thành phần giao diện tìm.
         JPanel pnlTim = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         pnlTim.setOpaque(false);
@@ -111,6 +114,7 @@ public class QuanLyDichVu extends JPanel {
 
         UIStyle.taoBang(tblDichVu, 2);
         tblDichVu.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tblDichVu.addMouseListener(this); // Giữ nguyên ListSelectionListener bên dưới.
         tblDichVu.getColumnModel().getColumn(0).setPreferredWidth(95);
         tblDichVu.getColumnModel().getColumn(1).setPreferredWidth(175);
         tblDichVu.getColumnModel().getColumn(2).setPreferredWidth(120);
@@ -152,9 +156,9 @@ public class QuanLyDichVu extends JPanel {
 
         // Chưa chọn dịch vụ: chỉ có nút Thêm dịch vụ.
         // btnThem: Nút thao tác thêm.
-        JButton btnThem = UIStyle.nutXanh("+ Thêm dịch vụ");
+        btnThem = UIStyle.nutXanh("+ Thêm dịch vụ");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnThem.addActionListener(e -> them());
+        btnThem.addActionListener(this);
         // pnlThem: Khung chứa thành phần giao diện thêm.
         JPanel pnlThem = new JPanel(new GridLayout(1, 1));
         pnlThem.setOpaque(false);
@@ -162,17 +166,17 @@ public class QuanLyDichVu extends JPanel {
 
         // Đã chọn một dòng: ẩn hoàn toàn nút Thêm, chỉ hiện Lưu / Xóa / Bỏ chọn.
         // btnSua: Nút thao tác sửa.
-        JButton btnSua = UIStyle.nutChinh("Lưu");
+        btnSua = UIStyle.nutChinh("Lưu");
         // btnXoa: Nút thao tác xóa.
-        JButton btnXoa = UIStyle.nutXoa("Xóa");
+        btnXoa = UIStyle.nutXoa("Xóa");
         // btnBoChon: Nút thao tác bỏ chọn.
-        JButton btnBoChon = UIStyle.nutPhu("Bỏ chọn");
+        btnBoChon = UIStyle.nutPhu("Bỏ chọn");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnSua.addActionListener(e -> sua());
+        btnSua.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnXoa.addActionListener(e -> xoa());
+        btnXoa.addActionListener(this);
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnBoChon.addActionListener(e -> boChon());
+        btnBoChon.addActionListener(this);
         // pnlSua: Khung chứa thành phần giao diện sửa.
         JPanel pnlSua = new JPanel(new GridLayout(1, 3, 7, 0));
         pnlSua.setOpaque(false);
@@ -410,6 +414,50 @@ public class QuanLyDichVu extends JPanel {
             } else
                 UIStyle.loi(this, ex);
         }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object nguon = e.getSource();
+        if (nguon == btnTim || nguon == txtTim) {
+            taiLai(maDangSua);
+        } else if (nguon == btnLamMoi) {
+            txtTim.setText("");
+            boChon();
+            taiLai(null);
+        } else if (nguon == btnThem) {
+            them();
+        } else if (nguon == btnSua) {
+            sua();
+        } else if (nguon == btnXoa) {
+            xoa();
+        } else if (nguon == btnBoChon) {
+            boChon();
+        }
+    }
+
+    // MouseListener: để sẵn các điểm xử lý chuột, không thay thế
+    // ListSelectionListener
+    // (chọn dòng JTable bằng bàn phím vẫn hoạt động như project gốc).
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        // Không gọi lại hàm chọn dòng để tránh xử lý trùng sự kiện.
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
     }
 
 }
