@@ -80,203 +80,87 @@ public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener
                 lblTitle2.setForeground(NAVY);
                 // lblSub: Nhãn hiển thị: Quản lý thông tin ca làm việc.
                 JLabel lblSub = new JLabel("Quản lý thông tin ca làm việc");
-                lblSub.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.PLAIN,
-                                                13));
-
+                lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 lblSub.setForeground(Color.GRAY);
-
                 // pnlText: Khung chứa thành phần giao diện nội dung chữ.
                 JPanel pnlText = new JPanel();
-
+                // opaque false: màu nền trong suốt
                 pnlText.setOpaque(false);
-
-                pnlText.setLayout(
-                                new BoxLayout(
-                                                pnlText,
-                                                BoxLayout.Y_AXIS));
-
+                pnlText.setLayout(new BoxLayout(pnlText, BoxLayout.Y_AXIS));
                 pnlText.add(lblTitle2);
-
-                pnlText.add(
-                                Box.createVerticalStrut(5));
-
+                pnlText.add(Box.createVerticalStrut(5));
                 pnlText.add(lblSub);
-
-                pnlKhung.add(
-                                pnlText,
-                                BorderLayout.WEST);
-
+                pnlKhung.add(pnlText, BorderLayout.WEST);
                 return pnlKhung;
         }
-
-        // ==============================
-        // CENTER
-        // ==============================
 
         // Tạo trung tâm.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createCenter() {
-
                 // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
-                JPanel pnlKhung = new JPanel(
-                                new BorderLayout(
-                                                15,
-                                                15));
-
+                JPanel pnlKhung = new JPanel(new BorderLayout(15, 15));
                 pnlKhung.setBackground(BG);
-
-                pnlKhung.setBorder(
-                                new EmptyBorder(
-                                                20,
-                                                25,
-                                                20,
-                                                25));
-
-                pnlKhung.add(
-                                createForm(),
-                                BorderLayout.NORTH);
-
-                pnlKhung.add(
-                                createTablePanel(),
-                                BorderLayout.CENTER);
-
+                pnlKhung.setBorder(new EmptyBorder(20, 25, 20, 25));
+                pnlKhung.add(createForm(), BorderLayout.NORTH);
+                pnlKhung.add(createTablePanel(), BorderLayout.CENTER);
                 return pnlKhung;
         }
-
-        // ==============================
-        // FORM
-        // ==============================
 
         // Tạo biểu mẫu.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createForm() {
-
                 // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
-                JPanel pnlKhung = new JPanel(
-                                new GridBagLayout());
-
+                JPanel pnlKhung = new JPanel(new GridBagLayout());
                 pnlKhung.setBackground(Color.WHITE);
-
-                pnlKhung.setBorder(
-                                BorderFactory.createCompoundBorder(
-                                                BorderFactory.createLineBorder(
-                                                                new Color(
-                                                                                220,
-                                                                                225,
-                                                                                230)),
-                                                new EmptyBorder(
-                                                                15,
-                                                                15,
-                                                                15,
-                                                                15)));
+                pnlKhung.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createLineBorder(
+                                                new Color(220, 225, 230)),
+                                new EmptyBorder(15, 15, 15, 15)));
 
                 // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
                 // GridBagLayout.
                 GridBagConstraints gbc = new GridBagConstraints();
-
-                gbc.insets = new Insets(
-                                6,
-                                8,
-                                6,
-                                8);
-
+                gbc.insets = new Insets(6, 8, 6, 8);
                 gbc.fill = GridBagConstraints.HORIZONTAL;
-
-                // ==============================
-                // MA CA
-                // ==============================
-
                 gbc.gridx = 0;
                 gbc.gridy = 0;
                 gbc.weightx = 0;
-
-                pnlKhung.add(
-                                createLabel("Mã ca:"),
-                                gbc);
-
+                pnlKhung.add(createLabel("Mã ca:"), gbc);
                 txtMaCa = new JTextField();
-
                 styleTextField(txtMaCa);
                 txtMaCa.setEditable(false);
                 txtMaCa.setToolTipText("Mã CA được hệ thống tự sinh khi lưu");
-
                 gbc.gridx = 1;
                 gbc.weightx = 1;
-
-                pnlKhung.add(
-                                txtMaCa,
-                                gbc);
-
-                // ==============================
-                // TEN CA
-                // ==============================
-
+                pnlKhung.add(txtMaCa, gbc);
                 gbc.gridx = 2;
                 gbc.weightx = 0;
 
-                pnlKhung.add(
-                                createLabel("Tên ca:"),
-                                gbc);
-
+                pnlKhung.add(createLabel("Tên ca:"), gbc);
                 txtTenCa = new JTextField();
-
                 styleTextField(txtTenCa);
-
                 gbc.gridx = 3;
                 gbc.weightx = 1;
 
-                pnlKhung.add(
-                                txtTenCa,
-                                gbc);
-
-                // ==============================
-                // GIO BAT DAU
-                // ==============================
-
+                pnlKhung.add(txtTenCa, gbc);
                 gbc.gridx = 0;
                 gbc.gridy = 1;
                 gbc.weightx = 0;
 
-                pnlKhung.add(
-                                createLabel("Giờ bắt đầu:"),
-                                gbc);
-
+                pnlKhung.add(createLabel("Giờ bắt đầu:"), gbc);
                 txtGioBatDau = taoOChonGio();
-
                 gbc.gridx = 1;
                 gbc.weightx = 1;
-
-                pnlKhung.add(
-                                txtGioBatDau,
-                                gbc);
-
-                // ==============================
-                // GIO KET THUC
-                // ==============================
+                pnlKhung.add(txtGioBatDau, gbc);
 
                 gbc.gridx = 2;
                 gbc.weightx = 0;
-
-                pnlKhung.add(
-                                createLabel("Giờ kết thúc:"),
-                                gbc);
+                pnlKhung.add(createLabel("Giờ kết thúc:"), gbc);
 
                 txtGioKetThuc = taoOChonGio();
-
                 gbc.gridx = 3;
                 gbc.weightx = 1;
-
-                pnlKhung.add(
-                                txtGioKetThuc,
-                                gbc);
-
-                // ==============================
-                // BUTTON
-                // ==============================
-
+                pnlKhung.add(txtGioKetThuc, gbc);
                 // pnlButtons: Khung chứa thành phần giao diện các nút.
                 JPanel pnlButtons = createButtonPanel();
 
@@ -285,68 +169,38 @@ public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener
                 gbc.gridwidth = 4;
                 gbc.weightx = 1;
 
-                pnlKhung.add(
-                                pnlButtons,
-                                gbc);
-
+                pnlKhung.add(pnlButtons, gbc);
                 return pnlKhung;
         }
-
-        // ==============================
-        // LABEL
-        // ==============================
 
         // Tạo nhãn.
         // Tham số pnlText: nội dung chữ.
         // Kết quả: đối tượng/giá trị kiểu JLabel.
         private JLabel createLabel(String text) {
-
                 // lblNhan2: Nhãn hiển thị nhãn.
                 JLabel lblNhan2 = new JLabel(text);
-
-                lblNhan2.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                12));
-
-                lblNhan2.setForeground(
-                                new Color(
-                                                60,
-                                                60,
-                                                60));
-
+                lblNhan2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                lblNhan2.setForeground(new Color(60, 60, 60));
                 return lblNhan2;
         }
-
-        // ==============================
-        // TEXT FIELD
-        // ==============================
 
         // Áp dụng kiểu hiển thị cho trường nhập liệu.
         // Tham số txtTextField: ô nhập văn bản.
         private void styleTextField(
                         JTextField txtTextField) {
-
-                txtTextField.setPreferredSize(
-                                new Dimension(
-                                                220,
-                                                34));
-
-                txtTextField.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.PLAIN,
-                                                13));
+                txtTextField.setPreferredSize(new Dimension(220, 34));
+                txtTextField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         }
 
         /** Ô nhập tự chèn dấu ':' theo mặt nạ HH:mm (ví dụ 06:00). */
         private JFormattedTextField taoOChonGio() {
                 try {
+                        // khởi tạo ô nhập liệu theo dạng ##:##
                         MaskFormatter mask = new MaskFormatter("##:##");
                         mask.setPlaceholderCharacter('_');
                         // txtGio: Ô nhập theo định dạng giờ.
                         JFormattedTextField txtGio = new JFormattedTextField(mask);
+                        // giữ nguyên dữ liệu khi chuyển qua textfield khác
                         txtGio.setFocusLostBehavior(JFormattedTextField.PERSIST);
                         txtGio.setToolTipText("Giờ theo HH:mm (00:00 - 23:59). Ví dụ: 06:00");
                         styleTextField(txtGio);
@@ -356,66 +210,34 @@ public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener
                 }
         }
 
-        // ==============================
-        // BUTTON PANEL
-        // ==============================
-
         // Tạo khung chứa các nút.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createButtonPanel() {
-
                 // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
-                JPanel pnlKhung = new JPanel(
-                                new FlowLayout(
-                                                FlowLayout.RIGHT,
-                                                8,
-                                                0));
-
+                JPanel pnlKhung = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
                 pnlKhung.setBackground(Color.WHITE);
-
                 // btnThem: Nút thao tác thêm.
-                btnThem = createActionButton(
-                                "Thêm",
-                                GREEN);
-
+                btnThem = createActionButton("Thêm", GREEN);
                 // btnSua: Nút thao tác sửa.
-                btnSua = createActionButton(
-                                "Sửa",
-                                NAVY);
-
+                btnSua = createActionButton("Sửa", NAVY);
                 // btnXoa: Nút thao tác xóa.
-                btnXoa = createActionButton(
-                                "Xóa",
-                                RED);
-
+                btnXoa = createActionButton("Xóa", RED);
                 // btnLamMoi: Nút thao tác làm mới.
-                btnLamMoi = createActionButton(
-                                "Làm mới",
-                                ORANGE);
-
+                btnLamMoi = createActionButton("Làm mới", ORANGE);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnThem.addActionListener(this);
-
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnSua.addActionListener(this);
-
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnXoa.addActionListener(this);
-
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnLamMoi.addActionListener(this);
-
                 pnlKhung.add(btnThem);
                 pnlKhung.add(btnSua);
                 pnlKhung.add(btnXoa);
                 pnlKhung.add(btnLamMoi);
-
                 return pnlKhung;
         }
-
-        // ==============================
-        // ACTION BUTTON
-        // ==============================
 
         // Tạo nút thao tác.
         // Tham số pnlText: nội dung chữ.
@@ -424,97 +246,44 @@ public class QuanLyCaLam extends JPanel implements ActionListener, MouseListener
         private JButton createActionButton(
                         String text,
                         Color color) {
-
                 // btnThaoTac: Nút thao tác nút thao tác.
                 JButton btnThaoTac = new JButton(text);
-
                 btnThaoTac.setBackground(color);
-
                 btnThaoTac.setForeground(Color.WHITE);
-
-                btnThaoTac.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                12));
-
+                btnThaoTac.setFont(new Font("Segoe UI", Font.BOLD, 12));
                 btnThaoTac.setFocusPainted(false);
-
                 btnThaoTac.setBorderPainted(false);
-
                 btnThaoTac.setPreferredSize(
-                                new Dimension(
-                                                85,
-                                                34));
-
+                                new Dimension(85, 34));
                 return btnThaoTac;
         }
-
-        // ==============================
-        // TABLE
-        // ==============================
 
         // Tạo khung chứa bảng.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createTablePanel() {
-
                 // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
                 JPanel pnlKhung = new JPanel(
-                                new BorderLayout(
-                                                10,
-                                                10));
-
+                                new BorderLayout(10, 10));
                 pnlKhung.setBackground(Color.WHITE);
-
                 pnlKhung.setBorder(
                                 BorderFactory.createCompoundBorder(
                                                 BorderFactory.createLineBorder(
-                                                                new Color(
-                                                                                220,
-                                                                                225,
-                                                                                230)),
-                                                new EmptyBorder(
-                                                                10,
-                                                                10,
-                                                                10,
-                                                                10)));
-
-                // ==============================
-                // TOP
-                // ==============================
+                                                                new Color(220, 225, 230)),
+                                                new EmptyBorder(10, 10, 10, 10)));
 
                 // pnlTop2: Khung chứa thành phần giao diện trên.
                 JPanel pnlTop2 = new JPanel(
                                 new BorderLayout());
-
                 pnlTop2.setBackground(Color.WHITE);
-
                 // lblTitle2: Nhãn hiển thị: DANH SÁCH CA LÀM.
                 JLabel lblTitle2 = new JLabel(
                                 "DANH SÁCH CA LÀM");
-
-                lblTitle2.setFont(
-                                new Font(
-                                                "Segoe UI",
-                                                Font.BOLD,
-                                                16));
-
+                lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 16));
                 lblTitle2.setForeground(NAVY);
-
-                pnlTop2.add(
-                                lblTitle2,
-                                BorderLayout.WEST);
-
-                // ==============================
-                // SEARCH
-                // ==============================
-
+                pnlTop2.add(lblTitle2, BorderLayout.WEST);
                 // pnlSearch: Khung chứa thành phần giao diện tìm kiếm.
                 JPanel pnlSearch = new JPanel(
-                                new FlowLayout(
-                                                FlowLayout.RIGHT,
-                                                5,
-                                                0));
+                                new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
                 pnlSearch.setBackground(Color.WHITE);
 
