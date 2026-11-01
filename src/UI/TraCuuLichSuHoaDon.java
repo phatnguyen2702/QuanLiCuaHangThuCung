@@ -332,7 +332,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
                 }
             });
         }
-        pnlSearch.add(new JLabel("Tìm hóa đơn:"), BorderLayout.WEST);
+        pnlSearch.add(new JLabel("Tìm mã    hóa đơn:"), BorderLayout.WEST);
         pnlSearch.add(cmbMaHoaDon, BorderLayout.CENTER);
         // btnTimKiem: Nút thao tác: Xác nhận.
         JButton btnTimKiem = new JButton("Xác nhận");
