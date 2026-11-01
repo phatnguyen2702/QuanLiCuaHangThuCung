@@ -9,15 +9,10 @@ import entity.TaiKhoan;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
-// Giao diện/chức năng đăng nhập của ứng dụng.
-public class DangNhap extends JFrame implements ActionListener, MouseListener {
+public class DangNhap extends JFrame implements ActionListener {
 
-        // txtTaiKhoan: Ô nhập/hiển thị văn bản tài khoản.
         private JTextField txtTaiKhoan;
-        // txtMatKhau: Ô nhập mật khẩu có che ký tự mật khẩu.
         private JPasswordField txtMatKhau;
         private JButton btnDangNhap;
 
@@ -28,7 +23,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
         // GREEN: Màu dùng cho giao diện: xanh lá.
         private final Color GREEN = new Color(72, 196, 62);
 
-        // taiKhoanDAO: Đối tượng truy cập dữ liệu tài khoản.
         private TaiKhoanDAO taiKhoanDAO;
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
@@ -42,7 +36,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
 
                 taiKhoanDAO = new TaiKhoanDAO();
 
-                // pnlMainPanel: Khung chứa thành phần giao diện chính khung.
                 JPanel pnlMainPanel = new JPanel(new GridLayout(1, 2));
 
                 pnlMainPanel.add(createLeftPanel());
@@ -51,11 +44,8 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 add(pnlMainPanel);
         }
 
-        // Tạo khung bên trái.
-        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createLeftPanel() {
 
-                // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
                 JPanel pnlKhung = new JPanel(new BorderLayout());
                 pnlKhung.setBackground(NAVY);
 
@@ -63,28 +53,23 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                                 new EmptyBorder(
                                                 35, 45, 30, 45));
 
-                // pnlContent: Khung chứa thành phần giao diện nội dung.
                 JPanel pnlContent = new JPanel(new BorderLayout(0, 20));
                 pnlContent.setOpaque(false);
-                // pnlBranding: Khung chứa thành phần giao diện thương hiệu.
                 JPanel pnlBranding = new JPanel();
                 pnlBranding.setOpaque(false);
 
                 pnlBranding.setLayout(new BoxLayout(pnlBranding, BoxLayout.Y_AXIS));
                 // Ten he thong
-                // lblTen: Nhãn hiển thị: PET SHOP PRO.
                 JLabel lblTen = new JLabel("PET SHOP PRO");
                 lblTen.setForeground(Color.WHITE);
                 lblTen.setFont(new Font("Segoe UI", Font.BOLD, 26));
                 lblTen.setAlignmentX(Component.CENTER_ALIGNMENT);
                 // Tieu de
-                // lblTieuDe2: Nhãn hiển thị: HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG.
                 JLabel lblTieuDe2 = new JLabel("HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
                 lblTieuDe2.setForeground(new Color(255, 105, 90));
                 lblTieuDe2.setFont(new Font("Segoe UI", Font.BOLD, 16));
                 lblTieuDe2.setAlignmentX(Component.CENTER_ALIGNMENT);
                 // lblSlogan
-                // lblSlogan: Nhãn hiển thị khẩu hiệu.
                 JLabel lblSlogan = new JLabel(
                                 "<html>" + "<div style='text-align:center;'>"
                                                 + "Vận hành gọn gàng<br>"
@@ -102,7 +87,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 pnlBranding.add(Box.createVerticalStrut(12));
                 pnlBranding.add(lblSlogan);
                 pnlContent.add(pnlBranding, BorderLayout.NORTH);
-                // pnlTinhNang: Khung chứa thành phần giao diện tính nặng.
                 JPanel pnlTinhNang = new JPanel(new GridBagLayout());
                 pnlTinhNang.setBackground(new Color(169, 194, 218));
                 pnlTinhNang.setBorder(new EmptyBorder(15, 18, 15, 18));
@@ -122,7 +106,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 pnlTinhNang.add(lblTinhNang);
 
                 pnlContent.add(pnlTinhNang, BorderLayout.CENTER);
-                // pnlStatus: Khung chứa thành phần giao diện trạng thái.
                 JPanel pnlStatus = new JPanel(
                                 new FlowLayout(
                                                 FlowLayout.LEFT,
@@ -131,11 +114,9 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
 
                 pnlStatus.setOpaque(false);
 
-                // lblCham: Nhãn hiển thị: ●.
                 JLabel lblCham = new JLabel("●");
                 lblCham.setForeground(new Color(70, 220, 80));
                 lblCham.setFont(new Font("Arial", Font.BOLD, 18));
-                // lblTrangThai2: Nhãn hiển thị: Máy chủ Pet Shop Pro đang hoạt động ổn định.
                 JLabel lblTrangThai2 = new JLabel("Máy chủ Pet Shop Pro đang hoạt động ổn định");
                 lblTrangThai2.setForeground(Color.WHITE);
                 lblTrangThai2.setFont(new Font("Segoe UI", Font.ITALIC, 11));
@@ -147,27 +128,20 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 return pnlKhung;
         }
 
-        // RIGHT PANEL
-        // Tạo khung bên phải.
-        // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel createRightPanel() {
-                // pnlBackground: Khung chứa thành phần giao diện màu nền.
                 JPanel pnlBackground = new JPanel(new GridBagLayout());
                 pnlBackground.setBackground(LIGHT_BLUE);
-                // pnlCard: Khung chứa thành phần giao diện thẻ.
                 JPanel pnlCard = new JPanel();
                 pnlCard.setBackground(Color.WHITE);
                 pnlCard.setPreferredSize(new Dimension(360, 395));
                 pnlCard.setBorder(new EmptyBorder(35, 35, 35, 35));
                 pnlCard.setLayout(new BoxLayout(pnlCard, BoxLayout.Y_AXIS));
-                // lblTitle2: Nhãn hiển thị: Đăng Nhập.
                 JLabel lblTitle2 = new JLabel("Đăng Nhập");
                 lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 27));
 
                 lblTitle2.setAlignmentX(Component.LEFT_ALIGNMENT);
                 pnlCard.add(lblTitle2);
                 pnlCard.add(Box.createVerticalStrut(28));
-                // lblTaiKhoan2: Nhãn hiển thị: TÀI KHOẢN.
                 JLabel lblTaiKhoan2 = new JLabel("TÀI KHOẢN");
                 lblTaiKhoan2.setForeground(Color.GRAY);
                 lblTaiKhoan2.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -183,48 +157,37 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 txtTaiKhoan.setAlignmentX(Component.LEFT_ALIGNMENT);
                 // Khi nguoi dung nhap chu:
                 // tu dong chuyen thanh chu thuong
-                txtTaiKhoan.getDocument().addDocumentListener(
-                                new javax.swing.event.DocumentListener() {
-                                        // Cập nhật trạng thái liên quan đến nội dung đang nhập.
-                                        private void xuLy() {
-                                                SwingUtilities.invokeLater(() -> {
-                                                        // text: Đọc nội dung chữ từ ô nhập để xử lý nội dung chữ.
-                                                        String text = txtTaiKhoan.getText();
-                                                        String moi = text.toLowerCase().replaceAll("[^a-z0-9]", "");
-                                                        if (!text.equals(moi)) {
-                                                                // Cập nhật nội dung chữ hiển thị trong
-                                                                // control bằng setText().
-                                                                txtTaiKhoan.setText(moi);
-                                                        }
-                                                });
-                                        }
-
-                                        // Cập nhật trạng thái liên quan khi người dùng thêm ký tự vào ô văn bản.
-                                        // Tham số e: thông tin sự kiện.
-                                        @Override
-                                        public void insertUpdate(
-                                                        javax.swing.event.DocumentEvent e) {
-                                                xuLy();
-                                        }
-
-                                        // Cập nhật trạng thái liên quan khi người dùng xóa ký tự trong ô văn bản.
-                                        @Override
-                                        public void removeUpdate(
-                                                        javax.swing.event.DocumentEvent e) {
-                                                xuLy();
-                                        }
-
-                                        // Nhận thông báo khi thuộc tính của tài liệu văn bản thay đổi.
-                                        @Override
-                                        public void changedUpdate(
-                                                        javax.swing.event.DocumentEvent e) {
-                                                xuLy();
-                                        }
+                // DocumentListener: tự đổi tên đăng nhập thành chữ thường và bỏ ký tự ngoài
+                // a-z, 0-9.
+                txtTaiKhoan.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                        private void locTaiKhoan() {
+                                SwingUtilities.invokeLater(() -> {
+                                        String hienTai = txtTaiKhoan.getText();
+                                        String hopLe = hienTai.toLowerCase(java.util.Locale.ROOT)
+                                                        .replaceAll("[^a-z0-9]", "");
+                                        if (!hienTai.equals(hopLe))
+                                                txtTaiKhoan.setText(hopLe);
                                 });
+                        }
+
+                        @Override
+                        public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                                locTaiKhoan();
+                        }
+
+                        @Override
+                        public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                                locTaiKhoan();
+                        }
+
+                        @Override
+                        public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                                locTaiKhoan();
+                        }
+                });
                 pnlCard.add(txtTaiKhoan);
                 pnlCard.add(Box.createVerticalStrut(18));
 
-                // lblMatKhau: Nhãn hiển thị: MẬT KHẨU.
                 JLabel lblMatKhau = new JLabel("MẬT KHẨU");
                 lblMatKhau.setForeground(Color.GRAY);
                 lblMatKhau.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -239,7 +202,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 pnlCard.add(txtMatKhau);
                 // Khoang cach giua truong mat khau va nut dang nhap.
                 pnlCard.add(Box.createVerticalStrut(20));
-                // btnDangNhap: Nút thao tác: ĐĂNG NHẬP.
                 btnDangNhap = new JButton("ĐĂNG NHẬP");
                 btnDangNhap.setBackground(GREEN);
                 btnDangNhap.setForeground(Color.WHITE);
@@ -250,10 +212,8 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
 
                 btnDangNhap.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnDangNhap.addActionListener(this);
 
-                // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 txtMatKhau.addActionListener(this);
 
                 pnlCard.add(btnDangNhap);
@@ -270,7 +230,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 // taiKhoan: Đọc nội dung chữ từ ô nhập để xử lý tài khoản.
                 String taiKhoan = txtTaiKhoan.getText().trim().toLowerCase();
 
-                // matKhau: Lưu mật khẩu.
                 String matKhau = new String(txtMatKhau.getPassword());
 
                 if (taiKhoan.isEmpty()) {
@@ -337,30 +296,6 @@ public class DangNhap extends JFrame implements ActionListener, MouseListener {
                 if (nguon == btnDangNhap || nguon == txtMatKhau) {
                         xuLyDangNhap();
                 }
-        }
-
-        // Giữ sẵn giao diện MouseListener cho các thao tác chuột khi cần bổ sung.
-        // Những màn hình này chưa yêu cầu xử lý chuột riêng, nên không đăng ký sự kiện
-        // thừa.
-        @Override
-        public void mouseClicked(MouseEvent e) {
-                // Không gọi lại hàm chọn dòng để tránh xử lý trùng sự kiện.
-        }
-
-        @Override
-        public void mousePressed(MouseEvent e) {
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-        }
-
-        @Override
-        public void mouseEntered(MouseEvent e) {
-        }
-
-        @Override
-        public void mouseExited(MouseEvent e) {
         }
 
 }

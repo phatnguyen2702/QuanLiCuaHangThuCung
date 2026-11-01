@@ -10,8 +10,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseAdapter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +23,13 @@ import java.util.List;
  * Man hinh "Danh muc" - Quan ly danh muc (nam lblTrong khung TrangChu).
  * Form Them / Sua danh muc la lop long DanhMucDialog o cuoi file.
  */
-public class DanhMucPanel extends JPanel {
+public class DanhMucPanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
 
     // dao: Đối tượng truy cập dữ liệu danh mục.
     private final DanhMucDAO dao = new DanhMucDAO();
@@ -52,8 +61,8 @@ public class DanhMucPanel extends JPanel {
     public DanhMucPanel() {
 
         setLayout(new BorderLayout());
-        setBackground(UIStyle.LIGHT_BLUE);
-        setBorder(new EmptyBorder(20, 25, 20, 25));
+        getContentPane().setBackground(UIStyle.LIGHT_BLUE);
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(20, 25, 20, 25));
 
         add(taoPhanDau(), BorderLayout.NORTH);
         add(taoPhanBang(), BorderLayout.CENTER);
@@ -216,14 +225,14 @@ public class DanhMucPanel extends JPanel {
     // Xử lý yêu cầu thêm dữ liệu từ giao diện.
     private void them() {
 
-        // Ma danh muc de lblTrong: nguoi dung tu nhap
-        DanhMucDialog winDlg = new DanhMucDialog(
-                SwingUtilities.getWindowAncestor(this),
-                null, "");
-        winDlg.setVisible(true);
-
-        if (winDlg.isDaLuu()) {
-            napLai();
+        try {
+            String maMoi = dao.taoMaMoi();
+            DanhMucDialog winDlg = new DanhMucDialog(
+                    SwingUtilities.getWindowAncestor(this), null, maMoi);
+            winDlg.setVisible(true);
+            if (winDlg.isDaLuu()) napLai();
+        } catch (SQLException ex) {
+            UIStyle.loi(this, ex);
         }
     }
 
@@ -384,6 +393,8 @@ public class DanhMucPanel extends JPanel {
             } else {
                 // Cập nhật nội dung chữ hiển thị lblTrong control bằng setText().
                 txtMa.setText(maMoi);
+                txtMa.setEditable(false);
+                txtMa.setBackground(UIStyle.READONLY);
             }
 
             // btnHuy: Nút thao tác hủy.
@@ -501,8 +512,8 @@ public class DanhMucPanel extends JPanel {
             // moTa: Đọc nội dung chữ từ ô nhập để xử lý mô tả.
             String moTa = txaMoTa.getText().trim();
 
-            if (ma.isEmpty() || ten.isEmpty()) {
-                UIStyle.canhBao(this, "Vui lòng nhập mã và tên danh mục.");
+            if (ten.isEmpty()) {
+                UIStyle.canhBao(this, "Vui lòng nhập tên danh mục.");
                 return;
             }
 

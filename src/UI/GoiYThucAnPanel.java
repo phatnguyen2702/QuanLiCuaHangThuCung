@@ -9,8 +9,13 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.net.URL;
+import java.sql.SQLException;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +24,13 @@ import java.util.List;
 import java.util.Locale;
 
 /** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
-public class GoiYThucAnPanel extends JPanel {
+public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseListener {
+    @Override public void actionPerformed(ActionEvent e) { }
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mousePressed(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
     // cmbPet: Hộp lựa chọn thú cưng.
     private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", "Mèo" });
     // cmbAge: Hộp lựa chọn tuổi.
@@ -38,6 +49,7 @@ public class GoiYThucAnPanel extends JPanel {
     private final JButton btnSelectedButton = UIStyle.nutPhu("Giỏ hàng (0)");
     // dao: Đối tượng truy cập dữ liệu sản phẩm.
     private final SanPhamDAO dao = new SanPhamDAO();
+    private final Runnable moThanhToan;
     // products: Lưu danh sách sản phẩm; phần tử có kiểu SanPham.
     private List<SanPham> products = List.of();
     // anhSanPhamCache: Bảng ánh xạ khóa đến giá trị dùng cho bộ nhớ đệm ảnh sản phẩm.
@@ -45,9 +57,14 @@ public class GoiYThucAnPanel extends JPanel {
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public GoiYThucAnPanel() {
+        this(null);
+    }
+
+    public GoiYThucAnPanel(Runnable moThanhToan) {
+        this.moThanhToan = moThanhToan;
         setLayout(new BorderLayout(12, 12));
-        setBackground(UIStyle.LIGHT_BLUE);
-        setBorder(new EmptyBorder(22, 25, 22, 25));
+        getContentPane().setBackground(UIStyle.LIGHT_BLUE);
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(22, 25, 22, 25));
 
         // lblTitle2: Nhãn hiển thị: Gợi ý thức ăn theo loại thú cưng.
         JLabel lblTitle2 = new JLabel("Gợi ý thức ăn theo loại thú cưng");
@@ -327,6 +344,24 @@ public class GoiYThucAnPanel extends JPanel {
                 String code = String.valueOf(getValueAt(row, 0));
                 for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
                     if (code.equals(item.getMaSanPham())) {
+                        final int tonKho;
+                        try {
+                            tonKho = dao.layTonKho(code);
+                        } catch (SQLException ex) {
+                            JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
+                                    "Không kiểm tra được tồn kho; số lượng chưa thay đổi.\n" + ex.getMessage(),
+                                    "Không kiểm tra được tồn kho", JOptionPane.ERROR_MESSAGE);
+                            fireTableCellUpdated(row, column);
+                            return;
+                        }
+                        if (quantity > tonKho) {
+                            JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
+                                    "Số lượng yêu cầu (" + quantity + ") vượt tồn hiện tại (" + tonKho
+                                            + "). Số lượng trong giỏ được giữ nguyên.",
+                                    "Không đủ tồn kho", JOptionPane.WARNING_MESSAGE);
+                            fireTableCellUpdated(row, column);
+                            return;
+                        }
                         item.setSoLuong(quantity);
                         super.setValueAt(quantity, row, column);
                         super.setValueAt(String.format("%,.0f đ", item.getThanhTien()), row, 4);
@@ -389,7 +424,9 @@ public class GoiYThucAnPanel extends JPanel {
             if (tblDuLieu.isEditing() && !tblDuLieu.getCellEditor().stopCellEditing())
                 return;
             winDialog.dispose();
-            if (winOwner instanceof TrangChu) {
+            if (moThanhToan != null) {
+                moThanhToan.run();
+            } else if (winOwner instanceof TrangChu) {
                 ((TrangChu) winOwner).moThanhToanTuGioHang();
             } else {
                 JOptionPane.showMessageDialog(this, "Không tìm thấy màn hình thanh toán.",

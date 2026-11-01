@@ -9,7 +9,6 @@ public class test {
     // Khởi chạy màn hình đăng nhập trên luồng giao diện Swing.
     // Tham số args: các đối số dòng lệnh.
     public static void main(String[] args) {
-
         SwingUtilities.invokeLater(() -> {
             new DangNhap().setVisible(true);
         });

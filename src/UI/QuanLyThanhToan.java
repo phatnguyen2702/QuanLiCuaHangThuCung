@@ -90,7 +90,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout(10, 12));
     // moLichSuHoaDon: Hành động được gọi khi cần mở lịch sử hóa đơn.
     private final Runnable moLichSuHoaDon;
-    // capNhatPhieuDichVu: Hành động được gọi khi cần cập nhật danh sách phiếu dịch vụ.
+    // capNhatPhieuDichVu: Hành động được gọi khi cần cập nhật danh sách phiếu dịch
+    // vụ.
     private final Runnable capNhatPhieuDichVu;
     // chiTiet: Lưu chi tiết; phần tử có kiểu entity.ThanhToan.
     private final List<entity.ThanhToan> chiTiet = UI.PhienLamViec.gioHang();
@@ -98,13 +99,16 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     private final List<entity.ThanhToan.KhachHang> danhSachKhachHang = new ArrayList<>();
     // danhSachMaSanPham: Lưu danh sách mã sản phẩm; phần tử có kiểu String.
     private final List<String> danhSachMaSanPham = new ArrayList<>();
-    // tenSanPhamTheoMa: Bảng ánh xạ khóa đến giá trị dùng cho ánh xạ mã sản phẩm đến tên sản phẩm.
+    // tenSanPhamTheoMa: Bảng ánh xạ khóa đến giá trị dùng cho ánh xạ mã sản phẩm
+    // đến tên sản phẩm.
     private final Map<String, String> tenSanPhamTheoMa = new LinkedHashMap<>();
     // danhSachVoucher: Danh sách voucher đang hoạt động.
     private final List<entity.ThanhToan.Voucher> danhSachVoucher = new ArrayList<>();
-    // maPhieuDichVuTrongDonHang: Lưu các mã phiếu dịch vụ trong đơn hàng; phần tử có kiểu String.
+    // maPhieuDichVuTrongDonHang: Lưu các mã phiếu dịch vụ trong đơn hàng; phần tử
+    // có kiểu String.
     private final List<String> maPhieuDichVuTrongDonHang = new ArrayList<>();
-    // dichVuTuPhieuDaThem: Lưu các dòng dịch vụ được thêm từ phiếu; phần tử có kiểu entity.ThanhToan.
+    // dichVuTuPhieuDaThem: Lưu các dòng dịch vụ được thêm từ phiếu; phần tử có kiểu
+    // entity.ThanhToan.
     private final List<entity.ThanhToan> dichVuTuPhieuDaThem = new ArrayList<>();
     // tableModel: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DonHangModel tableModel = new DonHangModel();
@@ -137,11 +141,11 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     private final JLabel lblTienThua = new JLabel();
     // tblDonHang: Bảng hiển thị dữ liệu đơn hàng.
     private final JTable tblDonHang = new JTable(tableModel);
-    // pnlPaymentMethodsPanel: Khung chứa thành phần giao diện khung phương thức thanh toán.
+    // pnlPaymentMethodsPanel: Khung chứa thành phần giao diện khung phương thức
+    // thanh toán.
     private final JPanel pnlPaymentMethodsPanel = new JPanel(new GridLayout(1, 0, 8, 0));
     // phuongThucTheoNut: Phương thức thanh toán tương ứng với từng nút chọn.
-    private final Map<JToggleButton, entity.ThanhToan.PhuongThuc> phuongThucTheoNut =
-            new LinkedHashMap<>();
+    private final Map<JToggleButton, entity.ThanhToan.PhuongThuc> phuongThucTheoNut = new LinkedHashMap<>();
     // btnApDungVoucher: Nút thao tác: Áp dụng.
     private final JButton btnApDungVoucher = new JButton("Áp dụng");
 
@@ -155,7 +159,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     private boolean dangCapNhatGoiYMaSanPham;
     // dangCapNhatGoiYVoucher: Cờ cho biết đang cập nhật gợi ý voucher.
     private boolean dangCapNhatGoiYVoucher;
-    // phuongThucHienTai: Đối tượng phương thức thanh toán hiện tại có kiểu entity.ThanhToan.PhuongThuc.
+    // phuongThucHienTai: Đối tượng phương thức thanh toán hiện tại có kiểu
+    // entity.ThanhToan.PhuongThuc.
     private entity.ThanhToan.PhuongThuc phuongThucHienTai;
     // voucher: Đối tượng voucher có kiểu entity.ThanhToan.Voucher.
     private entity.ThanhToan.Voucher voucher;
@@ -166,7 +171,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Tham số maNhanVien: mã nhân viên.
     // Tham số moLichSuHoaDon: mở lịch sử hóa đơn.
     public QuanLyThanhToan(String maNhanVien, Runnable moLichSuHoaDon) {
-        this(maNhanVien, moLichSuHoaDon, () -> { });
+        this(maNhanVien, moLichSuHoaDon, () -> {
+        });
     }
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
@@ -242,7 +248,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             if (component instanceof JToggleButton) {
                 JToggleButton methodButton = (JToggleButton) component;
                 methodButton.setBackground(methodButton.isSelected()
-                        ? new Color(215, 231, 244) : Color.WHITE);
+                        ? new Color(215, 231, 244)
+                        : Color.WHITE);
             }
         }
         capNhatTien();
@@ -308,7 +315,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         btnLichSu.addActionListener(this);
         pnlActions.add(btnLichSu);
 
-        // btnHuy: Nút thao tác: Hủy hóa đơn  ×.
+        // btnHuy: Nút thao tác: Hủy hóa đơn ×.
         JButton btnHuy = new JButton("Hủy hóa đơn  ×");
         btnHuy.setForeground(NAVY);
         btnHuy.setFocusPainted(false);
@@ -326,7 +333,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         // pnlBody: Khung chứa thành phần giao diện nội dung.
         JPanel pnlBody = new JPanel(new GridBagLayout());
         pnlBody.setOpaque(false);
-        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
@@ -395,6 +403,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         JPanel pnlSearchField = new JPanel(new BorderLayout(6, 0));
         pnlSearchField.setOpaque(false);
         pnlSearchField.add(new JLabel("Tìm sản phẩm"), BorderLayout.WEST);
+        cmbMaSanPham.setToolTipText("Nhập mã hoặc tên sản phẩm");
         pnlSearchField.add(cmbMaSanPham, BorderLayout.CENTER);
         // btnTim: Nút thao tác: Xác nhận.
         JButton btnTim = new JButton("Xác nhận");
@@ -455,7 +464,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         pnlKhung.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("KHÁCH HÀNG"),
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 5, 4, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -543,7 +553,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         // pnlFooter2: Khung chứa thành phần giao diện cuối trang.
         JPanel pnlFooter2 = new JPanel(new GridBagLayout());
         pnlFooter2.setOpaque(false);
-        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 0, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -623,7 +634,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         JPanel pnlOverview = new JPanel(new GridBagLayout());
         pnlOverview.setBackground(Color.WHITE);
         pnlOverview.setBorder(BorderFactory.createTitledBorder("Chi tiết thanh toán"));
-        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 8, 5, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -664,7 +676,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         JPanel pnlPayment = new JPanel(new GridBagLayout());
         pnlPayment.setBackground(Color.WHITE);
         pnlPayment.setBorder(BorderFactory.createTitledBorder("Hình thức thanh toán"));
-        // pg: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // pg: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints pg = new GridBagConstraints();
         pg.gridx = 0;
         pg.gridy = 0;
@@ -747,9 +760,9 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Nạp phương thức thanh toán thanh toán.
     private void napPhuongThucThanhToan() {
         try {
-            // phuongThucs: Lưu các phương thức thanh toán; phần tử có kiểu entity.ThanhToan.PhuongThuc.
-            List<entity.ThanhToan.PhuongThuc> phuongThucs =
-                    dao.layPhuongThucThanhToan();
+            // phuongThucs: Lưu các phương thức thanh toán; phần tử có kiểu
+            // entity.ThanhToan.PhuongThuc.
+            List<entity.ThanhToan.PhuongThuc> phuongThucs = dao.layPhuongThucThanhToan();
             ButtonGroup group = new ButtonGroup();
             pnlPaymentMethodsPanel.removeAll();
             phuongThucTheoNut.clear();
@@ -784,50 +797,68 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
     // Nạp danh sách mã sản phẩm.
     private void napDanhSachMaSanPham() {
+        Object giaTriDangNhap = cmbMaSanPham.getEditor().getItem();
         try {
-            Object itemHienTai = cmbMaSanPham.getEditor().getItem();
-            String tuKhoaHienTai = itemHienTai == null ? "" : itemHienTai.toString();
-            danhSachMaSanPham.clear();
-            tenSanPhamTheoMa.clear();
-            tenSanPhamTheoMa.putAll(dao.layDanhSachSanPham());
-            danhSachMaSanPham.addAll(tenSanPhamTheoMa.keySet());
+            Map<String, String> sanPhamMoi = dao.layDanhSachSanPham();
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String mauHienThi = "";
-            for (String ma : danhSachMaSanPham) {
-                String goiY = taoGoiYSanPham(ma);
+            for (Map.Entry<String, String> sanPham : sanPhamMoi.entrySet()) {
+                String goiY = sanPham.getKey();
+                if (sanPham.getValue() != null && !sanPham.getValue().isBlank()) {
+                    goiY += " - " + sanPham.getValue();
+                }
                 model.addElement(goiY);
                 if (goiY.length() > mauHienThi.length()) {
                     mauHienThi = goiY;
                 }
             }
-            cmbMaSanPham.setModel(model);
+            tenSanPhamTheoMa.clear();
+            tenSanPhamTheoMa.putAll(sanPhamMoi);
+            danhSachMaSanPham.clear();
+            danhSachMaSanPham.addAll(sanPhamMoi.keySet());
+            dangCapNhatGoiYMaSanPham = true;
+            try {
+                cmbMaSanPham.setModel(model);
+                cmbMaSanPham.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+                cmbMaSanPham.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+            } finally {
+                dangCapNhatGoiYMaSanPham = false;
+            }
             cmbMaSanPham.setPrototypeDisplayValue(mauHienThi);
-            cmbMaSanPham.setSelectedItem(tuKhoaHienTai);
             cmbMaSanPham.setPreferredSize(cmbMaSanPham.getPreferredSize());
+            if (giaTriDangNhap != null && !giaTriDangNhap.toString().isBlank()) {
+                capNhatGoiYMaSanPham();
+            }
         } catch (Exception e) {
             hienLoi("Không tải được danh sách mã sản phẩm: " + e.getMessage());
         }
     }
 
     // Nạp danh sách mã khách hàng.
-    private void napDanhSachMaKhachHang() {
+    public void napDanhSachMaKhachHang() {
+        Object giaTriDangNhap = cmbMaKhachHang.getEditor().getItem();
         try {
-            Object itemHienTai = cmbMaKhachHang.getEditor().getItem();
-            String tuKhoaHienTai = itemHienTai == null ? "" : itemHienTai.toString();
-            danhSachKhachHang.clear();
-            danhSachKhachHang.addAll(dao.layDanhSachKhachHang());
+            List<entity.ThanhToan.KhachHang> danhSachMoi = dao.layDanhSachKhachHang();
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "KH000000";
-            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
+            for (entity.ThanhToan.KhachHang khachHang : danhSachMoi) {
                 model.addElement(taoGoiYKhachHang(khachHang));
                 if (khachHang.getMaKhachHang().length() > maDaiNhat.length()) {
                     maDaiNhat = khachHang.getMaKhachHang();
                 }
             }
-            cmbMaKhachHang.setModel(model);
+            danhSachKhachHang.clear();
+            danhSachKhachHang.addAll(danhSachMoi);
+            dangCapNhatGoiYMaKhachHang = true;
+            try {
+                cmbMaKhachHang.setModel(model);
+                cmbMaKhachHang.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+                cmbMaKhachHang.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+            } finally {
+                dangCapNhatGoiYMaKhachHang = false;
+            }
             cmbMaKhachHang.setPrototypeDisplayValue(maDaiNhat);
             cmbMaKhachHang.setPreferredSize(cmbMaKhachHang.getPreferredSize());
-            cmbMaKhachHang.setSelectedItem(tuKhoaHienTai);
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách mã khách hàng: " + e.getMessage());
         }
@@ -835,26 +866,42 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
     // Nạp danh sách voucher đang hoạt động.
     private void napDanhSachVoucher() {
+        Object giaTriDangNhap = cmbVoucher.getEditor().getItem();
         try {
-            Object itemHienTai = cmbVoucher.getEditor().getItem();
-            String tuKhoaHienTai = itemHienTai == null ? "" : itemHienTai.toString();
-            danhSachVoucher.clear();
-            danhSachVoucher.addAll(dao.layDanhSachVoucher());
+            List<entity.ThanhToan.Voucher> voucherMoi = dao.layDanhSachVoucher();
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "VOUCHER000";
-            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
-                model.addElement(taoGoiYVoucher(item));
+            for (entity.ThanhToan.Voucher item : voucherMoi) {
+                String goiY = taoGoiYVoucher(item);
+                model.addElement(goiY);
                 if (item.getMaVoucher().length() > maDaiNhat.length()) {
                     maDaiNhat = item.getMaVoucher();
                 }
             }
-            cmbVoucher.setModel(model);
+            danhSachVoucher.clear();
+            danhSachVoucher.addAll(voucherMoi);
+            dangCapNhatGoiYVoucher = true;
+            try {
+                cmbVoucher.setModel(model);
+                cmbVoucher.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+                cmbVoucher.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
+            } finally {
+                dangCapNhatGoiYVoucher = false;
+            }
             cmbVoucher.setPrototypeDisplayValue(maDaiNhat);
             cmbVoucher.setPreferredSize(cmbVoucher.getPreferredSize());
-            cmbVoucher.setSelectedItem(tuKhoaHienTai);
+            if (giaTriDangNhap != null && !giaTriDangNhap.toString().isBlank()) {
+                capNhatGoiYVoucher();
+            }
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách voucher: " + e.getMessage());
         }
+    }
+
+    /** Làm mới dữ liệu gợi ý khi mở lại màn hình thanh toán. */
+    public void napDanhSachGoiYSanPhamVaVoucher() {
+        napDanhSachMaSanPham();
+        napDanhSachVoucher();
     }
 
     // Cập nhật gợi y mã khách hàng.
@@ -909,9 +956,9 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
                 dangCapNhatGoiYMaKhachHang = false;
             }
 
-            boolean daChonGoiY = danhSachKhachHang.stream().anyMatch(khachHang ->
-                    khachHang.getMaKhachHang().equalsIgnoreCase(maTimKiem)
-                    && tuKhoa.equals(taoGoiYKhachHang(khachHang)));
+            boolean daChonGoiY = danhSachKhachHang.stream()
+                    .anyMatch(khachHang -> khachHang.getMaKhachHang().equalsIgnoreCase(maTimKiem)
+                            && tuKhoa.equals(taoGoiYKhachHang(khachHang)));
             if (!maTimKiem.isEmpty() && !goiY.isEmpty()
                     && !daChonGoiY) {
                 cmbMaKhachHang.showPopup();
@@ -963,11 +1010,14 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             // tuKhoa: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
             String tuKhoa = txtEditor.getText();
             String maTimKiem = layMaSanPhamTuGoiY(tuKhoa);
+            String tenTimKiem = maTimKiem.toLowerCase(Locale.ROOT);
             // goiY: Lưu gợi y; phần tử có kiểu String.
             List<String> goiY = new ArrayList<>();
             String tuKhoaKhongPhanBietHoaThuong = maTimKiem.toLowerCase(Locale.ROOT);
             for (String ma : danhSachMaSanPham) {
-                if (maCoChuaTatCaKyTu(ma, tuKhoaKhongPhanBietHoaThuong)) {
+                String ten = tenSanPhamTheoMa.get(ma);
+                if (maCoChuaTatCaKyTu(ma, tuKhoaKhongPhanBietHoaThuong)
+                        || (ten != null && ten.toLowerCase(Locale.ROOT).contains(tenTimKiem))) {
                     goiY.add(ma);
                 }
             }
@@ -1019,8 +1069,11 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             String tuKhoaDaChuanHoa = maTimKiem.toLowerCase(Locale.ROOT);
             List<entity.ThanhToan.Voucher> goiY = new ArrayList<>();
             for (entity.ThanhToan.Voucher item : danhSachVoucher) {
-                if (maCoChuaTatCaKyTu(
-                        item.getMaVoucher(), tuKhoaDaChuanHoa)) {
+                String tenVoucher = item.getTenVoucher();
+                if (maCoChuaTatCaKyTu(item.getMaVoucher(), tuKhoaDaChuanHoa)
+                        || (tenVoucher != null
+                                && tenVoucher.toLowerCase(Locale.ROOT)
+                                        .contains(tuKhoaDaChuanHoa))) {
                     goiY.add(item);
                 }
             }
@@ -1047,9 +1100,9 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
                 dangCapNhatGoiYVoucher = false;
             }
 
-            boolean daChonGoiY = danhSachVoucher.stream().anyMatch(item ->
-                    item.getMaVoucher().equalsIgnoreCase(maTimKiem)
-                    && tuKhoa.equals(taoGoiYVoucher(item)));
+            boolean daChonGoiY = danhSachVoucher.stream()
+                    .anyMatch(item -> item.getMaVoucher().equalsIgnoreCase(maTimKiem)
+                            && tuKhoa.equals(taoGoiYVoucher(item)));
             if (!maTimKiem.isEmpty() && !goiY.isEmpty() && !daChonGoiY) {
                 cmbVoucher.showPopup();
             } else if (cmbVoucher.isPopupVisible()) {
@@ -1062,7 +1115,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     private String taoGoiYVoucher(entity.ThanhToan.Voucher item) {
         String ten = item.getTenVoucher();
         return ten == null || ten.isBlank()
-                ? item.getMaVoucher() : item.getMaVoucher() + " - " + ten;
+                ? item.getMaVoucher()
+                : item.getMaVoucher() + " - " + ten;
     }
 
     // Lấy mã voucher từ nội dung ô nhập hoặc gợi ý đã chọn.
@@ -1140,8 +1194,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
                 return;
             }
             // phieuDichVus: Bảng ánh xạ khóa đến giá trị dùng cho các phiếu dịch vụ.
-            Map<String, List<entity.ThanhToan>> phieuDichVus =
-                    dao.layPhieuDichVuDangXuLy(khachHang.getMaKhachHang());
+            Map<String, List<entity.ThanhToan>> phieuDichVus = dao.layPhieuDichVuDangXuLy(khachHang.getMaKhachHang());
             xoaDichVuTuPhieuDaThem();
             maKhachHang = khachHang.getMaKhachHang();
             maKhachHangDaXacNhan = tuKhoa;
@@ -1235,7 +1288,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             JLabel lblPrice = new JLabel(dinhDangTien(sanPham.getDonGia()));
             // pnlAddDialog: Khung chứa thành phần giao diện thêm hộp thoại.
             JPanel pnlAddDialog = new JPanel(new GridBagLayout());
-            // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+            // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+            // GridBagLayout.
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(7, 8, 7, 8);
             gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -1351,7 +1405,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         try {
             entity.ThanhToan.Voucher timDuoc = dao.timVoucher(ma);
             if (timDuoc == null) {
-                hienLoi("Mã voucher không tồn tại hoặc đã hết hiệu lực.");
+                hienLoi("Voucher không tồn tại, chưa đến ngày bắt đầu, đã hết hạn "
+                        + "hoặc đã hết lượt sử dụng.");
                 return;
             }
             String loiDieuKien = kiemTraDieuKienVoucher(timDuoc);
@@ -1388,6 +1443,15 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         }
         if (voucher != null) {
             try {
+                entity.ThanhToan.Voucher voucherMoi = dao.timVoucher(voucher.getMaVoucher());
+                if (voucherMoi == null) {
+                    voucher = null;
+                    capNhatTien();
+                    hienLoi("Voucher không còn hiệu lực, chưa đến ngày bắt đầu "
+                            + "hoặc đã hết lượt sử dụng.");
+                    return;
+                }
+                voucher = voucherMoi;
                 String loiDieuKien = kiemTraDieuKienVoucher(voucher);
                 if (loiDieuKien != null) {
                     hienLoi(loiDieuKien);
@@ -1399,7 +1463,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             }
         }
 
-        // tongThanhToan: Giá trị tổng tiền thanh toán dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // tongThanhToan: Giá trị tổng tiền thanh toán dùng số thập phân chính xác để
+        // tính toán tiền/tỷ lệ.
         BigDecimal tongThanhToan = tinhTongThanhToan();
         boolean tienMat = phuongThuc.getTenPhuongThuc()
                 .toLowerCase(Locale.forLanguageTag("vi-VN"))
@@ -1408,7 +1473,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
                 .toLowerCase(Locale.forLanguageTag("vi-VN"))
                 .contains("chuyển khoản");
         if (tienMat) {
-            // tienKhachDua: Giá trị số tiền khách đưa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+            // tienKhachDua: Giá trị số tiền khách đưa dùng số thập phân chính xác để tính
+            // toán tiền/tỷ lệ.
             BigDecimal tienKhachDua;
             try {
                 tienKhachDua = docTienKhachDua();
@@ -1550,7 +1616,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         for (int y = 0; y < matrix.getHeight(); y++) {
             for (int x = 0; x < matrix.getWidth(); x++) {
                 image.setRGB(x, y, matrix.get(x, y)
-                        ? Color.BLACK.getRGB() : Color.WHITE.getRGB());
+                        ? Color.BLACK.getRGB()
+                        : Color.WHITE.getRGB());
             }
         }
         return image;
@@ -1620,7 +1687,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         text.append("Tổng thanh toán: ").append(dinhDangTien(tong)).append('\n');
         text.append("Phương thức: ").append(tenPhuongThuc).append('\n');
         if (tenPhuongThuc.toLowerCase(Locale.forLanguageTag("vi-VN")).contains("tiền mặt")) {
-            // tienDua: Giá trị tiền đưa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+            // tienDua: Giá trị tiền đưa dùng số thập phân chính xác để tính toán tiền/tỷ
+            // lệ.
             BigDecimal tienDua = docTienKhachDua();
             text.append("Khách đưa: ").append(dinhDangTien(tienDua)).append('\n');
             text.append("Tiền thừa: ").append(dinhDangTien(tienDua.subtract(tong))).append('\n');
@@ -1737,7 +1805,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         java.util.regex.Matcher threshold = java.util.regex.Pattern
                 .compile("(\\d{4,})").matcher(dieuKien);
         if (threshold.find()) {
-            // mucToiThieu: Giá trị mục tới thiệu dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+            // mucToiThieu: Giá trị mục tới thiệu dùng số thập phân chính xác để tính toán
+            // tiền/tỷ lệ.
             BigDecimal mucToiThieu = new BigDecimal(threshold.group(1));
             if (tinhTongHang().compareTo(mucToiThieu) < 0) {
                 return "Đơn chưa đạt điều kiện tối thiểu "
@@ -1771,7 +1840,8 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
     // Cập nhật tiền.
     private void capNhatTien() {
-        // tongHang: Giá trị tổng tiền hàng dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // tongHang: Giá trị tổng tiền hàng dùng số thập phân chính xác để tính toán
+        // tiền/tỷ lệ.
         BigDecimal tongHang = tinhTongHang();
         // giam: Giá trị giảm dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
         BigDecimal giam = tinhTienGiam();
@@ -1794,11 +1864,13 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             lblTienThua.setText("—");
         } else {
             try {
-                // tienDua: Giá trị tiền đưa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+                // tienDua: Giá trị tiền đưa dùng số thập phân chính xác để tính toán tiền/tỷ
+                // lệ.
                 BigDecimal tienDua = docTienKhachDua();
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblTienThua.setText(tienDua.compareTo(tong) >= 0
-                        ? dinhDangTien(tienDua.subtract(tong)) : "Chưa đủ tiền");
+                        ? dinhDangTien(tienDua.subtract(tong))
+                        : "Chưa đủ tiền");
             } catch (NumberFormatException e) {
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblTienThua.setText("—");
