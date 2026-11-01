@@ -1,9 +1,9 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import ConnectDB.connectDB;
 import entity.DichVu;
+import entity.PhanQuyen;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

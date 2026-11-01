@@ -1,7 +1,6 @@
 package dao;
 
-import UI.PhanQuyen;
-
+import entity.PhanQuyen;
 import entity.TaiKhoan;
 
 import java.sql.*;

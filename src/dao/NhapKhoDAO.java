@@ -1,10 +1,9 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
+import entity.PhanQuyen;
 import entity.PhieuNhapKho;
 import entity.SanPham;
 
@@ -21,7 +20,8 @@ public class NhapKhoDAO {
 
     // Bổ sung cột hạn sử dụng cho chi tiết nhập nếu cơ sở dữ liệu chưa có.
     private void damBaoCotHanSuDung() throws SQLException {
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
             st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL " +
                     "ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
@@ -44,24 +44,28 @@ public class NhapKhoDAO {
 
         damBaoCotHanSuDung();
 
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlPhieu = """
                 INSERT INTO PhieuNhapKho
                 (maPhieuNhap, ngayNhap, trangThai, maNhanVien, maNhaCungCap)
                 VALUES (?, ?, ?, ?, ?)
                 """;
 
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuNhap
                 (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
 
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
 
             try {
@@ -126,9 +130,11 @@ public class NhapKhoDAO {
         damBaoCotHanSuDung();
         // ds: Danh sách chứa các phần tử kiểu ChiTietPhieuNhap.
         ArrayList<ChiTietPhieuNhap> ds = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham WHERE ct.maPhieuNhap=? ORDER BY ct.maSanPham";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, maPhieu);
             // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
@@ -232,7 +238,8 @@ public class NhapKhoDAO {
             throw new IllegalArgumentException("Vui lòng chọn mã phiếu nhập hợp lệ.");
         damBaoCotHanSuDung();
 
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlPhieu = """
                 SELECT pn.maPhieuNhap, pn.ngayNhap, pn.trangThai, pn.maNhanVien,
                        nv.hoTen AS tenNhanVien, pn.maNhaCungCap,
@@ -243,7 +250,8 @@ public class NhapKhoDAO {
                 LEFT JOIN Nhacungcap n ON n.maNhaCungCap = pn.maNhaCungCap
                 WHERE pn.maPhieuNhap = ?
                 """;
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlChiTiet = """
                 SELECT ct.maSanPham, sp.tenSanPham, ct.soLuongNhap,
                        ct.donGiaNhap, ct.hanSuDung
@@ -252,7 +260,8 @@ public class NhapKhoDAO {
                 WHERE ct.maPhieuNhap = ?
                 ORDER BY ct.maSanPham
                 """;
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
             PhieuNhapKho phieu = null;
             String tenNV = null, sdtNcc = null, diaChiNcc = null;
@@ -315,7 +324,8 @@ public class NhapKhoDAO {
         // list: Danh sách chứa các phần tử kiểu PhieuNhapKho.
         ArrayList<PhieuNhapKho> list = new ArrayList<>();
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT pn.maPhieuNhap, pn.ngayNhap, pn.maNhanVien,
                        pn.maNhaCungCap, ncc.tenNhaCungCap,
@@ -357,10 +367,12 @@ public class NhapKhoDAO {
     public void hoanTatPhieuNhap(String maPhieu) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
 
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
 
             try {
@@ -394,10 +406,12 @@ public class NhapKhoDAO {
     public void xoaPhieuNhap(String maPhieu) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
 
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
 
             try {
@@ -438,7 +452,8 @@ public class NhapKhoDAO {
         // list: Danh sách chứa các phần tử kiểu NhaCungCap.
         ArrayList<NhaCungCap> list = new ArrayList<>();
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT maNhaCungCap, tenNhaCungCap,
                        soDienThoai, email, diaChi
@@ -477,7 +492,8 @@ public class NhapKhoDAO {
     public boolean themNhaCungCap(NhaCungCap n) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 INSERT INTO Nhacungcap
                 (maNhaCungCap, tenNhaCungCap, soDienThoai, email, diaChi)
@@ -509,7 +525,8 @@ public class NhapKhoDAO {
         // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT maSanPham, tenSanPham, giaNhap, giaBan,
                        maDanhMuc, maNhaCungCap
