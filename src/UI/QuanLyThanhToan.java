@@ -913,25 +913,33 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
             if (!(editorComponent instanceof JTextField)) {
                 return;
             }
-            // txtEditor: Ô nhập/hiển thị văn bản bộ chỉnh sửa.
             JTextField txtEditor = (JTextField) editorComponent;
-            // tuKhoa: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
             String tuKhoa = txtEditor.getText();
             String maTimKiem = layMaKhachHangTuGoiY(tuKhoa);
-            // goiY: Lưu gợi y; phần tử có kiểu String.
-            List<String> goiY = new ArrayList<>();
             String tuKhoaDaChuanHoa = maTimKiem.toLowerCase(Locale.ROOT);
+            List<String> goiY = new ArrayList<>();
             for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
-                if (maCoChuaTatCaKyTu(
-                        khachHang.getMaKhachHang(), tuKhoaDaChuanHoa)) {
+                String ma = khachHang.getMaKhachHang();
+                String ten = khachHang.getHoTen() == null ? "" : khachHang.getHoTen();
+                String soDienThoai = khachHang.getSoDienThoai() == null ? "" : khachHang.getSoDienThoai();
+                boolean khopMa = maCoChuaTatCaKyTu(ma, tuKhoaDaChuanHoa);
+                boolean khopTen = ten.toLowerCase(Locale.ROOT).contains(tuKhoaDaChuanHoa);
+                boolean khopSdt = soDienThoai.toLowerCase(Locale.ROOT).contains(tuKhoaDaChuanHoa);
+                if (khopMa || khopTen || khopSdt) {
                     goiY.add(taoGoiYKhachHang(khachHang));
                 }
             }
-            for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
-                if (khachHang.getMaKhachHang().equalsIgnoreCase(maTimKiem)) {
-                    goiY.clear();
-                    goiY.add(taoGoiYKhachHang(khachHang));
-                    break;
+            if (goiY.isEmpty()) {
+                String maTheoTen = timMaKhachHangTheoTen(tuKhoa);
+                if (!maTheoTen.isEmpty()) {
+                    try {
+                        entity.ThanhToan.KhachHang khachHang = dao.timKhachHang(maTheoTen);
+                        if (khachHang != null) {
+                            goiY.add(taoGoiYKhachHang(khachHang));
+                        }
+                    } catch (SQLException ex) {
+                        // Bỏ qua lỗi lookup phụ và giữ gợi ý cục bộ.
+                    }
                 }
             }
 
@@ -944,7 +952,6 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
                 }
                 cmbMaKhachHang.setModel(model);
                 cmbMaKhachHang.setSelectedItem(tuKhoa);
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 txtEditor.setText(tuKhoa);
                 txtEditor.setCaretPosition(Math.min(viTriConTro, tuKhoa.length()));
             } finally {
@@ -953,9 +960,11 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
             boolean daChonGoiY = danhSachKhachHang.stream()
                     .anyMatch(khachHang -> khachHang.getMaKhachHang().equalsIgnoreCase(maTimKiem)
-                            && tuKhoa.equals(taoGoiYKhachHang(khachHang)));
-            if (!maTimKiem.isEmpty() && !goiY.isEmpty()
-                    && !daChonGoiY) {
+                            && tuKhoa.equals(taoGoiYKhachHang(khachHang)))
+                    || danhSachKhachHang.stream()
+                            .anyMatch(khachHang -> tuKhoa.equalsIgnoreCase(khachHang.getHoTen())
+                                    || tuKhoa.equalsIgnoreCase(khachHang.getSoDienThoai()));
+            if (!maTimKiem.isEmpty() && !goiY.isEmpty() && !daChonGoiY) {
                 cmbMaKhachHang.showPopup();
             } else if (cmbMaKhachHang.isPopupVisible()) {
                 cmbMaKhachHang.hidePopup();
@@ -973,17 +982,39 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
 
     // Lấy mã khách hàng từ nội dung ô nhập hoặc gợi ý đã chọn.
     private String layMaKhachHangTuGoiY(String tuKhoa) {
-        int separator = tuKhoa.indexOf(" - ");
+        if (tuKhoa == null) {
+            return "";
+        }
+        String input = tuKhoa.trim();
+        int separator = input.indexOf(" - ");
         if (separator > 0) {
-            String ma = tuKhoa.substring(0, separator);
+            String ma = input.substring(0, separator);
             for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
                 if (khachHang.getMaKhachHang().equalsIgnoreCase(ma)
-                        && tuKhoa.equals(taoGoiYKhachHang(khachHang))) {
+                        && input.equals(taoGoiYKhachHang(khachHang))) {
                     return ma;
                 }
             }
         }
-        return tuKhoa.trim();
+        String maTheoTen = timMaKhachHangTheoTen(input);
+        return maTheoTen.isEmpty() ? input : maTheoTen;
+    }
+
+    private String timMaKhachHangTheoTen(String tuKhoa) {
+        if (tuKhoa == null || tuKhoa.isBlank()) {
+            return "";
+        }
+        String keyword = tuKhoa.trim();
+        for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
+            String hoTen = khachHang.getHoTen() == null ? "" : khachHang.getHoTen();
+            String soDienThoai = khachHang.getSoDienThoai() == null ? "" : khachHang.getSoDienThoai();
+            if (hoTen.equalsIgnoreCase(keyword)
+                    || hoTen.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT))
+                    || soDienThoai.equalsIgnoreCase(keyword)) {
+                return khachHang.getMaKhachHang();
+            }
+        }
+        return "";
     }
 
     // Cập nhật gợi y mã sản phẩm.
