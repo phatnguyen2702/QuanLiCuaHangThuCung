@@ -190,7 +190,8 @@ public class HoaDonDAO {
                 + "LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham "
                 + "LEFT JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
                 + "LEFT JOIN ThuCung tc ON tc.maThuCung = ct.maThuCung "
-                + "WHERE ct.maHoaDon = ? ORDER BY maHang";
+                + "WHERE ct.maHoaDon = ? "
+                + "ORDER BY COALESCE(ct.maSanPham, ct.maDichVu, ct.maThuCung)";
 
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
