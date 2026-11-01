@@ -47,6 +47,7 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
         // liệu thời gian và chuỗi.
         private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/uuuu")
                         .withResolverStyle(ResolverStyle.STRICT);
+
         // dao: Đối tượng truy cập dữ liệu lịch phân ca.
         private final LichPhanCaDAO dao = new LichPhanCaDAO();
         // fntNoiDung: Phông chữ dùng cho phông chữ nội dung.
@@ -128,6 +129,7 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                 pnlPnl.setBackground(Color.WHITE);
                 pnlPnl.setBorder(new EmptyBorder(10, 10, 10, 10));
                 pnlPnl.add(taoPnlLoc(), BorderLayout.NORTH);
+
                 mdlPhanCa = new DefaultTableModel(new String[] {
                                 "Mã PC", "Ngày làm việc", "Mã NV", "Họ tên", "Mã ca", "Ca làm"
                 }, 0) {
@@ -489,7 +491,7 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                         lblTrangThai.setText("Tổng: " + ds.size() + " phân ca");
         }
 
-        // Hiển thị biểu mẫu.
+        // Hiển thị thị biểu mẫu.
         private void hienThiForm() {
                 // row: Lưu chỉ số dòng.
                 int row = tblPhanCa.getSelectedRow();
