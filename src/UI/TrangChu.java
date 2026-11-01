@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -1225,7 +1224,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở cảnh báo hạn sử dụng.
     private void moCanhBaoHanSuDung() {
         hienManHinh("canhbaohansudung", "Tra cứu hạn sử dụng sản phẩm", btnTimKiem,
-                () -> { pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel(); return pnlCanhBaoHanSuDung.getContentPane(); });
+                () -> {
+                    pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel();
+                    return pnlCanhBaoHanSuDung.getContentPane();
+                });
         if (pnlCanhBaoHanSuDung != null) {
             pnlCanhBaoHanSuDung.napLai();
         }
@@ -1234,7 +1236,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     // Mở gợi ý thức ăn.
     private void moGoiYThucAn() {
         hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnXuLy,
-                () -> { pnlGoiYThucAn = new GoiYThucAnPanel(this::moThanhToanTuGioHang); return pnlGoiYThucAn.getContentPane(); });
+                () -> {
+                    pnlGoiYThucAn = new GoiYThucAnPanel(this::moThanhToanTuGioHang);
+                    return pnlGoiYThucAn.getContentPane();
+                });
         if (pnlGoiYThucAn != null) {
             pnlGoiYThucAn.napLai();
         }
@@ -1287,18 +1292,20 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Đếm lịch Spa hôm nay.
-    // Kết quả: giá trị số nguyên.
+    // Đếm lịch Spa trong ngày hiện tại, không tính lịch đã hủy.
+    // Cùng tiêu chí ngày và trạng thái với danh sách Spa ở Trang chủ.
     private int demLichSpaHomNay() throws SQLException {
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = "SELECT COUNT(*) FROM LichHen WHERE CAST(ngayGioHen AS DATE) = CAST(GETDATE() AS DATE)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
+        String sql = "SELECT COUNT(*) FROM LichHen "
+                + "WHERE ngayGioHen >= ? AND ngayGioHen < ? "
+                + "AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
+        java.time.LocalDate homNay = java.time.LocalDate.now();
         try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setTimestamp(1, java.sql.Timestamp.valueOf(homNay.atStartOfDay()));
+            ps.setTimestamp(2, java.sql.Timestamp.valueOf(homNay.plusDays(1).atStartOfDay()));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
         }
     }
 
@@ -1381,60 +1388,46 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
 
         pnlLichSpaNoiDung.removeAll();
-        // now: Lưu hiện tại dưới dạng dữ liệu thời gian.
         LocalDateTime now = LocalDateTime.now();
+        java.time.LocalDate homNay = now.toLocalDate();
 
         try {
-            // tatCa: Lưu toàn bộ dữ liệu; phần tử có kiểu LichHen.
             List<LichHen> tatCa = new LichHenDAO().getAll();
-            // sapToi: Lưu sắp tới; phần tử có kiểu LichHen.
-            List<LichHen> sapToi = tatCa.stream()
-                    .filter(lh -> lh.getNgayGioHen() != null && !lh.getNgayGioHen().isBefore(now))
+            // Chỉ tính lịch của hôm nay chưa bị hủy (kể cả những lịch đã qua giờ).
+            List<LichHen> lichHomNay = tatCa.stream()
+                    .filter(lh -> lh.getNgayGioHen() != null
+                            && lh.getNgayGioHen().toLocalDate().equals(homNay)
+                            && !"Đã hủy".equalsIgnoreCase(
+                                    lh.getTrangThai() == null ? "" : lh.getTrangThai().trim()))
                     .sorted(Comparator.comparing(LichHen::getNgayGioHen))
                     .toList();
 
-            // trong90Phut: Lưu trong 90 phút; phần tử có kiểu LichHen.
-            List<LichHen> trong90Phut = sapToi.stream()
-                    .filter(lh -> Duration.between(now, lh.getNgayGioHen()).toMinutes() <= 90)
-                    .limit(3)
+            // Chỉ hiển thị những lịch CHƯA đến giờ trong HÔM NAY, không lấy ngày mai.
+            List<LichHen> lichConLai = lichHomNay.stream()
+                    .filter(lh -> !lh.getNgayGioHen().isBefore(now))
                     .toList();
+            long tongLichHomNay = lichHomNay.size();
 
-            long soLichHomNay = sapToi.stream()
-                    .filter(lh -> lh.getNgayGioHen().toLocalDate().equals(now.toLocalDate()))
-                    .count();
-
-            if (!trong90Phut.isEmpty()) {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                lblPhuDeLichSpa.setText("Trong 90 phút tiếp theo");
-                for (LichHen lh : trong90Phut) {
+            if (!lichConLai.isEmpty()) {
+                lblPhuDeLichSpa.setText("Các lịch còn lại trong hôm nay");
+                for (LichHen lh : lichConLai.stream().limit(3).toList()) {
                     pnlLichSpaNoiDung.add(taoDongLichSpa(lh));
                     pnlLichSpaNoiDung.add(Box.createVerticalStrut(3));
                 }
-                pnlLichSpaNoiDung.add(Box.createVerticalGlue());
-                pnlLichSpaNoiDung.add(taoChipTongKet(
-                        "Sắp tới: " + trong90Phut.size() + " lịch • Hôm nay: " + soLichHomNay + " lịch"));
-            } else if (!sapToi.isEmpty()) {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                lblPhuDeLichSpa.setText("Hiển thị những lịch hẹn tiếp theo");
-                int dem = 0;
-                for (LichHen lh : sapToi) {
-                    pnlLichSpaNoiDung.add(taoDongLichSpa(lh));
-                    pnlLichSpaNoiDung.add(Box.createVerticalStrut(3));
-                    dem++;
-                    if (dem == 3)
-                        break;
-                }
-                pnlLichSpaNoiDung.add(Box.createVerticalGlue());
-                pnlLichSpaNoiDung.add(taoChipTongKet("Hôm nay: " + soLichHomNay + " lịch Spa"));
             } else {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                lblPhuDeLichSpa.setText("Chưa có lịch hẹn Spa sắp tới");
-                // lblRong: Nhãn hiển thị: Không có lịch hẹn nào trong dữ liệu hiện tại..
-                JLabel lblRong = new JLabel("Không có lịch hẹn nào trong dữ liệu hiện tại.");
+                lblPhuDeLichSpa.setText(tongLichHomNay == 0
+                        ? "Hôm nay không có lịch Spa"
+                        : "Không còn lịch Spa nào sắp tới hôm nay");
+                JLabel lblRong = new JLabel(tongLichHomNay == 0
+                        ? "Chưa có lịch Spa được đặt trong ngày hôm nay."
+                        : "Các lịch Spa của hôm nay đều đã qua giờ hẹn.");
                 lblRong.setFont(UIStyle.font(Font.PLAIN, 13));
                 lblRong.setForeground(Color.GRAY);
                 pnlLichSpaNoiDung.add(lblRong);
             }
+            pnlLichSpaNoiDung.add(Box.createVerticalGlue());
+            pnlLichSpaNoiDung.add(taoChipTongKet(
+                    "Hôm nay: " + tongLichHomNay + " lịch Spa • Còn: " + lichConLai.size() + " lịch"));
         } catch (Exception ex) {
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblPhuDeLichSpa.setText("Không đọc được dữ liệu lịch hẹn");
