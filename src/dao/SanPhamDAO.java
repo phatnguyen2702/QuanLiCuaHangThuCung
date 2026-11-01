@@ -1,10 +1,9 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import ConnectDB.connectDB;
 import entity.DanhMuc;
 import entity.NhaCungCap;
+import entity.PhanQuyen;
 import entity.SanPham;
 
 import java.sql.*;
@@ -50,7 +49,8 @@ public class SanPhamDAO {
                              AND kk.soLuongThucTe IS NOT NULL), 0)
             """;
 
-    // SELECT_CO_BAN: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+    // SELECT_CO_BAN: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị
+    // trí nhận tham số nếu có.
     private static final String SELECT_CO_BAN = """
             SELECT sp.maSanPham,
                    sp.tenSanPham,
@@ -134,7 +134,8 @@ public class SanPhamDAO {
     /** Lọc thức ăn theo các trường hợp phù hợp đã lưu trong GoiYThucAn. */
     public ArrayList<SanPham> goiYThucAn(String loaiThuCung, String nhomTuoi, String kichThuoc) throws SQLException {
         damBaoBangGoiYThucAn();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = SELECT_CO_BAN + " WHERE (" + BIEU_THUC_TON + ") > 0 " +
                 "AND EXISTS (SELECT 1 FROM GoiYThucAn gy WHERE gy.maSanPham = sp.maSanPham " +
                 "AND gy.loaiThuCung = ? " +
@@ -143,7 +144,8 @@ public class SanPhamDAO {
                 "ORDER BY sp.tenSanPham";
         // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, loaiThuCung);
             ps.setString(2, nhomTuoi);
@@ -190,7 +192,8 @@ public class SanPhamDAO {
                     CONSTRAINT CK_GoiYThucAn_Size CHECK (kichThuoc IN (N'Nhỏ', N'Trung bình', N'Lớn', N'Mọi kích thước', N'Chưa xác định'))
                 )
                 """;
-        // seed: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // seed: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String seed = """
                 INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu)
                 SELECT sp.maSanPham,
@@ -211,7 +214,8 @@ public class SanPhamDAO {
                        OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%mèo%')
                   AND NOT EXISTS (SELECT 1 FROM dbo.GoiYThucAn gy WHERE gy.maSanPham = sp.maSanPham)
                 """;
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
             st.execute(taoBang);
             st.executeUpdate(seed);
@@ -228,7 +232,8 @@ public class SanPhamDAO {
         if (maSanPham == null || maSanPham.isBlank()) {
             return null;
         }
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT MIN(ct.hanSuDung) AS hanSomNhat
                 FROM dbo.ChiTietPhieuNhap ct
@@ -238,7 +243,8 @@ public class SanPhamDAO {
                   AND ISNULL(ct.trangThai, 1) = 1
                   AND ct.hanSuDung IS NOT NULL
                 """;
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maSanPham);
@@ -275,7 +281,8 @@ public class SanPhamDAO {
     public void luuSanPhamDayDu(SanPham sp, boolean dangSua, String tenDanhMuc,
             String nhomTuoi, String kichThuoc, int soLuongThem, String maNhanVien) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
-        if (soLuongThem > 0) PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        if (soLuongThem > 0)
+            PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
         damBaoBangGoiYThucAn();
 
         String nguon = ((tenDanhMuc == null ? "" : tenDanhMuc) + " " +
@@ -296,32 +303,44 @@ public class SanPhamDAO {
                         : "INSERT INTO SanPham(maSanPham,tenSanPham,giaNhap,giaBan,maDanhMuc,maNhaCungCap) VALUES(?,?,?,?,?,?)";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     if (dangSua) {
-                        ps.setString(1, sp.getTenSanPham()); ps.setDouble(2, sp.getGiaNhap());
-                        ps.setDouble(3, sp.getGiaBan()); ps.setString(4, sp.getMaDanhMuc());
-                        ps.setString(5, sp.getMaNhaCungCap()); ps.setString(6, sp.getMaSanPham());
+                        ps.setString(1, sp.getTenSanPham());
+                        ps.setDouble(2, sp.getGiaNhap());
+                        ps.setDouble(3, sp.getGiaBan());
+                        ps.setString(4, sp.getMaDanhMuc());
+                        ps.setString(5, sp.getMaNhaCungCap());
+                        ps.setString(6, sp.getMaSanPham());
                     } else {
-                        ps.setString(1, sp.getMaSanPham()); ps.setString(2, sp.getTenSanPham());
-                        ps.setDouble(3, sp.getGiaNhap()); ps.setDouble(4, sp.getGiaBan());
-                        ps.setString(5, sp.getMaDanhMuc()); ps.setString(6, sp.getMaNhaCungCap());
+                        ps.setString(1, sp.getMaSanPham());
+                        ps.setString(2, sp.getTenSanPham());
+                        ps.setDouble(3, sp.getGiaNhap());
+                        ps.setDouble(4, sp.getGiaBan());
+                        ps.setString(5, sp.getMaDanhMuc());
+                        ps.setString(6, sp.getMaNhaCungCap());
                     }
-                    if (ps.executeUpdate() != 1) throw new SQLException("Không lưu được hồ sơ sản phẩm.");
+                    if (ps.executeUpdate() != 1)
+                        throw new SQLException("Không lưu được hồ sơ sản phẩm.");
                 }
 
                 try (PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
-                    ps.setString(1, sp.getMaSanPham()); ps.executeUpdate();
+                    ps.setString(1, sp.getMaSanPham());
+                    ps.executeUpdate();
                 }
                 if (laThucAn) {
                     try (PreparedStatement ps = con.prepareStatement(
                             "INSERT INTO dbo.GoiYThucAn(maSanPham,loaiThuCung,nhomTuoi,kichThuoc,ghiChu) VALUES(?,?,?,?,N'Nhập từ form sản phẩm')")) {
-                        ps.setString(1, sp.getMaSanPham()); ps.setString(2, loai);
-                        ps.setString(3, nhomTuoi); ps.setString(4, kichThuoc); ps.executeUpdate();
+                        ps.setString(1, sp.getMaSanPham());
+                        ps.setString(2, loai);
+                        ps.setString(3, nhomTuoi);
+                        ps.setString(4, kichThuoc);
+                        ps.executeUpdate();
                     }
                 }
 
                 if (soLuongThem > 0) {
                     int max = 0;
-                    try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery(
-                            "SELECT maPhieuNhap FROM dbo.PhieuNhapKho WITH (UPDLOCK,HOLDLOCK)")) {
+                    try (Statement st = con.createStatement();
+                            ResultSet rs = st.executeQuery(
+                                    "SELECT maPhieuNhap FROM dbo.PhieuNhapKho WITH (UPDLOCK,HOLDLOCK)")) {
                         while (rs.next()) {
                             String ma = rs.getString(1);
                             if (ma != null && ma.matches("PN\\d{1,9}"))
@@ -331,18 +350,27 @@ public class SanPhamDAO {
                     String maPhieu = "PN" + String.format("%03d", max + 1);
                     try (PreparedStatement ps = con.prepareStatement(
                             "INSERT INTO PhieuNhapKho(maPhieuNhap,ngayNhap,trangThai,maNhanVien,maNhaCungCap) VALUES(?,CURRENT_TIMESTAMP,1,?,?)")) {
-                        ps.setString(1, maPhieu); ps.setString(2, maNhanVien); ps.setString(3, sp.getMaNhaCungCap());
+                        ps.setString(1, maPhieu);
+                        ps.setString(2, maNhanVien);
+                        ps.setString(3, sp.getMaNhaCungCap());
                         ps.executeUpdate();
                     }
                     try (PreparedStatement ps = con.prepareStatement(
                             "INSERT INTO ChiTietPhieuNhap(maPhieuNhap,maSanPham,soLuongNhap,donGiaNhap,trangThai) VALUES(?,?,?,?,1)")) {
-                        ps.setString(1, maPhieu); ps.setString(2, sp.getMaSanPham());
-                        ps.setInt(3, soLuongThem); ps.setDouble(4, sp.getGiaNhap()); ps.executeUpdate();
+                        ps.setString(1, maPhieu);
+                        ps.setString(2, sp.getMaSanPham());
+                        ps.setInt(3, soLuongThem);
+                        ps.setDouble(4, sp.getGiaNhap());
+                        ps.executeUpdate();
                     }
                 }
                 con.commit();
             } catch (SQLException | RuntimeException ex) {
-                try { con.rollback(); } catch (SQLException rollbackError) { ex.addSuppressed(rollbackError); }
+                try {
+                    con.rollback();
+                } catch (SQLException rollbackError) {
+                    ex.addSuppressed(rollbackError);
+                }
                 throw ex;
             }
         }
@@ -360,7 +388,8 @@ public class SanPhamDAO {
     public boolean them(SanPham sp) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 INSERT INTO SanPham
                 (maSanPham, tenSanPham, giaNhap, giaBan,
@@ -388,7 +417,8 @@ public class SanPhamDAO {
     public boolean sua(SanPham sp) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 UPDATE SanPham
                 SET tenSanPham = ?,
@@ -426,7 +456,8 @@ public class SanPhamDAO {
                 || nguon.contains("pate") || nguon.contains("hạt chó") || nguon.contains("hạt mèo");
         if (!laThucAn) {
             damBaoBangGoiYThucAn();
-            // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+            // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+            // lệnh.
             try (Connection con = connectDB.getConnection();
                     PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
                 ps.setString(1, maSanPham);
@@ -441,13 +472,17 @@ public class SanPhamDAO {
             throw new SQLException("Không xác định được thức ăn dành cho chó hay mèo từ danh mục/tên sản phẩm.");
         }
         damBaoBangGoiYThucAn();
-        // xoa: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // xoa: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String xoa = "DELETE FROM dbo.GoiYThucAn WHERE maSanPham = ?";
-        // them: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // them: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String them = "INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu) VALUES (?, ?, ?, ?, N'Nhập từ form sản phẩm')";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
             try (PreparedStatement psXoa = con.prepareStatement(xoa);
                     PreparedStatement psThem = con.prepareStatement(them)) {
@@ -473,7 +508,8 @@ public class SanPhamDAO {
     /** Tra lai loai, tuoi, co da luu cho san pham; null neu chua co. */
     public String[] layThongTinGoiY(String maSanPham) throws SQLException {
         damBaoBangGoiYThucAn();
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT TOP 1 loaiThuCung, nhomTuoi, kichThuoc FROM dbo.GoiYThucAn WHERE maSanPham = ?")) {
@@ -491,9 +527,11 @@ public class SanPhamDAO {
     public boolean xoa(String maSanPham) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
         damBaoBangGoiYThucAn();
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
             try {
                 try (PreparedStatement ps = con.prepareStatement(
@@ -511,15 +549,19 @@ public class SanPhamDAO {
                         + "+(SELECT COUNT(*) FROM ChiTietHoaDon WHERE maSanPham=?)"
                         + "+(SELECT COUNT(*) FROM ChiTietPhieuKiemKe WHERE maSanPham=?)";
                 try (PreparedStatement ps = con.prepareStatement(sqlDem)) {
-                    ps.setString(1, maSanPham); ps.setString(2, maSanPham); ps.setString(3, maSanPham);
+                    ps.setString(1, maSanPham);
+                    ps.setString(2, maSanPham);
+                    ps.setString(3, maSanPham);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next() && rs.getInt(1) > 0) {
-                            throw new SQLException("Không thể xóa sản phẩm đã phát sinh lịch sử nhập kho, hóa đơn hoặc kiểm kê.");
+                            throw new SQLException(
+                                    "Không thể xóa sản phẩm đã phát sinh lịch sử nhập kho, hóa đơn hoặc kiểm kê.");
                         }
                     }
                 }
                 try (PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
-                    ps.setString(1, maSanPham); ps.executeUpdate();
+                    ps.setString(1, maSanPham);
+                    ps.executeUpdate();
                 }
                 boolean deleted;
                 try (PreparedStatement ps = con.prepareStatement("DELETE FROM SanPham WHERE maSanPham=?")) {
@@ -540,7 +582,8 @@ public class SanPhamDAO {
     /** So dong nhap / ban / kiem ke dang tham chieu toi san pham nay. */
     public int demLichSu(String maSanPham) throws SQLException {
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT (SELECT COUNT(*) FROM ChiTietPhieuNhap   WHERE maSanPham = ?)
                      + (SELECT COUNT(*) FROM ChiTietHoaDon      WHERE maSanPham = ?)
@@ -594,7 +637,8 @@ public class SanPhamDAO {
         // list: Danh sách chứa các phần tử kiểu NhaCungCap.
         ArrayList<NhaCungCap> list = new ArrayList<>();
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT maNhaCungCap, tenNhaCungCap,
                        soDienThoai, email, diaChi
@@ -646,14 +690,16 @@ public class SanPhamDAO {
             return;
         }
 
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlPhieu = """
                 INSERT INTO PhieuNhapKho
                 (maPhieuNhap, ngayNhap, trangThai, maNhanVien, maNhaCungCap)
                 VALUES (?, ?, 1, ?, ?)
                 """;
 
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuNhap
                 (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai)
@@ -664,10 +710,12 @@ public class SanPhamDAO {
         int so = Integer.parseInt(
                 taoMa("PhieuNhapKho", "maPhieuNhap", "PN", 3).substring(2));
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
 
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
 
             try {

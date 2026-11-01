@@ -1,4 +1,4 @@
-package UI;
+package entity;
 
 import java.text.Normalizer;
 import java.util.EnumSet;
@@ -98,9 +98,11 @@ public final class PhanQuyen {
                     "Tài khoản không có quyền thực hiện: " + q + ". Vui lòng liên hệ quản lý.");
         // Xác minh lại quyền trong SQL mỗi khi ghi dữ liệu: tránh phiên cũ vẫn có quyền
         // sau khi quản lý đổi vai trò hoặc xóa nhân viên.
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT vaiTro FROM NhanVien WHERE maNhanVien = ?";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, UI.PhienLamViec.maNV);

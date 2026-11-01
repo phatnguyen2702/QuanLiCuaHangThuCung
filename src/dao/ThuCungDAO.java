@@ -1,8 +1,7 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import ConnectDB.connectDB;
+import entity.PhanQuyen;
 import entity.ThuCung;
 import java.sql.*;
 import java.util.ArrayList;
@@ -90,7 +89,8 @@ public class ThuCungDAO {
     public ArrayList<HoSoThuCung> getAllChiTiet() {
         // list: Danh sách chứa các phần tử kiểu HoSoThuCung.
         ArrayList<HoSoThuCung> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT t.maThuCung,t.tenThuCung,t.loai,t.giong,t.gioiTinh,"
                 + "t.canNang,t.maKhachHang,t.trangThai,k.hoTen AS tenKhachHang,"
                 + "k.soDienThoai, CASE WHEN EXISTS ("
@@ -100,7 +100,8 @@ public class ThuCungDAO {
                 + ") THEN 1 ELSE 0 END AS coLichHen FROM ThuCung t "
                 + "LEFT JOIN KhachHang k ON k.maKhachHang=t.maKhachHang "
                 + "ORDER BY t.maThuCung DESC";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -132,10 +133,12 @@ public class ThuCungDAO {
     public ArrayList<ChuNuoi> getDanhSachChuNuoi() {
         // ds: Danh sách chứa các phần tử kiểu ChuNuoi.
         ArrayList<ChuNuoi> ds = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maKhachHang, hoTen, soDienThoai FROM KhachHang "
                 + "ORDER BY hoTen, maKhachHang";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -154,12 +157,14 @@ public class ThuCungDAO {
     // Tham số tc: thú cưng cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(ThuCung tc) {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "INSERT INTO ThuCung "
                 + "(maThuCung,tenThuCung,loai,giong,gioiTinh,canNang,maKhachHang,trangThai) "
                 + "VALUES(?,?,?,?,?,?,?,?)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, tc.getMaThuCung());
@@ -182,12 +187,14 @@ public class ThuCungDAO {
      * hoac chi tiet hoa don, tranh khong khop du lieu lich su.
      */
     public boolean daCoLichSu(String maThuCung) {
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT CASE WHEN EXISTS (SELECT 1 FROM LichHen WHERE maThuCung=?) "
                 + "OR EXISTS (SELECT 1 FROM PhieuDichVu WHERE maThuCung=?) "
                 + "OR EXISTS (SELECT 1 FROM ChiTietHoaDon WHERE maThuCung=?) "
                 + "THEN 1 ELSE 0 END";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             for (int i = 1; i <= 3; i++)
@@ -207,15 +214,17 @@ public class ThuCungDAO {
     // Tham số tc: thú cưng cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(ThuCung tc) {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "UPDATE ThuCung SET tenThuCung=?, loai=?, giong=?, "
                 + "gioiTinh=?, canNang=?, maKhachHang=?, trangThai=? WHERE maThuCung=? "
                 + "AND (maKhachHang=? OR ("
                 + "NOT EXISTS (SELECT 1 FROM LichHen WHERE maThuCung=?) "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu WHERE maThuCung=?) "
                 + "AND NOT EXISTS (SELECT 1 FROM ChiTietHoaDon WHERE maThuCung=?)))";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, tc.getTenThuCung());
@@ -241,10 +250,12 @@ public class ThuCungDAO {
     // Tham số maThuCung: mã thú cưng.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean xoa(String maThuCung) {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "DELETE FROM ThuCung WHERE maThuCung=?";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maThuCung);

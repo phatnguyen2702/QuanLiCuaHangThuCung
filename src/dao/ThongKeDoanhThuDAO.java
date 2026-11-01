@@ -1,7 +1,5 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import ConnectDB.connectDB;
+import entity.PhanQuyen;
 
 // Lớp truy cập cơ sở dữ liệu cho thống kê doanh thu.
 public class ThongKeDoanhThuDAO {
@@ -44,7 +43,8 @@ public class ThongKeDoanhThuDAO {
     public static final class DongBieuDo {
         // thuTu: Lưu thứ tự.
         private final int thuTu;
-        // doanhThu: Giá trị doanh thu dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // doanhThu: Giá trị doanh thu dùng số thập phân chính xác để tính toán tiền/tỷ
+        // lệ.
         private final BigDecimal doanhThu;
 
         // Khởi tạo đối tượng từ các giá trị được truyền vào.
@@ -72,7 +72,8 @@ public class ThongKeDoanhThuDAO {
         private final String tenMatHang;
         // soLuong: Lưu số lượng.
         private final int soLuong;
-        // doanhThu: Giá trị doanh thu dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // doanhThu: Giá trị doanh thu dùng số thập phân chính xác để tính toán tiền/tỷ
+        // lệ.
         private final BigDecimal doanhThu;
 
         // Khởi tạo đối tượng từ các giá trị được truyền vào.
@@ -103,11 +104,13 @@ public class ThongKeDoanhThuDAO {
 
     // Nhóm dữ liệu hoặc chức năng báo cáo dùng trong ThongKeDoanhThuDAO.
     public static final class BaoCao {
-        // tongDoanhThu: Giá trị tổng doanh thu dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // tongDoanhThu: Giá trị tổng doanh thu dùng số thập phân chính xác để tính toán
+        // tiền/tỷ lệ.
         private final BigDecimal tongDoanhThu;
         // tongHoaDon: Lưu tổng số hóa đơn.
         private final int tongHoaDon;
-        // doanhThuTrungBinh: Giá trị doanh thu trung bình dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // doanhThuTrungBinh: Giá trị doanh thu trung bình dùng số thập phân chính xác
+        // để tính toán tiền/tỷ lệ.
         private final BigDecimal doanhThuTrungBinh;
         // bieuDo: Lưu biểu đồ; phần tử có kiểu DongBieuDo.
         private final List<DongBieuDo> bieuDo;
@@ -129,7 +132,8 @@ public class ThongKeDoanhThuDAO {
             this.tongDoanhThu = tongDoanhThu == null ? BigDecimal.ZERO : tongDoanhThu;
             this.tongHoaDon = tongHoaDon;
             this.doanhThuTrungBinh = doanhThuTrungBinh == null
-                    ? BigDecimal.ZERO : doanhThuTrungBinh;
+                    ? BigDecimal.ZERO
+                    : doanhThuTrungBinh;
             this.bieuDo = Collections.unmodifiableList(new ArrayList<>(bieuDo));
             this.matHangs = Collections.unmodifiableList(new ArrayList<>(matHangs));
         }
@@ -165,7 +169,7 @@ public class ThongKeDoanhThuDAO {
     // Tham số ngayThamChieu: ngày tham chiếu.
     // Kết quả: đối tượng/giá trị kiểu BaoCao.
     public BaoCao layBaoCao(CheDo cheDo, LocalDate ngayThamChieu) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
         if (cheDo == null || ngayThamChieu == null) {
             throw new IllegalArgumentException("Thiếu kỳ thống kê doanh thu.");
         }
@@ -199,7 +203,8 @@ public class ThongKeDoanhThuDAO {
                 throw new IllegalArgumentException("Kiểu thống kê không được hỗ trợ.");
         }
 
-        // tongDoanhThu: Giá trị tổng doanh thu dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // tongDoanhThu: Giá trị tổng doanh thu dùng số thập phân chính xác để tính toán
+        // tiền/tỷ lệ.
         BigDecimal tongDoanhThu = BigDecimal.ZERO;
         // tongHoaDon: Lưu tổng số hóa đơn.
         int tongHoaDon;
@@ -213,17 +218,20 @@ public class ThongKeDoanhThuDAO {
         // matHangs: Lưu các mặt hàng; phần tử có kiểu DongMatHang.
         List<DongMatHang> matHangs = new ArrayList<>();
 
-        // tongHoaDonSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // tongHoaDonSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị
+        // trí nhận tham số nếu có.
         String tongHoaDonSql = "SELECT COUNT(*) FROM HoaDon "
                 + "WHERE ngayLap >= ? AND ngayLap < ?";
-        // bieuDoSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // bieuDoSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String bieuDoSql = "SELECT " + cotNhom + " AS moc, "
                 + "COALESCE(SUM(ct.soLuong * ct.donGia "
                 + "* (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS doanhThu "
                 + "FROM HoaDon hd JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
                 + "WHERE hd.ngayLap >= ? AND hd.ngayLap < ? "
                 + "GROUP BY " + cotNhom + " ORDER BY moc";
-        // matHangSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // matHangSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String matHangSql = "SELECT "
                 + "COALESCE(dm.tenDanhMuc, "
                 + "CASE WHEN dv.maDichVu IS NOT NULL THEN N'Dịch vụ' "
@@ -242,7 +250,8 @@ public class ThongKeDoanhThuDAO {
                 + "sp.tenSanPham, dv.tenDichVu, tc.tenThuCung "
                 + "ORDER BY doanhThu DESC, tenMatHang";
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
             try (PreparedStatement ps = con.prepareStatement(tongHoaDonSql)) {
                 ps.setTimestamp(1, java.sql.Timestamp.valueOf(batDau));
@@ -294,7 +303,8 @@ public class ThongKeDoanhThuDAO {
             }
         }
 
-        // trungBinh: Giá trị trung bình dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // trungBinh: Giá trị trung bình dùng số thập phân chính xác để tính toán
+        // tiền/tỷ lệ.
         BigDecimal trungBinh = tongHoaDon == 0 ? BigDecimal.ZERO
                 : tongDoanhThu.divide(BigDecimal.valueOf(tongHoaDon), 0,
                         java.math.RoundingMode.HALF_UP);

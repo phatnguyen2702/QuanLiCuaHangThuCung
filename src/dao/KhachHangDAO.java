@@ -1,8 +1,7 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import entity.KhachHang;
+import entity.PhanQuyen;
 
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -50,7 +49,8 @@ public class KhachHangDAO {
         // Can SQL Server 2017 tro len (STRING_AGG)
         // =========================================================
 
-        // BASE_SELECT: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // BASE_SELECT: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị
+        // trí nhận tham số nếu có.
         private static final String BASE_SELECT = "SELECT k.maKhachHang, k.hoTen, k.soDienThoai, "
                         + "(SELECT COUNT(*) FROM ThuCung t WHERE t.maKhachHang = k.maKhachHang) AS thuCung, "
                         + "(SELECT ISNULL(SUM(ct.soLuong * ct.donGia * (1 - ISNULL(ct.phanTramGiam, 0) / 100.0)), 0) "
@@ -139,7 +139,8 @@ public class KhachHangDAO {
         // Kết quả: đối tượng/giá trị kiểu KhachHang.
         public KhachHang getBySdt(String sdt) {
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+                // tham số nếu có.
                 String sql = BASE_SELECT + "WHERE k.soDienThoai = ?";
 
                 try (
@@ -172,7 +173,8 @@ public class KhachHangDAO {
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean tonTaiSdt(String sdt) {
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+                // tham số nếu có.
                 String sql = "SELECT 1 FROM KhachHang WHERE soDienThoai = ?";
 
                 try (
@@ -195,7 +197,8 @@ public class KhachHangDAO {
         }
 
         // =========================================================
-        // THONG KE: {tong khach, so khach co the (0), tong diem (0), khach mua thang nay}
+        // THONG KE: {tong khach, so khach co the (0), tong diem (0), khach mua thang
+        // nay}
         // =========================================================
 
         // Tổng hợp các chỉ số thống kê từ cơ sở dữ liệu.
@@ -205,7 +208,8 @@ public class KhachHangDAO {
                 // kq: Mảng lưu kết quả.
                 long[] kq = new long[4];
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+                // tham số nếu có.
                 String sql = "SELECT "
                                 + "(SELECT COUNT(*) FROM KhachHang), "
                                 + "(SELECT 0), "
@@ -244,12 +248,14 @@ public class KhachHangDAO {
         public String them(
                         KhachHang kh,
                         ArrayList<ThuCungMoi> thuCungs) {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
+                PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+                // lệnh.
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
-                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+                        // nhau.
                         con.setAutoCommit(false);
 
                         try {
@@ -328,7 +334,7 @@ public class KhachHangDAO {
         // Tham số maKhachHang: mã khách hàng.
         // Kết quả: chuỗi kết quả.
         public String xoa(String maKhachHang) {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
+                PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
 
                 // rangBuoc: Mảng lưu ràng buộc.
                 String[][] rangBuoc = {
@@ -336,7 +342,8 @@ public class KhachHangDAO {
                                 { "HoaDon", "hoa don" },
                                 { "PhieuDichVu", "phieu dich vu" } };
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+                // lệnh.
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
                         for (String[] r : rangBuoc) {
@@ -358,7 +365,8 @@ public class KhachHangDAO {
                                 }
                         }
 
-                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+                        // nhau.
                         con.setAutoCommit(false);
 
                         try {
@@ -419,7 +427,8 @@ public class KhachHangDAO {
                         String prefix,
                         int width) throws SQLException {
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+                // tham số nếu có.
                 String sql = "SELECT MAX(" + col + ") FROM " + table
                                 + " WHERE " + col + " LIKE ?";
 

@@ -1,9 +1,8 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuKiemKe;
+import entity.PhanQuyen;
 import entity.PhieuKiemKe;
 import entity.SanPham;
 
@@ -19,10 +18,13 @@ public class KiemKeDAO {
 
     // Bổ sung các cột hỗ trợ thời điểm kiểm kê nếu cơ sở dữ liệu chưa có.
     private void damBaoCotKiemKe() throws SQLException {
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = ConnectDB.connectDB.getConnection(); Statement st = con.createStatement()) {
-            st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayBatDau') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayBatDau DATETIME2 NULL");
-            st.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayChot') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayChot DATETIME2 NULL");
+            st.execute(
+                    "IF COL_LENGTH('dbo.PhieuKiemKe','ngayBatDau') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayBatDau DATETIME2 NULL");
+            st.execute(
+                    "IF COL_LENGTH('dbo.PhieuKiemKe','ngayChot') IS NULL ALTER TABLE dbo.PhieuKiemKe ADD ngayChot DATETIME2 NULL");
         }
     }
 
@@ -37,19 +39,21 @@ public class KiemKeDAO {
     // Tham số phieu: phiếu.
     // Tham số chiTiet: chi tiết.
     public void luu(PhieuKiemKe phieu,
-                    List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
+            List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
 
         damBaoCotKiemKe();
 
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlPhieu = """
                 INSERT INTO PhieuKiemKe
                 (maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlChiTiet = """
                 INSERT INTO ChiTietPhieuKiemKe
                 (maPhieuKiemKe, maSanPham, soLuongHeThong,
@@ -57,40 +61,51 @@ public class KiemKeDAO {
                 VALUES (?, ?, ?, ?, ?)
                 """;
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
 
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
 
             try {
                 int daCapNhat;
-                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuKiemKe SET ngayKiemKe=?, trangThai=1, maNhanVien=?, ngayBatDau=?, ngayChot=? WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
-                    ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayKiemKe())); ps.setString(2, phieu.getMaNhanVien());
-                    ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayBatDau())); ps.setTimestamp(4, Timestamp.valueOf(phieu.getNgayChot()));
-                    ps.setString(5, phieu.getMaPhieuKiemKe()); daCapNhat = ps.executeUpdate();
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE PhieuKiemKe SET ngayKiemKe=?, trangThai=1, maNhanVien=?, ngayBatDau=?, ngayChot=? WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
+                    ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayKiemKe()));
+                    ps.setString(2, phieu.getMaNhanVien());
+                    ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayBatDau()));
+                    ps.setTimestamp(4, Timestamp.valueOf(phieu.getNgayChot()));
+                    ps.setString(5, phieu.getMaPhieuKiemKe());
+                    daCapNhat = ps.executeUpdate();
                 }
                 if (daCapNhat > 0) {
-                    try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
-                        ps.setString(1, phieu.getMaPhieuKiemKe()); ps.executeUpdate();
+                    try (PreparedStatement ps = con
+                            .prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
+                        ps.setString(1, phieu.getMaPhieuKiemKe());
+                        ps.executeUpdate();
                     }
-                } else try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
-                    ps.setString(1, phieu.getMaPhieuKiemKe());
-                    ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayKiemKe()));
-                    ps.setBoolean(3, phieu.isTrangThai());
-                    ps.setString(4, phieu.getMaNhanVien());
-                    ps.setTimestamp(5, Timestamp.valueOf(phieu.getNgayBatDau()));
-                    ps.setTimestamp(6, Timestamp.valueOf(phieu.getNgayChot()));
-                    ps.executeUpdate();
-                }
+                } else
+                    try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
+                        ps.setString(1, phieu.getMaPhieuKiemKe());
+                        ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayKiemKe()));
+                        ps.setBoolean(3, phieu.isTrangThai());
+                        ps.setString(4, phieu.getMaNhanVien());
+                        ps.setTimestamp(5, Timestamp.valueOf(phieu.getNgayBatDau()));
+                        ps.setTimestamp(6, Timestamp.valueOf(phieu.getNgayChot()));
+                        ps.executeUpdate();
+                    }
 
                 try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
                     for (ChiTietPhieuKiemKe ct : chiTiet) {
                         ps.setString(1, phieu.getMaPhieuKiemKe());
                         ps.setString(2, ct.getMaSanPham());
                         ps.setInt(3, ct.getSoLuongHeThong());
-                        if (ct.getSoLuongThucTe() == null) ps.setNull(4, Types.INTEGER);
-                        else ps.setInt(4, ct.getSoLuongThucTe());
+                        if (ct.getSoLuongThucTe() == null)
+                            ps.setNull(4, Types.INTEGER);
+                        else
+                            ps.setInt(4, ct.getSoLuongThucTe());
                         ps.setBoolean(5, ct.isTrangThai());
                         ps.addBatch();
                     }
@@ -112,38 +127,60 @@ public class KiemKeDAO {
     // Tham số phieu: phiếu.
     // Tham số chiTiet: chi tiết.
     public void luuNhap(PhieuKiemKe phieu, List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
         damBaoCotKiemKe();
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
             try {
                 int capNhat;
-                try (PreparedStatement ps = con.prepareStatement("UPDATE PhieuKiemKe SET ngayKiemKe=?,trangThai=0,maNhanVien=?,ngayBatDau=?,ngayChot=NULL WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
-                    ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayBatDau())); ps.setString(2, phieu.getMaNhanVien());
-                    ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayBatDau())); ps.setString(4, phieu.getMaPhieuKiemKe()); capNhat = ps.executeUpdate();
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE PhieuKiemKe SET ngayKiemKe=?,trangThai=0,maNhanVien=?,ngayBatDau=?,ngayChot=NULL WHERE maPhieuKiemKe=? AND ISNULL(trangThai,0)=0")) {
+                    ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayBatDau()));
+                    ps.setString(2, phieu.getMaNhanVien());
+                    ps.setTimestamp(3, Timestamp.valueOf(phieu.getNgayBatDau()));
+                    ps.setString(4, phieu.getMaPhieuKiemKe());
+                    capNhat = ps.executeUpdate();
                 }
                 if (capNhat == 0) {
-                    try (PreparedStatement ps = con.prepareStatement("INSERT INTO PhieuKiemKe(maPhieuKiemKe,ngayKiemKe,trangThai,maNhanVien,ngayBatDau) VALUES(?,?,0,?,?)")) {
-                        ps.setString(1, phieu.getMaPhieuKiemKe()); ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayBatDau()));
-                        ps.setString(3, phieu.getMaNhanVien()); ps.setTimestamp(4, Timestamp.valueOf(phieu.getNgayBatDau())); ps.executeUpdate();
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO PhieuKiemKe(maPhieuKiemKe,ngayKiemKe,trangThai,maNhanVien,ngayBatDau) VALUES(?,?,0,?,?)")) {
+                        ps.setString(1, phieu.getMaPhieuKiemKe());
+                        ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayBatDau()));
+                        ps.setString(3, phieu.getMaNhanVien());
+                        ps.setTimestamp(4, Timestamp.valueOf(phieu.getNgayBatDau()));
+                        ps.executeUpdate();
                     }
                 }
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
-                    ps.setString(1, phieu.getMaPhieuKiemKe()); ps.executeUpdate();
+                try (PreparedStatement ps = con
+                        .prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
+                    ps.setString(1, phieu.getMaPhieuKiemKe());
+                    ps.executeUpdate();
                 }
-                try (PreparedStatement ps = con.prepareStatement("INSERT INTO ChiTietPhieuKiemKe(maPhieuKiemKe,maSanPham,soLuongHeThong,soLuongThucTe,trangThai) VALUES(?,?,?,?,?)")) {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO ChiTietPhieuKiemKe(maPhieuKiemKe,maSanPham,soLuongHeThong,soLuongThucTe,trangThai) VALUES(?,?,?,?,?)")) {
                     for (ChiTietPhieuKiemKe ct : chiTiet) {
-                        ps.setString(1, phieu.getMaPhieuKiemKe()); ps.setString(2, ct.getMaSanPham()); ps.setInt(3, ct.getSoLuongHeThong());
-                        if (ct.getSoLuongThucTe() == null) ps.setNull(4, Types.INTEGER); else ps.setInt(4, ct.getSoLuongThucTe());
-                        ps.setBoolean(5, ct.isTrangThai()); ps.addBatch();
+                        ps.setString(1, phieu.getMaPhieuKiemKe());
+                        ps.setString(2, ct.getMaSanPham());
+                        ps.setInt(3, ct.getSoLuongHeThong());
+                        if (ct.getSoLuongThucTe() == null)
+                            ps.setNull(4, Types.INTEGER);
+                        else
+                            ps.setInt(4, ct.getSoLuongThucTe());
+                        ps.setBoolean(5, ct.isTrangThai());
+                        ps.addBatch();
                     }
                     ps.executeBatch();
                 }
                 // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
-            } catch (SQLException e) { con.rollback(); throw e; }
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            }
         }
     }
 
@@ -153,19 +190,27 @@ public class KiemKeDAO {
         damBaoCotKiemKe();
         // ds: Danh sách chứa các phần tử kiểu PhieuKiemKe.
         ArrayList<PhieuKiemKe> ds = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maPhieuKiemKe, ngayKiemKe, trangThai, maNhanVien, ngayBatDau, ngayChot FROM PhieuKiemKe WHERE ISNULL(trangThai,0)=0 ORDER BY ngayKiemKe DESC";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
-        try (Connection c = ConnectDB.connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql); ResultSet r = p.executeQuery()) {
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
+        try (Connection c = ConnectDB.connectDB.getConnection();
+                PreparedStatement p = c.prepareStatement(sql);
+                ResultSet r = p.executeQuery()) {
             // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (r.next()) {
                 PhieuKiemKe x = new PhieuKiemKe();
                 x.setMaPhieuKiemKe(r.getString(1));
                 // t: Lưu bảng/thành phần được xử lý dưới dạng dữ liệu thời gian.
-                Timestamp t = r.getTimestamp(2); x.setNgayKiemKe(t == null ? null : t.toLocalDateTime());
-                x.setTrangThai(r.getBoolean(3)); x.setMaNhanVien(r.getString(4));
-                t = r.getTimestamp(5); x.setNgayBatDau(t == null ? null : t.toLocalDateTime());
-                t = r.getTimestamp(6); x.setNgayChot(t == null ? null : t.toLocalDateTime());
+                Timestamp t = r.getTimestamp(2);
+                x.setNgayKiemKe(t == null ? null : t.toLocalDateTime());
+                x.setTrangThai(r.getBoolean(3));
+                x.setMaNhanVien(r.getString(4));
+                t = r.getTimestamp(5);
+                x.setNgayBatDau(t == null ? null : t.toLocalDateTime());
+                t = r.getTimestamp(6);
+                x.setNgayChot(t == null ? null : t.toLocalDateTime());
                 ds.add(x);
             }
         }
@@ -178,26 +223,41 @@ public class KiemKeDAO {
     public ArrayList<ChiTietPhieuKiemKe> layChiTiet(String maPhieu) throws SQLException {
         // ds: Danh sách chứa các phần tử kiểu ChiTietPhieuKiemKe.
         ArrayList<ChiTietPhieuKiemKe> ds = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT k.maSanPham,s.tenSanPham,k.soLuongHeThong,k.soLuongThucTe,k.trangThai FROM ChiTietPhieuKiemKe k JOIN SanPham s ON s.maSanPham=k.maSanPham WHERE k.maPhieuKiemKe=? ORDER BY k.maSanPham";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
-        try (Connection c=connectDB.getConnection(); PreparedStatement p=c.prepareStatement(sql)) {
-            p.setString(1,maPhieu); try(ResultSet r=p.executeQuery()) { while(r.next()) {
-                ChiTietPhieuKiemKe x=new ChiTietPhieuKiemKe(); x.setMaPhieuKiemKe(maPhieu); x.setMaSanPham(r.getString(1));
-                x.setTenSanPham(r.getString(2)); x.setSoLuongHeThong(r.getInt(3)); int thuc=r.getInt(4);
-                x.setSoLuongThucTe(r.wasNull()?null:thuc); x.setTrangThai(r.getBoolean(5)); ds.add(x);
-            }}
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
+        try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, maPhieu);
+            try (ResultSet r = p.executeQuery()) {
+                while (r.next()) {
+                    ChiTietPhieuKiemKe x = new ChiTietPhieuKiemKe();
+                    x.setMaPhieuKiemKe(maPhieu);
+                    x.setMaSanPham(r.getString(1));
+                    x.setTenSanPham(r.getString(2));
+                    x.setSoLuongHeThong(r.getInt(3));
+                    int thuc = r.getInt(4);
+                    x.setSoLuongThucTe(r.wasNull() ? null : thuc);
+                    x.setTrangThai(r.getBoolean(5));
+                    ds.add(x);
+                }
+            }
         }
         return ds;
     }
 
-    /** Toan bo san pham kem ton kho he thong (cong thuc ton lay tu SanPhamDAO de luon khop). */
+    /**
+     * Toan bo san pham kem ton kho he thong (cong thuc ton lay tu SanPhamDAO de
+     * luon khop).
+     */
     public ArrayList<SanPham> laySanPhamKemTon() throws SQLException {
 
         // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = """
                 SELECT sp.maSanPham,
                        sp.tenSanPham,
@@ -208,10 +268,9 @@ public class KiemKeDAO {
                 """;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
                 SanPham sp = new SanPham();
@@ -225,7 +284,8 @@ public class KiemKeDAO {
         return list;
     }
 
-    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co roi cong 1
+    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co
+    // roi cong 1
     // Tạo mã mới từ bảng, cột, tiền tố và số chữ số được yêu cầu.
     // Tham số bang: bảng dữ liệu.
     // Tham số cot: cột.
@@ -233,16 +293,15 @@ public class KiemKeDAO {
     // Tham số soChuSo: số chữ số của mã.
     // Kết quả: chuỗi kết quả.
     private static String taoMa(String bang, String cot,
-                                String tienTo, int soChuSo) throws SQLException {
+            String tienTo, int soChuSo) throws SQLException {
 
         int max = 0;
 
         try (
-            Connection con = connectDB.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT " + cot + " FROM " + bang);
-            ResultSet rs = ps.executeQuery()
-        ) {
+                Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT " + cot + " FROM " + bang);
+                ResultSet rs = ps.executeQuery()) {
             // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
             while (rs.next()) {
                 // ma: Lưu mã.

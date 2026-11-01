@@ -5,6 +5,8 @@ import dao.HoaDonDAO;
 import dao.LichHenDAO;
 import dao.TaiKhoanDAO;
 import entity.LichHen;
+import entity.PhanQuyen;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,132 +44,113 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 
 /**
- * Cua so chinh Pet Shop Pro - pmnMenu theo hướng chức năng.
- * 5 btnNhom: He thong, Danh muc, Nghiep vu, Tim kiem, Thong ke.
- * Moi chuc nang mo JPanel trong CardLayout, khong mo JFrame moi.
+ * JFrame: cửa sổ chính của Pet Shop Pro.
+ * ActionListener: nhận sự kiện từ JButton/JMenuItem; MouseListener: các
+ * callback chuột.
+ * JPanel + CardLayout: chứa và chuyển giữa các chức năng ngay trong một cửa sổ.
  */
 public class TrangChu extends JFrame implements ActionListener, MouseListener {
 
-    // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
+    // Color: quy định màu nền của Trang chủ; final: không gán lại biến sau khi khởi
+    // tạo.
     private final Color LIGHT_BLUE = new Color(229, 241, 252);
-    // MENU_BLUE: Màu dùng cho giao diện: xanh dương.
     private final Color MENU_BLUE = new Color(207, 222, 235);
-    // maNV: Lưu mã nhân viên.
+    // Ba thuộc tính private: lưu thông tin đăng nhập; final: chỉ gán một lần trong
+    // constructor.
     private final String maNV;
-    // hoTen: Lưu họ tên.
     private final String hoTen;
-    // vaiTro: Lưu vai trò.
     private final String vaiTro;
 
-    // TEN_TAB: Mảng lưu tab.
+    // Mảng hằng tên bốn màn hình kho, dùng chung khi chọn tab.
     private static final String[] TEN_TAB = {
             "Danh mục", "Sản phẩm", "Nhập kho", "Kiểm kê kho"
     };
-    // DINH_DANG_GIO: Bộ định dạng ngày/giờ theo mẫu HH:mm:ss | dd/MM/yyyy để chuyển
-    // giữa dữ liệu thời gian và chuỗi.
+    // DateTimeFormatter: quy định cách hiển thị đồng hồ trên giao diện.
     private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("HH:mm:ss | dd/MM/yyyy");
-    // DINH_DANG_GIO_HEN: Bộ định dạng ngày/giờ theo mẫu HH:mm để chuyển giữa dữ
-    // liệu thời gian và chuỗi.
     private static final DateTimeFormatter DINH_DANG_GIO_HEN = DateTimeFormatter.ofPattern("HH:mm");
 
-    // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng
-    // chứa.
+    // CardLayout: giữ nhiều màn hình trong một khung và chỉ hiện màn hình được
+    // chọn.
     private final CardLayout cardLayout = new CardLayout();
-    // pnlNoiDung: Khung chứa thành phần giao diện nội dung.
+    // JPanel: khung chứa màn hình; đặt CardLayout để điều hướng không cần mở JFrame
+    // mới.
     private final JPanel pnlNoiDung = new JPanel(cardLayout);
-    // lblNgayTrangChu: Nhãn hiển thị ngày hiển thị trên trang chủ.
     private JLabel lblNgayTrangChu;
-    // btnTrangChu: Nút thao tác trang chủ.
     private JButton btnTrangChu;
-    // btnHeThong: Nút thao tác hệ thống.
     private JButton btnHeThong;
-    // btnDanhMuc: Nút thao tác danh mục.
     private JButton btnDanhMuc;
-    // btnXuLy: Nút thao tác xử lý.
     private JButton btnXuLy;
-    // btnTimKiem: Nút thao tác tìm kiếm.
     private JButton btnTimKiem;
-    // btnThongKe: Nút thao tác thống kê.
     private JButton btnThongKe;
-    // Nút nhân viên và nút trên trang chủ sử dụng ActionListener của JFrame.
     private JButton btnNhanVien, btnLamMoi, btnHoTro;
 
-    // dsBtnMucChinh: Lưu danh sách nút mục chính; phần tử có kiểu JButton.
+    // ArrayList<JButton>: lưu các nút menu để đổi màu trạng thái đồng loạt.
     private final ArrayList<JButton> dsBtnMucChinh = new ArrayList<>();
-    // btnNhomDaChon: Nút thao tác nhóm đã chọn.
     private JButton btnNhomDaChon;
 
-    // Man hinh kho; nap lai du lieu khi quay lai.
-    // arrPnlManHinhKho: Mảng lưu mảng khung màn hình kho.
+    // Mảng JPanel: lưu bốn panel Kho để tránh khởi tạo lặp.
     private final JPanel[] arrPnlManHinhKho = new JPanel[TEN_TAB.length];
-    // napLai: Mảng lưu nạp lại.
+    // Runnable: giữ lời gọi nạp lại dữ liệu cho từng màn hình Kho.
     private final Runnable[] napLai = new Runnable[TEN_TAB.length];
-    // Man hinh khac khoi tao mot lan, tai su dung trong CardLayout.
-    // mapManHinhKhac: Bảng ánh xạ khóa đến giá trị dùng cho ánh xạ mã màn hình đến
-    // thành phần giao diện.
+    // HashMap: ánh xạ mã chức năng -> giao diện Swing đã tạo.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
-    // pnlTraCuuHoaDon: Đối tượng khung tra cứu hóa đơn có kiểu TraCuuLichSuHoaDon.
     private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
-    // pnlTraCuuNhapKho: Đối tượng khung tra cứu nhập kho có kiểu TraCuuKhoPanel.
     private TraCuuKhoPanel pnlTraCuuNhapKho;
-    // pnlTraCuuKiemKe: Đối tượng khung tra cứu kiểm kê có kiểu TraCuuKhoPanel.
     private TraCuuKhoPanel pnlTraCuuKiemKe;
-    // pnlThongKeDoanhThu: Đối tượng khung thống kê doanh thu có kiểu
-    // ThongKeDoanhThu.
     private ThongKeDoanhThu pnlThongKeDoanhThu;
-    // pnlThanhToan: Đối tượng khung thanh toán có kiểu QuanLyThanhToan.
     private QuanLyThanhToan pnlThanhToan;
-    // tmrDongHo: Bộ hẹn giờ dùng để cập nhật giao diện định kỳ.
+    // Swing Timer: phát sự kiện định kỳ để cập nhật đồng hồ, không truy vấn thống
+    // kê mỗi giây.
     private final javax.swing.Timer tmrDongHo;
-    // pnlCanhBaoHanSuDung: Đối tượng khung cảnh báo hạn sử dụng có kiểu
-    // CanhBaoHanSuDungPanel.
     private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
-    // pnlGoiYThucAn: Đối tượng khung gợi ý thức ăn có kiểu GoiYThucAnPanel.
     private GoiYThucAnPanel pnlGoiYThucAn;
 
-    // Thanh phan dong tren trang chu.
-    // pnlLichSpaNoiDung: Khung chứa thành phần giao diện lịch Spa nội dung.
     private JPanel pnlLichSpaNoiDung;
-    // lblPhuDeLichSpa: Nhãn hiển thị phụ đề lịch Spa.
     private JLabel lblPhuDeLichSpa;
-    // lblDoanhThuHomNay: Nhãn hiển thị doanh thu hôm nay.
     private JLabel lblDoanhThuHomNay;
-    // lblLuotMuaHomNay: Nhãn hiển thị lượt mua hôm nay.
     private JLabel lblLuotMuaHomNay;
-    // lblLichSpaHomNay: Nhãn hiển thị lịch Spa hôm nay.
     private JLabel lblLichSpaHomNay;
-    // lblPhieuNhapHomNay: Nhãn hiển thị phiếu nhập hôm nay.
     private JLabel lblPhieuNhapHomNay;
 
-    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-    // Tham số maNV: mã nhân viên.
-    // Tham số hoTen: họ tên.
-    // Tham số vaiTro: vai trò.
+    /**
+     * Constructor: nhận thông tin nhân viên từ màn hình đăng nhập.
+     * Kiểm tra vai trò, lưu phiên, dựng JFrame và bắt đầu đồng hồ.
+     */
     public TrangChu(String maNV, String hoTen, String vaiTro) {
         this.maNV = maNV;
         this.hoTen = hoTen;
         this.vaiTro = vaiTro;
 
+        // Validation: từ chối mở cửa sổ khi mã nhân viên rỗng hoặc vai trò không hợp
+        // lệ.
         if (maNV == null || maNV.isBlank()
                 || PhanQuyen.vaiTro(vaiTro) == PhanQuyen.VaiTro.KHONG_HOP_LE) {
             throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
         }
 
+        // Lưu phiên đăng nhập dùng trong TrangChu và các chức năng liên quan.
         PhienLamViec.dat(maNV, hoTen, vaiTro);
+        // Đồng bộ phiên làm việc với lớp UI.PhienLamViec của các màn hình khác.
         UI.PhienLamViec.dat(maNV, hoTen, vaiTro);
 
+        // JFrame.setTitle(): đặt tiêu đề cửa sổ ứng dụng.
         setTitle("Pet Shop Pro - Trang chủ");
+        // setSize(): đặt kích thước khởi đầu của JFrame (rộng x cao).
         setSize(1200, 720);
         setMinimumSize(new Dimension(980, 650));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // BorderLayout: chia cửa sổ thành các vùng Bắc, Nam, Đông, Tây và Giữa.
         setLayout(new BorderLayout());
+        // Đưa thanh menu vào vùng NORTH của cửa sổ.
         add(taoPnlHeader(), BorderLayout.NORTH);
 
         pnlNoiDung.setBackground(LIGHT_BLUE);
+        // Đăng ký thẻ Trang chủ với khóa "trangchu" trong CardLayout.
         pnlNoiDung.add(taoPnlTrangChu(), "trangchu");
         add(pnlNoiDung, BorderLayout.CENTER);
 
+        // Timer 1000 ms: mỗi khoảng 1 giây thực hiện lambda cập nhật đồng hồ.
         tmrDongHo = new javax.swing.Timer(1000, e -> capNhatGio());
         tmrDongHo.start();
         capNhatGio();
@@ -175,53 +158,72 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         hienTrangChu();
     }
 
-    // Giải phóng tài nguyên liên quan khi đóng cửa sổ.
+    /**
+     * Đóng cửa sổ TrangChu.
+     * Dừng Swing Timer trước khi gọi dispose() của JFrame để không phát sinh sự
+     * kiện thừa.
+     */
     @Override
     public void dispose() {
         tmrDongHo.stop();
         super.dispose();
     }
 
-    // Hiển thị trang chủ.
+    /**
+     * Quay về card "trangchu" trong CardLayout.
+     * Bỏ đánh dấu nhóm menu và nạp lại các lịch Spa sắp tới.
+     */
     private void hienTrangChu() {
         btnNhomDaChon = null;
-        cardLayout.show(pnlNoiDung, "trangchu");
-        datMucDangChon(btnTrangChu);
-        setTitle("Pet Shop Pro - Trang chủ");
+        chuyenManHinh("trangchu", "Trang chủ", btnTrangChu);
         napLichSpaSapToi();
     }
 
-    /** API cu cho DieuHuong.moKho(cha, tab) va nhung man hinh khac. */
+    /**
+     * Hàm dùng chung để hiển thị một card trong JPanel nội dung.
+     * CardLayout.show() chọn màn hình; các câu lệnh còn lại cập nhật menu, tiêu đề
+     * và bố cục.
+     */
+    private void chuyenManHinh(String maManHinh, String tieuDe, JButton nutNhom) {
+        // CardLayout.show(): chuyển sang card được định danh bởi maManHinh.
+        cardLayout.show(pnlNoiDung, maManHinh);
+        datMucDangChon(nutNhom);
+        setTitle("Pet Shop Pro - " + tieuDe);
+        pnlNoiDung.revalidate();
+        pnlNoiDung.repaint();
+    }
+
+    /**
+     * Chuyển đến tab Danh mục, Sản phẩm, Nhập kho hoặc Kiểm kê.
+     * switch expression xác định quyền; màn hình chỉ khởi tạo lần đầu và được nạp
+     * lại khi mở tiếp.
+     */
     public void chuyenKho(int tab) {
         if (tab < 0 || tab >= TEN_TAB.length)
             tab = 0;
-        PhanQuyen.Quyen q = switch (tab) {
-            case 0 -> PhanQuyen.Quyen.DANH_MUC_SAN_PHAM;
-            case 1 -> PhanQuyen.Quyen.SAN_PHAM;
-            case 2 -> PhanQuyen.Quyen.NHAP_KHO;
-            default -> PhanQuyen.Quyen.KIEM_KE;
-        };
-        if (!PhanQuyen.kiemTra(q, this))
-            return;
+        // Quyền được áp dụng khi bật/tắt JMenuItem trong menu.
         try {
+            // Lazy Initialization: chỉ tạo giao diện lần đầu tiên, tránh tạo thừa đối
+            // tượng.
             boolean laLanDau = arrPnlManHinhKho[tab] == null;
             if (laLanDau) {
                 taoManHinh(tab);
                 pnlNoiDung.add(arrPnlManHinhKho[tab], "tab" + tab);
             }
-            cardLayout.show(pnlNoiDung, "tab" + tab);
-            datMucDangChon(btnNhomDaChon != null ? btnNhomDaChon : btnDanhMuc);
-            setTitle("Pet Shop Pro - " + TEN_TAB[tab]);
+            chuyenManHinh("tab" + tab, TEN_TAB[tab],
+                    btnNhomDaChon != null ? btnNhomDaChon : btnDanhMuc);
+            // Khi mở lại tab cũ, chạy Runnable để tải dữ liệu mới.
             if (!laLanDau && napLai[tab] != null)
                 napLai[tab].run();
-            pnlNoiDung.revalidate();
-            pnlNoiDung.repaint();
         } catch (RuntimeException ex) {
             baoLoiMoManHinh(TEN_TAB[tab], ex);
         }
     }
 
-    // Mở thống kê doanh thu.
+    /**
+     * Mở màn hình thống kê doanh thu.
+     * Tái sử dụng màn hình đã tạo và gọi lamMoi() khi mở lại.
+     */
     private void moThongKeDoanhThu() {
         boolean daTaoManHinh = pnlThongKeDoanhThu != null;
         hienManHinh("thongkedoanhthu", "Thống kê doanh thu", btnThongKe,
@@ -234,8 +236,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Tạo màn hình.
-    // Tham số tab: tab.
+    /**
+     * Tạo một trong bốn màn hình kho dựa vào chỉ số tab.
+     * Lấy content pane của màn hình con để nhúng vào CardLayout; lưu Runnable dùng
+     * để nạp lại.
+     */
     private void taoManHinh(int tab) {
         switch (tab) {
             case 0 -> {
@@ -261,35 +266,36 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Hiển thị màn hình.
-    // Tham số khoa: khóa.
-    // Tham số tieuDe: tiêu đề.
-    // Tham số btnNhomMacDinh: nhóm mặc định.
-    // Tham số tao: tạo.
+    /**
+     * Hàm điều hướng chung cho các chức năng không thuộc nhóm tab kho.
+     * PhanQuyen chặn truy cập trái quyền; HashMap lưu Component; Supplier.get() chỉ
+     * tạo màn hình khi cần (lazy initialization).
+     */
     private void hienManHinh(String khoa, String tieuDe, JButton btnNhomMacDinh,
             Supplier<? extends Component> tao) {
-        if (!PhanQuyen.kiemTra(PhanQuyen.tuMaManHinh(khoa), this))
-            return;
+        // Màn hình được mở từ các mục menu đã bật theo vai trò.
         try {
+            // Lấy màn hình theo khóa trong HashMap; trả về null nếu chưa được tạo.
             Component c = mapManHinhKhac.get(khoa);
             if (c == null) {
+                // Supplier.get(): gọi constructor được truyền vào để tạo giao diện khi cần.
                 c = tao.get();
+                // Lưu giao diện vào HashMap để những lần sau không tạo mới.
                 mapManHinhKhac.put(khoa, c);
+                // Đăng ký Component mới vào CardLayout với khóa duy nhất.
                 pnlNoiDung.add(c, khoa);
             }
-            cardLayout.show(pnlNoiDung, khoa);
-            datMucDangChon(btnNhomDaChon != null ? btnNhomDaChon : btnNhomMacDinh);
-            setTitle("Pet Shop Pro - " + tieuDe);
-            pnlNoiDung.revalidate();
-            pnlNoiDung.repaint();
+            chuyenManHinh(khoa, tieuDe,
+                    btnNhomDaChon != null ? btnNhomDaChon : btnNhomMacDinh);
         } catch (RuntimeException ex) {
             baoLoiMoManHinh(tieuDe, ex);
         }
     }
 
-    // Báo lỗi mô màn hình.
-    // Tham số ten: tên.
-    // Tham số ex: ngoại lệ cần xử lý.
+    /**
+     * Thông báo khi không tạo hoặc hiển thị được màn hình.
+     * Ghi stack trace vào Console và hiện JOptionPane để người dùng biết lỗi.
+     */
     private void baoLoiMoManHinh(String ten, RuntimeException ex) {
         ex.printStackTrace();
         JOptionPane.showMessageDialog(this,
@@ -299,34 +305,52 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                 "Pet Shop Pro - Lỗi mở màn hình", JOptionPane.ERROR_MESSAGE);
     }
 
-    // Mở lịch hẹn.
+    /**
+     * Mở Quản lý lịch hẹn Spa.
+     * Truyền constructor reference QuanLyLichHen::new vào hàm điều hướng.
+     */
     private void moLichHen() {
         hienManHinh("lichhen", "Lịch hẹn Spa", btnXuLy, QuanLyLichHen::new);
     }
 
-    // Mở thú cưng.
+    /**
+     * Mở Quản lý thú cưng.
+     * Màn hình được quản lý bởi hienManHinh().
+     */
     private void moThuCung() {
         hienManHinh("thucung", "Quản lý thú cưng", btnDanhMuc, QuanLyThuCung::new);
     }
 
-    // Mở khách hàng.
+    /**
+     * Mở Quản lý khách hàng.
+     * Lambda truyền mã nhân viên đăng nhập vào constructor của màn hình con.
+     */
     private void moKhachHang() {
         hienManHinh("khachhang", "Quản lý khách hàng", btnDanhMuc,
                 () -> new QuanLyKhachHang(maNV));
     }
 
-    // Mở voucher.
+    /**
+     * Mở Quản lý mã giảm giá.
+     * Tái sử dụng phương thức điều hướng chung.
+     */
     private void moVoucher() {
         hienManHinh("voucher", "Quản lý voucher", btnDanhMuc, QuanLyVoucher::new);
     }
 
-    // Mở phiếu dịch vụ.
+    /**
+     * Mở Quản lý phiếu dịch vụ.
+     * Kiểm tra quyền trước khi tạo hoặc hiển thị JPanel nghiệp vụ.
+     */
     private void moPhieuDichVu() {
         hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnXuLy,
                 QuanLyPhieuDichVu::new);
     }
 
-    // Mở tra cứu hóa đơn.
+    /**
+     * Mở trang tra cứu lịch sử hóa đơn.
+     * Dùng đối tượng đã tạo khi chuyển qua lại giữa các chức năng.
+     */
     private void moTraCuuHoaDon() {
         hienManHinh("hoadon", "Tra cứu lịch sử hóa đơn", btnTimKiem,
                 () -> {
@@ -343,7 +367,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Mở tra cứu nhập kho.
+    /**
+     * Mở tra cứu phiếu nhập kho.
+     * Sử dụng giao diện tra cứu kho và cập nhật dữ liệu theo trạng thái màn hình.
+     */
     private void moTraCuuNhapKho() {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
                 () -> {
@@ -355,7 +382,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             pnlTraCuuNhapKho.lamMoi();
     }
 
-    // Mở tra cứu kiểm kê.
+    /**
+     * Mở tra cứu phiếu kiểm kê.
+     * Sử dụng giao diện tra cứu kho dành cho dữ liệu kiểm kê.
+     */
     private void moTraCuuKiemKe() {
         hienManHinh("tracuukkkho", "Tra cứu kiểm kê kho", btnTimKiem,
                 () -> {
@@ -367,7 +397,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             pnlTraCuuKiemKe.lamMoi();
     }
 
-    // Mở thanh toán.
+    /**
+     * Mở giao diện thanh toán.
+     * Giữ và tái sử dụng màn hình thanh toán trong vùng nội dung.
+     */
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
                 () -> {
@@ -383,7 +416,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Cập nhật danh sách phiếu dịch vụ.
+    /**
+     * Làm mới dữ liệu phiếu dịch vụ khi cần.
+     * Gọi chức năng cập nhật của màn hình đã mở, không khởi tạo màn hình mới.
+     */
     private void capNhatDanhSachPhieuDichVu() {
         Component manHinh = mapManHinhKhac.get("phieudv");
         if (manHinh instanceof QuanLyPhieuDichVu) {
@@ -391,10 +427,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    /** Mở màn hình thanh toán với các mặt hàng đang có trong giỏ gợi ý. */
+    /**
+     * Mở thanh toán với các mặt hàng được chọn từ phần gợi ý thức ăn.
+     * Liên kết luồng gợi ý sản phẩm với luồng thanh toán.
+     */
     public void moThanhToanTuGioHang() {
-        if (!PhanQuyen.kiemTra(PhanQuyen.Quyen.THANH_TOAN, this))
-            return;
         if (UI.PhienLamViec.gioHang().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.", "Giỏ hàng",
                     JOptionPane.INFORMATION_MESSAGE);
@@ -403,31 +440,46 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         chuyenTuNhom(btnXuLy, this::moThanhToan);
     }
 
-    // Mở ma trận phân quyền.
+    /**
+     * Mở giao diện ma trận phân quyền.
+     * Dành cho vai trò được cấp quyền cấu hình hệ thống.
+     */
     private void moMaTranPhanQuyen() {
         hienManHinh("phanquyen", "Ma trận phân quyền", btnHeThong,
                 () -> new MaTranPhanQuyenPanel(this::moQuanLyTaiKhoan));
     }
 
-    // Mở quản lý tài khoản.
+    /**
+     * Mở giao diện quản lý tài khoản.
+     * Gọi hienManHinh() để tạo (nếu cần) và hiển thị.
+     */
     private void moQuanLyTaiKhoan() {
         hienManHinh("taikhoan", "Quản lý tài khoản", btnHeThong,
                 QuanLyTaiKhoan::new);
     }
 
-    // Mở quản lý phân ca.
+    /**
+     * Mở giao diện phân ca nhân viên.
+     * Tạo JPanel chỉ khi lần đầu mở chức năng.
+     */
     private void moQuanLyPhanCa() {
         hienManHinh("phanca", "Phân ca nhân viên", btnXuLy,
                 QuanLyPhanCa::new);
     }
 
-    // Mở quản lý ca làm.
+    /**
+     * Mở giao diện quản lý ca làm.
+     * Tạo hoặc tái sử dụng màn hình theo mã định danh.
+     */
     private void moQuanLyCaLam() {
         hienManHinh("calam", "Quản lý ca làm", btnHeThong,
                 QuanLyCaLam::new);
     }
 
-    // Mở dịch vụ.
+    /**
+     * Mở giao diện quản lý dịch vụ.
+     * Có thể gọi lại hàm làm mới dữ liệu của màn hình đã mở.
+     */
     private void moDichVu() {
         hienManHinh("dichvu", "Quản lý dịch vụ", btnDanhMuc, QuanLyDichVu::new);
         Component manHinh = mapManHinhKhac.get("dichvu");
@@ -436,25 +488,31 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Chuyển từ nhóm.
-    // Tham số btnNhom: nhóm.
-    // Tham số hanhDong: hành động.
+    /**
+     * Ghi nhận nhóm menu hiện tại rồi thực hiện hành động được truyền vào.
+     * Runnable.run() là gọi phương thức, KHÔNG tự tạo luồng mới.
+     */
     private void chuyenTuNhom(JButton btnNhom, Runnable hanhDong) {
         btnNhomDaChon = btnNhom;
+        // Runnable.run(): gọi hành động ngay trên luồng hiện tại, không tạo Thread mới.
         hanhDong.run();
     }
 
-    // Kiểm tra pmnMenu có mục nào có thể hiển thị hay không.
-    // Tham số pmnMenu: pmnMenu.
-    // Kết quả: true/false theo điều kiện xử lý.
+    /**
+     * Kiểm tra menu thả xuống có ít nhất một mục đang được bật hay không.
+     * Hỗ trợ khóa các nhóm menu không có chức năng phù hợp với quyền nhân viên.
+     */
     private boolean coMucMenu(JPopupMenu pmnMenu) {
         for (Component c : pmnMenu.getComponents())
-            if (c instanceof JMenuItem)
+            if (c instanceof JMenuItem item && item.isEnabled())
                 return true;
         return false;
     }
 
-    // Cập nhật quyền truy cập pmnMenu.
+    /**
+     * Cập nhật trạng thái bật/tắt của các nút menu chính.
+     * Khóa nhóm menu nếu tất cả mục bên trong đều bị vô hiệu hóa theo vai trò.
+     */
     private void capNhatQuyenMenu() {
         btnHeThong.setEnabled(coMucMenu(taoMenuHeThong()));
         btnDanhMuc.setEnabled(coMucMenu(taoMenuDanhMuc()));
@@ -467,8 +525,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Cập nhật kiểu hiển thị để đánh dấu mục pmnMenu đang được chọn.
-    // Tham số btnDangChon: mục đang chọn.
+    /**
+     * Đổi màu và trạng thái để nhận biết nhóm menu đang được chọn.
+     * Duyệt danh sách JButton và cập nhật thuộc tính màu nền.
+     */
     private void datMucDangChon(JButton btnDangChon) {
         for (JButton btnTam : dsBtnMucChinh) {
             boolean active = btnTam == btnDangChon;
@@ -484,27 +544,32 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Cập nhật giờ.
+    /**
+     * Hiển thị thời gian hiện tại ở đầu Trang chủ.
+     * LocalDateTime.now() lấy thời gian, DateTimeFormatter chuyển sang chuỗi
+     * HH:mm:ss | dd/MM/yyyy.
+     */
     private void capNhatGio() {
         if (lblNgayTrangChu != null) {
-            // Định dạng dữ liệu thành chuỗi rồi hiển thị trong control bằng setText().
             lblNgayTrangChu.setText(LocalDateTime.now().format(DINH_DANG_GIO));
         }
     }
 
-    // ==================== MENU THEO HUONG CHUC NANG ====================
-    // Tạo khung đầu trang.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo thanh điều hướng nằm phía trên cửa sổ.
+     * JPanel = khung chứa; JLabel = chữ/logo; JButton = nút; BorderLayout chia
+     * thương hiệu, menu và tài khoản.
+     */
     private JPanel taoPnlHeader() {
-        // header: Khung chứa thành phần giao diện đầu trang.
+        // JPanel: tạo khung thanh menu; BorderLayout chia làm ba vùng chính.
         JPanel pnlHeader2 = new JPanel(new BorderLayout(8, 0));
         pnlHeader2.setBackground(UIStyle.NAVY);
         pnlHeader2.setBorder(new EmptyBorder(7, 12, 7, 12));
 
-        // pnlThuongHieu: Khung chứa thành phần giao diện thương hiệu.
+        // FlowLayout: đặt logo và tên thương hiệu theo hàng ngang.
         JPanel pnlThuongHieu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         pnlThuongHieu.setOpaque(false);
-        // lblLogo: Nhãn hiển thị: PET SHOP PRO.
+        // JLabel: tạo nhãn hiển thị logo kèm chữ PET SHOP PRO.
         JLabel lblLogo = new JLabel("PET SHOP PRO", taiIcon("/img/logo.png", 26, 26), SwingConstants.LEFT);
         lblLogo.setForeground(Color.WHITE);
         lblLogo.setFont(UIStyle.font(Font.BOLD, 16));
@@ -514,13 +579,14 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         pnlThuongHieu.setPreferredSize(new Dimension(160, 38));
         pnlHeader2.add(pnlThuongHieu, BorderLayout.WEST);
 
-        // pnlMenu: Khung chứa thành phần giao diện pmnMenu.
+        // GridLayout(1,6): sắp xếp sáu nút menu trên cùng một hàng.
         JPanel pnlMenu = new JPanel(new GridLayout(1, 6, 2, 0));
         pnlMenu.setOpaque(false);
 
+        // JButton: tạo nút Trang chủ và đăng ký hành động quay về trang chính.
         btnTrangChu = taoBtnNhom("TRANG CHỦ", "/img/trangchulogo.png");
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTrangChu.addActionListener(this);
+        // Method Reference this::hienTrangChu: truyền hành động, chưa chạy ngay.
+        dangKyHanhDong(btnTrangChu, this::hienTrangChu);
 
         btnHeThong = taoBtnNhom("HỆ THỐNG", "/img/caidatlogo.png");
         btnDanhMuc = taoBtnNhom("DANH MỤC", "/img/danhmuclogo.png");
@@ -541,20 +607,16 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         dsBtnMucChinh.add(btnTimKiem);
         dsBtnMucChinh.add(btnThongKe);
 
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnHeThong.addActionListener(this);
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnDanhMuc.addActionListener(this);
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnXuLy.addActionListener(this);
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnTimKiem.addActionListener(this);
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnThongKe.addActionListener(this);
+        dangKyHanhDong(btnHeThong, () -> hienPopup(btnHeThong, taoMenuHeThong()));
+        dangKyHanhDong(btnDanhMuc, () -> hienPopup(btnDanhMuc, taoMenuDanhMuc()));
+        dangKyHanhDong(btnXuLy, () -> hienPopup(btnXuLy, taoMenuNghiepVu()));
+        dangKyHanhDong(btnTimKiem, () -> hienPopup(btnTimKiem, taoMenuTimKiem()));
+        dangKyHanhDong(btnThongKe, () -> hienPopup(btnThongKe, taoMenuThongKe()));
 
+        // Thêm vùng menu vào giữa thanh điều hướng.
         pnlHeader2.add(pnlMenu, BorderLayout.CENTER);
 
-        // btnNhanVien: Nút thao tác nhân viên.
+        // JButton: nút tên nhân viên; nhấn để mở thông tin và các thao tác tài khoản.
         btnNhanVien = new JButton(hoTen == null ? "Tài khoản" : hoTen);
         btnNhanVien.setFont(UIStyle.font(Font.BOLD, 12));
         btnNhanVien.setForeground(Color.WHITE);
@@ -565,19 +627,17 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         btnNhanVien.setPreferredSize(new Dimension(170, 38));
         btnNhanVien.setToolTipText("Thông tin nhân viên / Đổi mật khẩu / Đăng xuất");
         btnNhanVien.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnNhanVien.addActionListener(this);
+        dangKyHanhDong(btnNhanVien, () -> hienThongTinNhanVien(btnNhanVien));
         pnlHeader2.add(btnNhanVien, BorderLayout.EAST);
 
         return pnlHeader2;
     }
 
-    // Tạo nút nhóm chức năng.
-    // Tham số lblTitle2: tiêu đề.
-    // Tham số iconPath: biểu tượng đường dẫn.
-    // Kết quả: đối tượng/giá trị kiểu JButton.
+    /**
+     * Tạo một JButton dùng chung cho các nhóm menu.
+     * Thiết lập biểu tượng, phông chữ, màu, vùng viền, con trỏ và tooltip.
+     */
     private JButton taoBtnNhom(String title, String iconPath) {
-        // btnTam: Nút thao tác tạm.
         JButton btnTam = new JButton(title, taiIcon(iconPath, 18, 18));
         btnTam.setFont(UIStyle.font(Font.PLAIN, 12));
         btnTam.setBackground(UIStyle.NAVY);
@@ -592,51 +652,51 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return btnTam;
     }
 
-    // Tải biểu tượng.
-    // Tham số path: đường dẫn.
-    // Tham số w: chiều rộng.
-    // Tham số h: chiều cao.
-    // Kết quả: đối tượng/giá trị kiểu ImageIcon.
+    /**
+     * Đọc ảnh từ thư mục tài nguyên /img trong project.
+     * getResource() lấy URL; ImageIcon chứa ảnh; getScaledInstance() co giãn ảnh
+     * theo kích thước yêu cầu.
+     */
     private ImageIcon taiIcon(String path, int w, int h) {
         java.net.URL url = getClass().getResource(path);
         if (url == null)
             return null;
+        // ImageIcon chứa ảnh; getScaledInstance() đổi kích thước và làm mượt ảnh.
         Image img = new ImageIcon(url).getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
         return new ImageIcon(img);
     }
 
-    // Hiển thị pmnMenu bật lên.
-    // Tham số btnNguon: nguồn.
-    // Tham số pmnPopMenu: bật lên pmnMenu.
+    /**
+     * Hiển thị JPopupMenu ngay bên dưới nút menu được nhấn.
+     * JPopupMenu là bảng lựa chọn chức năng bật ra tại vị trí của JButton.
+     */
     private void hienPopup(JButton btnNguon, JPopupMenu pmnPopMenu) {
         pmnPopMenu.show(btnNguon, 0, btnNguon.getHeight());
     }
 
-    // Thêm mục.
-    // Tham số pmnPopMenu: bật lên pmnMenu.
-    // Tham số ten: tên.
-    // Tham số btnNhom: nhóm.
-    // Tham số hanhDong: hành động.
+    /**
+     * Thêm một JMenuItem vào menu thả xuống.
+     * Khóa mục menu không có quyền bằng setEnabled(false); mục được bật mới chạy
+     * Runnable.
+     */
     private void themMuc(JPopupMenu pmnPopMenu, String ten, JButton btnNhom, Runnable hanhDong) {
         PhanQuyen.Quyen q = PhanQuyen.tuTenMenu(ten);
-        if (!PhanQuyen.coQuyen(q))
-            return;
-        // mniChucNang: Mục lệnh trong pmnMenu chức nặng.
+        // JMenuItem: một lựa chọn trong menu thả xuống (JPopupMenu).
         JMenuItem mniChucNang = new JMenuItem(ten);
         mniChucNang.setFont(UIStyle.font(Font.PLAIN, 13));
         mniChucNang.setBorder(new EmptyBorder(9, 14, 9, 14));
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        dangKyHanhDong(mniChucNang, () -> {
-            if (PhanQuyen.kiemTra(q, this))
-                chuyenTuNhom(btnNhom, hanhDong);
-        });
+        // Giữ mọi mục trong menu; mục không được cấp quyền sẽ có màu xám và không thể
+        // nhấn.
+        mniChucNang.setEnabled(PhanQuyen.coQuyen(q));
+        dangKyHanhDong(mniChucNang, () -> chuyenTuNhom(btnNhom, hanhDong));
         pmnPopMenu.add(mniChucNang);
     }
 
-    // Tạo pmnMenu hệ thống.
-    // Kết quả: đối tượng/giá trị kiểu JPopupMenu.
+    /**
+     * Tạo menu Hệ thống: tài khoản, phân quyền và ca làm.
+     * Các mục không có quyền vẫn hiển thị nhưng bị vô hiệu hóa trong themMuc().
+     */
     private JPopupMenu taoMenuHeThong() {
-        // p: Menu bật lên p.
         JPopupMenu pmnP = new JPopupMenu();
         themMuc(pmnP, "Quản lý tài khoản", btnHeThong, this::moQuanLyTaiKhoan);
         themMuc(pmnP, "Ma trận phân quyền", btnHeThong, this::moMaTranPhanQuyen);
@@ -644,10 +704,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pmnP;
     }
 
-    // Tạo pmnMenu danh mục.
-    // Kết quả: đối tượng/giá trị kiểu JPopupMenu.
+    /**
+     * Tạo menu Danh mục: sản phẩm, khách hàng, thú cưng, dịch vụ, voucher.
+     * Hành động cho từng mục được truyền bằng lambda hoặc method reference.
+     */
     private JPopupMenu taoMenuDanhMuc() {
-        // p: Menu bật lên p.
         JPopupMenu pmnP = new JPopupMenu();
         themMuc(pmnP, "Danh mục sản phẩm", btnDanhMuc, () -> chuyenKho(0));
         themMuc(pmnP, "Sản phẩm", btnDanhMuc, () -> chuyenKho(1));
@@ -658,10 +719,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pmnP;
     }
 
-    // Tạo pmnMenu nghiệp vụ.
-    // Kết quả: đối tượng/giá trị kiểu JPopupMenu.
+    /**
+     * Tạo menu Xử lý: nhập kho, kiểm kê, Spa, thanh toán, phân ca.
+     * addSeparator() tạo đường ngăn cách các nhóm thao tác.
+     */
     private JPopupMenu taoMenuNghiepVu() {
-        // p: Menu bật lên p.
         JPopupMenu pmnP = new JPopupMenu();
         themMuc(pmnP, "Nhập kho", btnXuLy, () -> chuyenKho(2));
         themMuc(pmnP, "Kiểm kê kho", btnXuLy, () -> chuyenKho(3));
@@ -679,10 +741,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pmnP;
     }
 
-    // Tạo pmnMenu tìm kiếm.
-    // Kết quả: đối tượng/giá trị kiểu JPopupMenu.
+    /**
+     * Tạo menu Tìm kiếm: các chức năng tra cứu.
+     * Mỗi mục được kiểm tra quyền trước khi hiển thị.
+     */
     private JPopupMenu taoMenuTimKiem() {
-        // p: Menu bật lên p.
         JPopupMenu pmnP = new JPopupMenu();
         themMuc(pmnP, "Tra cứu lịch sử hóa đơn", btnTimKiem, this::moTraCuuHoaDon);
         themMuc(pmnP, "Tra cứu nhập kho", btnTimKiem, this::moTraCuuNhapKho);
@@ -691,21 +754,22 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pmnP;
     }
 
-    // Tạo pmnMenu thống kê.
-    // Kết quả: đối tượng/giá trị kiểu JPopupMenu.
+    /**
+     * Tạo menu Thống kê.
+     * Đưa chức năng thống kê doanh thu vào menu nếu nhân viên có quyền.
+     */
     private JPopupMenu taoMenuThongKe() {
-        // p: Menu bật lên p.
         JPopupMenu pmnP = new JPopupMenu();
         themMuc(pmnP, "Thống kê doanh thu", btnThongKe, this::moThongKeDoanhThu);
         return pmnP;
     }
 
-    // Hiển thị thông tin nhân viên.
-    // Tham số btnNguon: nguồn.
+    /**
+     * Hiển thị JPopupMenu khi nhấn tên nhân viên.
+     * Bên trong có mã nhân viên, tên, vai trò cùng mục đổi mật khẩu và đăng xuất.
+     */
     private void hienThongTinNhanVien(JButton btnNguon) {
-        // pmnPopMenu: Menu bật lên bật lên pmnMenu.
         JPopupMenu pmnPopMenu = new JPopupMenu();
-        // pnlThongTin: Khung chứa thành phần giao diện thông tin.
         JPanel pnlThongTin = new JPanel(new GridLayout(0, 2, 15, 8));
         pnlThongTin.setBorder(new EmptyBorder(12, 12, 12, 12));
         themThongTin(pnlThongTin, "Mã NV", maNV);
@@ -714,19 +778,15 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         themThongTin(pnlThongTin, "Trạng thái", "Đang hoạt động");
         pmnPopMenu.add(pnlThongTin);
         pmnPopMenu.addSeparator();
-        // mniDoiMatKhau: Mục lệnh trong pmnMenu: Đổi mật khẩu.
         JMenuItem mniDoiMatKhau = new JMenuItem("Đổi mật khẩu");
         mniDoiMatKhau.setFont(UIStyle.font(Font.PLAIN, 13));
         mniDoiMatKhau.setBorder(new EmptyBorder(9, 14, 9, 14));
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         dangKyHanhDong(mniDoiMatKhau, () -> moDlgDoiMatKhau());
         pmnPopMenu.add(mniDoiMatKhau);
         pmnPopMenu.addSeparator();
-        // mniDangXuat: Mục lệnh trong pmnMenu: Đăng xuất.
         JMenuItem mniDangXuat = new JMenuItem("Đăng xuất");
         mniDangXuat.setFont(UIStyle.font(Font.PLAIN, 13));
         mniDangXuat.setBorder(new EmptyBorder(9, 14, 9, 14));
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         dangKyHanhDong(mniDangXuat, () -> dangXuat());
         pmnPopMenu.add(mniDangXuat);
         pmnPopMenu.show(btnNguon,
@@ -734,33 +794,33 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     }
 
     /**
-     * Cho phep moi nhan vien da dang nhap doi mat khau cua CHINH MINH.
-     * Khong hien mat khau cu, khong yeu cau quyen quan ly.
+     * Tạo JDialog đổi mật khẩu cho chính nhân viên đang đăng nhập.
+     * JPasswordField che mật khẩu; kiểm tra đầu vào; SwingWorker gọi TaiKhoanDAO
+     * ngoài luồng giao diện.
      */
     private void moDlgDoiMatKhau() {
+        // Validation: từ chối mở cửa sổ khi mã nhân viên rỗng hoặc vai trò không hợp
+        // lệ.
         if (maNV == null || maNV.isBlank()) {
             JOptionPane.showMessageDialog(this, "Không xác định được phiên đăng nhập hiện tại.",
                     "Đổi mật khẩu", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // winDoiMatKhau: Hộp thoại đổi mật khẩu.
         JDialog winDoiMatKhau = new JDialog(this, "Pet Shop Pro - Đổi mật khẩu", true);
         winDoiMatKhau.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         winDoiMatKhau.setSize(460, 405);
         winDoiMatKhau.setMinimumSize(new Dimension(420, 385));
         winDoiMatKhau.setLocationRelativeTo(this);
+        // BorderLayout: chia cửa sổ thành các vùng Bắc, Nam, Đông, Tây và Giữa.
         winDoiMatKhau.setLayout(new BorderLayout());
 
-        // pnlTieuDe: Khung chứa thành phần giao diện tiêu đề.
         JPanel pnlTieuDe = new JPanel(new BorderLayout(0, 5));
         pnlTieuDe.setBackground(UIStyle.NAVY);
         pnlTieuDe.setBorder(new EmptyBorder(16, 22, 16, 22));
-        // lblTieuDe: Nhãn hiển thị: ĐỔI MẬT KHẨU.
         JLabel lblTieuDe = new JLabel("ĐỔI MẬT KHẨU");
         lblTieuDe.setForeground(Color.WHITE);
         lblTieuDe.setFont(UIStyle.font(Font.BOLD, 19));
-        // lblTaiKhoan: Nhãn hiển thị: Tài khoản: .
         JLabel lblTaiKhoan = new JLabel("Tài khoản: " + maNV + " - " + (hoTen == null ? "" : hoTen));
         lblTaiKhoan.setForeground(new Color(215, 230, 245));
         lblTaiKhoan.setFont(UIStyle.font(Font.PLAIN, 12));
@@ -768,25 +828,18 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         pnlTieuDe.add(lblTaiKhoan, BorderLayout.SOUTH);
         winDoiMatKhau.add(pnlTieuDe, BorderLayout.NORTH);
 
-        // txtMatKhauCu: Ô nhập mật khẩu có che ký tự mật khẩu cũ.
         JPasswordField txtMatKhauCu = new JPasswordField(21);
-        // txtMatKhauMoi: Ô nhập mật khẩu có che ký tự mật khẩu mới.
         JPasswordField txtMatKhauMoi = new JPasswordField(21);
-        // txtXacNhanMatKhau: Ô nhập mật khẩu có che ký tự xác nhân mật khẩu.
         JPasswordField txtXacNhanMatKhau = new JPasswordField(21);
-        // arrMatKhau: Mảng lưu mảng mật khẩu.
         JPasswordField[] arrMatKhau = { txtMatKhauCu, txtMatKhauMoi, txtXacNhanMatKhau };
         for (JPasswordField txtMatKhau : arrMatKhau) {
             txtMatKhau.setFont(UIStyle.font(Font.PLAIN, 14));
             txtMatKhau.setPreferredSize(new Dimension(280, 35));
         }
 
-        // pnlForm: Khung chứa thành phần giao diện biểu mẫu.
         JPanel pnlForm = new JPanel(new GridBagLayout());
         pnlForm.setBackground(Color.WHITE);
         pnlForm.setBorder(new EmptyBorder(16, 22, 8, 22));
-        // gbc: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
-        // GridBagLayout.
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1;
@@ -797,12 +850,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         themTruongMatKhau(pnlForm, gbc, 2, "Mật khẩu mới", txtMatKhauMoi);
         themTruongMatKhau(pnlForm, gbc, 4, "Xác nhận mật khẩu mới", txtXacNhanMatKhau);
 
-        // chkHienMatKhau: Ô chọn đánh dấu: Hiện mật khẩu.
         JCheckBox chkHienMatKhau = new JCheckBox("Hiện mật khẩu");
         chkHienMatKhau.setOpaque(false);
         chkHienMatKhau.setFont(UIStyle.font(Font.PLAIN, 12));
         char charEcho = txtMatKhauCu.getEchoChar();
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         dangKyHanhDong(chkHienMatKhau, () -> {
             for (JPasswordField txtMatKhau : arrMatKhau) {
                 txtMatKhau.setEchoChar(chkHienMatKhau.isSelected() ? (char) 0 : charEcho);
@@ -812,7 +863,6 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         gbc.insets = new Insets(1, 0, 0, 0);
         pnlForm.add(chkHienMatKhau, gbc);
 
-        // lblTrangThai: Nhãn hiển thị: Mật khẩu mới phải có ít nhất 6 ký tự..
         JLabel lblTrangThai = new JLabel("Mật khẩu mới phải có ít nhất 6 ký tự.");
         lblTrangThai.setForeground(new Color(100, 108, 120));
         lblTrangThai.setFont(UIStyle.font(Font.PLAIN, 12));
@@ -822,19 +872,12 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
 
         winDoiMatKhau.add(pnlForm, BorderLayout.CENTER);
 
-        // btnHuy: Nút thao tác hủy.
         JButton btnHuy = UIStyle.nutPhu("Hủy");
-        // btnLuuMatKhau: Nút thao tác lưu mật khẩu.
         JButton btnLuuMatKhau = UIStyle.nutChinh("Lưu mật khẩu");
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         dangKyHanhDong(btnHuy, () -> winDoiMatKhau.dispose());
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         dangKyHanhDong(btnLuuMatKhau, () -> {
-            // arrMatKhauCu: Mảng lưu mảng mật khẩu cũ.
             char[] arrMatKhauCu = txtMatKhauCu.getPassword();
-            // arrMatKhauMoi: Mảng lưu mảng mật khẩu mới.
             char[] arrMatKhauMoi = txtMatKhauMoi.getPassword();
-            // arrXacNhan: Mảng lưu mảng xác nhân.
             char[] arrXacNhan = txtXacNhanMatKhau.getPassword();
             try {
                 if (arrMatKhauCu.length == 0 || arrMatKhauMoi.length == 0 || arrXacNhan.length == 0) {
@@ -857,30 +900,28 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                 if (!Arrays.equals(arrMatKhauMoi, arrXacNhan)) {
                     JOptionPane.showMessageDialog(winDoiMatKhau,
                             "Xác nhận mật khẩu mới không khớp.", "Mật khẩu không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                    // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                     txtXacNhanMatKhau.setText("");
                     return;
                 }
 
-                // SQL Server duoc truy van o worker, khong khoa giao dien Swing.
                 String strMatKhauCu = new String(arrMatKhauCu);
                 String strMatKhauMoi = new String(arrMatKhauMoi);
                 btnLuuMatKhau.setEnabled(false);
                 btnHuy.setEnabled(false);
                 lblTrangThai.setForeground(UIStyle.NAVY);
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblTrangThai.setText("Đang cập nhật mật khẩu...");
 
+                // SwingWorker: chạy truy vấn đổi mật khẩu ở luồng nền, tránh chặn giao diện.
                 new SwingWorker<Boolean, Void>() {
-                    // Chạy công việc nền để tránh làm treo luồng giao diện Swing.
-                    // Kết quả: đối tượng/giá trị kiểu Boolean.
                     @Override
+                    // doInBackground(): xử lý công việc nền, không cập nhật trực tiếp thành phần
+                    // Swing.
                     protected Boolean doInBackground() throws Exception {
                         return new TaiKhoanDAO().doiMatKhau(maNV, strMatKhauCu, strMatKhauMoi);
                     }
 
-                    // Xử lý kết quả công việc nền trên luồng giao diện Swing.
                     @Override
+                    // done(): nhận kết quả tác vụ trên luồng sự kiện Swing để cập nhật thông báo.
                     protected void done() {
                         btnLuuMatKhau.setEnabled(true);
                         btnHuy.setEnabled(true);
@@ -890,26 +931,21 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                                         "Đổi mật khẩu thành công!\nHãy sử dụng mật khẩu mới trong lần đăng nhập tiếp theo.",
                                         "Pet Shop Pro", JOptionPane.INFORMATION_MESSAGE);
                                 for (JPasswordField txtMatKhau : arrMatKhau)
-                                    // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                                     txtMatKhau.setText("");
                                 winDoiMatKhau.dispose();
                             } else {
                                 lblTrangThai.setForeground(new Color(192, 55, 55));
-                                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                                 lblTrangThai.setText("Mật khẩu hiện tại không đúng. Vui lòng thử lại.");
-                                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                                 txtMatKhauCu.setText("");
                                 txtMatKhauCu.requestFocusInWindow();
                             }
                         } catch (InterruptedException ex) {
                             Thread.currentThread().interrupt();
                             lblTrangThai.setForeground(new Color(192, 55, 55));
-                            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                             lblTrangThai.setText("Thao tác bị gián đoạn. Vui lòng thử lại.");
                         } catch (ExecutionException ex) {
                             ex.printStackTrace();
                             lblTrangThai.setForeground(new Color(192, 55, 55));
-                            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                             lblTrangThai.setText("Không cập nhật được. Hãy kiểm tra kết nối SQL Server.");
                         }
                     }
@@ -921,7 +957,6 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             }
         });
 
-        // pnlNut: Khung chứa thành phần giao diện nút.
         JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
         pnlNut.setBackground(Color.WHITE);
         pnlNut.setBorder(new EmptyBorder(0, 12, 2, 12));
@@ -933,15 +968,12 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         winDoiMatKhau.setVisible(true);
     }
 
-    // Thêm trường mật khẩu.
-    // Tham số pnlForm: khung biểu mẫu.
-    // Tham số gbc: ràng buộc bố trí.
-    // Tham số intDong: số nguyên dòng.
-    // Tham số strNhan: chuỗi nhân.
-    // Tham số txtMatKhau: ô văn bản mật khẩu.
+    /**
+     * Tạo một dòng gồm JLabel và JPasswordField trong biểu mẫu đổi mật khẩu.
+     * GridBagConstraints xác định vị trí và độ rộng các thành phần.
+     */
     private void themTruongMatKhau(JPanel pnlForm, GridBagConstraints gbc,
             int intDong, String strNhan, JPasswordField txtMatKhau) {
-        // lblNhan: Nhãn hiển thị nhãn.
         JLabel lblNhan = new JLabel(strNhan);
         lblNhan.setFont(UIStyle.font(Font.BOLD, 12));
         gbc.gridy = intDong;
@@ -952,58 +984,62 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         pnlForm.add(txtMatKhau, gbc);
     }
 
-    // Thêm thông tin.
-    // Tham số pnlPanel: khung khung.
-    // Tham số lblNhan: nhãn nhân.
-    // Tham số lblGiaTri: nhãn giá trị.
+    /**
+     * Thêm một cặp nhãn và giá trị vào bảng thông tin tài khoản.
+     * JLabel dùng để hiển thị chữ không cho chỉnh sửa.
+     */
     private void themThongTin(JPanel pnlPanel, String lblNhan, String lblGiaTri) {
-        // lblThongTin: Nhãn hiển thị thông tin.
         JLabel lblThongTin = new JLabel(lblNhan);
         lblThongTin.setFont(UIStyle.font(Font.BOLD, 12));
         pnlPanel.add(lblThongTin);
         pnlPanel.add(new JLabel(lblGiaTri != null ? lblGiaTri : ""));
     }
 
-    // Kết thúc phiên hiện tại và quay lại màn hình đăng nhập.
+    /**
+     * Kết thúc phiên làm việc của nhân viên.
+     * Xóa dữ liệu phiên, đóng TrangChu và mở lại màn hình DangNhap.
+     */
     private void dangXuat() {
-        // Xóa phiên dùng chung trước khi về màn hình đăng nhập.
         UI.PhienLamViec.dat(null, null, null);
         PhienLamViec.dat(null, null, null);
         dispose();
         new DangNhap().setVisible(true);
     }
 
-    // Làm mới trang chủ.
+    /**
+     * Tải lại những nội dung có thể thay đổi trên Trang chủ.
+     * Gọi lại đồng hồ, lịch Spa và thống kê; revalidate() tính lại bố cục,
+     * repaint() vẽ lại.
+     */
     private void lamMoiTrangChu() {
         capNhatGio();
         napLichSpaSapToi();
+        // Lấy số liệu từ DAO/JDBC và đưa vào bốn nhãn thống kê.
         napTongQuanHomNay();
         pnlNoiDung.revalidate();
         pnlNoiDung.repaint();
     }
 
-    // ==================== NOI DUNG TRANG CHU ====================
-    // Tạo khung trang chủ.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo bố cục trang chủ gồm tiêu đề, ảnh, truy cập nhanh và tiện ích.
+     * BorderLayout chia vùng chính; GridLayout chia hai cột ảnh và truy cập nhanh.
+     */
     private JPanel taoPnlTrangChu() {
-        // pnlChinh: Khung chứa thành phần giao diện chính.
+        // JPanel: khung chính của trang; BorderLayout chia phần tiêu đề và nội dung.
         JPanel pnlChinh = new JPanel(new BorderLayout());
         pnlChinh.setBackground(LIGHT_BLUE);
         pnlChinh.add(taoPnlThanhTieuDe(), BorderLayout.NORTH);
 
-        // pnlThan: Khung chứa thành phần giao diện thân.
         JPanel pnlThan = new JPanel(new BorderLayout(0, 14));
         pnlThan.setBackground(LIGHT_BLUE);
         pnlThan.setBorder(new EmptyBorder(16, 28, 16, 28));
 
-        // Hai cot ben tren va duoi can nhau theo cung mot luoi.
-        // pnlTren: Khung chứa thành phần giao diện trên.
+        // GridLayout(1,2): chia hai cột bằng nhau cho ảnh giới thiệu và truy cập nhanh.
         JPanel pnlTren = new JPanel(new GridLayout(1, 2, 20, 0));
         pnlTren.setOpaque(false);
         pnlTren.add(taoPnlGioiThieu());
         pnlTren.add(taoPnlTruyCapNhanh());
 
-        // pnlDuoi: Khung chứa thành phần giao diện dưới.
         JPanel pnlDuoi = taoPnlTienIchDuoi();
         pnlDuoi.setPreferredSize(new Dimension(0, 200));
 
@@ -1013,38 +1049,36 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlChinh;
     }
 
-    // Tạo thanh tiêu đề.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo thanh tiêu đề Trang chủ.
+     * JLabel hiển thị ngày giờ/tiêu đề; JButton Làm mới và Hỗ trợ gắn Runnable để
+     * thực thi.
+     */
     private JPanel taoPnlThanhTieuDe() {
-        // pnlPanel: Khung chứa thành phần giao diện khung.
         JPanel pnlPanel = new JPanel(new BorderLayout());
         pnlPanel.setBackground(UIStyle.BAR);
         pnlPanel.setBorder(new EmptyBorder(10, 25, 10, 25));
 
-        // lblNgayHienTai: Nhãn hiển thị ngày hiện tại.
+        // JLabel: tạo nhãn ngày giờ ở góc trái thanh tiêu đề.
         JLabel lblNgayHienTai = new JLabel(LocalDateTime.now().format(DINH_DANG_GIO));
         lblNgayTrangChu = lblNgayHienTai;
         lblNgayHienTai.setFont(UIStyle.font(Font.BOLD, 12));
 
-        // lblTieuDeTrangChu: Nhãn hiển thị: TRANG CHỦ.
         JLabel lblTieuDeTrangChu = new JLabel("TRANG CHỦ", SwingConstants.CENTER);
         lblTieuDeTrangChu.setFont(UIStyle.font(Font.BOLD, 25));
 
-        // pnlThaoTac: Khung chứa thành phần giao diện thao tác.
         JPanel pnlThaoTac = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlThaoTac.setOpaque(false);
 
-        // btnLamMoi: Nút thao tác làm mới.
+        // JButton Làm mới: nút được định dạng chung qua UIStyle.
         btnLamMoi = UIStyle.nutPhu(" Làm mới");
         btnLamMoi.setPreferredSize(new Dimension(135, 38));
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnLamMoi.addActionListener(this);
+        dangKyHanhDong(btnLamMoi, this::lamMoiTrangChu);
 
-        // btnHoTro: Nút thao tác hỗ trợ.
+        // JButton Hỗ trợ: mở JDialog hướng dẫn sử dụng.
         btnHoTro = UIStyle.nutPhu("? Hỗ trợ");
         btnHoTro.setPreferredSize(new Dimension(125, 38));
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        btnHoTro.addActionListener(this);
+        dangKyHanhDong(btnHoTro, this::moModalHoTro);
 
         pnlThaoTac.add(btnLamMoi);
         pnlThaoTac.add(btnHoTro);
@@ -1055,43 +1089,39 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlPanel;
     }
 
-    // Tạo khung giới thiệu.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo khung ảnh giới thiệu Pet Shop Pro.
+     * Ghi đè paintComponent() và dùng Graphics2D để vẽ ảnh theo kích thước hiện tại
+     * của khung.
+     */
     private JPanel taoPnlGioiThieu() {
-        // pnlPanel: Khung chứa thành phần giao diện khung.
         JPanel pnlPanel = new JPanel(new BorderLayout());
         pnlPanel.setBackground(Color.WHITE);
         pnlPanel.setBorder(new LineBorder(UIStyle.LINE));
 
+        // getResource(): tìm ảnh trong tài nguyên classpath của project.
         java.net.URL url = getClass().getResource("/img/giothieutrangchu.png");
         if (url == null) {
             pnlPanel.add(new JLabel("Không tìm thấy ảnh giới thiệu", SwingConstants.CENTER));
             return pnlPanel;
         }
         Image anh = new ImageIcon(url).getImage();
-        // pnlAnhCoGian: Khung chứa thành phần giao diện ảnh có gian.
         JPanel pnlAnhCoGian = new JPanel() {
-            // Vẽ nội dung tùy chỉnh lên thành phần giao diện.
-            // Tham số g: ngữ cảnh vẽ.
             @Override
+            // Ghi đè paintComponent(): vẽ lại ảnh khi kích thước khung thay đổi.
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                // w: Lưu chiều rộng.
-                // h: Lưu chiều cao.
                 int w = getWidth(), h = getHeight();
                 int iw = anh.getWidth(this), ih = anh.getHeight(this);
                 if (iw <= 0 || ih <= 0 || w <= 0 || h <= 0)
                     return;
-                // Anh luon phu kin khung, khong con khoang trang lon.
-                // Giu ti le goc, cat bot rat it o canh neu can thiet.
+                // Chọn tỷ lệ phủ kín khung; ảnh có thể bị cắt bớt để không tạo khoảng trống.
                 double tile = Math.max((double) w / iw, (double) h / ih);
                 int newW = (int) Math.ceil(iw * tile);
                 int newH = (int) Math.ceil(ih * tile);
-                // x: Lưu tọa độ ngang.
                 int x = (w - newW) / 2;
-                // y: Lưu tọa độ dọc.
-                int y = 0; // Can tren tblDuLieu2 khung Truy cap nhanh.
-                // g2: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
+                int y = 0;
+                // Graphics2D: cung cấp thao tác vẽ ảnh với thuật toán nội suy làm mượt.
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                         RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -1104,16 +1134,18 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlPanel;
     }
 
-    // Tạo khung truy cập nhanh.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo khu vực truy cập nhanh F4–F8.
+     * BoxLayout.Y_AXIS xếp các lựa chọn theo chiều dọc; mỗi lựa chọn kiểm tra
+     * quyền.
+     */
     private JPanel taoPnlTruyCapNhanh() {
-        // pnlPanel: Khung chứa thành phần giao diện khung.
         JPanel pnlPanel = new JPanel();
         pnlPanel.setBackground(Color.WHITE);
         pnlPanel.setBorder(new CompoundBorder(new LineBorder(UIStyle.LINE), new EmptyBorder(15, 15, 15, 15)));
+        // BoxLayout.Y_AXIS: xếp các dòng truy cập nhanh theo chiều dọc.
         pnlPanel.setLayout(new BoxLayout(pnlPanel, BoxLayout.Y_AXIS));
 
-        // lblTitle2: Nhãn hiển thị: TRUY CẬP NHANH.
         JLabel lblTitle2 = new JLabel("TRUY CẬP NHANH");
         lblTitle2.setFont(UIStyle.font(Font.BOLD, 18));
         lblTitle2.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1140,10 +1172,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlPanel;
     }
 
-    // Tạo khung tiện ích phía dưới.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo hai khung ở phía dưới Trang chủ.
+     * GridLayout(1,2) chia Lịch Spa sắp tới và Tổng quan hôm nay thành hai cột.
+     */
     private JPanel taoPnlTienIchDuoi() {
-        // pnlPanel: Khung chứa thành phần giao diện khung.
         JPanel pnlPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         pnlPanel.setOpaque(false);
         pnlPanel.add(taoPnlLichSpaSapToi());
@@ -1151,15 +1184,15 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlPanel;
     }
 
-    // Tạo khung tổng quan.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo khung "Tổng quan hôm nay".
+     * GridLayout(2,2) chứa bốn thẻ Doanh thu, Lượt mua, Lịch Spa và Phiếu nhập.
+     */
     private JPanel taoPnlTongQuan() {
-        // pnlTongQuan: Khung chứa thành phần giao diện tổng quan.
         JPanel pnlTongQuan = new JPanel(new BorderLayout(0, 14));
         pnlTongQuan.setBackground(Color.WHITE);
         pnlTongQuan.setBorder(new CompoundBorder(new LineBorder(UIStyle.LINE), new EmptyBorder(14, 16, 14, 16)));
 
-        // lblTieuDeTongQuan: Nhãn hiển thị: Tổng quan hôm nay.
         JLabel lblTieuDeTongQuan = new JLabel("Tổng quan hôm nay", taiIcon("/img/thongkelogo.png", 18, 18),
                 SwingConstants.LEFT);
         lblTieuDeTongQuan.setFont(UIStyle.font(Font.BOLD, 17));
@@ -1167,7 +1200,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         lblTieuDeTongQuan.setIconTextGap(8);
         pnlTongQuan.add(lblTieuDeTongQuan, BorderLayout.NORTH);
 
-        // pnlLuoi: Khung chứa thành phần giao diện lưới ngày.
+        // GridLayout(2,2): bốn ô thống kê xếp thành hai hàng, hai cột.
         JPanel pnlLuoi = new JPanel(new GridLayout(2, 2, 12, 12));
         pnlLuoi.setOpaque(false);
 
@@ -1182,22 +1215,21 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         pnlLuoi.add(taoTheTongQuan("Phiếu nhập", lblPhieuNhapHomNay));
 
         pnlTongQuan.add(pnlLuoi, BorderLayout.CENTER);
+        // Lấy số liệu từ DAO/JDBC và đưa vào bốn nhãn thống kê.
         napTongQuanHomNay();
         return pnlTongQuan;
     }
 
-    // Tạo thẻ tổng quan.
-    // Tham số tieuDe: tiêu đề.
-    // Tham số lblGiaTri2: giá trị.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo một thẻ thống kê có tiêu đề và số liệu.
+     * JPanel chứa JLabel tiêu đề ở trên và JLabel giá trị ở giữa.
+     */
     private JPanel taoTheTongQuan(String tieuDe, JLabel lblGiaTri2) {
-        // pnlKhung: Khung dùng để nhóm và bố trí các thành phần giao diện.
         JPanel pnlKhung = new JPanel(new BorderLayout(0, 6));
 
         pnlKhung.setBackground(new Color(245, 248, 252));
         pnlKhung.setBorder(new EmptyBorder(8, 12, 8, 12));
 
-        // lblTieuDe: Nhãn hiển thị tiêu đề.
         JLabel lblTieuDe = new JLabel(tieuDe);
         lblTieuDe.setFont(UIStyle.font(Font.PLAIN, 12));
 
@@ -1210,18 +1242,21 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlKhung;
     }
 
-    // Tạo giá trị tổng quan.
-    // Tham số text: nội dung chữ.
-    // Kết quả: đối tượng/giá trị kiểu JLabel.
+    /**
+     * Khởi tạo JLabel để hiển thị giá trị của một chỉ số.
+     * Thiết lập phông chữ đậm, màu và nội dung ban đầu.
+     */
     private JLabel taoGiaTriTongQuan(String text) {
-        // lblTam: Nhãn hiển thị tạm.
         JLabel lblTam = new JLabel(text);
         lblTam.setFont(UIStyle.font(Font.BOLD, 23));
         lblTam.setForeground(new Color(38, 45, 57));
         return lblTam;
     }
 
-    // Mở cảnh báo hạn sử dụng.
+    /**
+     * Mở màn hình tra cứu hạn sử dụng sản phẩm.
+     * Đưa content pane của màn hình vào vùng CardLayout và nạp dữ liệu.
+     */
     private void moCanhBaoHanSuDung() {
         hienManHinh("canhbaohansudung", "Tra cứu hạn sử dụng sản phẩm", btnTimKiem,
                 () -> {
@@ -1233,7 +1268,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Mở gợi ý thức ăn.
+    /**
+     * Mở màn hình gợi ý thức ăn theo loại thú cưng.
+     * Truyền callback mở thanh toán khi người dùng muốn mua sản phẩm được gợi ý.
+     */
     private void moGoiYThucAn() {
         hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnXuLy,
                 () -> {
@@ -1245,78 +1283,79 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Nạp tổng quan hôm nay.
+    /**
+     * Tải bốn chỉ số thống kê trong ngày.
+     * Kiểm tra quyền từng nhóm; gọi HoaDonDAO và các truy vấn đếm lịch Spa/phiếu
+     * nhập; setText() cập nhật JLabel.
+     */
     private void napTongQuanHomNay() {
         if (lblDoanhThuHomNay == null)
             return;
+        // Kiểm tra quyền riêng cho nhóm số liệu doanh thu.
         boolean xemThongKe = PhanQuyen.coQuyen(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
         boolean xemSpa = PhanQuyen.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA);
         boolean xemKho = PhanQuyen.coQuyen(PhanQuyen.Quyen.NHAP_KHO);
-        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblDoanhThuHomNay.setText("Không có quyền");
-        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblLuotMuaHomNay.setText("—");
-        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblLichSpaHomNay.setText("—");
-        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblPhieuNhapHomNay.setText("—");
         if (xemThongKe) {
             try {
+                // DAO Pattern: tách phần lấy dữ liệu hóa đơn khỏi bố cục Swing.
                 HoaDonDAO.ThongKe tk = new HoaDonDAO().layThongKe();
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblDoanhThuHomNay.setText(formatVnd(tk.getDoanhThuHomNay()));
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblLuotMuaHomNay.setText(String.valueOf(tk.getHoaDonHomNay()));
             } catch (Exception ex) {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblDoanhThuHomNay.setText("—");
             }
         }
         if (xemSpa) {
             try {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblLichSpaHomNay.setText(String.valueOf(demLichSpaHomNay()));
             } catch (SQLException ex) {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblLichSpaHomNay.setText("—");
             }
         }
         if (xemKho) {
             try {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblPhieuNhapHomNay.setText(String.valueOf(demPhieuNhapHomNay()));
             } catch (SQLException ex) {
-                // Cập nhật nội dung chữ hiển thị trong control bằng setText().
                 lblPhieuNhapHomNay.setText("—");
             }
         }
     }
 
-    // Đếm lịch Spa trong ngày hiện tại, không tính lịch đã hủy.
-    // Cùng tiêu chí ngày và trạng thái với danh sách Spa ở Trang chủ.
+    /**
+     * Đếm lịch hẹn Spa trong ngày chưa bị hủy bằng SQL COUNT(*).
+     * PreparedStatement gán mốc 00:00 hôm nay và 00:00 ngày mai; ResultSet lấy kết
+     * quả.
+     */
     private int demLichSpaHomNay() throws SQLException {
+        // SQL COUNT(*): đếm các bản ghi lịch hẹn thỏa điều kiện trong ngày.
         String sql = "SELECT COUNT(*) FROM LichHen "
                 + "WHERE ngayGioHen >= ? AND ngayGioHen < ? "
                 + "AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
         java.time.LocalDate homNay = java.time.LocalDate.now();
+        // try-with-resources: tự đóng Connection và PreparedStatement, kể cả khi lỗi.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
+            // PreparedStatement: truyền mốc thời gian bắt đầu ngày, tránh ghép chuỗi SQL.
             ps.setTimestamp(1, java.sql.Timestamp.valueOf(homNay.atStartOfDay()));
             ps.setTimestamp(2, java.sql.Timestamp.valueOf(homNay.plusDays(1).atStartOfDay()));
+            // ResultSet: nhận dữ liệu trả về từ lệnh SELECT.
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
             }
         }
     }
 
-    // Đếm phiếu nhập hôm nay.
-    // Kết quả: giá trị số nguyên.
+    /**
+     * Đếm phiếu nhập có ngày nhập là ngày hiện tại.
+     * JDBC kết hợp SQL COUNT(*) và GETDATE() của SQL Server.
+     */
     private int demPhieuNhapHomNay() throws SQLException {
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
         String sql = "SELECT COUNT(*) FROM PhieuNhapKho WHERE CAST(ngayNhap AS DATE) = CAST(GETDATE() AS DATE)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
+        // try-with-resources: tự đóng Connection và PreparedStatement, kể cả khi lỗi.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -1324,31 +1363,31 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Định dạng số tiền theo cách hiển thị tiền Việt Nam.
-    // Tham số soTien: số tiền.
-    // Kết quả: chuỗi kết quả.
+    /**
+     * Định dạng BigDecimal thành chuỗi tiền Việt Nam.
+     * Chuyển sang định dạng chung của UIStyle; trường hợp null được xem là 0.
+     */
     private String formatVnd(BigDecimal soTien) {
         return UIStyle.tien(soTien == null ? 0 : soTien.doubleValue());
     }
 
-    // Tạo khung lịch Spa sắp tới.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    /**
+     * Tạo thẻ Lịch Spa sắp tới.
+     * JPanel chứa tiêu đề/phụ đề và danh sách dòng lịch; BoxLayout xếp dòng theo
+     * chiều dọc.
+     */
     private JPanel taoPnlLichSpaSapToi() {
-        // pnlCard: Khung chứa thành phần giao diện thẻ.
         JPanel pnlCard = new JPanel(new BorderLayout(0, 5));
         pnlCard.setBackground(Color.WHITE);
         pnlCard.setBorder(new CompoundBorder(new LineBorder(UIStyle.LINE), new EmptyBorder(10, 14, 10, 14)));
 
-        // pnlTren: Khung chứa thành phần giao diện trên.
         JPanel pnlTren = new JPanel(new BorderLayout());
         pnlTren.setOpaque(false);
 
-        // pnlBocTieuDe: Khung chứa thành phần giao diện bọc tiêu đề.
         JPanel pnlBocTieuDe = new JPanel();
         pnlBocTieuDe.setOpaque(false);
         pnlBocTieuDe.setLayout(new BoxLayout(pnlBocTieuDe, BoxLayout.Y_AXIS));
 
-        // lblTitle2: Nhãn hiển thị: Lịch Spa sắp tới.
         JLabel lblTitle2 = new JLabel("Lịch Spa sắp tới", taiIcon("/img/lichlogo.png", 18, 18), SwingConstants.LEFT);
         lblTitle2.setFont(UIStyle.font(Font.BOLD, 17));
         lblTitle2.setForeground(new Color(40, 55, 77));
@@ -1374,15 +1413,20 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlCard;
     }
 
-    // Nạp lịch Spa sắp tới.
+    /**
+     * Nạp và hiển thị lịch Spa sắp diễn ra trong hôm nay.
+     * LichHenDAO.getAll() -> Stream lọc lịch hôm nay/chưa hủy -> lọc lịch chưa đến
+     * giờ -> giới hạn 3 dòng.
+     */
     private void napLichSpaSapToi() {
         if (pnlLichSpaNoiDung == null || lblPhuDeLichSpa == null)
             return;
         if (!PhanQuyen.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA)) {
             pnlLichSpaNoiDung.removeAll();
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblPhuDeLichSpa.setText("Không có quyền xem lịch Spa");
+            // revalidate(): yêu cầu Swing cập nhật lại cách sắp xếp danh sách lịch.
             pnlLichSpaNoiDung.revalidate();
+            // repaint(): yêu cầu Swing vẽ lại danh sách sau khi thay đổi dữ liệu.
             pnlLichSpaNoiDung.repaint();
             return;
         }
@@ -1392,17 +1436,19 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         java.time.LocalDate homNay = now.toLocalDate();
 
         try {
+            // LichHenDAO: lấy danh sách lịch Spa từ SQL Server.
             List<LichHen> tatCa = new LichHenDAO().getAll();
-            // Chỉ tính lịch của hôm nay chưa bị hủy (kể cả những lịch đã qua giờ).
+            // Stream.filter(): chỉ lấy lịch trong hôm nay và chưa bị hủy.
             List<LichHen> lichHomNay = tatCa.stream()
                     .filter(lh -> lh.getNgayGioHen() != null
                             && lh.getNgayGioHen().toLocalDate().equals(homNay)
                             && !"Đã hủy".equalsIgnoreCase(
                                     lh.getTrangThai() == null ? "" : lh.getTrangThai().trim()))
+                    // Comparator.comparing(): sắp xếp các lịch theo giờ hẹn tăng dần.
                     .sorted(Comparator.comparing(LichHen::getNgayGioHen))
                     .toList();
 
-            // Chỉ hiển thị những lịch CHƯA đến giờ trong HÔM NAY, không lấy ngày mai.
+            // Lọc lần hai để chỉ giữ lịch chưa đến giờ; không lấy lịch ngày mai.
             List<LichHen> lichConLai = lichHomNay.stream()
                     .filter(lh -> !lh.getNgayGioHen().isBefore(now))
                     .toList();
@@ -1410,6 +1456,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
 
             if (!lichConLai.isEmpty()) {
                 lblPhuDeLichSpa.setText("Các lịch còn lại trong hôm nay");
+                // Stream.limit(3): trang chủ hiển thị tối đa 3 lịch sắp tới.
                 for (LichHen lh : lichConLai.stream().limit(3).toList()) {
                     pnlLichSpaNoiDung.add(taoDongLichSpa(lh));
                     pnlLichSpaNoiDung.add(Box.createVerticalStrut(3));
@@ -1429,34 +1476,30 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             pnlLichSpaNoiDung.add(taoChipTongKet(
                     "Hôm nay: " + tongLichHomNay + " lịch Spa • Còn: " + lichConLai.size() + " lịch"));
         } catch (Exception ex) {
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblPhuDeLichSpa.setText("Không đọc được dữ liệu lịch hẹn");
-            // lblLoi: Nhãn hiển thị: Vui lòng kiểm tra kết nối CSDL hoặc dữ liệu Lịch hẹn
-            // Spa..
             JLabel lblLoi = new JLabel("Vui lòng kiểm tra kết nối CSDL hoặc dữ liệu Lịch hẹn Spa.");
             lblLoi.setFont(UIStyle.font(Font.PLAIN, 13));
             lblLoi.setForeground(new Color(170, 60, 60));
             pnlLichSpaNoiDung.add(lblLoi);
         }
 
+        // revalidate(): yêu cầu Swing cập nhật lại cách sắp xếp danh sách lịch.
         pnlLichSpaNoiDung.revalidate();
+        // repaint(): yêu cầu Swing vẽ lại danh sách sau khi thay đổi dữ liệu.
         pnlLichSpaNoiDung.repaint();
     }
 
-    // Tạo dòng lịch Spa.
-    // Tham số lh: lịch hẹn cần xử lý.
-    // Kết quả: đối tượng/giá trị kiểu JComponent.
+    /**
+     * Tạo một dòng JLabel thể hiện giờ hẹn, thú cưng và ghi chú.
+     * Giới hạn độ dài hiển thị và giữ thông tin đầy đủ trong tooltip.
+     */
     private JComponent taoDongLichSpa(LichHen lh) {
         String gio = lh.getNgayGioHen() == null ? "--:--" : lh.getNgayGioHen().format(DINH_DANG_GIO_HEN);
-        // thuCung: Lưu thú cưng.
         String thuCung = khongRong(lh.getTenThuCung(), "Thú cưng");
-        // ghiChu: Lưu ghi chú.
         String ghiChu = khongRong(lh.getGhiChu(), "Chăm sóc Spa");
-        // Khong de HTML tu xuong dong lam pnlKhung bi keo rong/le cot.
         String strNoiDung = gio + "  ·  " + thuCung + "  ·  " + ghiChu;
         if (strNoiDung.length() > 62)
             strNoiDung = strNoiDung.substring(0, 59) + "...";
-        // lblThongTin: Nhãn hiển thị thông tin.
         JLabel lblThongTin = new JLabel(strNoiDung);
         lblThongTin.setToolTipText(gio + " - " + thuCung + " - " + ghiChu);
         lblThongTin.setFont(UIStyle.font(Font.PLAIN, 12));
@@ -1466,25 +1509,25 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return lblThongTin;
     }
 
-    // Trả về chuỗi mặc định nếu nội dung đầu vào trống hoặc null.
-    // Tham số s: chuỗi đầu vào.
-    // Tham số macDinh: mặc định.
+    /**
+     * Chuẩn hóa chuỗi tùy chọn.
+     * Trả về giá trị mặc định nếu chuỗi null hoặc chỉ gồm khoảng trắng.
+     */
     private String khongRong(String s, String macDinh) {
         return (s == null || s.trim().isEmpty()) ? macDinh : s.trim();
     }
 
-    // Tạo nhãn tổng kết.
-    // Tham số text: nội dung chữ.
-    // Kết quả: đối tượng/giá trị kiểu JComponent.
+    /**
+     * Tạo nhãn tổng kết số lịch Spa dạng thẻ nhỏ.
+     * JLabel với nền xanh nhạt đặt trong JPanel.
+     */
     private JComponent taoChipTongKet(String text) {
-        // lblTam: Nhãn hiển thị tạm.
         JLabel lblTam = new JLabel(text);
         lblTam.setOpaque(true);
         lblTam.setBackground(new Color(223, 245, 232));
         lblTam.setForeground(new Color(28, 123, 81));
         lblTam.setFont(UIStyle.font(Font.BOLD, 11));
         lblTam.setBorder(new CompoundBorder(new LineBorder(new Color(200, 233, 216)), new EmptyBorder(4, 10, 4, 10)));
-        // pnlBoc: Khung chứa thành phần giao diện bọc.
         JPanel pnlBoc = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         pnlBoc.setOpaque(false);
         pnlBoc.add(lblTam);
@@ -1492,19 +1535,20 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         return pnlBoc;
     }
 
-    // Mở hộp thoại hỗ trợ.
+    /**
+     * Mở hộp thoại hỗ trợ sử dụng phần mềm.
+     * JDialog hiển thị nội dung HTML trong JEditorPane, bọc JScrollPane để cuộn.
+     */
     private void moModalHoTro() {
-        // winHoTro: Hộp thoại hỗ trợ.
+        // JDialog: tạo cửa sổ Hỗ trợ nằm trên Trang chủ.
         JDialog winHoTro = new JDialog(this, "Hỗ trợ sử dụng Pet Shop Pro", true);
         winHoTro.setSize(760, 560);
         winHoTro.setLocationRelativeTo(this);
         winHoTro.setLayout(new BorderLayout(0, 10));
 
-        // pnlTieuDeHoTro: Khung chứa thành phần giao diện tiêu đề hỗ trợ.
         JPanel pnlTieuDeHoTro = new JPanel(new BorderLayout());
         pnlTieuDeHoTro.setBackground(UIStyle.NAVY);
         pnlTieuDeHoTro.setBorder(new EmptyBorder(14, 18, 14, 18));
-        // lblTitle2: Nhãn hiển thị: HỖ TRỢ - TỔNG QUAN CHỨC NĂNG.
         JLabel lblTitle2 = new JLabel("HỖ TRỢ - TỔNG QUAN CHỨC NĂNG", taiIcon("/img/logo.png", 24, 24),
                 SwingConstants.LEFT);
         lblTitle2.setForeground(Color.WHITE);
@@ -1513,11 +1557,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         pnlTieuDeHoTro.add(lblTitle2, BorderLayout.WEST);
         winHoTro.add(pnlTieuDeHoTro, BorderLayout.NORTH);
 
-        // edtEdpHuongDan: Vùng hiển thị văn bản có định dạng vùng văn bản hướng dẫn.
+        // JEditorPane: hiển thị hướng dẫn có định dạng HTML.
         JEditorPane edtEdpHuongDan = new JEditorPane();
         edtEdpHuongDan.setContentType("text/html");
         edtEdpHuongDan.setEditable(false);
-        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         edtEdpHuongDan.setText(
                 """
                         <html>
@@ -1552,16 +1595,13 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                         </html>
                         """);
         edtEdpHuongDan.setCaretPosition(0);
-        // scrHuongDan: Khung cuộn hướng dẫn.
+        // JScrollPane: thêm thanh cuộn nếu nội dung hướng dẫn dài.
         JScrollPane scrHuongDan = new JScrollPane(edtEdpHuongDan);
         scrHuongDan.setBorder(new EmptyBorder(0, 12, 0, 12));
         winHoTro.add(scrHuongDan, BorderLayout.CENTER);
 
-        // btnDongHoTro: Nút thao tác dòng hỗ trợ.
         JButton btnDongHoTro = UIStyle.nutChinh("Đóng");
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         dangKyHanhDong(btnDongHoTro, () -> winHoTro.dispose());
-        // pnlDuoi: Khung chứa thành phần giao diện dưới.
         JPanel pnlDuoi = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
         pnlDuoi.setBackground(Color.WHITE);
         pnlDuoi.add(btnDongHoTro);
@@ -1570,20 +1610,16 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         winHoTro.setVisible(true);
     }
 
-    // Thêm nút truy cấp nhanh.
-    // Tham số pnlParent: thành phần cha.
-    // Tham số text: nội dung chữ.
-    // Tham số shortcut: phím tắt.
-    // Tham số quyen: quyền.
-    // Tham số hanhDong: hành động.
+    /**
+     * Tạo một dòng truy cập nhanh và đăng ký phím tắt.
+     * InputMap nhận F4–F8; ActionMap chỉ chạy khi nút nhanh được bật theo vai trò.
+     */
     private void themBtnTruyCapNhanh(JPanel pnlParent, String text, String shortcut,
             PhanQuyen.Quyen quyen, Runnable hanhDong) {
-        // pnlDong: Khung chứa thành phần giao diện dòng dữ liệu.
         JPanel pnlDong = new JPanel(new BorderLayout());
         pnlDong.setBackground(MENU_BLUE);
         pnlDong.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
 
-        // btnTruyCap: Nút thao tác truy cấp.
         JButton btnTruyCap = new JButton(text);
         btnTruyCap.setHorizontalAlignment(SwingConstants.LEFT);
         btnTruyCap.setFont(UIStyle.font(Font.PLAIN, 14));
@@ -1593,26 +1629,28 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         btnTruyCap.setEnabled(PhanQuyen.coQuyen(quyen));
         if (!btnTruyCap.isEnabled())
             btnTruyCap.setToolTipText("Vai trò hiện tại không có quyền");
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
-        dangKyHanhDong(btnTruyCap, () -> {
-            if (PhanQuyen.kiemTra(quyen, this))
-                hanhDong.run();
-        });
+        dangKyHanhDong(btnTruyCap, hanhDong);
 
+        // Tạo mã nhận diện riêng cho mỗi phím F4–F8.
         String khoa = "truycapnhanh-" + shortcut;
+        // InputMap: bắt phím tắt khi cửa sổ đang được focus.
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
                 .put(KeyStroke.getKeyStroke(shortcut), khoa);
+        // ActionMap: ánh xạ mã phím sang hành động mở màn hình được phép.
         getRootPane().getActionMap().put(khoa, new AbstractAction() {
-            // Xử lý hành động được phát ra từ nút, pmnMenu hoặc phím tắt.
-            // Tham số e: thông tin sự kiện.
+            /**
+             * Xử lý tập trung sự kiện nhấn nút hoặc chọn menu.
+             * Lấy Runnable đã lưu bằng getClientProperty() và gọi run() trên luồng xử lý sự
+             * kiện.
+             */
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                if (PhanQuyen.kiemTra(quyen, TrangChu.this))
+                // Phím tắt chỉ chạy khi nút truy cập nhanh tương ứng đang bật.
+                if (btnTruyCap.isEnabled())
                     hanhDong.run();
             }
         });
 
-        // lblPhimTat: Nhãn hiển thị phím tất.
         JLabel lblPhimTat = new JLabel(shortcut);
         lblPhimTat.setFont(UIStyle.font(Font.BOLD, 14));
         lblPhimTat.setBorder(new EmptyBorder(0, 0, 0, 10));
@@ -1624,27 +1662,20 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         pnlParent.add(Box.createVerticalStrut(5));
     }
 
-    // =========================================================
-    // PHIEN LAM VIEC (nhan vien dang dang nhap, dung chung)
-    // =========================================================
-
-    // Nhóm dữ liệu hoặc chức năng phiên làm việc dùng trong TrangChu.
+    /** Lớp lồng lưu mã, tên và vai trò nhân viên của phiên hiện tại. */
     public static final class PhienLamViec {
-        // maNV: Lưu mã nhân viên.
         public static String maNV;
-        // hoTen: Lưu họ tên.
         public static String hoTen;
-        // vaiTro: Lưu vai trò.
         public static String vaiTro;
 
-        // Ẩn hàm khởi tạo vì lớp chỉ cung cấp các hàm tiện ích dùng chung.
         private PhienLamViec() {
         }
 
-        // Ghi thông tin nhân viên vào phiên làm việc dùng chung.
-        // Tham số ma: mã.
-        // Tham số ten: tên.
-        // Tham số role: vai trò.
+        /**
+         * Lưu thông tin của phiên làm việc.
+         * Các biến static cho phép truy cập dữ liệu phiên thông qua lớp lồng
+         * PhienLamViec.
+         */
         public static void dat(String ma, String ten, String role) {
             maNV = ma;
             hoTen = ten;
@@ -1652,44 +1683,30 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // =========================================================
-    // MAU SAC, FONT, THANH PHAN DUNG CHUNG
-    // =========================================================
-
-    // Nhóm dữ liệu hoặc chức năng u i kiểu hiển thị dùng trong TrangChu.
+    /** Các hàm tạo thành phần Swing và quy tắc màu/định dạng dùng chung. */
     public static final class UIStyle {
-        // NAVY: Màu dùng cho giao diện: xanh đậm.
         public static final Color NAVY = new Color(18, 48, 82);
-        // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
         public static final Color LIGHT_BLUE = new Color(229, 241, 252);
-        // MENU_BLUE: Màu dùng cho giao diện: xanh dương.
         public static final Color MENU_BLUE = new Color(207, 222, 235);
-        // ACTIVE_BLUE: Màu dùng cho giao diện: xanh dương.
         public static final Color ACTIVE_BLUE = new Color(169, 194, 218);
-        // GREEN: Màu dùng cho giao diện: xanh lá.
         public static final Color GREEN = new Color(72, 196, 62);
-        // RED: Màu dùng cho giao diện: đỏ.
         public static final Color RED = new Color(200, 40, 40);
-        // LINE: Màu dùng cho giao diện: đường.
         public static final Color LINE = new Color(210, 218, 226);
-        // BAR: Màu dùng cho giao diện: thanh.
         public static final Color BAR = new Color(247, 249, 251);
-        // READONLY: Màu dùng cho giao diện: chỉ đọc.
         public static final Color READONLY = new Color(235, 235, 235);
 
-        // Ẩn hàm khởi tạo vì lớp chỉ cung cấp các hàm tiện ích dùng chung.
         private UIStyle() {
         }
 
-        // Tạo phông chữ với kiểu và kích thước được chỉ định.
-        // Tham số style: kiểu hiển thị.
-        // Tham số size: kích thước.
-        // Kết quả: đối tượng/giá trị kiểu Font.
+        /**
+         * Tạo Font Segoe UI với kiểu và kích thước mong muốn.
+         * Dùng chung để đồng nhất chữ trên nhiều màn hình.
+         */
         public static Font font(int style, int size) {
             return new Font("Segoe UI", style, size);
         }
 
-        // DINH_DANG_TIEN: Bộ định dạng số/tiền dùng để hiển thị dữ liệu trên giao diện.
+        // DecimalFormat: định dạng số tiền với dấu phân nhóm hàng nghìn.
         private static final DecimalFormat DINH_DANG_TIEN;
 
         static {
@@ -1698,16 +1715,18 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             DINH_DANG_TIEN = new DecimalFormat("#,##0", s);
         }
 
-        // Định dạng số tiền thành chuỗi để hiển thị.
-        // Tham số v: giá trị đầu vào.
-        // Kết quả: chuỗi kết quả.
+        /**
+         * Chuyển số tiền thành chuỗi có dấu phân cách hàng nghìn và ký hiệu ₫.
+         * Sử dụng DecimalFormat.
+         */
         public static String tien(double v) {
             return DINH_DANG_TIEN.format(v) + " ₫";
         }
 
-        // Đọc chuỗi tiền trên giao diện thành giá trị số.
-        // Tham số s: chuỗi đầu vào.
-        // Kết quả: đối tượng/giá trị kiểu long.
+        /**
+         * Đọc chuỗi tiền người dùng nhập thành số nguyên long.
+         * Loại bỏ dấu cách/dấu phân cách rồi kiểm tra bằng biểu thức chính quy.
+         */
         public static long docTien(String s) {
             String sach = s == null ? "" : s.replaceAll("[\\s.,₫dđ]", "");
             if (!sach.matches("\\d{1,15}")) {
@@ -1716,14 +1735,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             return Long.parseLong(sach);
         }
 
-        // Tạo nút thao tác với nội dung và màu sắc được chỉ định.
-        // Tham số text: nội dung chữ.
-        // Tham số nen: màu nền.
-        // Tham số chu: màu chữ.
-        // Tham số vien: màu viền.
-        // Kết quả: đối tượng/giá trị kiểu JButton.
+        /**
+         * Tạo nút JButton theo bộ màu chung.
+         * Thiết lập nền, màu chữ, Border, Font và hình dạng con trỏ.
+         */
         private static JButton nut(String text, Color nen, Color chu, Color vien) {
-            // btnTam: Nút thao tác tạm.
             JButton btnTam = new JButton(text);
             btnTam.setFont(font(Font.BOLD, 13));
             btnTam.setBackground(nen);
@@ -1740,85 +1756,84 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             return btnTam;
         }
 
-        // Tạo nút cho thao tác chính theo kiểu giao diện chung.
-        // Tham số text: nội dung chữ.
-        // Kết quả: đối tượng/giá trị kiểu JButton.
+        /**
+         * Tạo nút thao tác chính màu xanh đậm.
+         * Gọi lại hàm nut() để tránh viết lặp giao diện.
+         */
         public static JButton nutChinh(String text) {
             return nut(text, NAVY, Color.WHITE, null);
         }
 
-        // Tạo nút màu xanh dùng cho thao tác xác nhận.
-        // Tham số text: nội dung chữ.
-        // Kết quả: đối tượng/giá trị kiểu JButton.
+        /**
+         * Tạo nút thao tác tích cực màu xanh lá.
+         * Gọi lại hàm nut() với bộ màu tương ứng.
+         */
         public static JButton nutXanh(String text) {
             return nut(text, GREEN, Color.WHITE, null);
         }
 
-        // Tạo nút cho thao tác phụ theo kiểu giao diện chung.
-        // Tham số text: nội dung chữ.
-        // Kết quả: đối tượng/giá trị kiểu JButton.
+        /**
+         * Tạo nút phụ nền trắng, viền xanh.
+         * Gọi lại hàm nut() với màu định sẵn.
+         */
         public static JButton nutPhu(String text) {
             return nut(text, Color.WHITE, NAVY, NAVY);
         }
 
-        // Tạo nút cho thao tác xóa theo kiểu giao diện chung.
-        // Tham số text: nội dung chữ.
-        // Kết quả: đối tượng/giá trị kiểu JButton.
+        /**
+         * Tạo nút xóa/hủy có chữ đỏ.
+         * Gọi lại hàm nut() để thống nhất định dạng.
+         */
         public static JButton nutXoa(String text) {
             return nut(text, Color.WHITE, RED, LINE);
         }
 
-        // Tạo nút chuyển tab và đánh dấu tab đang chọn.
-        // Tham số text: nội dung chữ.
-        // Tham số btnDangChon: mục đang chọn.
-        // Kết quả: đối tượng/giá trị kiểu JButton.
+        /**
+         * Tạo nút tab; đổi màu theo trạng thái đang chọn.
+         * Toán tử điều kiện ?: chọn bộ màu.
+         */
         public static JButton nutTab(String text, boolean dangChon) {
             return nut(text, dangChon ? ACTIVE_BLUE : Color.WHITE,
                     dangChon ? Color.WHITE : NAVY, NAVY);
         }
 
-        // Tạo nhãn chữ theo kiểu giao diện dùng chung.
-        // Tham số text: nội dung chữ.
-        // Kết quả: đối tượng/giá trị kiểu JLabel.
+        /**
+         * Tạo JLabel tiêu chuẩn dùng chung.
+         * JLabel là nhãn hiển thị chữ hoặc biểu tượng.
+         */
         public static JLabel nhan(String text) {
-            // lblNhan3: Nhãn dùng để hiển thị chữ hoặc giá trị trên giao diện.
             JLabel lblNhan3 = new JLabel(text);
             lblNhan3.setFont(font(Font.BOLD, 13));
             return lblNhan3;
         }
 
-        // Tạo ô nhập văn bản với độ rộng theo số cột.
-        // Tham số cot: cột.
-        // Kết quả: đối tượng/giá trị kiểu JTextField.
+        /**
+         * Tạo JTextField nhập dữ liệu.
+         * JTextField là ô nhập một dòng; thiết lập kiểu chữ/border thống nhất.
+         */
         public static JTextField o(int cot) {
-            // t: Ô nhập/hiển thị văn bản bảng/thành phần được xử lý.
             JTextField txtVanBan = new JTextField(cot);
             txtVanBan.setFont(font(Font.PLAIN, 13));
             return txtVanBan;
         }
 
-        // Tạo ô văn bản chỉ đọc để hiển thị dữ liệu.
-        // Tham số lblGiaTri: nhãn giá trị.
-        // Kết quả: đối tượng/giá trị kiểu JTextField.
+        /**
+         * Tạo JTextField chỉ đọc.
+         * setEditable(false) ngăn nhập tay nhưng vẫn có thể xem nội dung.
+         */
         public static JTextField oChiDoc(String lblGiaTri) {
-            // t: Ô nhập/hiển thị văn bản bảng/thành phần được xử lý.
             JTextField txtVanBan = o(10);
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             txtVanBan.setText(lblGiaTri);
             txtVanBan.setEditable(false);
             txtVanBan.setBackground(READONLY);
             return txtVanBan;
         }
 
-        // Bố trí nhãn và thành phần nhập liệu vào một hàng của biểu mẫu.
-        // Tham số pnlForm2: biểu mẫu.
-        // Tham số dong: dòng dữ liệu.
-        // Tham số ten: tên.
-        // Tham số thanhPhan: thanh phần.
-        // Tham số cao: cao.
+        /**
+         * Bố trí một nhãn và thành phần nhập liệu thành một dòng form.
+         * GridBagLayout/GridBagConstraints hỗ trợ sắp xếp trường nhập.
+         */
         public static void hang(JPanel pnlForm2, int dong, String ten, JComponent thanhPhan, boolean cao) {
-            // g: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
-            // GridBagLayout.
             GridBagConstraints g = new GridBagConstraints();
             g.gridy = dong;
             g.insets = new Insets(6, 0, 6, 15);
@@ -1835,28 +1850,27 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             pnlForm2.add(thanhPhan, g);
         }
 
-        // Tạo khung nội dung theo kiểu giao diện dùng chung.
-        // Kết quả: đối tượng/giá trị kiểu JPanel.
+        /**
+         * Tạo thẻ JPanel nền trắng dùng cho giao diện.
+         * Thiết lập Border và khoảng đệm.
+         */
         public static JPanel the() {
-            // pnlKetQua: Khung chứa thành phần giao diện kết quả.
             JPanel pnlKetQua = new JPanel();
             pnlKetQua.setBackground(Color.WHITE);
             pnlKetQua.setBorder(new CompoundBorder(new LineBorder(LINE), new EmptyBorder(15, 15, 15, 15)));
             return pnlKetQua;
         }
 
-        // Tạo thẻ hiển thị tiêu đề và giá trị thống kê.
-        // Tham số tieuDe: tiêu đề.
-        // Tham số lblGiaTri: nhãn giá trị.
-        // Kết quả: đối tượng/giá trị kiểu JPanel.
+        /**
+         * Tạo thẻ hiển thị một chỉ số thống kê.
+         * Đặt JLabel tiêu đề và JLabel giá trị vào JPanel.
+         */
         public static JPanel theThongKe(String tieuDe, JLabel lblGiaTri) {
-            // pnlKetQua: Khung chứa thành phần giao diện kết quả.
             JPanel pnlKetQua = new JPanel();
             pnlKetQua.setLayout(new BoxLayout(pnlKetQua, BoxLayout.Y_AXIS));
             pnlKetQua.setBackground(Color.WHITE);
             pnlKetQua.setBorder(new CompoundBorder(new LineBorder(LINE), new EmptyBorder(14, 18, 14, 18)));
 
-            // lblTam: Nhãn hiển thị tạm.
             JLabel lblTam = new JLabel(tieuDe);
             lblTam.setForeground(Color.GRAY);
             lblTam.setFont(font(Font.PLAIN, 13));
@@ -1871,9 +1885,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             return pnlKetQua;
         }
 
-        // Tạo bảng dữ liệu.
-        // Tham số tblDuLieu2: bảng dữ liệu.
-        // Tham số cotCanPhai: cột cần phải.
+        /**
+         * Thiết lập kiểu hiển thị cho JTable.
+         * Chỉnh JTableHeader và cell renderer; căn phải một số cột nếu được chỉ định.
+         */
         public static void taoBang(JTable tblDuLieu2, int... cotCanPhai) {
             tblDuLieu2.setRowHeight(32);
             tblDuLieu2.setFont(font(Font.PLAIN, 13));
@@ -1885,19 +1900,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             tblDuLieu2.setFillsViewportHeight(true);
             tblDuLieu2.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-            // header: Phần tiêu đề cột của bảng đầu trang.
             JTableHeader tbhHeader = tblDuLieu2.getTableHeader();
             tbhHeader.setReorderingAllowed(false);
             tbhHeader.setPreferredSize(new Dimension(0, 40));
             tbhHeader.setDefaultRenderer(new DefaultTableCellRenderer() {
-                // Thiết lập thành phần dùng để vẽ một ô của bảng.
-                // Tham số t: bảng đang hiển thị.
-                // Tham số v: giá trị của ô.
-                // Tham số sel: trạng thái được chọn.
-                // Tham số foc: trạng thái có tiêu điểm.
-                // Tham số r: chỉ số dòng.
-                // Tham số c: chỉ số cột.
-                // Kết quả: đối tượng/giá trị kiểu Component.
                 @Override
                 public Component getTableCellRendererComponent(JTable tblDuLieu3, Object v, boolean sel, boolean foc,
                         int r,
@@ -1914,14 +1920,6 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             });
 
             tblDuLieu2.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-                // Thiết lập thành phần dùng để vẽ một ô của bảng.
-                // Tham số t: bảng đang hiển thị.
-                // Tham số v: giá trị của ô.
-                // Tham số sel: trạng thái được chọn.
-                // Tham số foc: trạng thái có tiêu điểm.
-                // Tham số r: chỉ số dòng.
-                // Tham số c: chỉ số cột.
-                // Kết quả: đối tượng/giá trị kiểu Component.
                 @Override
                 public Component getTableCellRendererComponent(JTable tblDuLieu3, Object v, boolean sel, boolean foc,
                         int r,
@@ -1941,30 +1939,31 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             });
         }
 
-        // Bọc bảng trong khung cuộn.
-        // Tham số tblDuLieu2: bảng dữ liệu.
-        // Kết quả: đối tượng/giá trị kiểu JScrollPane.
+        /**
+         * Bọc JTable trong JScrollPane để tạo thanh cuộn.
+         * Đặt Border và màu nền của viewport.
+         */
         public static JScrollPane cuon(JTable tblDuLieu2) {
-            // scrHuongDan: Khung cuộn hướng dẫn.
             JScrollPane scrHuongDan = new JScrollPane(tblDuLieu2);
             scrHuongDan.setBorder(new LineBorder(LINE));
             scrHuongDan.getViewport().setBackground(Color.WHITE);
             return scrHuongDan;
         }
 
-        // Thông báo dữ liệu của màn hình.
-        // Tham số cha: thành phần cha.
-        // Tham số strNoiDung: chuỗi nội dung.
+        /**
+         * Hiển thị thông báo thông thường.
+         * JOptionPane.INFORMATION_MESSAGE là hộp thoại thông tin.
+         */
         public static void thongBao(Component cha, String strNoiDung) {
             JOptionPane.showMessageDialog(cha, strNoiDung, "Pet Shop Pro", JOptionPane.INFORMATION_MESSAGE);
         }
 
-        // Xuất PDF.
-        // Tham số cha: thành phần cha.
-        // Tham số tieuDe: tiêu đề.
-        // Tham số tblDuLieu2: bảng dữ liệu.
+        /**
+         * Xuất dữ liệu của JTable ra tệp PDF.
+         * JFileChooser cho chọn vị trí lưu, Files.write() ghi kết quả PDF.
+         */
         public static void xuatPdf(Component cha, String tieuDe, JTable tblDuLieu2) {
-            // fchChonTep: Hộp chọn tệp bộ chọn.
+            // JFileChooser: hộp thoại cho người dùng chọn đường dẫn lưu tệp.
             JFileChooser fchChonTep = new JFileChooser();
             fchChonTep.setDialogTitle("Lưu " + tieuDe + " PDF");
             fchChonTep.setSelectedFile(new java.io.File(
@@ -1974,12 +1973,12 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                 return;
             }
 
-            // file: Đường dẫn tệp dùng cho tệp.
             java.io.File file = fchChonTep.getSelectedFile();
             if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
                 file = new java.io.File(file.getParentFile(), file.getName() + ".pdf");
             }
             try {
+                // Ghi nội dung PDF thành tệp; taoPdfBang() tạo dữ liệu nhị phân.
                 Files.write(file.toPath(), taoPdfBang(tieuDe, tblDuLieu2));
                 JOptionPane.showMessageDialog(cha, "Đã xuất PDF:\n" + file.getAbsolutePath(),
                         "Xuất PDF", JOptionPane.INFORMATION_MESSAGE);
@@ -1989,10 +1988,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             }
         }
 
-        // Tạo PDF bảng.
-        // Tham số tieuDe: tiêu đề.
-        // Tham số tblDuLieu2: bảng dữ liệu.
-        // Kết quả: đối tượng/giá trị kiểu byte[].
+        /**
+         * Tạo PDF một trang từ ảnh chụp JTable và tiêu đề.
+         * Graphics2D vẽ bảng lên BufferedImage; DeflaterOutputStream nén ảnh; tự tạo
+         * cấu trúc PDF 1.4.
+         */
         private static byte[] taoPdfBang(String tieuDe, JTable tblDuLieu2) throws IOException {
             int tableWidth = Math.max(1, tblDuLieu2.getPreferredSize().width);
             int tableHeight = Math.max(1, tblDuLieu2.getTableHeader().getPreferredSize().height
@@ -2000,9 +2000,8 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             int imageWidth = 1400;
             int imageHeight = Math.max(120, (int) Math.ceil(
                     (double) tableHeight * imageWidth / tableWidth) + 90);
-            // image: Ảnh trong bộ nhớ dùng cho hình ảnh.
+            // BufferedImage: vùng ảnh trong bộ nhớ để render JTable trước khi xuất PDF.
             BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_RGB);
-            // g: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
             Graphics2D g = image.createGraphics();
             Dimension oldTableSize = tblDuLieu2.getSize();
             Dimension oldHeaderSize = tblDuLieu2.getTableHeader().getSize();
@@ -2027,12 +2026,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                 tblDuLieu2.getTableHeader().setSize(oldHeaderSize);
             }
 
-            // compressed: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
             ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+            // DeflaterOutputStream: nén dữ liệu ảnh để đưa vào cấu trúc PDF.
             try (DeflaterOutputStream deflater = new DeflaterOutputStream(compressed)) {
-                // pixels: Mảng lưu các điểm ảnh.
                 int[] pixels = new int[imageWidth];
-                // row: Mảng lưu chỉ số dòng.
                 byte[] row = new byte[imageWidth * 3];
                 for (int y = 0; y < imageHeight; y++) {
                     image.getRGB(0, y, imageWidth, 1, pixels, 0, imageWidth);
@@ -2046,26 +2043,21 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
                 }
             }
 
-            // imageData: Mảng lưu ảnh dữ liệu.
             byte[] imageData = compressed.toByteArray();
             int pageHeight = Math.max(1, (int) Math.ceil(842.0 * imageHeight / imageWidth));
-            // objects: Lưu các đối tượng; phần tử có kiểu byte[].
             java.util.List<byte[]> objects = new ArrayList<>();
             objects.add(pdfBytes("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"));
             objects.add(pdfBytes("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"));
             objects.add(pdfBytes("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 "
                     + pageHeight + "] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>\nendobj\n"));
-            // content: Mảng lưu nội dung.
             byte[] content = pdfBytes("q\n842 0 0 " + pageHeight + " 0 0 cm\n/Im0 Do\nQ\n");
             objects.add(pdfStream(4, "", content));
             objects.add(pdfStream(5, "/Type /XObject /Subtype /Image /Width " + imageWidth
                     + " /Height " + imageHeight + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode",
                     imageData));
 
-            // pdf: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
             ByteArrayOutputStream pdf = new ByteArrayOutputStream();
             pdf.write(pdfBytes("%PDF-1.4\n"));
-            // offsets: Lưu các vị trí byte; phần tử có kiểu Integer.
             java.util.List<Integer> offsets = new ArrayList<>();
             offsets.add(0);
             for (byte[] object : objects) {
@@ -2082,13 +2074,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             return pdf.toByteArray();
         }
 
-        // Tạo đối tượng stream trong cấu trúc tệp PDF.
-        // Tham số number: số.
-        // Tham số dictionary: từ điển.
-        // Tham số data: dữ liệu.
-        // Kết quả: đối tượng/giá trị kiểu byte[].
+        /**
+         * Đóng gói byte dữ liệu vào một đối tượng stream của PDF.
+         * Khai báo độ dài và ranh giới stream.
+         */
         private static byte[] pdfStream(int number, String dictionary, byte[] data) throws IOException {
-            // object: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
             ByteArrayOutputStream object = new ByteArrayOutputStream();
             object.write(pdfBytes(number + " 0 obj\n<< " + dictionary + " /Length " + data.length
                     + " >>\nstream\n"));
@@ -2097,34 +2087,39 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             return object.toByteArray();
         }
 
-        // Chuyển chuỗi nội dung PDF thành mảng byte.
-        // Tham số value: giá trị.
-        // Kết quả: đối tượng/giá trị kiểu byte[].
+        /**
+         * Mã hóa chuỗi cấu trúc PDF thành mảng byte.
+         * Dùng charset ISO-8859-1 cho các token cấu trúc PDF.
+         */
         private static byte[] pdfBytes(String value) {
             return value.getBytes(StandardCharsets.ISO_8859_1);
         }
 
-        // Cảnh báo dữ liệu của màn hình.
-        // Tham số cha: thành phần cha.
-        // Tham số strNoiDung: chuỗi nội dung.
+        /**
+         * Hiển thị hộp thoại cảnh báo.
+         * JOptionPane.WARNING_MESSAGE là kiểu cảnh báo.
+         */
         public static void canhBao(Component cha, String strNoiDung) {
             JOptionPane.showMessageDialog(cha, strNoiDung, "Pet Shop Pro", JOptionPane.WARNING_MESSAGE);
         }
 
-        // Xác nhận dữ liệu của màn hình.
-        // Tham số cha: thành phần cha.
-        // Tham số strNoiDung: chuỗi nội dung.
-        // Kết quả: true/false theo điều kiện xử lý.
+        /**
+         * Hiển thị hộp thoại yêu cầu Yes/No.
+         * Trả về true nếu người dùng chọn Yes.
+         */
         public static boolean xacNhan(Component cha, String strNoiDung) {
             return JOptionPane.showConfirmDialog(cha, strNoiDung, "Pet Shop Pro",
                     JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
         }
 
-        // Hiển thị thông báo lỗi từ ngoại lệ nhận được.
-        // Tham số cha: thành phần cha.
-        // Tham số ex: ngoại lệ cần xử lý.
+        /**
+         * Hiển thị lỗi; diễn giải một số mã lỗi SQL Server.
+         * Phân biệt trùng khóa và ràng buộc khóa ngoại để tạo thông báo dễ hiểu.
+         */
         public static void loi(Component cha, Exception ex) {
             String nd;
+            // Pattern matching instanceof: kiểm tra và lấy lỗi SQL trong cùng một biểu
+            // thức.
             if (ex instanceof SQLException sql) {
                 if (sql.getErrorCode() == 547) {
                     nd = "Không thực hiện được vì dữ liệu này đang được dùng ở nơi khác\n"
@@ -2142,12 +2137,11 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
             JOptionPane.showMessageDialog(cha, nd, "Pet Shop Pro", JOptionPane.ERROR_MESSAGE);
         }
 
-        // Sắp xếp các nút hủy và lưu trong một hàng.
-        // Tham số btnHuy2: hủy.
-        // Tham số btnLuu2: lưu.
-        // Kết quả: đối tượng/giá trị kiểu JPanel.
+        /**
+         * Tạo JPanel chứa các nút Hủy/Lưu.
+         * FlowLayout.RIGHT căn các nút về bên phải.
+         */
         public static JPanel hangNut(JButton btnHuy2, JButton btnLuu2) {
-            // pnlKetQua: Khung chứa thành phần giao diện kết quả.
             JPanel pnlKetQua = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
             pnlKetQua.setOpaque(false);
             pnlKetQua.add(btnHuy2);
@@ -2156,64 +2150,72 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         }
     }
 
-    // Đăng ký hành động cho nút/menu động (trong popup, dialog).
-    // putClientProperty gắn Runnable vào đúng control, không giữ tham chiếu popup
-    // cũ.
+    /**
+     * Gắn một Runnable vào JButton/JMenuItem.
+     * putClientProperty() lưu hành động; addActionListener(this) dùng chung bộ nhận
+     * sự kiện.
+     */
     private void dangKyHanhDong(AbstractButton nut, Runnable hanhDong) {
+        // ClientProperty lưu Runnable ngay trên nút; không cần viết nhiều if-else để xử
+        // lý.
         nut.putClientProperty("petshop.hanhDong", hanhDong);
+        // ActionListener: đăng ký TrangChu tiếp nhận sự kiện nhấn nút/menu.
         nut.addActionListener(this);
     }
 
+    /**
+     * Xử lý tập trung sự kiện nhấn nút hoặc chọn menu.
+     * Lấy Runnable đã lưu bằng getClientProperty() và gọi run() trên luồng xử lý sự
+     * kiện.
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
-        Object nguon = e.getSource();
-        if (nguon == btnTrangChu) {
-            hienTrangChu();
-        } else if (nguon == btnHeThong) {
-            hienPopup(btnHeThong, taoMenuHeThong());
-        } else if (nguon == btnDanhMuc) {
-            hienPopup(btnDanhMuc, taoMenuDanhMuc());
-        } else if (nguon == btnXuLy) {
-            hienPopup(btnXuLy, taoMenuNghiepVu());
-        } else if (nguon == btnTimKiem) {
-            hienPopup(btnTimKiem, taoMenuTimKiem());
-        } else if (nguon == btnThongKe) {
-            hienPopup(btnThongKe, taoMenuThongKe());
-        } else if (nguon == btnNhanVien) {
-            hienThongTinNhanVien(btnNhanVien);
-        } else if (nguon == btnLamMoi) {
-            lamMoiTrangChu();
-        } else if (nguon == btnHoTro) {
-            moModalHoTro();
-        } else if (nguon instanceof JComponent control) {
-            // Các menu/dialog động giữ nguyên logic xử lý cũ.
+        if (e.getSource() instanceof JComponent control) {
+            // Lấy Runnable đã lưu trên thành phần phát sự kiện.
             Object handler = control.getClientProperty("petshop.hanhDong");
             if (handler instanceof Runnable hanhDong) {
+                // Runnable.run(): gọi hành động ngay trên luồng hiện tại, không tạo Thread mới.
                 hanhDong.run();
             }
         }
     }
 
-    // Giữ sẵn giao diện MouseListener cho các thao tác chuột khi cần bổ sung.
-    // Những màn hình này chưa yêu cầu xử lý chuột riêng, nên không đăng ký sự kiện
-    // thừa.
+    /**
+     * Phương thức của giao diện MouseListener.
+     * Hiện không xử lý thao tác nhấp chuột riêng.
+     */
     @Override
     public void mouseClicked(MouseEvent e) {
-        // Không gọi lại hàm chọn dòng để tránh xử lý trùng sự kiện.
     }
 
+    /**
+     * Phương thức MouseListener khi nhấn nút chuột.
+     * Để trống vì không có logic sử dụng ở Trang chủ.
+     */
     @Override
     public void mousePressed(MouseEvent e) {
     }
 
+    /**
+     * Phương thức MouseListener khi thả nút chuột.
+     * Để trống vì không có logic sử dụng ở Trang chủ.
+     */
     @Override
     public void mouseReleased(MouseEvent e) {
     }
 
+    /**
+     * Phương thức MouseListener khi con trỏ đi vào thành phần.
+     * Để trống vì không có logic sử dụng ở Trang chủ.
+     */
     @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    /**
+     * Phương thức MouseListener khi con trỏ rời thành phần.
+     * Để trống vì không có logic sử dụng ở Trang chủ.
+     */
     @Override
     public void mouseExited(MouseEvent e) {
     }

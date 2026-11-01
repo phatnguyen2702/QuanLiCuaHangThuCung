@@ -1,8 +1,7 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import entity.CaLam;
+import entity.PhanQuyen;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,7 +21,8 @@ public class CaLamDAO {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
         // list: Danh sách chứa các phần tử kiểu CaLam.
         ArrayList<CaLam> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maCa, tenCa, gioBatDau, gioKetThuc " +
                 "FROM CaLam " +
                 "ORDER BY maCa";
@@ -53,12 +53,15 @@ public class CaLamDAO {
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(CaLam ca) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "INSERT INTO CaLam (maCa, tenCa, gioBatDau, gioKetThuc) "
                 + "VALUES (?, ?, ?, ?)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
             try {
                 // maMoi: Lưu mã mới.
@@ -90,7 +93,8 @@ public class CaLamDAO {
     public boolean sua(CaLam ca) {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "UPDATE CaLam SET " +
                 "tenCa = ?, " +
                 "gioBatDau = ?, " +
@@ -116,7 +120,8 @@ public class CaLamDAO {
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean xoa(String maCa) {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.CA_LAM);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "DELETE FROM CaLam WHERE maCa = ?";
         try (
                 Connection con = connectDB.getConnection();
