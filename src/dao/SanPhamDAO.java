@@ -260,6 +260,94 @@ public class SanPhamDAO {
         return timKiem("", null, null);
     }
 
+    /** Tồn mới nhất, dùng khi chỉnh số lượng trong giỏ thức ăn. */
+    public int layTonKho(String maSanPham) throws SQLException {
+        String sql = "SELECT " + BIEU_THUC_TON + " AS tonKho FROM SanPham sp WHERE sp.maSanPham=?";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maSanPham);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("tonKho") : 0;
+            }
+        }
+    }
+
+    /** Lưu sản phẩm, metadata gợi ý và lượng nhập ban đầu trong một giao dịch. */
+    public void luuSanPhamDayDu(SanPham sp, boolean dangSua, String tenDanhMuc,
+            String nhomTuoi, String kichThuoc, int soLuongThem, String maNhanVien) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        if (soLuongThem > 0) PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        damBaoBangGoiYThucAn();
+
+        String nguon = ((tenDanhMuc == null ? "" : tenDanhMuc) + " " +
+                (sp.getTenSanPham() == null ? "" : sp.getTenSanPham())).toLowerCase(java.util.Locale.ROOT);
+        boolean laThucAn = nguon.contains("thức ăn") || nguon.contains("thuc an")
+                || nguon.contains("pate") || nguon.contains("hạt chó") || nguon.contains("hạt mèo");
+        String loai = (nguon.contains("chó") || nguon.contains("cho") || nguon.contains("dog")) ? "Chó"
+                : (nguon.contains("mèo") || nguon.contains("meo") || nguon.contains("cat")) ? "Mèo" : null;
+        if (laThucAn && loai == null) {
+            throw new SQLException("Không xác định được thức ăn dành cho chó hay mèo từ danh mục/tên sản phẩm.");
+        }
+
+        try (Connection con = connectDB.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                String sql = dangSua
+                        ? "UPDATE SanPham SET tenSanPham=?,giaNhap=?,giaBan=?,maDanhMuc=?,maNhaCungCap=? WHERE maSanPham=?"
+                        : "INSERT INTO SanPham(maSanPham,tenSanPham,giaNhap,giaBan,maDanhMuc,maNhaCungCap) VALUES(?,?,?,?,?,?)";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    if (dangSua) {
+                        ps.setString(1, sp.getTenSanPham()); ps.setDouble(2, sp.getGiaNhap());
+                        ps.setDouble(3, sp.getGiaBan()); ps.setString(4, sp.getMaDanhMuc());
+                        ps.setString(5, sp.getMaNhaCungCap()); ps.setString(6, sp.getMaSanPham());
+                    } else {
+                        ps.setString(1, sp.getMaSanPham()); ps.setString(2, sp.getTenSanPham());
+                        ps.setDouble(3, sp.getGiaNhap()); ps.setDouble(4, sp.getGiaBan());
+                        ps.setString(5, sp.getMaDanhMuc()); ps.setString(6, sp.getMaNhaCungCap());
+                    }
+                    if (ps.executeUpdate() != 1) throw new SQLException("Không lưu được hồ sơ sản phẩm.");
+                }
+
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
+                    ps.setString(1, sp.getMaSanPham()); ps.executeUpdate();
+                }
+                if (laThucAn) {
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO dbo.GoiYThucAn(maSanPham,loaiThuCung,nhomTuoi,kichThuoc,ghiChu) VALUES(?,?,?,?,N'Nhập từ form sản phẩm')")) {
+                        ps.setString(1, sp.getMaSanPham()); ps.setString(2, loai);
+                        ps.setString(3, nhomTuoi); ps.setString(4, kichThuoc); ps.executeUpdate();
+                    }
+                }
+
+                if (soLuongThem > 0) {
+                    int max = 0;
+                    try (Statement st = con.createStatement(); ResultSet rs = st.executeQuery(
+                            "SELECT maPhieuNhap FROM dbo.PhieuNhapKho WITH (UPDLOCK,HOLDLOCK)")) {
+                        while (rs.next()) {
+                            String ma = rs.getString(1);
+                            if (ma != null && ma.matches("PN\\d{1,9}"))
+                                max = Math.max(max, Integer.parseInt(ma.substring(2)));
+                        }
+                    }
+                    String maPhieu = "PN" + String.format("%03d", max + 1);
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO PhieuNhapKho(maPhieuNhap,ngayNhap,trangThai,maNhanVien,maNhaCungCap) VALUES(?,CURRENT_TIMESTAMP,1,?,?)")) {
+                        ps.setString(1, maPhieu); ps.setString(2, maNhanVien); ps.setString(3, sp.getMaNhaCungCap());
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO ChiTietPhieuNhap(maPhieuNhap,maSanPham,soLuongNhap,donGiaNhap,trangThai) VALUES(?,?,?,?,1)")) {
+                        ps.setString(1, maPhieu); ps.setString(2, sp.getMaSanPham());
+                        ps.setInt(3, soLuongThem); ps.setDouble(4, sp.getGiaNhap()); ps.executeUpdate();
+                    }
+                }
+                con.commit();
+            } catch (SQLException | RuntimeException ex) {
+                try { con.rollback(); } catch (SQLException rollbackError) { ex.addSuppressed(rollbackError); }
+                throw ex;
+            }
+        }
+    }
+
     // Lấy mã mới để hiển thị khi lập bản ghi.
     // Kết quả: chuỗi kết quả.
     public String taoMaMoi() throws SQLException {
@@ -408,19 +496,30 @@ public class SanPhamDAO {
             // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
             con.setAutoCommit(false);
             try {
-                // Xóa các dòng tham chiếu trước để không vi phạm khóa ngoại.
-                String[] bangLienQuan = {
-                        "dbo.GoiYThucAn",
-                        "dbo.ChiTietHoaDon",
-                        "dbo.ChiTietPhieuNhap",
-                        "dbo.ChiTietPhieuKiemKe"
-                };
-                for (String bang : bangLienQuan) {
-                    try (PreparedStatement ps = con.prepareStatement(
-                            "DELETE FROM " + bang + " WHERE maSanPham=?")) {
-                        ps.setString(1, maSanPham);
-                        ps.executeUpdate();
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT maSanPham FROM SanPham WITH (UPDLOCK,HOLDLOCK) WHERE maSanPham=?")) {
+                    ps.setString(1, maSanPham);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            con.commit();
+                            return false;
+                        }
                     }
+                }
+
+                String sqlDem = "SELECT (SELECT COUNT(*) FROM ChiTietPhieuNhap WHERE maSanPham=?)"
+                        + "+(SELECT COUNT(*) FROM ChiTietHoaDon WHERE maSanPham=?)"
+                        + "+(SELECT COUNT(*) FROM ChiTietPhieuKiemKe WHERE maSanPham=?)";
+                try (PreparedStatement ps = con.prepareStatement(sqlDem)) {
+                    ps.setString(1, maSanPham); ps.setString(2, maSanPham); ps.setString(3, maSanPham);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next() && rs.getInt(1) > 0) {
+                            throw new SQLException("Không thể xóa sản phẩm đã phát sinh lịch sử nhập kho, hóa đơn hoặc kiểm kê.");
+                        }
+                    }
+                }
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM dbo.GoiYThucAn WHERE maSanPham=?")) {
+                    ps.setString(1, maSanPham); ps.executeUpdate();
                 }
                 boolean deleted;
                 try (PreparedStatement ps = con.prepareStatement("DELETE FROM SanPham WHERE maSanPham=?")) {

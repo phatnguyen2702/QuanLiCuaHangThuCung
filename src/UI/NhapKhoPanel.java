@@ -17,10 +17,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.YearMonth;
+import java.time.format.TextStyle;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
 
 /**
  * Man hinh "Nhap kho" - Lap phieu nhap hang (nam trong khung TrangChu).
@@ -201,7 +207,7 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         // btnThem: Nút thao tác thêm.
         JButton btnThem = UIStyle.nutChinh("+ Thêm mặt hàng");
         // btnXoaDong: Nút thao tác xóa dòng.
-        JButton btnXoaDong = UIStyle.nutXoa("Xóa dòng");
+        JButton btnXoaDong = UIStyle.nutXoa("Xóa mặt hàng");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnThem.addActionListener(e -> themMatHang());
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
@@ -808,7 +814,14 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
             UIStyle.hang(pnlForm2, 0, "Sản phẩm", cmbSanPham, false);
             UIStyle.hang(pnlForm2, 1, "Số lượng nhập", spnSoLuong, false);
             UIStyle.hang(pnlForm2, 2, "Đơn giá nhập", txtDonGia, false);
-            UIStyle.hang(pnlForm2, 3, "Hạn sử dụng (dd/MM/yyyy, tùy chọn)", txtHanSuDung, false);
+            JPanel pnlHanSuDung = new JPanel(new BorderLayout(5, 0));
+            pnlHanSuDung.setOpaque(false);
+            JButton btnChonNgay = UIStyle.nutPhu("Chọn ngày");
+            btnChonNgay.setToolTipText("Mở lịch để chọn hạn sử dụng");
+            btnChonNgay.addActionListener(e -> chonHanSuDung(btnChonNgay));
+            pnlHanSuDung.add(txtHanSuDung, BorderLayout.CENTER);
+            pnlHanSuDung.add(btnChonNgay, BorderLayout.EAST);
+            UIStyle.hang(pnlForm2, 3, "Hạn sử dụng (tùy chọn)", pnlHanSuDung, false);
 
             if (cmbSanPham.getItemCount() > 0) {
                 cmbSanPham.setSelectedIndex(0);
@@ -895,6 +908,18 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         /** Dong chi tiet vua nhap, hoac null neu bam Huy. */
         public ChiTietPhieuNhap getKetQua() {
             return ketQua;
+        }
+
+        private void chonHanSuDung(Component anchor) {
+            LocalDate selected = null;
+            try {
+                if (!txtHanSuDung.getText().trim().isEmpty()) {
+                    selected = LocalDate.parse(txtHanSuDung.getText().trim(),
+                            DateTimeFormatter.ofPattern("dd/MM/uuuu"));
+                }
+            } catch (java.time.format.DateTimeParseException ignored) { }
+            LichChonNgayPopup.mo(anchor, selected, date -> txtHanSuDung.setText(
+                    date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))));
         }
     }
 
@@ -1096,6 +1121,111 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         // Trả về phiếu đang sửa của đối tượng.
         public PhieuNhapKho getPhieuSua() {
             return phieuSua;
+        }
+    }
+
+    /** Lịch bật lên dùng chung cho hạn sử dụng và bộ lọc tra cứu kho. */
+    static final class LichChonNgayPopup extends JPopupMenu {
+        private final JPanel pnlNgay = new JPanel(new GridLayout(0, 7, 2, 2));
+        private final JComboBox<String> cmbThang = new JComboBox<>();
+        private final JSpinner spnNam;
+        private final Consumer<LocalDate> chonNgay;
+        private YearMonth thangHienTai;
+
+        static void mo(Component anchor, LocalDate selected, Consumer<LocalDate> chonNgay) {
+            LichChonNgayPopup popup = new LichChonNgayPopup(selected, chonNgay);
+            popup.show(anchor, 0, anchor.getHeight());
+        }
+
+        private LichChonNgayPopup(LocalDate selected, Consumer<LocalDate> chonNgay) {
+            this.chonNgay = chonNgay;
+            LocalDate base = selected == null ? LocalDate.now() : selected;
+            thangHienTai = YearMonth.from(base);
+            spnNam = new JSpinner(new SpinnerNumberModel(base.getYear(), 1900, 2200, 1));
+            setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(190, 198, 208)),
+                    BorderFactory.createEmptyBorder(8, 8, 6, 8)));
+            setLayout(new BorderLayout(0, 6));
+
+            JPanel pnlTieuDe = new JPanel(new BorderLayout(5, 0));
+            JButton btnTruoc = new JButton("‹");
+            JButton btnSau = new JButton("›");
+            for (JButton button : new JButton[] { btnTruoc, btnSau }) {
+                button.setFocusable(false);
+                button.setMargin(new Insets(2, 7, 2, 7));
+            }
+            for (Month month : Month.values()) {
+                cmbThang.addItem(month.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("vi-VN")));
+            }
+            cmbThang.setSelectedIndex(thangHienTai.getMonthValue() - 1);
+            JPanel pnlThangNam = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+            pnlThangNam.add(cmbThang);
+            pnlThangNam.add(spnNam);
+            pnlTieuDe.add(btnTruoc, BorderLayout.WEST);
+            pnlTieuDe.add(pnlThangNam, BorderLayout.CENTER);
+            pnlTieuDe.add(btnSau, BorderLayout.EAST);
+
+            JPanel pnlThu = new JPanel(new GridLayout(1, 7, 2, 2));
+            for (String tenThu : new String[] { "CN", "T2", "T3", "T4", "T5", "T6", "T7" }) {
+                pnlThu.add(new JLabel(tenThu, SwingConstants.CENTER));
+            }
+            JPanel pnlLich = new JPanel(new BorderLayout(0, 2));
+            pnlLich.add(pnlThu, BorderLayout.NORTH);
+            pnlLich.add(pnlNgay, BorderLayout.CENTER);
+
+            JPanel pnlCuoi = new JPanel(new BorderLayout());
+            JButton btnXoa = new JButton("Xóa");
+            JButton btnHomNay = new JButton("Hôm nay");
+            btnXoa.setForeground(new Color(35, 105, 175));
+            btnHomNay.setForeground(new Color(35, 105, 175));
+            pnlCuoi.add(btnXoa, BorderLayout.WEST);
+            pnlCuoi.add(btnHomNay, BorderLayout.EAST);
+            add(pnlTieuDe, BorderLayout.NORTH);
+            add(pnlLich, BorderLayout.CENTER);
+            add(pnlCuoi, BorderLayout.SOUTH);
+
+            btnTruoc.addActionListener(e -> doiThang(-1));
+            btnSau.addActionListener(e -> doiThang(1));
+            cmbThang.addActionListener(e -> capNhatThangTuDieuKhien());
+            spnNam.addChangeListener(e -> capNhatThangTuDieuKhien());
+            btnXoa.addActionListener(e -> { chonNgay.accept(null); setVisible(false); });
+            btnHomNay.addActionListener(e -> { chonNgay.accept(LocalDate.now()); setVisible(false); });
+            veLich(selected);
+        }
+
+        private void doiThang(int delta) {
+            thangHienTai = thangHienTai.plusMonths(delta);
+            cmbThang.setSelectedIndex(thangHienTai.getMonthValue() - 1);
+            spnNam.setValue(thangHienTai.getYear());
+            veLich(null);
+        }
+
+        private void capNhatThangTuDieuKhien() {
+            if (cmbThang.getSelectedIndex() < 0) return;
+            thangHienTai = YearMonth.of((Integer) spnNam.getValue(), cmbThang.getSelectedIndex() + 1);
+            veLich(null);
+        }
+
+        private void veLich(LocalDate selected) {
+            pnlNgay.removeAll();
+            LocalDate ngayDau = thangHienTai.atDay(1);
+            int lech = ngayDau.getDayOfWeek().getValue() % 7;
+            LocalDate ngayDauLich = ngayDau.minusDays(lech);
+            for (int i = 0; i < 42; i++) {
+                LocalDate date = ngayDauLich.plusDays(i);
+                JButton button = new JButton(String.valueOf(date.getDayOfMonth()));
+                button.setMargin(new Insets(3, 4, 3, 4));
+                button.setBorderPainted(false);
+                button.setFocusPainted(false);
+                button.setOpaque(true);
+                button.setBackground(date.equals(selected) ? new Color(61, 105, 163) : Color.WHITE);
+                button.setForeground(date.equals(selected) ? Color.WHITE
+                        : date.getMonthValue() == thangHienTai.getMonthValue()
+                                ? new Color(35, 45, 60) : new Color(155, 160, 168));
+                button.addActionListener(e -> { chonNgay.accept(date); setVisible(false); });
+                pnlNgay.add(button);
+            }
+            pnlNgay.revalidate();
+            pnlNgay.repaint();
         }
     }
 }

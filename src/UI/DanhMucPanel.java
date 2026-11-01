@@ -225,14 +225,14 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
     // Xử lý yêu cầu thêm dữ liệu từ giao diện.
     private void them() {
 
-        // Ma danh muc de lblTrong: nguoi dung tu nhap
-        DanhMucDialog winDlg = new DanhMucDialog(
-                SwingUtilities.getWindowAncestor(this),
-                null, "");
-        winDlg.setVisible(true);
-
-        if (winDlg.isDaLuu()) {
-            napLai();
+        try {
+            String maMoi = dao.taoMaMoi();
+            DanhMucDialog winDlg = new DanhMucDialog(
+                    SwingUtilities.getWindowAncestor(this), null, maMoi);
+            winDlg.setVisible(true);
+            if (winDlg.isDaLuu()) napLai();
+        } catch (SQLException ex) {
+            UIStyle.loi(this, ex);
         }
     }
 
@@ -393,6 +393,8 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             } else {
                 // Cập nhật nội dung chữ hiển thị lblTrong control bằng setText().
                 txtMa.setText(maMoi);
+                txtMa.setEditable(false);
+                txtMa.setBackground(UIStyle.READONLY);
             }
 
             // btnHuy: Nút thao tác hủy.
@@ -510,8 +512,8 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             // moTa: Đọc nội dung chữ từ ô nhập để xử lý mô tả.
             String moTa = txaMoTa.getText().trim();
 
-            if (ma.isEmpty() || ten.isEmpty()) {
-                UIStyle.canhBao(this, "Vui lòng nhập mã và tên danh mục.");
+            if (ten.isEmpty()) {
+                UIStyle.canhBao(this, "Vui lòng nhập tên danh mục.");
                 return;
             }
 
