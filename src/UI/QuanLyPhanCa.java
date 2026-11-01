@@ -231,7 +231,7 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnXoa.addActionListener(this);
                 // btnExcel: Nút thao tác Excel.
-                btnExcel = taoNut("Xuất Excel", new Color(29, 133, 82));
+                btnExcel = taoNut("Xuất lịch phân ca", new Color(29, 133, 82));
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnExcel.addActionListener(this);
                 btnXemTuan = taoNut("Xem lịch tuần", NAVY);
@@ -246,7 +246,7 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                 pnlTrai.add(btnSaoChepTuan);
                 pnlPnl.add(pnlTrai, BorderLayout.WEST);
                 // btnLamMoi: Nút thao tác làm mới.
-                btnLamMoiDanhSach = taoNut("↻ Làm mới", BLUE);
+                btnLamMoiDanhSach = taoNut("Làm mới", BLUE);
                 // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
                 btnLamMoiDanhSach.addActionListener(this);
                 pnlPnl.add(btnLamMoiDanhSach, BorderLayout.EAST);
@@ -256,12 +256,15 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
         // Tạo khung bên phải.
         // Kết quả: đối tượng/giá trị kiểu JPanel.
         private JPanel taoPnlBenPhai() {
-                // pnlPnl: Khung dùng để nhóm và bố trí các thành phần giao diện.
-                JPanel pnlPnl = new JPanel(new BorderLayout(0, 12));
+                JPanel pnlPnl = new JPanel(new BorderLayout());
                 pnlPnl.setBackground(Color.WHITE);
                 pnlPnl.setPreferredSize(new Dimension(310, 0));
-                pnlPnl.add(taoPnlForm(), BorderLayout.NORTH);
-                pnlPnl.add(taoPnlThongKeHomNay(), BorderLayout.CENTER);
+                // Hai phần ở phía trên, không kéo giãn các thẻ số liệu xuống đáy.
+                JPanel phanTren = new JPanel(new BorderLayout(0, 12));
+                phanTren.setOpaque(false);
+                phanTren.add(taoPnlForm(), BorderLayout.NORTH);
+                phanTren.add(taoPnlThongKeHomNay(), BorderLayout.CENTER);
+                pnlPnl.add(phanTren, BorderLayout.NORTH);
                 return pnlPnl;
         }
 
@@ -336,64 +339,60 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                 return pnlPnl;
         }
 
-        /**
-         * Thẻ thống kê ở góc phải bên dưới form: số nhân viên được PHÂN CA hôm nay.
-         * Đây là số người được xếp lịch, không phải thống kê chấm công thực tế.
-         */
+        /** Thống kê dạng 2 thẻ số liệu, đồng bộ phong cách với Tổng quan Trang chủ. */
         private JPanel taoPnlThongKeHomNay() {
-                JPanel khung = new JPanel(new BorderLayout(0, 8));
+                JPanel khung = new JPanel(new BorderLayout(0, 12));
                 khung.setBackground(Color.WHITE);
                 khung.setBorder(BorderFactory.createCompoundBorder(
                                 BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(215, 226, 237)),
-                                new EmptyBorder(12, 14, 12, 14)));
+                                new EmptyBorder(12, 14, 14, 14)));
 
-                JPanel dau = new JPanel(new BorderLayout(4, 4));
-                dau.setOpaque(false);
-                JLabel tieuDe = new JLabel("NHÂN VIÊN LÀM VIỆC HÔM NAY");
+                JPanel hangTieuDe = new JPanel(new BorderLayout(6, 0));
+                hangTieuDe.setOpaque(false);
+                JLabel tieuDe = new JLabel("Tổng quan phân ca hôm nay");
                 tieuDe.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 tieuDe.setForeground(NAVY);
-                dau.add(tieuDe, BorderLayout.CENTER);
+                hangTieuDe.add(tieuDe, BorderLayout.CENTER);
+
                 btnLamMoiThongKe = new JButton("↻");
                 btnLamMoiThongKe.setFocusable(false);
-                btnLamMoiThongKe.setToolTipText("Cập nhật số nhân viên phân ca hôm nay từ SQL Server");
+                btnLamMoiThongKe.setToolTipText("Cập nhật thống kê phân ca hôm nay từ SQL Server");
                 btnLamMoiThongKe.setMargin(new Insets(1, 5, 1, 5));
                 btnLamMoiThongKe.addActionListener(this);
-                dau.add(btnLamMoiThongKe, BorderLayout.EAST);
+                hangTieuDe.add(btnLamMoiThongKe, BorderLayout.EAST);
 
                 lblNgayThongKe = new JLabel();
                 lblNgayThongKe.setFont(new Font("Segoe UI", Font.PLAIN, 11));
                 lblNgayThongKe.setForeground(new Color(91, 105, 120));
-                JPanel chiTiet = new JPanel(new BorderLayout(6, 0));
-                chiTiet.setOpaque(false);
-                lblSoNhanVienHomNay = new JLabel("0");
-                lblSoNhanVienHomNay.setForeground(new Color(29, 133, 82));
-                lblSoNhanVienHomNay.setFont(new Font("Segoe UI", Font.BOLD, 34));
-                chiTiet.add(lblSoNhanVienHomNay, BorderLayout.WEST);
-                JPanel nhan = new JPanel();
-                nhan.setOpaque(false);
-                nhan.setLayout(new BoxLayout(nhan, BoxLayout.Y_AXIS));
-                nhan.add(new JLabel("nhân viên được phân ca"));
-                lblSoCaHomNay = new JLabel("0 ca làm việc");
-                lblSoCaHomNay.setForeground(new Color(90, 105, 120));
-                nhan.add(lblSoCaHomNay);
-                chiTiet.add(nhan, BorderLayout.CENTER);
 
-                JPanel thongTin = new JPanel();
-                thongTin.setOpaque(false);
-                thongTin.setLayout(new BoxLayout(thongTin, BoxLayout.Y_AXIS));
-                lblNgayThongKe.setAlignmentX(Component.LEFT_ALIGNMENT);
-                chiTiet.setAlignmentX(Component.LEFT_ALIGNMENT);
-                thongTin.add(lblNgayThongKe);
-                thongTin.add(Box.createVerticalStrut(5));
-                thongTin.add(chiTiet);
-                dau.setAlignmentX(Component.LEFT_ALIGNMENT);
-                JPanel phanDau = new JPanel(new BorderLayout(0, 8));
+                JPanel phanDau = new JPanel(new BorderLayout(0, 7));
                 phanDau.setOpaque(false);
-                phanDau.add(dau, BorderLayout.NORTH);
-                phanDau.add(thongTin, BorderLayout.SOUTH);
+                phanDau.add(hangTieuDe, BorderLayout.NORTH);
+                phanDau.add(lblNgayThongKe, BorderLayout.SOUTH);
                 khung.add(phanDau, BorderLayout.NORTH);
 
+                lblSoNhanVienHomNay = new JLabel("0");
+                lblSoCaHomNay = new JLabel("0");
+                JPanel luoiChiSo = new JPanel(new GridLayout(1, 2, 10, 0));
+                luoiChiSo.setOpaque(false);
+                luoiChiSo.add(taoTheChiSoPhanCa("Nhân viên", lblSoNhanVienHomNay));
+                luoiChiSo.add(taoTheChiSoPhanCa("Ca làm", lblSoCaHomNay));
+                khung.add(luoiChiSo, BorderLayout.CENTER);
                 return khung;
+        }
+
+        private JPanel taoTheChiSoPhanCa(String nhan, JLabel giaTri) {
+                JPanel the = new JPanel(new BorderLayout(0, 6));
+                the.setBackground(new Color(245, 248, 252));
+                the.setBorder(new EmptyBorder(10, 12, 10, 12));
+                JLabel tieuDe = new JLabel(nhan);
+                tieuDe.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                tieuDe.setForeground(new Color(52, 65, 81));
+                giaTri.setFont(new Font("Segoe UI", Font.BOLD, 23));
+                giaTri.setForeground(NAVY);
+                the.add(tieuDe, BorderLayout.NORTH);
+                the.add(giaTri, BorderLayout.CENTER);
+                return the;
         }
 
         /**
@@ -412,11 +411,11 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                         // Một nhân viên có nhiều ca vẫn chỉ tính là 1 nhân viên.
                         lblSoNhanVienHomNay.setText(String.valueOf(nhanVienKhacNhau.size()));
                         // Mỗi phân ca trong danh sách tương ứng một ca làm việc.
-                        lblSoCaHomNay.setText(lich.size() + " ca làm việc");
+                        lblSoCaHomNay.setText(String.valueOf(lich.size()));
                 } catch (Exception ex) {
                         // Không hiển thị 0 gây hiểu nhầm khi không kết nối được DB.
                         lblSoNhanVienHomNay.setText("—");
-                        lblSoCaHomNay.setText("Không tải được số ca");
+                        lblSoCaHomNay.setText("—");
                         ex.printStackTrace();
                 }
         }
@@ -892,13 +891,9 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                                         bangTuan.getColumnModel().getColumn(c).setPreferredWidth(163);
                                 modelTuan.setRowCount(0);
                                 List<LichPhanCa> phanCaTuan = dao.layPhanCaTrongTuan(thuHai);
+                                // Chỉ hiển thị nhân viên thực sự có ít nhất một phân ca
+                                // trong tuần được chọn; không nạp toàn bộ danh sách nhân viên.
                                 Map<String, StringBuilder[]> bangTheoNguoi = new LinkedHashMap<>();
-                                for (String[] nv : dao.getDanhSachNhanVien()) {
-                                        StringBuilder[] ngay = new StringBuilder[7];
-                                        for (int i = 0; i < 7; i++)
-                                                ngay[i] = new StringBuilder();
-                                        bangTheoNguoi.put(nv[0] + " - " + nv[1], ngay);
-                                }
                                 for (LichPhanCa pc : phanCaTuan) {
                                         String nhanVien = pc.getMaNhanVien() + " - " + pc.getHoTen();
                                         if (!bangTheoNguoi.containsKey(nhanVien)) {
@@ -922,8 +917,10 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
                                                 duLieu[i + 1] = hang.getValue()[i].toString();
                                         modelTuan.addRow(duLieu);
                                 }
-                                tongKet.setText("Tổng: " + phanCaTuan.size() + " phân ca / "
-                                                + bangTheoNguoi.size() + " nhân viên");
+                                tongKet.setText(phanCaTuan.isEmpty()
+                                                ? "Không có nhân viên được phân ca trong tuần này."
+                                                : "Tổng: " + phanCaTuan.size() + " phân ca / "
+                                                                + bangTheoNguoi.size() + " nhân viên có ca");
                         } catch (Exception ex) {
                                 baoLoi(ex);
                         }
