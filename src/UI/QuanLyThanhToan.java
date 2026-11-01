@@ -186,9 +186,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
         pnlNoiDung.add(createBody(), BorderLayout.CENTER);
         setContentPane(pnlNoiDung);
         tblDonHang.addMouseListener(this);
-        napDanhSachMaKhachHang();
-        napDanhSachMaSanPham();
-        napDanhSachVoucher();
+        napDanhSachTimKiem();
         napPhuongThucThanhToan();
         capNhatTien();
     }
@@ -278,6 +276,13 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     public void napGioHang() {
         tableModel.fireTableDataChanged();
         capNhatTien();
+    }
+
+    /** Tải lại các dữ liệu gợi ý vì khách hàng, sản phẩm và voucher có thể vừa được thêm. */
+    public void napDanhSachTimKiem() {
+        napDanhSachMaKhachHang();
+        napDanhSachMaSanPham();
+        napDanhSachVoucher();
     }
 
     // Tạo tiêu đề.
@@ -780,20 +785,24 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Nạp danh sách mã sản phẩm.
     private void napDanhSachMaSanPham() {
         try {
+            Object itemHienTai = cmbMaSanPham.getEditor().getItem();
+            String tuKhoaHienTai = itemHienTai == null ? "" : itemHienTai.toString();
             danhSachMaSanPham.clear();
             tenSanPhamTheoMa.clear();
             tenSanPhamTheoMa.putAll(dao.layDanhSachSanPham());
             danhSachMaSanPham.addAll(tenSanPhamTheoMa.keySet());
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String mauHienThi = "";
             for (String ma : danhSachMaSanPham) {
                 String goiY = taoGoiYSanPham(ma);
-                cmbMaSanPham.addItem(goiY);
+                model.addElement(goiY);
                 if (goiY.length() > mauHienThi.length()) {
                     mauHienThi = goiY;
                 }
             }
+            cmbMaSanPham.setModel(model);
             cmbMaSanPham.setPrototypeDisplayValue(mauHienThi);
-            cmbMaSanPham.setSelectedItem("");
+            cmbMaSanPham.setSelectedItem(tuKhoaHienTai);
             cmbMaSanPham.setPreferredSize(cmbMaSanPham.getPreferredSize());
         } catch (Exception e) {
             hienLoi("Không tải được danh sách mã sản phẩm: " + e.getMessage());
@@ -803,18 +812,22 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Nạp danh sách mã khách hàng.
     private void napDanhSachMaKhachHang() {
         try {
+            Object itemHienTai = cmbMaKhachHang.getEditor().getItem();
+            String tuKhoaHienTai = itemHienTai == null ? "" : itemHienTai.toString();
             danhSachKhachHang.clear();
             danhSachKhachHang.addAll(dao.layDanhSachKhachHang());
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "KH000000";
             for (entity.ThanhToan.KhachHang khachHang : danhSachKhachHang) {
-                cmbMaKhachHang.addItem(taoGoiYKhachHang(khachHang));
+                model.addElement(taoGoiYKhachHang(khachHang));
                 if (khachHang.getMaKhachHang().length() > maDaiNhat.length()) {
                     maDaiNhat = khachHang.getMaKhachHang();
                 }
             }
+            cmbMaKhachHang.setModel(model);
             cmbMaKhachHang.setPrototypeDisplayValue(maDaiNhat);
             cmbMaKhachHang.setPreferredSize(cmbMaKhachHang.getPreferredSize());
-            cmbMaKhachHang.setSelectedItem("");
+            cmbMaKhachHang.setSelectedItem(tuKhoaHienTai);
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách mã khách hàng: " + e.getMessage());
         }
@@ -823,18 +836,22 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Nạp danh sách voucher đang hoạt động.
     private void napDanhSachVoucher() {
         try {
+            Object itemHienTai = cmbVoucher.getEditor().getItem();
+            String tuKhoaHienTai = itemHienTai == null ? "" : itemHienTai.toString();
             danhSachVoucher.clear();
             danhSachVoucher.addAll(dao.layDanhSachVoucher());
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "VOUCHER000";
             for (entity.ThanhToan.Voucher item : danhSachVoucher) {
-                cmbVoucher.addItem(taoGoiYVoucher(item));
+                model.addElement(taoGoiYVoucher(item));
                 if (item.getMaVoucher().length() > maDaiNhat.length()) {
                     maDaiNhat = item.getMaVoucher();
                 }
             }
+            cmbVoucher.setModel(model);
             cmbVoucher.setPrototypeDisplayValue(maDaiNhat);
             cmbVoucher.setPreferredSize(cmbVoucher.getPreferredSize());
-            cmbVoucher.setSelectedItem("");
+            cmbVoucher.setSelectedItem(tuKhoaHienTai);
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách voucher: " + e.getMessage());
         }

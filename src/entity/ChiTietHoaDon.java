@@ -1,6 +1,6 @@
 package entity;
 
-// Lớp dữ liệu biểu diễn các thuộc tính lưu trữ của một dòng chi tiết hóa đơn.
+// Dữ liệu một dòng chi tiết hóa đơn, bao gồm cả thông tin bổ sung khi tra cứu.
 public class ChiTietHoaDon {
     private final String maHoaDon;
     private final String maThuCung;
@@ -9,6 +9,9 @@ public class ChiTietHoaDon {
     private final int soLuong;
     private final double donGia;
     private final double phanTramGiam;
+    private final String tenHang;
+    private final String loaiHang;
+    private final String tenThuCung;
 
     public ChiTietHoaDon(
             String maHoaDon,
@@ -18,6 +21,21 @@ public class ChiTietHoaDon {
             int soLuong,
             double donGia,
             double phanTramGiam) {
+        this(maHoaDon, maThuCung, maDichVu, maSanPham, soLuong, donGia, phanTramGiam,
+                null, null, null);
+    }
+
+    public ChiTietHoaDon(
+            String maHoaDon,
+            String maThuCung,
+            String maDichVu,
+            String maSanPham,
+            int soLuong,
+            double donGia,
+            double phanTramGiam,
+            String tenHang,
+            String loaiHang,
+            String tenThuCung) {
         this.maHoaDon = maHoaDon;
         this.maThuCung = maThuCung;
         this.maDichVu = maDichVu;
@@ -25,6 +43,9 @@ public class ChiTietHoaDon {
         this.soLuong = soLuong;
         this.donGia = donGia;
         this.phanTramGiam = phanTramGiam;
+        this.tenHang = tenHang;
+        this.loaiHang = loaiHang;
+        this.tenThuCung = tenThuCung;
     }
 
     public String getMaHoaDon() {
@@ -53,6 +74,28 @@ public class ChiTietHoaDon {
 
     public double getPhanTramGiam() {
         return phanTramGiam;
+    }
+
+    public String getMaHang() {
+        if (maSanPham != null) {
+            return maSanPham;
+        }
+        if (maDichVu != null) {
+            return maDichVu;
+        }
+        return maThuCung;
+    }
+
+    public String getTenHang() {
+        return tenHang;
+    }
+
+    public String getLoaiHang() {
+        return loaiHang;
+    }
+
+    public String getTenThuCung() {
+        return tenThuCung;
     }
 
     public double getThanhTien() {
