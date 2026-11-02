@@ -278,6 +278,8 @@ CREATE TABLE ChiTietPhieuNhap (
     donGiaNhap DECIMAL(18,2) NULL,
     trangThai BIT NULL DEFAULT 1,
     hanSuDung DATE NULL,
+    ngungKinhDoanh BIT NOT NULL DEFAULT 0,
+    soLuongDaXuLy INT NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_ChiTietPhieuNhap
         PRIMARY KEY (maPhieuNhap, maSanPham),
@@ -316,6 +318,30 @@ CREATE TABLE ChiTietPhieuKiemKe (
 
     CONSTRAINT FK_CTPKK_SanPham
         FOREIGN KEY (maSanPham) REFERENCES SanPham(maSanPham)
+);
+CREATE TABLE ChiTietPhieuKiemKeLo (
+    maPhieuKiemKe VARCHAR(10) NOT NULL,
+    maPhieuNhap VARCHAR(10) NOT NULL,
+    maSanPham VARCHAR(10) NOT NULL,
+    soLuongHeThong INT NOT NULL,
+    soLuongThucTe INT NULL,
+    trangThai BIT NULL,
+    CONSTRAINT PK_ChiTietPhieuKiemKeLo PRIMARY KEY (maPhieuKiemKe, maPhieuNhap, maSanPham),
+    CONSTRAINT FK_CTPKKL_Phieu FOREIGN KEY (maPhieuKiemKe) REFERENCES PhieuKiemKe(maPhieuKiemKe),
+    CONSTRAINT FK_CTPKKL_Lo FOREIGN KEY (maPhieuNhap, maSanPham)
+        REFERENCES ChiTietPhieuNhap(maPhieuNhap, maSanPham)
+);
+CREATE TABLE ChiTietXuLyHang (
+    maXuLy BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    maPhieuNhap VARCHAR(10) NOT NULL,
+    maSanPham VARCHAR(10) NOT NULL,
+    soLuong INT NOT NULL CHECK (soLuong > 0),
+    lyDo NVARCHAR(50) NOT NULL,
+    ghiChu NVARCHAR(250) NULL,
+    ngayXuLy DATETIME2 NOT NULL DEFAULT GETDATE(),
+    maNhanVien VARCHAR(10) NULL,
+    CONSTRAINT FK_XuLyHang_DotNhap FOREIGN KEY (maPhieuNhap, maSanPham)
+        REFERENCES ChiTietPhieuNhap(maPhieuNhap, maSanPham)
 );
 /* =======================================================
    GOI Y THUC AN - TICH HOP MigrationGoiYThucAn.sql

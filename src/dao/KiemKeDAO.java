@@ -43,6 +43,7 @@ public class KiemKeDAO {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
 
         damBaoCotKiemKe();
+        SanPhamDAO.damBaoCotKinhDoanh();
 
         // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
         // nhận tham số nếu có.
@@ -55,10 +56,9 @@ public class KiemKeDAO {
         // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
         // nhận tham số nếu có.
         String sqlChiTiet = """
-                INSERT INTO ChiTietPhieuKiemKe
-                (maPhieuKiemKe, maSanPham, soLuongHeThong,
-                 soLuongThucTe, trangThai)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO ChiTietPhieuKiemKeLo
+                (maPhieuKiemKe, maPhieuNhap, maSanPham, soLuongHeThong, soLuongThucTe, trangThai)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
@@ -81,8 +81,13 @@ public class KiemKeDAO {
                     daCapNhat = ps.executeUpdate();
                 }
                 if (daCapNhat > 0) {
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
+                        ps.setString(1, phieu.getMaPhieuKiemKe());
+                        ps.executeUpdate();
+                    }
                     try (PreparedStatement ps = con
-                            .prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
+                            .prepareStatement("DELETE FROM ChiTietPhieuKiemKeLo WHERE maPhieuKiemKe=?")) {
                         ps.setString(1, phieu.getMaPhieuKiemKe());
                         ps.executeUpdate();
                     }
@@ -100,13 +105,14 @@ public class KiemKeDAO {
                 try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
                     for (ChiTietPhieuKiemKe ct : chiTiet) {
                         ps.setString(1, phieu.getMaPhieuKiemKe());
-                        ps.setString(2, ct.getMaSanPham());
-                        ps.setInt(3, ct.getSoLuongHeThong());
+                        ps.setString(2, ct.getMaPhieuNhap());
+                        ps.setString(3, ct.getMaSanPham());
+                        ps.setInt(4, ct.getSoLuongHeThong());
                         if (ct.getSoLuongThucTe() == null)
-                            ps.setNull(4, Types.INTEGER);
+                            ps.setNull(5, Types.INTEGER);
                         else
-                            ps.setInt(4, ct.getSoLuongThucTe());
-                        ps.setBoolean(5, ct.isTrangThai());
+                            ps.setInt(5, ct.getSoLuongThucTe());
+                        ps.setBoolean(6, ct.isTrangThai());
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -129,6 +135,7 @@ public class KiemKeDAO {
     public void luuNhap(PhieuKiemKe phieu, List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
         damBaoCotKiemKe();
+        SanPhamDAO.damBaoCotKinhDoanh();
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
         try (Connection con = connectDB.getConnection()) {
@@ -156,21 +163,27 @@ public class KiemKeDAO {
                     }
                 }
                 try (PreparedStatement ps = con
-                        .prepareStatement("DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
+                        .prepareStatement("DELETE FROM ChiTietPhieuKiemKeLo WHERE maPhieuKiemKe=?")) {
                     ps.setString(1, phieu.getMaPhieuKiemKe());
                     ps.executeUpdate();
                 }
                 try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO ChiTietPhieuKiemKe(maPhieuKiemKe,maSanPham,soLuongHeThong,soLuongThucTe,trangThai) VALUES(?,?,?,?,?)")) {
+                        "DELETE FROM ChiTietPhieuKiemKe WHERE maPhieuKiemKe=?")) {
+                    ps.setString(1, phieu.getMaPhieuKiemKe());
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO ChiTietPhieuKiemKeLo(maPhieuKiemKe,maPhieuNhap,maSanPham,soLuongHeThong,soLuongThucTe,trangThai) VALUES(?,?,?,?,?,?)")) {
                     for (ChiTietPhieuKiemKe ct : chiTiet) {
                         ps.setString(1, phieu.getMaPhieuKiemKe());
-                        ps.setString(2, ct.getMaSanPham());
-                        ps.setInt(3, ct.getSoLuongHeThong());
+                        ps.setString(2, ct.getMaPhieuNhap());
+                        ps.setString(3, ct.getMaSanPham());
+                        ps.setInt(4, ct.getSoLuongHeThong());
                         if (ct.getSoLuongThucTe() == null)
-                            ps.setNull(4, Types.INTEGER);
+                            ps.setNull(5, Types.INTEGER);
                         else
-                            ps.setInt(4, ct.getSoLuongThucTe());
-                        ps.setBoolean(5, ct.isTrangThai());
+                            ps.setInt(5, ct.getSoLuongThucTe());
+                        ps.setBoolean(6, ct.isTrangThai());
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -221,11 +234,15 @@ public class KiemKeDAO {
     // Tham số maPhieu: mã phiếu.
     // Kết quả: đối tượng/giá trị kiểu ArrayList<ChiTietPhieuKiemKe>.
     public ArrayList<ChiTietPhieuKiemKe> layChiTiet(String maPhieu) throws SQLException {
+        SanPhamDAO.damBaoCotKinhDoanh();
         // ds: Danh sách chứa các phần tử kiểu ChiTietPhieuKiemKe.
         ArrayList<ChiTietPhieuKiemKe> ds = new ArrayList<>();
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
-        String sql = "SELECT k.maSanPham,s.tenSanPham,k.soLuongHeThong,k.soLuongThucTe,k.trangThai FROM ChiTietPhieuKiemKe k JOIN SanPham s ON s.maSanPham=k.maSanPham WHERE k.maPhieuKiemKe=? ORDER BY k.maSanPham";
+        String sql = "SELECT k.maSanPham,s.tenSanPham,k.maPhieuNhap,pn.ngayNhap,k.soLuongHeThong,k.soLuongThucTe,k.trangThai "
+                + "FROM ChiTietPhieuKiemKeLo k JOIN SanPham s ON s.maSanPham=k.maSanPham "
+                + "JOIN PhieuNhapKho pn ON pn.maPhieuNhap=k.maPhieuNhap "
+                + "WHERE k.maPhieuKiemKe=? ORDER BY k.maSanPham,k.maPhieuNhap";
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
         try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
@@ -236,10 +253,13 @@ public class KiemKeDAO {
                     x.setMaPhieuKiemKe(maPhieu);
                     x.setMaSanPham(r.getString(1));
                     x.setTenSanPham(r.getString(2));
-                    x.setSoLuongHeThong(r.getInt(3));
-                    int thuc = r.getInt(4);
+                    x.setMaPhieuNhap(r.getString(3));
+                    java.sql.Timestamp ngayNhap = r.getTimestamp(4);
+                    x.setNgayNhap(ngayNhap == null ? null : ngayNhap.toLocalDateTime().toLocalDate());
+                    x.setSoLuongHeThong(r.getInt(5));
+                    int thuc = r.getInt(6);
                     x.setSoLuongThucTe(r.wasNull() ? null : thuc);
-                    x.setTrangThai(r.getBoolean(5));
+                    x.setTrangThai(r.getBoolean(7));
                     ds.add(x);
                 }
             }
@@ -252,6 +272,7 @@ public class KiemKeDAO {
      * luon khop).
      */
     public ArrayList<SanPham> laySanPhamKemTon() throws SQLException {
+        SanPhamDAO.damBaoCotKinhDoanh();
 
         // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
@@ -259,12 +280,26 @@ public class KiemKeDAO {
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = """
-                SELECT sp.maSanPham,
-                       sp.tenSanPham,
-                """ + SanPhamDAO.BIEU_THUC_TON + """
-                       AS tonKho
-                FROM SanPham sp
-                ORDER BY sp.maSanPham
+                WITH NguonLo AS (
+                  SELECT ct.maSanPham,sp.tenSanPham,ct.maPhieuNhap,pn.ngayNhap,ct.hanSuDung,
+                         CASE WHEN ISNULL(ct.soLuongNhap,0)-ISNULL(ct.soLuongDaXuLy,0)<0 THEN 0
+                              ELSE ISNULL(ct.soLuongNhap,0)-ISNULL(ct.soLuongDaXuLy,0) END AS soLuongNhap,
+                         ISNULL((SELECT SUM(hd.soLuong) FROM ChiTietHoaDon hd WHERE hd.maSanPham=ct.maSanPham),0) AS daBan,
+                         ISNULL((SELECT SUM(kk.soLuongThucTe-kk.soLuongHeThong) FROM ChiTietPhieuKiemKe kk JOIN PhieuKiemKe p ON p.maPhieuKiemKe=kk.maPhieuKiemKe WHERE kk.maSanPham=ct.maSanPham AND p.trangThai=1 AND kk.soLuongThucTe IS NOT NULL),0) AS dieuChinhCu,
+                         ISNULL((SELECT SUM(kl.soLuongThucTe-kl.soLuongHeThong) FROM ChiTietPhieuKiemKeLo kl JOIN PhieuKiemKe p ON p.maPhieuKiemKe=kl.maPhieuKiemKe WHERE kl.maPhieuNhap=ct.maPhieuNhap AND kl.maSanPham=ct.maSanPham AND p.trangThai=1 AND kl.soLuongThucTe IS NOT NULL),0) AS dieuChinhLo
+                  FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn ON pn.maPhieuNhap=ct.maPhieuNhap JOIN SanPham sp ON sp.maSanPham=ct.maSanPham
+                  WHERE pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1
+                ), Lo AS (
+                  SELECT *,SUM(soLuongNhap) OVER(PARTITION BY maSanPham ORDER BY ngayNhap,maPhieuNhap ROWS UNBOUNDED PRECEDING) AS tonLuyKe
+                  FROM NguonLo
+                ), ConLai AS (
+                  SELECT *, CASE WHEN daBan>=tonLuyKe THEN 0 WHEN daBan<=tonLuyKe-soLuongNhap THEN soLuongNhap ELSE tonLuyKe-daBan END
+                         + CASE WHEN tonLuyKe=soLuongNhap THEN dieuChinhCu ELSE 0 END + dieuChinhLo AS tonKho
+                  FROM Lo
+                )
+                SELECT maSanPham,tenSanPham,maPhieuNhap,CAST(ngayNhap AS date) AS ngayNhap,hanSuDung,tonKho
+                FROM ConLai WHERE tonKho>0
+                ORDER BY maSanPham,ngayNhap,maPhieuNhap
                 """;
 
         try (
@@ -276,6 +311,11 @@ public class KiemKeDAO {
                 SanPham sp = new SanPham();
                 sp.setMaSanPham(rs.getString("maSanPham"));
                 sp.setTenSanPham(rs.getString("tenSanPham"));
+                sp.setMaPhieuNhap(rs.getString("maPhieuNhap"));
+                java.sql.Date ngayNhap = rs.getDate("ngayNhap");
+                sp.setNgayNhap(ngayNhap == null ? null : ngayNhap.toLocalDate());
+                java.sql.Date hanSuDung = rs.getDate("hanSuDung");
+                sp.setHanSuDung(hanSuDung == null ? null : hanSuDung.toLocalDate());
                 sp.setTonKho(rs.getInt("tonKho"));
                 list.add(sp);
             }

@@ -6,16 +6,10 @@ import entity.PhanQuyen;
 import entity.SanPham;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
- * DAO cua man hinh "Danh muc": danh muc + cac thao tac ma form Them/Sua danh
- * muc
- * can (liet ke san pham trong danh muc, ghi them so luong nhap kho).
+ * DAO cua man hinh "Danh muc": tìm kiếm và lưu danh mục sản phẩm.
  */
 public class DanhMucDAO {
 
@@ -24,6 +18,7 @@ public class DanhMucDAO {
     // Tham số tuKhoa: từ khóa tìm kiếm.
     // Kết quả: đối tượng/giá trị kiểu ArrayList<DanhMuc>.
     public ArrayList<DanhMuc> timKiem(String tuKhoa) throws SQLException {
+        SanPhamDAO.damBaoCotKinhDoanh();
 
         // list: Danh sách chứa các phần tử kiểu DanhMuc.
         ArrayList<DanhMuc> list = new ArrayList<>();
@@ -237,6 +232,7 @@ public class DanhMucDAO {
 
     /** San pham thuoc 1 danh muc, kem ton kho hien tai. */
     public ArrayList<SanPham> timSanPhamTheoDanhMuc(String maDanhMuc) throws SQLException {
+        SanPhamDAO.damBaoCotKinhDoanh();
 
         // list: Danh sách chứa các phần tử kiểu SanPham.
         ArrayList<SanPham> list = new ArrayList<>();
@@ -280,96 +276,6 @@ public class DanhMucDAO {
         }
 
         return list;
-    }
-
-    /**
-     * Ghi them so luong cho cac san pham: tao phieu nhap kho DA HOAN TAT,
-     * moi nha cung cap 1 phieu (vi 1 phieu chi co 1 nha cung cap),
-     * don gia nhap = gia nhap hien tai cua san pham. 1 giao dich.
-     * soLuong.get(i) la so luong them cho sanPham.get(i); dong <= 0 bi bo qua.
-     */
-    public void nhapBoSung(List<SanPham> sanPham, List<Integer> soLuong,
-            String maNhanVien) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
-
-        // Gom theo nha cung cap
-        // theoNcc: Bảng ánh xạ khóa đến giá trị dùng cho theo NCC.
-        Map<String, List<Integer>> theoNcc = new LinkedHashMap<>();
-
-        for (int i = 0; i < sanPham.size(); i++) {
-            if (soLuong.get(i) != null && soLuong.get(i) > 0) {
-                theoNcc.computeIfAbsent(sanPham.get(i).getMaNhaCungCap(),
-                        k -> new ArrayList<>()).add(i);
-            }
-        }
-
-        if (theoNcc.isEmpty()) {
-            return;
-        }
-
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String sqlPhieu = """
-                INSERT INTO PhieuNhapKho
-                (maPhieuNhap, ngayNhap, trangThai, maNhanVien, maNhaCungCap)
-                VALUES (?, ?, 1, ?, ?)
-                """;
-
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String sqlChiTiet = """
-                INSERT INTO ChiTietPhieuNhap
-                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai)
-                VALUES (?, ?, ?, ?, 1)
-                """;
-
-        // Ma phieu ke tiep; moi phieu trong lan nay +1
-        int so = Integer.parseInt(
-                taoMa("PhieuNhapKho", "maPhieuNhap", "PN", 3).substring(2));
-
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection con = connectDB.getConnection()) {
-
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-            // nhau.
-            con.setAutoCommit(false);
-
-            try {
-                for (Map.Entry<String, List<Integer>> e : theoNcc.entrySet()) {
-
-                    // maPhieu: Lưu mã phiếu.
-                    String maPhieu = String.format("PN%03d", so++);
-
-                    try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
-                        ps.setString(1, maPhieu);
-                        ps.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
-                        ps.setString(3, maNhanVien);
-                        ps.setString(4, e.getKey());
-                        ps.executeUpdate();
-                    }
-
-                    try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
-                        for (int i : e.getValue()) {
-                            ps.setString(1, maPhieu);
-                            ps.setString(2, sanPham.get(i).getMaSanPham());
-                            ps.setInt(3, soLuong.get(i));
-                            ps.setDouble(4, sanPham.get(i).getGiaNhap());
-                            ps.addBatch();
-                        }
-                        ps.executeBatch();
-                    }
-                }
-
-                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
-                con.commit();
-
-            } catch (SQLException ex) {
-                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
-                con.rollback();
-                throw ex;
-            }
-        }
     }
 
     // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co

@@ -1,0 +1,316 @@
+package UI;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
+import dao.TaiKhoanDAO;
+import entity.TaiKhoan;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class DangNhapUI extends JFrame implements ActionListener {
+
+        private JTextField txtTaiKhoan;
+        private JPasswordField txtMatKhau;
+        private JButton btnDangNhap;
+
+        // NAVY: Màu dùng cho giao diện: xanh đậm.
+        private final Color NAVY = new Color(18, 48, 82);
+        // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
+        private final Color LIGHT_BLUE = new Color(229, 241, 252);
+        // GREEN: Màu dùng cho giao diện: xanh lá.
+        private final Color GREEN = new Color(72, 196, 62);
+
+        private TaiKhoanDAO taiKhoanDAO;
+
+        // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
+        public DangNhapUI() {
+
+                setTitle("Pet Shop Pro - Đăng Nhập");
+                setSize(1000, 570);
+                setLocationRelativeTo(null);
+                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                setResizable(false);
+
+                taiKhoanDAO = new TaiKhoanDAO();
+
+                JPanel pnlMainPanel = new JPanel(new GridLayout(1, 2));
+
+                pnlMainPanel.add(createLeftPanel());
+                pnlMainPanel.add(createRightPanel());
+
+                add(pnlMainPanel);
+        }
+
+        private JPanel createLeftPanel() {
+
+                JPanel pnlKhung = new JPanel(new BorderLayout());
+                pnlKhung.setBackground(NAVY);
+
+                pnlKhung.setBorder(
+                                new EmptyBorder(
+                                                35, 45, 30, 45));
+
+                JPanel pnlContent = new JPanel(new BorderLayout(0, 20));
+                pnlContent.setOpaque(false);
+                JPanel pnlBranding = new JPanel();
+                pnlBranding.setOpaque(false);
+
+                pnlBranding.setLayout(new BoxLayout(pnlBranding, BoxLayout.Y_AXIS));
+                // Ten he thong
+                JLabel lblTen = new JLabel("PET SHOP PRO");
+                lblTen.setForeground(Color.WHITE);
+                lblTen.setFont(new Font("Segoe UI", Font.BOLD, 26));
+                lblTen.setAlignmentX(Component.CENTER_ALIGNMENT);
+                // Tieu de
+                JLabel lblTieuDe2 = new JLabel("HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
+                lblTieuDe2.setForeground(new Color(255, 105, 90));
+                lblTieuDe2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                lblTieuDe2.setAlignmentX(Component.CENTER_ALIGNMENT);
+                // lblSlogan
+                JLabel lblSlogan = new JLabel(
+                                "<html>" + "<div style='text-align:center;'>"
+                                                + "Vận hành gọn gàng<br>"
+                                                + "Chăm thú cưng tận tâm"
+                                                + "</div>"
+                                                + "</html>");
+                lblSlogan.setForeground(Color.WHITE);
+                lblSlogan.setFont(new Font("Segoe UI", Font.ITALIC, 18));
+                lblSlogan.setAlignmentX(Component.CENTER_ALIGNMENT);
+                lblSlogan.setHorizontalAlignment(SwingConstants.CENTER);
+                pnlBranding.add(Box.createVerticalStrut(2));
+                pnlBranding.add(lblTen);
+                pnlBranding.add(Box.createVerticalStrut(12));
+                pnlBranding.add(lblTieuDe2);
+                pnlBranding.add(Box.createVerticalStrut(12));
+                pnlBranding.add(lblSlogan);
+                pnlContent.add(pnlBranding, BorderLayout.NORTH);
+                JPanel pnlTinhNang = new JPanel(new GridBagLayout());
+                pnlTinhNang.setBackground(new Color(169, 194, 218));
+                pnlTinhNang.setBorder(new EmptyBorder(15, 18, 15, 18));
+                // dsTinhNang: Mảng lưu danh sách tính năng.
+                JLabel lblTinhNang = new JLabel(
+                                "<html>"
+                                                + "<div>"
+                                                + "• Thanh toán tại quầy - Thanh toán nhanh<br><br>"
+                                                + "• Lịch Spa - Điều phối phòng và thợ<br><br>"
+                                                + "• Kho hàng - Theo dõi tồn và nhập hàng<br><br>"
+                                                + "• Báo cáo - Đối soát theo ca"
+                                                + "</div>"
+                                                + "</html>");
+
+                lblTinhNang.setForeground(Color.WHITE);
+                lblTinhNang.setFont(new Font("Segoe UI", Font.BOLD, 18));
+                pnlTinhNang.add(lblTinhNang);
+
+                pnlContent.add(pnlTinhNang, BorderLayout.CENTER);
+                JPanel pnlStatus = new JPanel(
+                                new FlowLayout(
+                                                FlowLayout.LEFT,
+                                                5,
+                                                0));
+
+                pnlStatus.setOpaque(false);
+
+                JLabel lblCham = new JLabel("●");
+                lblCham.setForeground(new Color(70, 220, 80));
+                lblCham.setFont(new Font("Arial", Font.BOLD, 18));
+                JLabel lblTrangThai2 = new JLabel("Máy chủ Pet Shop Pro đang hoạt động ổn định");
+                lblTrangThai2.setForeground(Color.WHITE);
+                lblTrangThai2.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+                pnlStatus.add(lblCham);
+                pnlStatus.add(lblTrangThai2);
+                pnlContent.add(pnlStatus, BorderLayout.SOUTH);
+                // THEM CONTENT VAO PANEL
+                pnlKhung.add(pnlContent, BorderLayout.CENTER);
+                return pnlKhung;
+        }
+
+        private JPanel createRightPanel() {
+                JPanel pnlBackground = new JPanel(new GridBagLayout());
+                pnlBackground.setBackground(LIGHT_BLUE);
+                JPanel pnlCard = new JPanel();
+                pnlCard.setBackground(Color.WHITE);
+                pnlCard.setPreferredSize(new Dimension(360, 395));
+                pnlCard.setBorder(new EmptyBorder(35, 35, 35, 35));
+                pnlCard.setLayout(new BoxLayout(pnlCard, BoxLayout.Y_AXIS));
+                JLabel lblTitle2 = new JLabel("Đăng Nhập");
+                lblTitle2.setFont(new Font("Segoe UI", Font.BOLD, 27));
+
+                lblTitle2.setAlignmentX(Component.LEFT_ALIGNMENT);
+                pnlCard.add(lblTitle2);
+                pnlCard.add(Box.createVerticalStrut(28));
+                JLabel lblTaiKhoan2 = new JLabel("TÀI KHOẢN");
+                lblTaiKhoan2.setForeground(Color.GRAY);
+                lblTaiKhoan2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblTaiKhoan2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                pnlCard.add(lblTaiKhoan2);
+                pnlCard.add(Box.createVerticalStrut(7));
+                txtTaiKhoan = new JTextField();
+
+                txtTaiKhoan.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                txtTaiKhoan.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+
+                txtTaiKhoan.setAlignmentX(Component.LEFT_ALIGNMENT);
+                // Khi nguoi dung nhap chu:
+                // tu dong chuyen thanh chu thuong
+                // DocumentListener: tự đổi tên đăng nhập thành chữ thường và bỏ ký tự ngoài
+                // a-z, 0-9.
+                txtTaiKhoan.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                        private void locTaiKhoan() {
+                                SwingUtilities.invokeLater(() -> {
+                                        String hienTai = txtTaiKhoan.getText();
+                                        String hopLe = hienTai.toLowerCase(java.util.Locale.ROOT)
+                                                        .replaceAll("[^a-z0-9]", "");
+                                        if (!hienTai.equals(hopLe))
+                                                txtTaiKhoan.setText(hopLe);
+                                });
+                        }
+
+                        @Override
+                        public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                                locTaiKhoan();
+                        }
+
+                        @Override
+                        public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                                locTaiKhoan();
+                        }
+
+                        @Override
+                        public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                                locTaiKhoan();
+                        }
+                });
+                pnlCard.add(txtTaiKhoan);
+                pnlCard.add(Box.createVerticalStrut(18));
+
+                JLabel lblMatKhau = new JLabel("MẬT KHẨU");
+                lblMatKhau.setForeground(Color.GRAY);
+                lblMatKhau.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                lblMatKhau.setAlignmentX(Component.LEFT_ALIGNMENT);
+                pnlCard.add(lblMatKhau);
+                pnlCard.add(Box.createVerticalStrut(7));
+
+                txtMatKhau = new JPasswordField();
+                txtMatKhau.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                txtMatKhau.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+                txtMatKhau.setAlignmentX(Component.LEFT_ALIGNMENT);
+                pnlCard.add(txtMatKhau);
+                // Khoang cach giua truong mat khau va nut dang nhap.
+                pnlCard.add(Box.createVerticalStrut(20));
+                btnDangNhap = new JButton("ĐĂNG NHẬP");
+                btnDangNhap.setBackground(GREEN);
+                btnDangNhap.setForeground(Color.WHITE);
+                btnDangNhap.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                btnDangNhap.setFocusPainted(false);
+                btnDangNhap.setBorderPainted(false);
+                btnDangNhap.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
+                btnDangNhap.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+                btnDangNhap.addActionListener(this);
+
+                txtMatKhau.addActionListener(this);
+
+                pnlCard.add(btnDangNhap);
+
+                pnlBackground.add(pnlCard);
+
+                return pnlBackground;
+        }
+
+        // Kiểm tra thông tin đăng nhập và mở màn hình tương ứng khi xác thực thành
+        // công.
+        private void xuLyDangNhap() {
+
+                // taiKhoan: Đọc nội dung chữ từ ô nhập để xử lý tài khoản.
+                String taiKhoan = txtTaiKhoan.getText().trim().toLowerCase();
+
+                String matKhau = new String(txtMatKhau.getPassword());
+
+                // Cho phép mở ứng dụng nhanh khi cả hai ô đăng nhập để trống.
+                if (taiKhoan.isEmpty() && matKhau.isEmpty()) {
+                        try {
+                                TrangChuUI trangChu = new TrangChuUI("NV001", "Dang Dinh An", "Quan ly");
+                                trangChu.setVisible(true);
+                                dispose();
+                        } catch (RuntimeException ex) {
+                                ex.printStackTrace();
+                                JOptionPane.showMessageDialog(this,
+                                                "Không thể mở Trang chủ!\nChi tiết: " + ex.getMessage(),
+                                                "Lỗi mở giao diện", JOptionPane.ERROR_MESSAGE);
+                        }
+                        return;
+                }
+
+                if (taiKhoan.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Vui lòng nhập tài khoản!", "Thông báo",
+                                        JOptionPane.WARNING_MESSAGE);
+                        txtTaiKhoan.requestFocus();
+                        return;
+                }
+
+                // kiểm tra mật khẩu
+                if (matKhau.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Vui lòng nhập mật khẩu!", "Thong bao",
+                                        JOptionPane.WARNING_MESSAGE);
+                        txtMatKhau.requestFocus();
+                        return;
+                }
+
+                // Xac thuc khong yeu cau phien dang nhap.
+                // getAll() chi dung cho man hinh QUAN LY TAI KHOAN,
+                // vi ham do yeu cau quyen TAI_KHOAN.
+                TaiKhoan tk;
+                try {
+                        tk = taiKhoanDAO.xacThuc(taiKhoan, matKhau);
+                } catch (java.sql.SQLException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Không thể kết nối hoặc truy vấn SQL Server!\nChi tiết: " + ex.getMessage(),
+                                        "Lỗi cơ sở dữ liệu",
+                                        JOptionPane.ERROR_MESSAGE);
+                        return;
+                }
+                if (tk == null) {
+                        JOptionPane.showMessageDialog(
+                                        this,
+                                        "Tài khoản hoặc mật khẩu không chính xác!",
+                                        "Đăng nhập thất bại",
+                                        JOptionPane.ERROR_MESSAGE);
+                        txtMatKhau.selectAll();
+                        txtMatKhau.requestFocus();
+                        return;
+                }
+                // Khoi tao trang chu truoc khi dong cua so dang nhap:
+                // neu trang chu gap loi thi nguoi dung van nhin thay thong bao.
+                try {
+                        TrangChuUI trangChu = new TrangChuUI(tk.getMaNhanVien(), tk.getHoTen(), tk.getVaiTro());
+                        trangChu.setVisible(true);
+                        dispose();
+                        JOptionPane.showMessageDialog(trangChu, "Đăng nhập thành công!", "Thông báo",
+                                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (RuntimeException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(this,
+                                        "Đã xác thực tài khoản nhưng không thể mở Trang chủ!\nChi tiết: "
+                                                        + ex.getMessage(),
+                                        "Lỗi mở giao diện", JOptionPane.ERROR_MESSAGE);
+                }
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+                // Cả nhấn nút và Enter trong ô mật khẩu đều đăng nhập như trước.
+                Object nguon = e.getSource();
+                if (nguon == btnDangNhap || nguon == txtMatKhau) {
+                        xuLyDangNhap();
+                }
+        }
+
+}

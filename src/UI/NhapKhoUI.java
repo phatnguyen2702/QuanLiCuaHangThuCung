@@ -1,7 +1,7 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.PhienLamViec;
+import UI.TrangChuUI.UIStyle;
 import dao.NhapKhoDAO;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
@@ -14,39 +14,30 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.YearMonth;
-import java.time.format.TextStyle;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.function.Consumer;
 
 /**
  * Man hinh "Nhap kho" - Lap phieu nhap hang (nam trong khung TrangChu).
  * Cac pnlForm2 phu (nha cung cap, chi tiet nhap, phieu nhap nhap) la lop long o
  * cuoi file.
  */
-public class NhapKhoPanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+public class NhapKhoUI extends JFrame implements ActionListener {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
 
     // dao: Đối tượng truy cập dữ liệu nhập kho.
     private final NhapKhoDAO dao = new NhapKhoDAO();
     // moTraCuu: Hành động được gọi khi cần mở màn hình tra cứu.
     private final Runnable moTraCuu;
 
-    // DINH_DANG_NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
+    // DINH_DANG_NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển
+    // giữa dữ liệu thời gian và chuỗi.
     private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ---- thong tin phieu ----
@@ -93,14 +84,14 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
     private boolean daNapDongMau = false;
 
     // Khởi tạo đối tượng với trạng thái ban đầu.
-    public NhapKhoPanel() {
+    public NhapKhoUI() {
         this(() -> {
         });
     }
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số moTraCuu: mở màn hình tra cứu.
-    public NhapKhoPanel(Runnable moTraCuu) {
+    public NhapKhoUI(Runnable moTraCuu) {
         this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
@@ -169,7 +160,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
     private void themHang(JPanel pnlThe, int dong, String nhan1, JComponent c1,
             String nhan2, JComponent c2) {
 
-        // g: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // g: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints g = new GridBagConstraints();
         g.gridy = dong;
         g.anchor = GridBagConstraints.WEST;
@@ -231,7 +223,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
 
         UIStyle.taoBang(tblDuLieu2, 2, 3, 4);
 
-        // Khong xuat truc tiep tblDuLieu2 chua luu: chung tu phai lay tu SQL theo ma phieu.
+        // Khong xuat truc tiep tblDuLieu2 chua luu: chung tu phai lay tu SQL theo ma
+        // phieu.
         // lblHuongDanPdf: Nhãn hiển thị: Xuất PDF: Tra cứu nhập kho → Xem chi tiết.
         JLabel lblHuongDanPdf = new JLabel("Xuất PDF: Tra cứu nhập kho → Xem chi tiết");
         lblHuongDanPdf.setFont(new Font("Segoe UI", Font.ITALIC, 12));
@@ -297,10 +290,13 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         }
     }
 
-    /** Điền sẵn vài mặt hàng thật vào phiếu nháp để màn hình có dữ liệu minh họa. */
+    /**
+     * Điền sẵn vài mặt hàng thật vào phiếu nháp để màn hình có dữ liệu minh họa.
+     */
     private void napDongMau() {
         NhaCungCap ncc = (NhaCungCap) cmbNhaCungCap.getSelectedItem();
-        if (ncc == null) return;
+        if (ncc == null)
+            return;
 
         try {
             // sanPham: Lưu sản phẩm; phần tử có kiểu SanPham.
@@ -797,7 +793,6 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
             }
             cmbSanPham.setFont(UIStyle.font(Font.PLAIN, 13));
             spnSoLuong.setFont(UIStyle.font(Font.PLAIN, 13));
-            txtDonGia.setEditable(false);
 
             // Chon san pham -> tu dien gia nhap dang co trong tblDuLieu2 SanPham
             cmbSanPham.addActionListener(e -> {
@@ -918,9 +913,12 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
                     selected = LocalDate.parse(txtHanSuDung.getText().trim(),
                             DateTimeFormatter.ofPattern("dd/MM/uuuu"));
                 }
-            } catch (java.time.format.DateTimeParseException ignored) { }
-            LichChonNgayPopup.mo(anchor, selected, date -> txtHanSuDung.setText(
-                    date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))));
+            } catch (java.time.format.DateTimeParseException ignored) {
+            }
+            LocalDate date = LichChonNgay.chonNgayLichHen(anchor, selected, false);
+            if (date != null) {
+                txtHanSuDung.setText(date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu")));
+            }
         }
     }
 
@@ -934,7 +932,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
      */
     private static class PhieuNhapNhapDialog extends JDialog {
 
-        // NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
+        // NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu
+        // thời gian và chuỗi.
         private static final DateTimeFormatter NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         // dao: Đối tượng truy cập dữ liệu nhập kho.
@@ -1125,108 +1124,4 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         }
     }
 
-    /** Lịch bật lên dùng chung cho hạn sử dụng và bộ lọc tra cứu kho. */
-    static final class LichChonNgayPopup extends JPopupMenu {
-        private final JPanel pnlNgay = new JPanel(new GridLayout(0, 7, 2, 2));
-        private final JComboBox<String> cmbThang = new JComboBox<>();
-        private final JSpinner spnNam;
-        private final Consumer<LocalDate> chonNgay;
-        private YearMonth thangHienTai;
-
-        static void mo(Component anchor, LocalDate selected, Consumer<LocalDate> chonNgay) {
-            LichChonNgayPopup popup = new LichChonNgayPopup(selected, chonNgay);
-            popup.show(anchor, 0, anchor.getHeight());
-        }
-
-        private LichChonNgayPopup(LocalDate selected, Consumer<LocalDate> chonNgay) {
-            this.chonNgay = chonNgay;
-            LocalDate base = selected == null ? LocalDate.now() : selected;
-            thangHienTai = YearMonth.from(base);
-            spnNam = new JSpinner(new SpinnerNumberModel(base.getYear(), 1900, 2200, 1));
-            setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(190, 198, 208)),
-                    BorderFactory.createEmptyBorder(8, 8, 6, 8)));
-            setLayout(new BorderLayout(0, 6));
-
-            JPanel pnlTieuDe = new JPanel(new BorderLayout(5, 0));
-            JButton btnTruoc = new JButton("‹");
-            JButton btnSau = new JButton("›");
-            for (JButton button : new JButton[] { btnTruoc, btnSau }) {
-                button.setFocusable(false);
-                button.setMargin(new Insets(2, 7, 2, 7));
-            }
-            for (Month month : Month.values()) {
-                cmbThang.addItem(month.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("vi-VN")));
-            }
-            cmbThang.setSelectedIndex(thangHienTai.getMonthValue() - 1);
-            JPanel pnlThangNam = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-            pnlThangNam.add(cmbThang);
-            pnlThangNam.add(spnNam);
-            pnlTieuDe.add(btnTruoc, BorderLayout.WEST);
-            pnlTieuDe.add(pnlThangNam, BorderLayout.CENTER);
-            pnlTieuDe.add(btnSau, BorderLayout.EAST);
-
-            JPanel pnlThu = new JPanel(new GridLayout(1, 7, 2, 2));
-            for (String tenThu : new String[] { "CN", "T2", "T3", "T4", "T5", "T6", "T7" }) {
-                pnlThu.add(new JLabel(tenThu, SwingConstants.CENTER));
-            }
-            JPanel pnlLich = new JPanel(new BorderLayout(0, 2));
-            pnlLich.add(pnlThu, BorderLayout.NORTH);
-            pnlLich.add(pnlNgay, BorderLayout.CENTER);
-
-            JPanel pnlCuoi = new JPanel(new BorderLayout());
-            JButton btnXoa = new JButton("Xóa");
-            JButton btnHomNay = new JButton("Hôm nay");
-            btnXoa.setForeground(new Color(35, 105, 175));
-            btnHomNay.setForeground(new Color(35, 105, 175));
-            pnlCuoi.add(btnXoa, BorderLayout.WEST);
-            pnlCuoi.add(btnHomNay, BorderLayout.EAST);
-            add(pnlTieuDe, BorderLayout.NORTH);
-            add(pnlLich, BorderLayout.CENTER);
-            add(pnlCuoi, BorderLayout.SOUTH);
-
-            btnTruoc.addActionListener(e -> doiThang(-1));
-            btnSau.addActionListener(e -> doiThang(1));
-            cmbThang.addActionListener(e -> capNhatThangTuDieuKhien());
-            spnNam.addChangeListener(e -> capNhatThangTuDieuKhien());
-            btnXoa.addActionListener(e -> { chonNgay.accept(null); setVisible(false); });
-            btnHomNay.addActionListener(e -> { chonNgay.accept(LocalDate.now()); setVisible(false); });
-            veLich(selected);
-        }
-
-        private void doiThang(int delta) {
-            thangHienTai = thangHienTai.plusMonths(delta);
-            cmbThang.setSelectedIndex(thangHienTai.getMonthValue() - 1);
-            spnNam.setValue(thangHienTai.getYear());
-            veLich(null);
-        }
-
-        private void capNhatThangTuDieuKhien() {
-            if (cmbThang.getSelectedIndex() < 0) return;
-            thangHienTai = YearMonth.of((Integer) spnNam.getValue(), cmbThang.getSelectedIndex() + 1);
-            veLich(null);
-        }
-
-        private void veLich(LocalDate selected) {
-            pnlNgay.removeAll();
-            LocalDate ngayDau = thangHienTai.atDay(1);
-            int lech = ngayDau.getDayOfWeek().getValue() % 7;
-            LocalDate ngayDauLich = ngayDau.minusDays(lech);
-            for (int i = 0; i < 42; i++) {
-                LocalDate date = ngayDauLich.plusDays(i);
-                JButton button = new JButton(String.valueOf(date.getDayOfMonth()));
-                button.setMargin(new Insets(3, 4, 3, 4));
-                button.setBorderPainted(false);
-                button.setFocusPainted(false);
-                button.setOpaque(true);
-                button.setBackground(date.equals(selected) ? new Color(61, 105, 163) : Color.WHITE);
-                button.setForeground(date.equals(selected) ? Color.WHITE
-                        : date.getMonthValue() == thangHienTai.getMonthValue()
-                                ? new Color(35, 45, 60) : new Color(155, 160, 168));
-                button.addActionListener(e -> { chonNgay.accept(date); setVisible(false); });
-                pnlNgay.add(button);
-            }
-            pnlNgay.revalidate();
-            pnlNgay.repaint();
-        }
-    }
 }

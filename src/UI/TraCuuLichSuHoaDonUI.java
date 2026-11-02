@@ -50,11 +50,11 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
 import dao.HoaDonDAO;
-import entity.ChiTietHoaDonTraCuu;
-import entity.HoaDonTraCuu;
+import entity.ChiTietHoaDon;
+import entity.HoaDon;
 
 // Giao diện/chức năng tra cứu lịch sử hóa đơn của ứng dụng.
-public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseListener {
+public class TraCuuLichSuHoaDonUI extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -64,19 +64,19 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
     private static final Color GREEN = new Color(25, 157, 107);
     // BORDER: Màu dùng cho giao diện: viền.
     private static final Color BORDER = new Color(210, 220, 230);
-    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
-    private static final DateTimeFormatter DATE_TIME =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
+    // liệu thời gian và chuỗi.
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     // MONEY: Bộ định dạng số/tiền dùng để hiển thị dữ liệu trên giao diện.
-    private static final NumberFormat MONEY =
-            NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    private static final NumberFormat MONEY = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
     // dao: Đối tượng truy cập dữ liệu hóa đơn.
     private final HoaDonDAO dao = new HoaDonDAO();
     // quayLai: Hành động được gọi khi cần quay lại màn hình trước.
     private final Runnable quayLai;
     // pnlNoiDung: Phần giao diện được TrangChu nhúng vào CardLayout.
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout());
-    // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng chứa.
+    // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng
+    // chứa.
     private final CardLayout cardLayout = new CardLayout();
     // pnlScreens: Khung chứa thành phần giao diện các màn hình.
     private final JPanel pnlScreens = new JPanel(cardLayout);
@@ -121,13 +121,13 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
     // lblPhuongThuc: Nhãn hiển thị phương thức thanh toán.
     private final JLabel lblPhuongThuc = new JLabel();
     // hoaDonDangXem: Dữ liệu hóa đơn đang xem.
-    private HoaDonTraCuu hoaDonDangXem;
+    private HoaDon hoaDonDangXem;
     // dangCapNhatGoiYMaHoaDon: Cờ cho biết đang cập nhật gợi ý mã hóa đơn.
     private boolean dangCapNhatGoiYMaHoaDon;
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số quayLai: quay lại màn hình trước.
-    public TraCuuLichSuHoaDon(Runnable quayLai) {
+    public TraCuuLichSuHoaDonUI(Runnable quayLai) {
         this.quayLai = quayLai;
         setTitle("Tra cứu lịch sử hóa đơn");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -577,11 +577,12 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
             // tuKhoa: Lưu từ khóa tìm kiếm.
             String tuKhoa = layTuKhoa();
             // hoaDons: Dữ liệu hóa đơn tra cứu.
-            List<HoaDonTraCuu> hoaDons = dao.timHoaDon(tuKhoa);
-            List<HoaDonTraCuu> hoaDonGoiY = tuKhoa.isEmpty()
-                    ? hoaDons : dao.timHoaDon("");
+            List<HoaDon> hoaDons = dao.timHoaDon(tuKhoa);
+            List<HoaDon> hoaDonGoiY = tuKhoa.isEmpty()
+                    ? hoaDons
+                    : dao.timHoaDon("");
             danhSachMaHoaDon.clear();
-            for (HoaDonTraCuu hoaDon : hoaDonGoiY) {
+            for (HoaDon hoaDon : hoaDonGoiY) {
                 danhSachMaHoaDon.add(hoaDon.getMaHoaDon());
             }
             invoiceTableModel.setInvoices(hoaDons);
@@ -610,12 +611,12 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
 
     // Mở chi tiết.
     // Tham số selected: trạng thái được chọn.
-    private void moChiTiet(HoaDonTraCuu selected) {
+    private void moChiTiet(HoaDon selected) {
         if (selected == null) {
             return;
         }
         try {
-            HoaDonTraCuu fullInvoice = dao.layChiTietHoaDon(selected.getMaHoaDon());
+            HoaDon fullInvoice = dao.layChiTietHoaDon(selected.getMaHoaDon());
             if (fullInvoice == null) {
                 JOptionPane.showMessageDialog(
                         pnlNoiDung,
@@ -639,7 +640,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
 
     // Hiển thị thông tin chi tiết.
     // Tham số invoice: hóa đơn.
-    private void hienThongTinChiTiet(HoaDonTraCuu invoice) {
+    private void hienThongTinChiTiet(HoaDon invoice) {
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblMaHoaDon.setText(invoice.getMaHoaDon());
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
@@ -664,10 +665,10 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
     // Lấy tên thú cưng.
     // Tham số invoice: hóa đơn.
     // Kết quả: chuỗi kết quả.
-    private String layTenThuCung(HoaDonTraCuu invoice) {
+    private String layTenThuCung(HoaDon invoice) {
         // names: Lưu các tên; phần tử có kiểu String.
         List<String> names = new ArrayList<>();
-        for (ChiTietHoaDonTraCuu detail : invoice.getChiTiet()) {
+        for (ChiTietHoaDon detail : invoice.getChiTiet()) {
             if ("Thú cưng".equals(detail.getLoaiHang())) {
                 names.add(detail.getTenHang());
             } else if (detail.getTenThuCung() != null
@@ -728,7 +729,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
     // Tạo nội dung hóa đơn.
     // Tham số invoice: hóa đơn.
     // Kết quả: chuỗi kết quả.
-    private String taoNoiDungHoaDon(HoaDonTraCuu invoice) {
+    private String taoNoiDungHoaDon(HoaDon invoice) {
         // text: Bộ đệm ghép các đoạn chuỗi để tạo nội dung chữ.
         StringBuilder text = new StringBuilder();
         text.append("PET SHOP PRO\n");
@@ -744,9 +745,9 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         text.append("STT | Mã hàng | Loại | Tên hàng | Thú cưng | SL | Đơn giá | Thành tiền\n");
         text.append("------------------------------------------------------------\n");
         // details: Lưu các dòng chi tiết hóa đơn.
-        List<ChiTietHoaDonTraCuu> details = invoice.getChiTiet();
+        List<ChiTietHoaDon> details = invoice.getChiTiet();
         for (int index = 0; index < details.size(); index++) {
-            ChiTietHoaDonTraCuu item = details.get(index);
+            ChiTietHoaDon item = details.get(index);
             text.append(index + 1).append(" | ")
                     .append(safe(item.getMaHang())).append(" | ")
                     .append(safe(item.getLoaiHang())).append(" | ")
@@ -785,7 +786,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
                 "THANH TOÁN", "TRẠNG THÁI", ""
         };
         // invoices: Dữ liệu hóa đơn hiển thị trên bảng.
-        private List<HoaDonTraCuu> invoices = new ArrayList<>();
+        private List<HoaDon> invoices = new ArrayList<>();
 
         // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
@@ -821,7 +822,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int row, int column) {
-            HoaDonTraCuu invoice = invoices.get(row);
+            HoaDon invoice = invoices.get(row);
             switch (column) {
                 case 0:
                     return invoice.getMaHoaDon();
@@ -845,13 +846,13 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         // Lấy hóa đơn.
         // Tham số row: chỉ số dòng.
         // Kết quả: dữ liệu hóa đơn tại dòng được chọn.
-        private HoaDonTraCuu getInvoice(int row) {
+        private HoaDon getInvoice(int row) {
             return row < 0 || row >= invoices.size() ? null : invoices.get(row);
         }
 
         // Cập nhật danh sách hóa đơn.
         // Tham số invoices: danh sách hóa đơn.
-        private void setInvoices(List<HoaDonTraCuu> invoices) {
+        private void setInvoices(List<HoaDon> invoices) {
             this.invoices = new ArrayList<>(invoices);
             fireTableDataChanged();
         }
@@ -865,7 +866,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
                 "Số lượng", "Đơn giá", "Thành tiền"
         };
         // details: Lưu các dòng chi tiết hóa đơn.
-        private List<ChiTietHoaDonTraCuu> details = new ArrayList<>();
+        private List<ChiTietHoaDon> details = new ArrayList<>();
 
         // Trả về số dòng dữ liệu của mô hình bảng.
         @Override
@@ -892,7 +893,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         // Kết quả: đối tượng/giá trị kiểu Object.
         @Override
         public Object getValueAt(int row, int column) {
-            ChiTietHoaDonTraCuu detail = details.get(row);
+            ChiTietHoaDon detail = details.get(row);
             switch (column) {
                 case 0:
                     return row + 1;
@@ -917,7 +918,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
 
         // Cập nhật các dòng chi tiết.
         // Tham số details: các dòng chi tiết.
-        private void setDetails(List<ChiTietHoaDonTraCuu> details) {
+        private void setDetails(List<ChiTietHoaDon> details) {
             this.details = new ArrayList<>(details);
             fireTableDataChanged();
         }
@@ -979,7 +980,8 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         }
     }
 
-    // Nhóm dữ liệu hoặc chức năng hành động trên dòng dùng trong TraCuuLichSuHoaDon.
+    // Nhóm dữ liệu hoặc chức năng hành động trên dòng dùng trong
+    // TraCuuLichSuHoaDon.
     private interface RowAction {
         // Thực hiện hành động ứng với dòng được chọn.
         // Tham số row: chỉ số dòng.

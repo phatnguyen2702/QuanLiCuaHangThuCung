@@ -49,7 +49,7 @@ import javax.swing.table.JTableHeader;
  * callback chuột.
  * JPanel + CardLayout: chứa và chuyển giữa các chức năng ngay trong một cửa sổ.
  */
-public class TrangChu extends JFrame implements ActionListener, MouseListener {
+public class TrangChuUI extends JFrame implements ActionListener, MouseListener {
 
     // Color: quy định màu nền của Trang chủ; final: không gán lại biến sau khi khởi
     // tạo.
@@ -94,16 +94,16 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private final Runnable[] napLai = new Runnable[TEN_TAB.length];
     // HashMap: ánh xạ mã chức năng -> giao diện Swing đã tạo.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
-    private TraCuuLichSuHoaDon pnlTraCuuHoaDon;
-    private TraCuuKhoPanel pnlTraCuuNhapKho;
-    private TraCuuKhoPanel pnlTraCuuKiemKe;
-    private ThongKeDoanhThu pnlThongKeDoanhThu;
-    private QuanLyThanhToan pnlThanhToan;
+    private TraCuuLichSuHoaDonUI pnlTraCuuHoaDon;
+    private TraCuuKhoUI pnlTraCuuNhapKho;
+    private TraCuuKhoUI pnlTraCuuKiemKe;
+    private ThongKeDoanhThuUI pnlThongKeDoanhThu;
+    private QuanLyThanhToanUI pnlThanhToan;
     // Swing Timer: phát sự kiện định kỳ để cập nhật đồng hồ, không truy vấn thống
     // kê mỗi giây.
     private final javax.swing.Timer tmrDongHo;
-    private CanhBaoHanSuDungPanel pnlCanhBaoHanSuDung;
-    private GoiYThucAnPanel pnlGoiYThucAn;
+    private CanhBaoHanSuDungUI pnlCanhBaoHanSuDung;
+    private GoiYThucAnUI pnlGoiYThucAn;
 
     private JPanel pnlLichSpaNoiDung;
     private JLabel lblPhuDeLichSpa;
@@ -116,7 +116,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Constructor: nhận thông tin nhân viên từ màn hình đăng nhập.
      * Kiểm tra vai trò, lưu phiên, dựng JFrame và bắt đầu đồng hồ.
      */
-    public TrangChu(String maNV, String hoTen, String vaiTro) {
+    public TrangChuUI(String maNV, String hoTen, String vaiTro) {
         this.maNV = maNV;
         this.hoTen = hoTen;
         this.vaiTro = vaiTro;
@@ -131,7 +131,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         // Lưu phiên đăng nhập dùng trong TrangChu và các chức năng liên quan.
         PhienLamViec.dat(maNV, hoTen, vaiTro);
         // Đồng bộ phiên làm việc với lớp UI.PhienLamViec của các màn hình khác.
-        UI.PhienLamViec.dat(maNV, hoTen, vaiTro);
+        UI.PhienLamViecUI.dat(maNV, hoTen, vaiTro);
 
         // JFrame.setTitle(): đặt tiêu đề cửa sổ ứng dụng.
         setTitle("Pet Shop Pro - Trang chủ");
@@ -228,7 +228,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
         boolean daTaoManHinh = pnlThongKeDoanhThu != null;
         hienManHinh("thongkedoanhthu", "Thống kê doanh thu", btnThongKe,
                 () -> {
-                    pnlThongKeDoanhThu = new ThongKeDoanhThu();
+                    pnlThongKeDoanhThu = new ThongKeDoanhThuUI();
                     return pnlThongKeDoanhThu.getContentPanel();
                 });
         if (daTaoManHinh && pnlThongKeDoanhThu != null) {
@@ -244,22 +244,22 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void taoManHinh(int tab) {
         switch (tab) {
             case 0 -> {
-                DanhMucPanel pnlKhung2 = new DanhMucPanel();
+                DanhMucUI pnlKhung2 = new DanhMucUI();
                 arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
             case 1 -> {
-                SanPhamPanel pnlKhung2 = new SanPhamPanel();
+                SanPhamUI pnlKhung2 = new SanPhamUI();
                 arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
             case 2 -> {
-                NhapKhoPanel pnlKhung2 = new NhapKhoPanel(this::moTraCuuNhapKho);
+                NhapKhoUI pnlKhung2 = new NhapKhoUI(this::moTraCuuNhapKho);
                 arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
             default -> {
-                KiemKePanel pnlKhung2 = new KiemKePanel(this::moTraCuuKiemKe);
+                KiemKeUI pnlKhung2 = new KiemKeUI(this::moTraCuuKiemKe);
                 arrPnlManHinhKho[tab] = (JPanel) pnlKhung2.getContentPane();
                 napLai[tab] = pnlKhung2::napLai;
             }
@@ -310,7 +310,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Truyền constructor reference QuanLyLichHen::new vào hàm điều hướng.
      */
     private void moLichHen() {
-        hienManHinh("lichhen", "Lịch hẹn Spa", btnXuLy, QuanLyLichHen::new);
+        hienManHinh("lichhen", "Lịch hẹn Spa", btnXuLy, QuanLyLichHenUI::new);
     }
 
     /**
@@ -318,7 +318,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Màn hình được quản lý bởi hienManHinh().
      */
     private void moThuCung() {
-        hienManHinh("thucung", "Quản lý thú cưng", btnDanhMuc, QuanLyThuCung::new);
+        hienManHinh("thucung", "Quản lý thú cưng", btnDanhMuc, QuanLyThuCungUI::new);
     }
 
     /**
@@ -327,7 +327,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void moKhachHang() {
         hienManHinh("khachhang", "Quản lý khách hàng", btnDanhMuc,
-                () -> new QuanLyKhachHang(maNV));
+                () -> new QuanLyKhachHangUI(maNV));
     }
 
     /**
@@ -335,7 +335,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Tái sử dụng phương thức điều hướng chung.
      */
     private void moVoucher() {
-        hienManHinh("voucher", "Quản lý voucher", btnDanhMuc, QuanLyVoucher::new);
+        hienManHinh("voucher", "Quản lý voucher", btnDanhMuc, QuanLyVoucherUI::new);
     }
 
     /**
@@ -344,7 +344,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void moPhieuDichVu() {
         hienManHinh("phieudv", "Quản lý phiếu dịch vụ", btnXuLy,
-                QuanLyPhieuDichVu::new);
+                QuanLyPhieuDichVuUI::new);
     }
 
     /**
@@ -354,7 +354,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moTraCuuHoaDon() {
         hienManHinh("hoadon", "Tra cứu lịch sử hóa đơn", btnTimKiem,
                 () -> {
-                    pnlTraCuuHoaDon = new TraCuuLichSuHoaDon(
+                    pnlTraCuuHoaDon = new TraCuuLichSuHoaDonUI(
                             () -> chuyenTuNhom(btnXuLy, this::moThanhToan));
                     return pnlTraCuuHoaDon.getContentPanel();
                 });
@@ -374,7 +374,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moTraCuuNhapKho() {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
                 () -> {
-                    pnlTraCuuNhapKho = new TraCuuKho(
+                    pnlTraCuuNhapKho = new TraCuuKhoUI(false,
                             () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2)));
                     return pnlTraCuuNhapKho.getContentPane();
                 });
@@ -389,7 +389,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moTraCuuKiemKe() {
         hienManHinh("tracuukkkho", "Tra cứu kiểm kê kho", btnTimKiem,
                 () -> {
-                    pnlTraCuuKiemKe = new TraCuuKKKho(
+                    pnlTraCuuKiemKe = new TraCuuKiemKeKhoUI(
                             () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(3)));
                     return pnlTraCuuKiemKe.getContentPane();
                 });
@@ -404,7 +404,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
                 () -> {
-                    pnlThanhToan = new QuanLyThanhToan(maNV,
+                    pnlThanhToan = new QuanLyThanhToanUI(maNV,
                             () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon),
                             this::capNhatDanhSachPhieuDichVu);
                     return pnlThanhToan.getContentPanel();
@@ -422,8 +422,8 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void capNhatDanhSachPhieuDichVu() {
         Component manHinh = mapManHinhKhac.get("phieudv");
-        if (manHinh instanceof QuanLyPhieuDichVu) {
-            ((QuanLyPhieuDichVu) manHinh).loadData();
+        if (manHinh instanceof QuanLyPhieuDichVuUI) {
+            ((QuanLyPhieuDichVuUI) manHinh).loadData();
         }
     }
 
@@ -432,7 +432,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Liên kết luồng gợi ý sản phẩm với luồng thanh toán.
      */
     public void moThanhToanTuGioHang() {
-        if (UI.PhienLamViec.gioHang().isEmpty()) {
+        if (UI.PhienLamViecUI.gioHang().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.", "Giỏ hàng",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
@@ -446,7 +446,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void moMaTranPhanQuyen() {
         hienManHinh("phanquyen", "Ma trận phân quyền", btnHeThong,
-                () -> new MaTranPhanQuyenPanel(this::moQuanLyTaiKhoan));
+                () -> new MaTranPhanQuyenUI(this::moQuanLyTaiKhoan));
     }
 
     /**
@@ -455,7 +455,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void moQuanLyTaiKhoan() {
         hienManHinh("taikhoan", "Quản lý tài khoản", btnHeThong,
-                QuanLyTaiKhoan::new);
+                QuanLyTaiKhoanUI::new);
     }
 
     /**
@@ -464,7 +464,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void moQuanLyPhanCa() {
         hienManHinh("phanca", "Phân ca nhân viên", btnXuLy,
-                QuanLyPhanCa::new);
+                QuanLyPhanCaUI::new);
     }
 
     /**
@@ -473,7 +473,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      */
     private void moQuanLyCaLam() {
         hienManHinh("calam", "Quản lý ca làm", btnHeThong,
-                QuanLyCaLam::new);
+                QuanLyCaLamUI::new);
     }
 
     /**
@@ -481,10 +481,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Có thể gọi lại hàm làm mới dữ liệu của màn hình đã mở.
      */
     private void moDichVu() {
-        hienManHinh("dichvu", "Quản lý dịch vụ", btnDanhMuc, QuanLyDichVu::new);
+        hienManHinh("dichvu", "Quản lý dịch vụ", btnDanhMuc, QuanLyDichVuUI::new);
         Component manHinh = mapManHinhKhac.get("dichvu");
-        if (manHinh instanceof QuanLyDichVu) {
-            ((QuanLyDichVu) manHinh).lamMoi();
+        if (manHinh instanceof QuanLyDichVuUI) {
+            ((QuanLyDichVuUI) manHinh).lamMoi();
         }
     }
 
@@ -1000,10 +1000,10 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
      * Xóa dữ liệu phiên, đóng TrangChu và mở lại màn hình DangNhap.
      */
     private void dangXuat() {
-        UI.PhienLamViec.dat(null, null, null);
+        UI.PhienLamViecUI.dat(null, null, null);
         PhienLamViec.dat(null, null, null);
         dispose();
-        new DangNhap().setVisible(true);
+        new DangNhapUI().setVisible(true);
     }
 
     /**
@@ -1260,7 +1260,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moCanhBaoHanSuDung() {
         hienManHinh("canhbaohansudung", "Tra cứu hạn sử dụng sản phẩm", btnTimKiem,
                 () -> {
-                    pnlCanhBaoHanSuDung = new CanhBaoHanSuDungPanel();
+                    pnlCanhBaoHanSuDung = new CanhBaoHanSuDungUI();
                     return pnlCanhBaoHanSuDung.getContentPane();
                 });
         if (pnlCanhBaoHanSuDung != null) {
@@ -1275,7 +1275,7 @@ public class TrangChu extends JFrame implements ActionListener, MouseListener {
     private void moGoiYThucAn() {
         hienManHinh("goiythucan", "Gợi ý thức ăn theo loại thú cưng", btnXuLy,
                 () -> {
-                    pnlGoiYThucAn = new GoiYThucAnPanel(this::moThanhToanTuGioHang);
+                    pnlGoiYThucAn = new GoiYThucAnUI(this::moThanhToanTuGioHang);
                     return pnlGoiYThucAn.getContentPane();
                 });
         if (pnlGoiYThucAn != null) {

@@ -1,7 +1,6 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.UIStyle;
 import dao.DanhMucDAO;
 import entity.DanhMuc;
 import entity.SanPham;
@@ -12,9 +11,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,20 +21,17 @@ import java.util.List;
  * Man hinh "Danh muc" - Quan ly danh muc (nam lblTrong khung TrangChu).
  * Form Them / Sua danh muc la lop long DanhMucDialog o cuoi file.
  */
-public class DanhMucPanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+public class DanhMucUI extends JFrame implements ActionListener {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
 
     // dao: Đối tượng truy cập dữ liệu danh mục.
     private final DanhMucDAO dao = new DanhMucDAO();
 
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[]{"Mã", "Tên danh mục", "Mô tả", "Số sản phẩm", "Tổng tồn kho"}, 0) {
+            new String[] { "Mã", "Tên danh mục", "Mô tả", "Số sản phẩm", "Tổng tồn kho" }, 0) {
         // Không cho phép sửa trực tiếp các ô lblTrong bảng.
         // Tham số row: chỉ số dòng.
         // Tham số col: chỉ số cột.
@@ -58,7 +53,7 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
     private ArrayList<DanhMuc> dsHienTai = new ArrayList<>();
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-    public DanhMucPanel() {
+    public DanhMucUI() {
 
         setLayout(new BorderLayout());
         getContentPane().setBackground(UIStyle.LIGHT_BLUE);
@@ -143,7 +138,7 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnXoa.addActionListener(e -> xoa());
 
-        pnlThanhCongCu.add(UIStyle.nhan("Tìm danh mục:"));
+        pnlThanhCongCu.add(UIStyle.nhan("Tìm danh mục (mã/tên):"));
         pnlThanhCongCu.add(txtTim);
         pnlThanhCongCu.add(btnLoc);
         pnlThanhCongCu.add(btnSua);
@@ -181,7 +176,7 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
 
             model.setRowCount(0);
             for (DanhMuc dm : dsHienTai) {
-                model.addRow(new Object[]{
+                model.addRow(new Object[] {
                         dm.getMaDanhMuc(),
                         dm.getTenDanhMuc(),
                         dm.getMoTa(),
@@ -230,7 +225,8 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             DanhMucDialog winDlg = new DanhMucDialog(
                     SwingUtilities.getWindowAncestor(this), null, maMoi);
             winDlg.setVisible(true);
-            if (winDlg.isDaLuu()) napLai();
+            if (winDlg.isDaLuu())
+                napLai();
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
         }
@@ -282,13 +278,13 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
                 int[] c = dao.demLienQuan(dm.getMaDanhMuc());
                 tongSp += c[0];
                 ten.append("\n  - ").append(dm.getMaDanhMuc())
-                   .append(" ").append(dm.getTenDanhMuc());
+                        .append(" ").append(dm.getTenDanhMuc());
             }
 
             // hoi: Bộ đệm ghép các đoạn chuỗi để tạo hỏi.
             StringBuilder hoi = new StringBuilder();
             hoi.append("Xóa ").append(dsXoa.size()).append(" danh mục:")
-               .append(ten);
+                    .append(ten);
 
             if (tongSp > 0) {
                 UIStyle.canhBao(this, "Không thể xóa danh mục đang có " + tongSp
@@ -339,14 +335,14 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
 
         // modelSp: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
         private final DefaultTableModel modelSp = new DefaultTableModel(
-                new String[]{"Mã SP", "Tên sản phẩm", "Tồn hiện tại", "Thêm số lượng"}, 0) {
+                new String[] { "Mã SP", "Tên sản phẩm", "Tồn hiện tại" }, 0) {
             // Quy định ô của bảng có được chỉnh sửa trực tiếp hay không.
             // Tham số row: chỉ số dòng.
             // Tham số col: chỉ số cột.
             // Kết quả: true/false theo điều kiện xử lý.
             @Override
             public boolean isCellEditable(int row, int col) {
-                return col == 3;
+                return false;
             }
         };
         // tblBangSp: Bảng hiển thị dữ liệu bảng sản phẩm.
@@ -379,7 +375,7 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             UIStyle.hang(pnlForm2, 1, "Tên danh mục", txtTen, false);
             UIStyle.hang(pnlForm2, 2, "Mô tả", scrCuonMoTa, true);
 
-            JComponent phanSoLuong = dangSua ? taoBangSoLuong(dm) : null;
+            JComponent phanSanPham = dangSua ? taoBangSanPham(dm) : null;
 
             if (dangSua) {
                 // Cập nhật nội dung chữ hiển thị lblTrong control bằng setText().
@@ -412,8 +408,8 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
 
             setLayout(new BorderLayout());
             add(pnlForm2, BorderLayout.NORTH);
-            if (phanSoLuong != null) {
-                add(phanSoLuong, BorderLayout.CENTER);
+            if (phanSanPham != null) {
+                add(phanSanPham, BorderLayout.CENTER);
             }
             add(pnlNut2, BorderLayout.SOUTH);
 
@@ -424,11 +420,9 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             setLocationRelativeTo(winCha);
         }
 
-        // Bang san pham cua danh muc: chi cot "Them so luong" duoc go
-        // Tạo bảng số lượng.
+        // Bảng sản phẩm thuộc danh mục, chỉ để xem.
         // Tham số dm: danh mục cần xử lý.
-        // Kết quả: đối tượng/giá trị kiểu JComponent.
-        private JComponent taoBangSoLuong(DanhMuc dm) {
+        private JComponent taoBangSanPham(DanhMuc dm) {
 
             try {
                 dsSanPham.addAll(dao.timSanPhamTheoDanhMuc(dm.getMaDanhMuc()));
@@ -437,15 +431,14 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             }
 
             for (SanPham sp : dsSanPham) {
-                modelSp.addRow(new Object[]{
-                        sp.getMaSanPham(), sp.getTenSanPham(), sp.getTonKho(), 0});
+                modelSp.addRow(new Object[] { sp.getMaSanPham(), sp.getTenSanPham(), sp.getTonKho() });
             }
 
-            UIStyle.taoBang(tblBangSp, 2, 3);
+            UIStyle.taoBang(tblBangSp, 2);
             tblBangSp.setRowHeight(28);
 
             // lblTieuDe2: Nhãn hiển thị tiêu đề.
-            JLabel lblTieuDe2 = UIStyle.nhan("Sản phẩm trong danh mục — nhập số lượng cần thêm vào cột bên phải");
+            JLabel lblTieuDe2 = UIStyle.nhan("Sản phẩm trong danh mục");
 
             // scrCuon: Khung cuộn cuộn.
             JScrollPane scrCuon = UIStyle.cuon(tblBangSp);
@@ -466,40 +459,6 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
             }
 
             return pnlKhung2;
-        }
-
-        // Doc cot "Them so luong"; tra ve null neu co o nhap sai
-        // Đọc số lượng thêm.
-        // Kết quả: đối tượng/giá trị kiểu List<Integer>.
-        private List<Integer> docSoLuongThem() {
-
-            if (tblBangSp.isEditing()) {
-                tblBangSp.getCellEditor().stopCellEditing();
-            }
-
-            // kq: Lưu kết quả; phần tử có kiểu Integer.
-            List<Integer> kq = new ArrayList<>();
-
-            for (int i = 0; i < modelSp.getRowCount(); i++) {
-                // chu: Lưu màu chữ.
-                String chu = String.valueOf(modelSp.getValueAt(i, 3)).trim();
-
-                if (chu.isEmpty()) {
-                    chu = "0";
-                }
-
-                if (!chu.matches("\\d{1,7}")) {
-                    UIStyle.canhBao(this, "Số lượng thêm của \""
-                            + modelSp.getValueAt(i, 1)
-                            + "\" phải là số nguyên không âm.\n"
-                            + "(Muốn giảm tồn kho hãy dùng Kiểm kê kho.)");
-                    return null;
-                }
-
-                kq.add(Integer.parseInt(chu));
-            }
-
-            return kq;
         }
 
         // Kiểm tra dữ liệu nhập và lưu thông tin của biểu mẫu.
@@ -534,17 +493,9 @@ public class DanhMucPanel extends JFrame implements ActionListener, MouseListene
 
             DanhMuc dm = new DanhMuc(ma, ten, moTa.isEmpty() ? null : moTa);
 
-            // soLuongThem: Lưu số lượng thêm; phần tử có kiểu Integer.
-            List<Integer> soLuongThem = dangSua ? docSoLuongThem() : null;
-            if (dangSua && soLuongThem == null) {
-                return;
-            }
-
             try {
                 if (dangSua) {
                     dao.sua(dm);
-                    dao.nhapBoSung(
-                            dsSanPham, soLuongThem, PhienLamViec.maNV);
                 } else {
                     dao.them(dm);
                 }
