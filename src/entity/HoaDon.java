@@ -1,10 +1,11 @@
 package entity;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+
+import dao.HoaDonDAO;
 
 // Lớp dữ liệu biểu diễn các thuộc tính của hóa đơn, bao gồm cả thông tin hiển thị khi tra cứu.
 public class HoaDon {
@@ -16,15 +17,12 @@ public class HoaDon {
     private final String tenKhachHang;
     private final String soDienThoai;
     private final String tenPhuongThuc;
-    private final BigDecimal tongTien;
-    private final List<ChiTietHoaDon> chiTiet;
-
     public HoaDon(
             String maHoaDon,
             LocalDateTime ngayLap,
             String maPhuongThuc,
             String maKhachHang) {
-        this(maHoaDon, ngayLap, maPhuongThuc, maKhachHang, null, null, null, BigDecimal.ZERO, null);
+        this(maHoaDon, ngayLap, maPhuongThuc, maKhachHang, null, null, null);
     }
 
     public HoaDon(
@@ -34,9 +32,7 @@ public class HoaDon {
             String maKhachHang,
             String tenKhachHang,
             String soDienThoai,
-            String tenPhuongThuc,
-            BigDecimal tongTien,
-            List<ChiTietHoaDon> chiTiet) {
+            String tenPhuongThuc) {
         this.maHoaDon = maHoaDon;
         this.ngayLap = ngayLap;
         this.maPhuongThuc = maPhuongThuc;
@@ -44,10 +40,6 @@ public class HoaDon {
         this.tenKhachHang = tenKhachHang;
         this.soDienThoai = soDienThoai;
         this.tenPhuongThuc = tenPhuongThuc;
-        this.tongTien = tongTien == null ? BigDecimal.ZERO : tongTien;
-        this.chiTiet = chiTiet == null
-                ? Collections.<ChiTietHoaDon>emptyList()
-                : Collections.unmodifiableList(new ArrayList<>(chiTiet));
     }
 
     public String getMaHoaDon() {
@@ -78,11 +70,19 @@ public class HoaDon {
         return tenPhuongThuc;
     }
 
-    public BigDecimal getTongTien() {
-        return tongTien;
+    public BigDecimal getTongTien() throws SQLException {
+        return tinhTongTien();
     }
 
-    public List<ChiTietHoaDon> getChiTiet() {
-        return chiTiet;
+    public List<ChiTietHoaDon> getChiTiet() throws SQLException {
+        return chiTiet();
+    }
+
+    public BigDecimal tinhTongTien() throws SQLException {
+        return new HoaDonDAO().layTongTienHoaDon(maHoaDon);
+    }
+
+    public List<ChiTietHoaDon> chiTiet() throws SQLException {
+        return new HoaDonDAO().layDanhSachChiTietHoaDon(maHoaDon);
     }
 }

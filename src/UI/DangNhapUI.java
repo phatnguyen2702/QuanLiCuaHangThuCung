@@ -232,21 +232,6 @@ public class DangNhapUI extends JFrame implements ActionListener {
 
                 String matKhau = new String(txtMatKhau.getPassword());
 
-                // Cho phép mở ứng dụng nhanh khi cả hai ô đăng nhập để trống.
-                if (taiKhoan.isEmpty() && matKhau.isEmpty()) {
-                        try {
-                                TrangChuUI trangChu = new TrangChuUI("NV001", "Dang Dinh An", "Quan ly");
-                                trangChu.setVisible(true);
-                                dispose();
-                        } catch (RuntimeException ex) {
-                                ex.printStackTrace();
-                                JOptionPane.showMessageDialog(this,
-                                                "Không thể mở Trang chủ!\nChi tiết: " + ex.getMessage(),
-                                                "Lỗi mở giao diện", JOptionPane.ERROR_MESSAGE);
-                        }
-                        return;
-                }
-
                 if (taiKhoan.isEmpty()) {
                         JOptionPane.showMessageDialog(this, "Vui lòng nhập tài khoản!", "Thông báo",
                                         JOptionPane.WARNING_MESSAGE);
