@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Luu nhan vien dang dang nhap de cac man hinh dung chung. */
-public final class PhienLamViec {
+public final class PhienLamViecUI {
 
     // GIO_HANG: Lưu hàng; phần tử có kiểu ThanhToan.
     private static final List<ThanhToan> GIO_HANG = new ArrayList<>();
@@ -18,7 +18,7 @@ public final class PhienLamViec {
     public static String vaiTro = null;
 
     // Ẩn hàm khởi tạo vì lớp chỉ cung cấp các hàm tiện ích dùng chung.
-    private PhienLamViec() {
+    private PhienLamViecUI() {
     }
 
     // Ghi thông tin nhân viên vào phiên làm việc dùng chung.

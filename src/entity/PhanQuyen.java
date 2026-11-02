@@ -63,9 +63,9 @@ public final class PhanQuyen {
     // Tham số q: q.
     // Kết quả: true/false theo điều kiện xử lý.
     public static boolean coQuyen(Quyen q) {
-        if (q == null || UI.PhienLamViec.maNV == null || UI.PhienLamViec.maNV.isBlank())
+        if (q == null || UI.PhienLamViecUI.maNV == null || UI.PhienLamViecUI.maNV.isBlank())
             return false;
-        return duocPhep(vaiTro(UI.PhienLamViec.vaiTro), q);
+        return duocPhep(vaiTro(UI.PhienLamViecUI.vaiTro), q);
     }
 
     /** Dùng để trình bày ma trận quyền mà không phải thay đổi phiên đăng nhập. */
@@ -105,10 +105,10 @@ public final class PhanQuyen {
         // lệnh.
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, UI.PhienLamViec.maNV);
+            ps.setString(1, UI.PhienLamViecUI.maNV);
             // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(UI.PhienLamViec.vaiTro)) {
+                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(UI.PhienLamViecUI.vaiTro)) {
                     throw new SecurityException("Vai trò đã thay đổi hoặc tài khoản không tồn tại. "
                             + "Vui lòng đăng xuất và đăng nhập lại.");
                 }

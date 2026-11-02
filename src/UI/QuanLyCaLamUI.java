@@ -21,7 +21,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 
 /** Giao diện quản lý ca làm; giữ luồng Form -> Entity -> DAO -> SQL Server. */
-public class QuanLyCaLam extends JPanel implements ActionListener {
+public class QuanLyCaLamUI extends JPanel implements ActionListener {
 
         // Màu sắc và định dạng dùng chung trong giao diện.
         private static final Color NAVY = new Color(18, 48, 82);
@@ -46,7 +46,7 @@ public class QuanLyCaLam extends JPanel implements ActionListener {
         // DAO: lớp truy vấn và cập nhật ca làm trong SQL Server.
         private final CaLamDAO caLamDAO = new CaLamDAO();
 
-        public QuanLyCaLam() {
+        public QuanLyCaLamUI() {
                 // BorderLayout: tiêu đề phía trên, form và bảng ở giữa.
                 setLayout(new BorderLayout());
                 setBackground(BG);

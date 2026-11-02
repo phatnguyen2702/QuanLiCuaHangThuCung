@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.UIStyle;
 import dao.VoucherDAO;
 import entity.Voucher;
 
@@ -21,9 +21,10 @@ import java.util.Locale;
 // Man Ma giam gia va Voucher: tim kiem, tao / sua / xoa, kich hoat / btnHuy2, lam moi,
 // chon 1 dong de xem thong tin voucher
 // Giao diện/chức năng quản lý voucher của ứng dụng.
-public class QuanLyVoucher extends JPanel {
+public class QuanLyVoucherUI extends JPanel {
 
-        // D: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời gian và chuỗi.
+        // D: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời gian
+        // và chuỗi.
         private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         // COLS: Mảng lưu các cột.
@@ -76,7 +77,8 @@ public class QuanLyVoucher extends JPanel {
         private ArrayList<Voucher> dsHienThi = new ArrayList<>();
 
         // ----- khung thông tin chi tiết (hiện khi chọn 1 dòng) -----
-        // cardCT: Bộ bố trí cho phép chuyển giữa các màn hình pnlTrong cùng một vùng chứa.
+        // cardCT: Bộ bố trí cho phép chuyển giữa các màn hình pnlTrong cùng một vùng
+        // chứa.
         private final CardLayout cardCT = new CardLayout();
         // pnlKhungCT: Khung chứa thành phần giao diện khung chi tiết.
         private final JPanel pnlKhungCT = new JPanel(cardCT);
@@ -101,7 +103,7 @@ public class QuanLyVoucher extends JPanel {
         private final JLabel lblVDieuKien = new JLabel();
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-        public QuanLyVoucher() {
+        public QuanLyVoucherUI() {
 
                 setLayout(new BorderLayout(0, 14));
                 setBackground(UIStyle.LIGHT_BLUE);
@@ -212,7 +214,8 @@ public class QuanLyVoucher extends JPanel {
                 // ---------------- khung thông tin chi tiết ----------------
                 pnlKhungCT.setOpaque(false);
 
-                // lblGoiY: Nhãn hiển thị: Chọn một voucher pnlTrong bảng để xem thông tin chi tiết..
+                // lblGoiY: Nhãn hiển thị: Chọn một voucher pnlTrong bảng để xem thông tin chi
+                // tiết..
                 JLabel lblGoiY = new JLabel("Chọn một voucher trong bảng để xem thông tin chi tiết.");
 
                 lblGoiY.setFont(UIStyle.font(Font.PLAIN, 13));
@@ -363,7 +366,8 @@ public class QuanLyVoucher extends JPanel {
                                 JTable tblDuLieu3, Object v, boolean sel, boolean foc, int r, int c) {
 
                         // lblNhan3: Nhãn dùng để hiển thị chữ hoặc giá trị trên giao diện.
-                        JLabel lblNhan3 = (JLabel) super.getTableCellRendererComponent(tblDuLieu3, v, false, false, r, c);
+                        JLabel lblNhan3 = (JLabel) super.getTableCellRendererComponent(tblDuLieu3, v, false, false, r,
+                                        c);
 
                         // nen: Màu dùng cho giao diện: màu nền.
                         Color nen;
@@ -1099,7 +1103,8 @@ public class QuanLyVoucher extends JPanel {
                         btnThaoTac2.setBorderPainted(false);
                         btnThaoTac2.setFocusPainted(false);
                         btnThaoTac2.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                        btnThaoTac2.setPreferredSize(new Dimension(Math.max(110, btnThaoTac2.getPreferredSize().width + 10), 38));
+                        btnThaoTac2.setPreferredSize(
+                                        new Dimension(Math.max(110, btnThaoTac2.getPreferredSize().width + 10), 38));
 
                         return btnThaoTac2;
                 }
@@ -1325,7 +1330,8 @@ public class QuanLyVoucher extends JPanel {
                                 btnThaoTac2.setContentAreaFilled(true);
                                 btnThaoTac2.setBorder(new LineBorder(new Color(160, 190, 225), 1));
                                 btnThaoTac2.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                                btnThaoTac2.setPreferredSize(new Dimension(Math.max(80, btnThaoTac2.getPreferredSize().width + 16), 32));
+                                btnThaoTac2.setPreferredSize(new Dimension(
+                                                Math.max(80, btnThaoTac2.getPreferredSize().width + 16), 32));
 
                                 return btnThaoTac2;
                         }

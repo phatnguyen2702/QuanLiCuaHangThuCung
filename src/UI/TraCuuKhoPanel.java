@@ -24,12 +24,30 @@ import java.util.Objects;
 
 /** Tra cứu phiếu nhập kho hoặc phiếu kiểm kê kho. */
 public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
     // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
@@ -209,9 +227,11 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     private void hienLich(JTextField field, Component anchor) {
         LocalDate selected = null;
         try {
-            if (!field.getText().trim().isEmpty()) selected = parseDate(field.getText());
-        } catch (IllegalArgumentException ignored) { }
-        NhapKhoPanel.LichChonNgayPopup.mo(anchor, selected, date -> field.setText(
+            if (!field.getText().trim().isEmpty())
+                selected = parseDate(field.getText());
+        } catch (IllegalArgumentException ignored) {
+        }
+        NhapKhoUI.LichChonNgayPopup.mo(anchor, selected, date -> field.setText(
                 date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))));
     }
 
@@ -236,7 +256,8 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     // Tìm kiểm.
     private void timKiem() {
         try {
-            if (kiemKe) damBaoCotThoiDiemChot();
+            if (kiemKe)
+                damBaoCotThoiDiemChot();
             // from: Lưu chỉ số bắt đầu dưới dạng dữ liệu thời gian.
             // to: Lưu chỉ số kết thúc dưới dạng dữ liệu thời gian.
             LocalDate from = parseDate(txtTuNgay.getText()), to = parseDate(txtDenNgay.getText());

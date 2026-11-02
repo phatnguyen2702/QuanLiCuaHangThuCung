@@ -15,7 +15,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 import java.util.ArrayList;
 
-public class QuanLyTaiKhoan extends JPanel implements ActionListener {
+public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
 
         // NAVY: Màu dùng cho giao diện: xanh đậm.
         private final Color NAVY = new Color(18, 48, 82);
@@ -51,7 +51,7 @@ public class QuanLyTaiKhoan extends JPanel implements ActionListener {
         private TaiKhoanDAO taiKhoanDAO;
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-        public QuanLyTaiKhoan() {
+        public QuanLyTaiKhoanUI() {
 
                 taiKhoanDAO = new TaiKhoanDAO();
 

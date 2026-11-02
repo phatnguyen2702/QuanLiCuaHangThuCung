@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.UIStyle;
 import dao.SanPhamDAO;
 import entity.SanPham;
 
@@ -24,13 +24,31 @@ import java.util.List;
 import java.util.Locale;
 
 /** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
-public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+public class GoiYThucAnUI extends JFrame implements ActionListener, MouseListener {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
     // cmbPet: Hộp lựa chọn thú cưng.
     private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", "Mèo" });
     // cmbAge: Hộp lựa chọn tuổi.
@@ -52,15 +70,16 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
     private final Runnable moThanhToan;
     // products: Lưu danh sách sản phẩm; phần tử có kiểu SanPham.
     private List<SanPham> products = List.of();
-    // anhSanPhamCache: Bảng ánh xạ khóa đến giá trị dùng cho bộ nhớ đệm ảnh sản phẩm.
+    // anhSanPhamCache: Bảng ánh xạ khóa đến giá trị dùng cho bộ nhớ đệm ảnh sản
+    // phẩm.
     private final Map<String, Icon> anhSanPhamCache = new HashMap<>();
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-    public GoiYThucAnPanel() {
+    public GoiYThucAnUI() {
         this(null);
     }
 
-    public GoiYThucAnPanel(Runnable moThanhToan) {
+    public GoiYThucAnUI(Runnable moThanhToan) {
         this.moThanhToan = moThanhToan;
         setLayout(new BorderLayout(12, 12));
         getContentPane().setBackground(UIStyle.LIGHT_BLUE);
@@ -200,7 +219,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
     // Tham số maSanPham: mã sản phẩm.
     // Kết quả: đối tượng/giá trị kiểu entity.ThanhToan.
     private entity.ThanhToan timTrongGio(String maSanPham) {
-        for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
+        for (entity.ThanhToan item : UI.PhienLamViecUI.gioHang()) {
             if (maSanPham.equals(item.getMaSanPham()))
                 return item;
         }
@@ -210,7 +229,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
     // Cộng số lượng các mặt hàng trong giỏ.
     // Kết quả: giá trị số nguyên.
     private int tongSoLuongTrongGio() {
-        return UI.PhienLamViec.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
+        return UI.PhienLamViecUI.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
     }
 
     // Thêm vào giờ.
@@ -227,7 +246,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
         } else {
             if (product.getTonKho() < 1)
                 return;
-            UI.PhienLamViec.gioHang().add(entity.ThanhToan.sanPham(
+            UI.PhienLamViecUI.gioHang().add(entity.ThanhToan.sanPham(
                     product.getMaSanPham(), product.getTenSanPham(), BigDecimal.valueOf(product.getGiaBan())));
         }
         napLai();
@@ -256,7 +275,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
             String tenFile = maSanPham + extension;
             ImageIcon nguon = null;
 
-            URL resource = GoiYThucAnPanel.class.getResource("/img/products/" + tenFile);
+            URL resource = GoiYThucAnUI.class.getResource("/img/products/" + tenFile);
             if (resource != null) {
                 nguon = new ImageIcon(resource);
             }
@@ -334,7 +353,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
                     if (quantity < 1)
                         throw new NumberFormatException();
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
+                    JOptionPane.showMessageDialog(GoiYThucAnUI.this,
                             "Số lượng phải là số nguyên lớn hơn 0.", "Số lượng không hợp lệ",
                             JOptionPane.WARNING_MESSAGE);
                     fireTableCellUpdated(row, column);
@@ -342,20 +361,20 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
                 }
 
                 String code = String.valueOf(getValueAt(row, 0));
-                for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
+                for (entity.ThanhToan item : UI.PhienLamViecUI.gioHang()) {
                     if (code.equals(item.getMaSanPham())) {
                         final int tonKho;
                         try {
                             tonKho = dao.layTonKho(code);
                         } catch (SQLException ex) {
-                            JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
+                            JOptionPane.showMessageDialog(GoiYThucAnUI.this,
                                     "Không kiểm tra được tồn kho; số lượng chưa thay đổi.\n" + ex.getMessage(),
                                     "Không kiểm tra được tồn kho", JOptionPane.ERROR_MESSAGE);
                             fireTableCellUpdated(row, column);
                             return;
                         }
                         if (quantity > tonKho) {
-                            JOptionPane.showMessageDialog(GoiYThucAnPanel.this,
+                            JOptionPane.showMessageDialog(GoiYThucAnUI.this,
                                     "Số lượng yêu cầu (" + quantity + ") vượt tồn hiện tại (" + tonKho
                                             + "). Số lượng trong giỏ được giữ nguyên.",
                                     "Không đủ tồn kho", JOptionPane.WARNING_MESSAGE);
@@ -374,7 +393,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
                 fireTableCellUpdated(row, column);
             }
         };
-        for (entity.ThanhToan item : UI.PhienLamViec.gioHang()) {
+        for (entity.ThanhToan item : UI.PhienLamViecUI.gioHang()) {
             model.addRow(new Object[] { item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
                     String.format("%,.0f đ", item.getDonGia()), String.format("%,.0f đ", item.getThanhTien()) });
         }
@@ -386,7 +405,7 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
         JButton btnRemove = UIStyle.nutXoa("Xóa sản phẩm khỏi giỏ");
         // btnCheckout: Nút thao tác thanh toán.
         JButton btnCheckout = UIStyle.nutXanh("Chuyển sang thanh toán");
-        btnCheckout.setEnabled(!UI.PhienLamViec.gioHang().isEmpty());
+        btnCheckout.setEnabled(!UI.PhienLamViecUI.gioHang().isEmpty());
         // btnClose: Nút thao tác đóng.
         JButton btnClose = UIStyle.nutPhu("Đóng");
         // pnlActions: Khung chứa thành phần giao diện thao tác.
@@ -414,9 +433,9 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
                 return;
             // maSanPham: Lưu mã sản phẩm.
             String maSanPham = String.valueOf(model.getValueAt(tblDuLieu.convertRowIndexToModel(row), 0));
-            UI.PhienLamViec.gioHang().removeIf(item -> maSanPham.equals(item.getMaSanPham()));
+            UI.PhienLamViecUI.gioHang().removeIf(item -> maSanPham.equals(item.getMaSanPham()));
             model.removeRow(tblDuLieu.convertRowIndexToModel(row));
-            btnCheckout.setEnabled(!UI.PhienLamViec.gioHang().isEmpty());
+            btnCheckout.setEnabled(!UI.PhienLamViecUI.gioHang().isEmpty());
             napLai();
         });
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
@@ -426,8 +445,8 @@ public class GoiYThucAnPanel extends JFrame implements ActionListener, MouseList
             winDialog.dispose();
             if (moThanhToan != null) {
                 moThanhToan.run();
-            } else if (winOwner instanceof TrangChu) {
-                ((TrangChu) winOwner).moThanhToanTuGioHang();
+            } else if (winOwner instanceof TrangChuUI) {
+                ((TrangChuUI) winOwner).moThanhToanTuGioHang();
             } else {
                 JOptionPane.showMessageDialog(this, "Không tìm thấy màn hình thanh toán.",
                         "Giỏ hàng", JOptionPane.ERROR_MESSAGE);

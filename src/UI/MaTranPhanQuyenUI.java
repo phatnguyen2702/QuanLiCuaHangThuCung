@@ -21,14 +21,14 @@ import javax.swing.table.DefaultTableModel;
 import entity.PhanQuyen;
 
 /** Xem ma trận quyền cố định: quản lý cấp vai trò tại Quản lý tài khoản. */
-public final class MaTranPhanQuyenPanel extends JPanel implements ActionListener, MouseListener {
+public final class MaTranPhanQuyenUI extends JPanel implements ActionListener, MouseListener {
     // Lưu callback ban đầu, không thay đổi cách điều hướng tới Quản lý tài khoản.
     private final Runnable moQuanLyTaiKhoan;
     private JButton btnAccounts;
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số moQuanLyTaiKhoan: mở quản lý tài khoản.
-    public MaTranPhanQuyenPanel(Runnable moQuanLyTaiKhoan) {
+    public MaTranPhanQuyenUI(Runnable moQuanLyTaiKhoan) {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_QUYEN);
         this.moQuanLyTaiKhoan = moQuanLyTaiKhoan;
         setLayout(new BorderLayout(0, 15));

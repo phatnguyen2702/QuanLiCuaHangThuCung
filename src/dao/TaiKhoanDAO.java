@@ -394,8 +394,8 @@ public class TaiKhoanDAO {
         public boolean doiMatKhau(String maNhanVien, String matKhauCu,
                         String matKhauMoi) throws SQLException {
                 // Khong cho phep doi mat khau thay nguoi khac, ke ca khi biet mat khau cu.
-                if (maNhanVien == null || UI.PhienLamViec.maNV == null
-                                || !maNhanVien.trim().equals(UI.PhienLamViec.maNV)) {
+                if (maNhanVien == null || UI.PhienLamViecUI.maNV == null
+                                || !maNhanVien.trim().equals(UI.PhienLamViecUI.maNV)) {
                         throw new SecurityException("Chỉ được đổi mật khẩu của tài khoản đang đăng nhập.");
                 }
 

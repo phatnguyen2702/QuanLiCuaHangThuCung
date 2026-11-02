@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Phân ca nhân viên: thêm, sửa, xóa, lọc, lịch chọn ngày và xuất Excel. */
-public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListener {
+public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListener {
         // NAVY: Màu dùng cho giao diện: xanh đậm.
         private static final Color NAVY = new Color(18, 48, 82);
         // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
@@ -84,7 +84,7 @@ public class QuanLyPhanCa extends JPanel implements ActionListener, MouseListene
         private String maDangSua;
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-        public QuanLyPhanCa() {
+        public QuanLyPhanCaUI() {
                 setLayout(new BorderLayout());
                 setBackground(BG);
                 add(taoPnlTieuDe(), BorderLayout.NORTH);
