@@ -797,6 +797,7 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
             }
             cmbSanPham.setFont(UIStyle.font(Font.PLAIN, 13));
             spnSoLuong.setFont(UIStyle.font(Font.PLAIN, 13));
+            txtDonGia.setEditable(false);
 
             // Chon san pham -> tu dien gia nhap dang co trong tblDuLieu2 SanPham
             cmbSanPham.addActionListener(e -> {
