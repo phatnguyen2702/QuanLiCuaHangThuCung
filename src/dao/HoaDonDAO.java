@@ -1,7 +1,5 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,9 +12,8 @@ import java.util.List;
 
 import ConnectDB.connectDB;
 import entity.ChiTietHoaDon;
-import entity.ChiTietHoaDonTraCuu;
 import entity.HoaDon;
-import entity.HoaDonTraCuu;
+import entity.PhanQuyen;
 
 // Lớp truy cập cơ sở dữ liệu cho hóa đơn.
 public class HoaDonDAO {
@@ -29,7 +26,8 @@ public class HoaDonDAO {
         private final int hoaDonHomNay;
         // khachHangHomNay: Lưu số khách hàng hôm nay.
         private final int khachHangHomNay;
-        // doanhThuHomNay: Giá trị doanh thu hôm nay dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+        // doanhThuHomNay: Giá trị doanh thu hôm nay dùng số thập phân chính xác để tính
+        // toán tiền/tỷ lệ.
         private final BigDecimal doanhThuHomNay;
 
         // Khởi tạo đối tượng từ các giá trị được truyền vào.
@@ -72,8 +70,9 @@ public class HoaDonDAO {
     // Lấy thống kê.
     // Kết quả: đối tượng/giá trị kiểu ThongKe.
     public ThongKe layThongKe() throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT "
                 + "(SELECT COUNT(*) FROM HoaDon) AS tongHoaDon, "
                 + "(SELECT COUNT(*) FROM HoaDon "
@@ -84,7 +83,8 @@ public class HoaDonDAO {
                 + " (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) "
                 + " FROM HoaDon hd JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
                 + " WHERE CAST(hd.ngayLap AS DATE) = CAST(GETDATE() AS DATE)) AS doanhThuHomNay";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -102,9 +102,10 @@ public class HoaDonDAO {
     // Tìm hóa đơn.
     // Tham số tuKhoa: từ khóa tìm kiếm.
     // Kết quả: danh sách dữ liệu hóa đơn dùng để hiển thị khi tra cứu.
-    public List<HoaDonTraCuu> timHoaDon(String tuKhoa) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+    public List<HoaDon> timHoaDon(String tuKhoa) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
                 + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
@@ -123,8 +124,9 @@ public class HoaDonDAO {
         // keyword: Lưu từ khóa tìm kiếm.
         String keyword = tuKhoa == null ? "" : tuKhoa.trim();
         // hoaDons: Dữ liệu hóa đơn dùng để hiển thị trên màn tra cứu.
-        List<HoaDonTraCuu> hoaDons = new ArrayList<>();
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        List<HoaDon> hoaDons = new ArrayList<>();
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, keyword);
@@ -139,17 +141,16 @@ public class HoaDonDAO {
                     Timestamp ngayLap = rs.getTimestamp("ngayLap");
                     String maHoaDon = rs.getString("maHoaDon");
                     String maKhachHang = rs.getString("maKhachHang");
-                    hoaDons.add(new HoaDonTraCuu(
-                            new HoaDon(
-                                    maHoaDon,
-                                    ngayLap == null ? null : ngayLap.toLocalDateTime(),
-                                    rs.getString("maPhuongThuc"),
-                                    maKhachHang),
+                    hoaDons.add(new HoaDon(
+                            maHoaDon,
+                            ngayLap == null ? null : ngayLap.toLocalDateTime(),
+                            rs.getString("maPhuongThuc"),
+                            maKhachHang,
                             rs.getString("hoTen"),
                             rs.getString("soDienThoai"),
                             rs.getString("tenPhuongThuc"),
                             rs.getBigDecimal("tongTien"),
-                            Collections.<ChiTietHoaDonTraCuu>emptyList()));
+                            Collections.<ChiTietHoaDon>emptyList()));
                 }
             }
         }
@@ -159,9 +160,10 @@ public class HoaDonDAO {
     // Lấy chi tiết hóa đơn.
     // Tham số maHoaDon: mã hóa đơn.
     // Kết quả: dữ liệu hóa đơn dùng để hiển thị chi tiết.
-    public HoaDonTraCuu layChiTietHoaDon(String maHoaDon) throws SQLException {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
-        // headerSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+    public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        // headerSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String headerSql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
                 + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc, "
@@ -175,7 +177,8 @@ public class HoaDonDAO {
                 + "GROUP BY hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
                 + "kh.maKhachHang, kh.hoTen, "
                 + "kh.soDienThoai, pt.tenPhuongThuc";
-        // detailSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // detailSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String detailSql = "SELECT ct.maHoaDon, ct.maThuCung, ct.maDichVu, ct.maSanPham, "
                 + "COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không xác định') AS tenHang, "
                 + "CASE WHEN sp.maSanPham IS NOT NULL THEN N'Sản phẩm' "
@@ -187,9 +190,11 @@ public class HoaDonDAO {
                 + "LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham "
                 + "LEFT JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
                 + "LEFT JOIN ThuCung tc ON tc.maThuCung = ct.maThuCung "
-                + "WHERE ct.maHoaDon = ? ORDER BY maHang";
+                + "WHERE ct.maHoaDon = ? "
+                + "ORDER BY COALESCE(ct.maSanPham, ct.maDichVu, ct.maThuCung)";
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
             // maKhachHang: Lưu mã khách hàng.
             String maKhachHang;
@@ -201,7 +206,8 @@ public class HoaDonDAO {
             String tenPhuongThuc;
             // ngayLap: Lưu ngày giờ lập hóa đơn dưới dạng dữ liệu thời gian.
             Timestamp ngayLap;
-            // tongTien: Giá trị tổng tiền dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+            // tongTien: Giá trị tổng tiền dùng số thập phân chính xác để tính toán tiền/tỷ
+            // lệ.
             BigDecimal tongTien;
             try (PreparedStatement ps = con.prepareStatement(headerSql)) {
                 ps.setString(1, maHoaDon);
@@ -221,35 +227,32 @@ public class HoaDonDAO {
             }
 
             // chiTiet: Lưu các dòng chi tiết hóa đơn.
-            List<ChiTietHoaDonTraCuu> chiTiet = new ArrayList<>();
+            List<ChiTietHoaDon> chiTiet = new ArrayList<>();
             try (PreparedStatement ps = con.prepareStatement(detailSql)) {
                 ps.setString(1, maHoaDon);
                 // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
                 try (ResultSet rs = ps.executeQuery()) {
                     // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                     while (rs.next()) {
-                        ChiTietHoaDon detail = new ChiTietHoaDon(
+                        chiTiet.add(new ChiTietHoaDon(
                                 rs.getString("maHoaDon"),
                                 rs.getString("maThuCung"),
                                 rs.getString("maDichVu"),
                                 rs.getString("maSanPham"),
                                 rs.getInt("soLuong"),
                                 rs.getDouble("donGia"),
-                                rs.getDouble("phanTramGiam"));
-                        chiTiet.add(new ChiTietHoaDonTraCuu(
-                                detail,
+                                rs.getDouble("phanTramGiam"),
                                 rs.getString("tenHang"),
                                 rs.getString("loaiHang"),
                                 rs.getString("tenThuCungDichVu")));
                     }
                 }
             }
-            return new HoaDonTraCuu(
-                    new HoaDon(
-                            maHoaDon,
-                            ngayLap == null ? null : ngayLap.toLocalDateTime(),
-                            maPhuongThuc,
-                            maKhachHang),
+            return new HoaDon(
+                    maHoaDon,
+                    ngayLap == null ? null : ngayLap.toLocalDateTime(),
+                    maPhuongThuc,
+                    maKhachHang,
                     tenKhachHang,
                     soDienThoai,
                     tenPhuongThuc,

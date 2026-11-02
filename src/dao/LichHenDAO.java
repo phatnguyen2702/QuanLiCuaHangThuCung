@@ -1,8 +1,8 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import entity.LichHen;
+import entity.PhanQuyen;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,7 +18,8 @@ public class LichHenDAO {
 
     /** Mỗi lịch Spa giữ chỗ cho nhân viên 60 phút kể từ giờ bắt đầu. */
     private static final int THOI_LUONG_LICH_PHUT = 60;
-    // GIO_HEN_FORMAT: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
+    // GIO_HEN_FORMAT: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển
+    // giữa dữ liệu thời gian và chuỗi.
     private static final DateTimeFormatter GIO_HEN_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // Lấy danh sách dịch vụ.
@@ -26,9 +27,11 @@ public class LichHenDAO {
     public ArrayList<String> getDanhSachDichVu() {
         // list: Danh sách chứa các phần tử kiểu String.
         ArrayList<String> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT tenDichVu FROM DichVu ORDER BY tenDichVu";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -51,7 +54,8 @@ public class LichHenDAO {
         // list: Danh sách chứa các phần tử kiểu LichHen.
         ArrayList<LichHen> list = new ArrayList<>();
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT lh.maLichHen, lh.ngayGioHen, lh.ghiChu, lh.trangThai, " +
                 "lh.maKhachHang, kh.hoTen as tenKhachHang, " +
                 "lh.maThuCung, tc.tenThuCung, tc.giong, " +
@@ -62,7 +66,8 @@ public class LichHenDAO {
                 "INNER JOIN NhanVien nv ON lh.maNhanVien = nv.maNhanVien " +
                 "ORDER BY lh.ngayGioHen DESC";
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -115,11 +120,13 @@ public class LichHenDAO {
     /** Hủy mềm để bảo toàn lịch sử, không hủy lịch đã có phiếu dịch vụ. */
     public boolean huy(String maLichHen) {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "UPDATE LichHen SET trangThai = N'Đã hủy' "
                 + "WHERE maLichHen = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy' "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuDichVu p WHERE p.maLichHen = LichHen.maLichHen)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maLichHen);
@@ -166,7 +173,8 @@ public class LichHenDAO {
         }
 
         // Kiểm tra theo đồng hồ SQL Server lần nữa, ngay trước khi lưu.
-        // sqlQuaGio: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlQuaGio: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlQuaGio = "SELECT CASE WHEN ? <= SYSDATETIME() THEN 1 ELSE 0 END";
         try (PreparedStatement ps = con.prepareStatement(sqlQuaGio)) {
             ps.setTimestamp(1, Timestamp.valueOf(ngayGio));
@@ -179,7 +187,8 @@ public class LichHenDAO {
         }
 
         // Hai lịch cách nhau dưới 60 phút sẽ chồng nhau (ví dụ 09:00 và 09:30).
-        // sqlTrung: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sqlTrung: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
+        // nhận tham số nếu có.
         String sqlTrung = "SELECT TOP (1) maLichHen, ngayGioHen "
                 + "FROM LichHen WITH (UPDLOCK, HOLDLOCK) "
                 + "WHERE maNhanVien = ? "
@@ -235,12 +244,15 @@ public class LichHenDAO {
         }
         if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
             return false;
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "INSERT INTO LichHen (maLichHen, ngayGioHen, ghiChu, maKhachHang, maNhanVien, maThuCung, trangThai) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
             con.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             try {
@@ -282,12 +294,15 @@ public class LichHenDAO {
         }
         if (!thuCungThuocKhach(lh.getMaThuCung(), lh.getMaKhachHang()))
             return false;
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "UPDATE LichHen SET ngayGioHen = ?, ghiChu = ?, maKhachHang = ?, maNhanVien = ?, maThuCung = ? "
                 + "WHERE maLichHen = ? AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+            // nhau.
             con.setAutoCommit(false);
             con.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             try {
@@ -320,9 +335,11 @@ public class LichHenDAO {
     // Tham số maKH: mã khách hàng.
     // Kết quả: true/false theo điều kiện xử lý.
     private boolean thuCungThuocKhach(String maTC, String maKH) {
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT 1 FROM ThuCung WHERE maThuCung = ? AND maKhachHang = ?";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maTC);
@@ -343,9 +360,11 @@ public class LichHenDAO {
     public ArrayList<String[]> getDanhSachKhachHang() {
         // list: Danh sách chứa các phần tử kiểu String[].
         ArrayList<String[]> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maKhachHang, hoTen FROM KhachHang";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -363,9 +382,11 @@ public class LichHenDAO {
     public ArrayList<String[]> getDanhSachNhanVienSpa() {
         // list: Danh sách chứa các phần tử kiểu String[].
         ArrayList<String[]> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maNhanVien, hoTen FROM NhanVien WHERE vaiTro = N'Nhan vien Spa'";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -384,9 +405,11 @@ public class LichHenDAO {
         ArrayList<String[]> list = new ArrayList<>();
         if (maKhachHang == null || maKhachHang.isBlank())
             return list;
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maThuCung, tenThuCung FROM ThuCung WHERE maKhachHang = ? ORDER BY tenThuCung";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maKhachHang);
@@ -407,9 +430,11 @@ public class LichHenDAO {
     public ArrayList<String[]> getDanhSachThuCung() {
         // list: Danh sách chứa các phần tử kiểu String[].
         ArrayList<String[]> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT maThuCung, tenThuCung FROM ThuCung";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {

@@ -24,12 +24,30 @@ import java.util.Objects;
 
 /** Tra cứu phiếu nhập kho hoặc phiếu kiểm kê kho. */
 public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
     // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
@@ -126,7 +144,7 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
             cmbNhaCungCap2.setPreferredSize(new Dimension(180, 26));
         }
         model.setColumnIdentifiers(kiemKe
-                ? new String[] { "Mã phiếu", "Ngày kiểm kê", "Mã NV lập", "Trạng thái", "Số mặt hàng", "Kết quả" }
+                ? new String[] { "Mã phiếu", "Ngày chốt", "Mã NV lập", "Trạng thái", "Số mặt hàng", "Kết quả" }
                 : new String[] { "Mã phiếu", "Ngày nhập", "Mã NV lập", "Mã NCC", "Nhà cung cấp", "Số mặt hàng",
                         "Tổng tiền", "Trạng thái" });
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
@@ -209,6 +227,7 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     private void hienLich(JTextField field, Component anchor) {
         LocalDate selected = null;
         try {
+<<<<<<< HEAD
             if (!field.getText().trim().isEmpty()) selected = parseDate(field.getText());
         } catch (IllegalArgumentException ignored) { }
         NhapKhoPanel.LichChonHanSuDung lich =
@@ -216,6 +235,14 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
                     field.setText(date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu")));
                 });
         lich.show(anchor, 0, anchor.getHeight());
+=======
+            if (!field.getText().trim().isEmpty())
+                selected = parseDate(field.getText());
+        } catch (IllegalArgumentException ignored) {
+        }
+        NhapKhoUI.LichChonNgayPopup.mo(anchor, selected, date -> field.setText(
+                date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))));
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422
     }
 
     // Nạp nhà cung cấp.
@@ -239,6 +266,8 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     // Tìm kiểm.
     private void timKiem() {
         try {
+            if (kiemKe)
+                damBaoCotThoiDiemChot();
             // from: Lưu chỉ số bắt đầu dưới dạng dữ liệu thời gian.
             // to: Lưu chỉ số kết thúc dưới dạng dữ liệu thời gian.
             LocalDate from = parseDate(txtTuNgay.getText()), to = parseDate(txtDenNgay.getText());
@@ -250,7 +279,7 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
             // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
             // tham số nếu có.
             String sql = kiemKe
-                    ? "SELECT p.maPhieuKiemKe,p.ngayKiemKe,p.maNhanVien,p.trangThai,COUNT(d.maSanPham),SUM(CASE WHEN d.soLuongThucTe IS NOT NULL AND d.soLuongThucTe<>d.soLuongHeThong THEN 1 ELSE 0 END),MAX(CASE WHEN d.soLuongThucTe IS NULL THEN 1 ELSE 0 END) FROM PhieuKiemKe p LEFT JOIN ChiTietPhieuKiemKe d ON d.maPhieuKiemKe=p.maPhieuKiemKe WHERE ISNULL(p.trangThai,0)=1 GROUP BY p.maPhieuKiemKe,p.ngayKiemKe,p.maNhanVien,p.trangThai ORDER BY p.ngayKiemKe DESC"
+                    ? "SELECT p.maPhieuKiemKe,COALESCE(p.ngayChot,p.ngayKiemKe),p.maNhanVien,p.trangThai,COUNT(d.maSanPham),SUM(CASE WHEN d.soLuongThucTe IS NOT NULL AND d.soLuongThucTe<>d.soLuongHeThong THEN 1 ELSE 0 END),MAX(CASE WHEN d.soLuongThucTe IS NULL THEN 1 ELSE 0 END) FROM PhieuKiemKe p LEFT JOIN ChiTietPhieuKiemKe d ON d.maPhieuKiemKe=p.maPhieuKiemKe WHERE ISNULL(p.trangThai,0)=1 GROUP BY p.maPhieuKiemKe,COALESCE(p.ngayChot,p.ngayKiemKe),p.maNhanVien,p.trangThai ORDER BY COALESCE(p.ngayChot,p.ngayKiemKe) DESC"
                     : "SELECT p.maPhieuNhap,p.ngayNhap,p.maNhanVien,p.maNhaCungCap,n.tenNhaCungCap,COUNT(d.maSanPham),ISNULL(SUM(d.soLuongNhap*d.donGiaNhap),0),p.trangThai FROM PhieuNhapKho p LEFT JOIN Nhacungcap n ON n.maNhaCungCap=p.maNhaCungCap LEFT JOIN ChiTietPhieuNhap d ON d.maPhieuNhap=p.maPhieuNhap GROUP BY p.maPhieuNhap,p.ngayNhap,p.maNhanVien,p.maNhaCungCap,n.tenNhaCungCap,p.trangThai ORDER BY p.ngayNhap DESC";
             // result: Lưu kết quả; phần tử có kiểu String[].
             List<String[]> result = new ArrayList<>();
@@ -313,6 +342,13 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
             JOptionPane.showMessageDialog(this, e.getMessage(), "Ngày không hợp lệ", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException e) {
             baoLoi(e);
+        }
+    }
+
+    private void damBaoCotThoiDiemChot() throws SQLException {
+        try (Connection connection = connectDB.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("IF COL_LENGTH('dbo.PhieuKiemKe','ngayChot') IS NULL "
+                    + "ALTER TABLE dbo.PhieuKiemKe ADD ngayChot DATETIME2 NULL");
         }
     }
 

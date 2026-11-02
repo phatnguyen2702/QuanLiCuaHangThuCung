@@ -50,7 +50,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 // Giao diện/chức năng thống kê doanh thu của ứng dụng.
-public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseListener {
+public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -61,14 +61,13 @@ public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseList
     // MUTED: Màu dùng cho giao diện: màu chữ phụ.
     private static final Color MUTED = new Color(105, 116, 130);
     // MONEY: Bộ định dạng số/tiền dùng để hiển thị dữ liệu trên giao diện.
-    private static final NumberFormat MONEY =
-            NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
-    // DAY_FORMAT: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời gian và chuỗi.
-    private static final DateTimeFormatter DAY_FORMAT =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    // MONTH_FORMAT: Bộ định dạng ngày/giờ theo mẫu MM/yyyy để chuyển giữa dữ liệu thời gian và chuỗi.
-    private static final DateTimeFormatter MONTH_FORMAT =
-            DateTimeFormatter.ofPattern("MM/yyyy");
+    private static final NumberFormat MONEY = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    // DAY_FORMAT: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu
+    // thời gian và chuỗi.
+    private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    // MONTH_FORMAT: Bộ định dạng ngày/giờ theo mẫu MM/yyyy để chuyển giữa dữ liệu
+    // thời gian và chuỗi.
+    private static final DateTimeFormatter MONTH_FORMAT = DateTimeFormatter.ofPattern("MM/yyyy");
 
     // dao: Đối tượng truy cập dữ liệu thống kê doanh thu.
     private final ThongKeDoanhThuDAO dao = new ThongKeDoanhThuDAO();
@@ -84,7 +83,7 @@ public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseList
     private final JLabel lblTongHoaDon = new JLabel("—", SwingConstants.CENTER);
     // lblTrungBinh: Nhãn hiển thị: —.
     private final JLabel lblTrungBinh = new JLabel("—", SwingConstants.CENTER);
-    // lblTrangThai: Nhãn hiển thị:  .
+    // lblTrangThai: Nhãn hiển thị: .
     private final JLabel lblTrangThai = new JLabel(" ");
     // btnTruoc: Nút thao tác: ‹.
     private final JButton btnTruoc = new JButton("‹");
@@ -104,7 +103,7 @@ public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseList
     private BaoCao baoCao;
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-    public ThongKeDoanhThu() {
+    public ThongKeDoanhThuUI() {
         setTitle("Thống kê doanh thu");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         pnlNoiDung.setBackground(new Color(229, 241, 252));
@@ -123,7 +122,9 @@ public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseList
         capNhatBaoCao();
     }
 
-    /** Trả về panel nội dung để TrangChu tiếp tục hiển thị màn hình bằng CardLayout. */
+    /**
+     * Trả về panel nội dung để TrangChu tiếp tục hiển thị màn hình bằng CardLayout.
+     */
     public JPanel getContentPanel() {
         return pnlNoiDung;
     }
@@ -317,7 +318,8 @@ public class ThongKeDoanhThu extends JFrame implements ActionListener, MouseList
                 super.getTableCellRendererComponent(tblDuLieu, value, selected, focus, row, col);
                 setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
                 setHorizontalAlignment(col == 1 || col == 4
-                        ? SwingConstants.RIGHT : SwingConstants.LEFT);
+                        ? SwingConstants.RIGHT
+                        : SwingConstants.LEFT);
                 return this;
             }
         });

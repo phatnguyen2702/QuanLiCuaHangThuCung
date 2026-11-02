@@ -1,8 +1,7 @@
 package dao;
 
-import UI.PhanQuyen;
-
 import entity.KhachHang;
+import entity.PhanQuyen;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -23,7 +22,8 @@ public class KhachHangChiTietDAO {
                 // list: Danh sách chứa các phần tử kiểu String[].
                 ArrayList<String[]> list = new ArrayList<>();
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+                // tham số nếu có.
                 String sql = "SELECT tenThuCung, loai, giong, gioiTinh, canNang "
                                 + "FROM ThuCung WHERE maKhachHang = ? ORDER BY maThuCung";
 
@@ -69,7 +69,8 @@ public class KhachHangChiTietDAO {
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean tonTaiSdtKhac(String sdt, String maKhachHang) {
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+                // tham số nếu có.
                 String sql = "SELECT 1 FROM KhachHang WHERE soDienThoai = ? AND maKhachHang <> ?";
 
                 try (
@@ -100,12 +101,14 @@ public class KhachHangChiTietDAO {
         // Tham số kh: khách hàng cần xử lý.
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean sua(KhachHang kh) {
-    PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
+                PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+                // lệnh.
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
-                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng nhau.
+                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
+                        // nhau.
                         con.setAutoCommit(false);
 
                         try {

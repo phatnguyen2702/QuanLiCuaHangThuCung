@@ -1,4 +1,4 @@
-package UI;
+package entity;
 
 import java.text.Normalizer;
 import java.util.EnumSet;
@@ -63,9 +63,9 @@ public final class PhanQuyen {
     // Tham số q: q.
     // Kết quả: true/false theo điều kiện xử lý.
     public static boolean coQuyen(Quyen q) {
-        if (q == null || UI.PhienLamViec.maNV == null || UI.PhienLamViec.maNV.isBlank())
+        if (q == null || UI.PhienLamViecUI.maNV == null || UI.PhienLamViecUI.maNV.isBlank())
             return false;
-        return duocPhep(vaiTro(UI.PhienLamViec.vaiTro), q);
+        return duocPhep(vaiTro(UI.PhienLamViecUI.vaiTro), q);
     }
 
     /** Dùng để trình bày ma trận quyền mà không phải thay đổi phiên đăng nhập. */
@@ -98,15 +98,17 @@ public final class PhanQuyen {
                     "Tài khoản không có quyền thực hiện: " + q + ". Vui lòng liên hệ quản lý.");
         // Xác minh lại quyền trong SQL mỗi khi ghi dữ liệu: tránh phiên cũ vẫn có quyền
         // sau khi quản lý đổi vai trò hoặc xóa nhân viên.
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận tham số nếu có.
+        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
+        // tham số nếu có.
         String sql = "SELECT vaiTro FROM NhanVien WHERE maNhanVien = ?";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối lệnh.
+        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
+        // lệnh.
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, UI.PhienLamViec.maNV);
+            ps.setString(1, UI.PhienLamViecUI.maNV);
             // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(UI.PhienLamViec.vaiTro)) {
+                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(UI.PhienLamViecUI.vaiTro)) {
                     throw new SecurityException("Vai trò đã thay đổi hoặc tài khoản không tồn tại. "
                             + "Vui lòng đăng xuất và đăng nhập lại.");
                 }

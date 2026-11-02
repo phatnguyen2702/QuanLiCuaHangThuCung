@@ -1,7 +1,7 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.PhienLamViec;
+import UI.TrangChuUI.UIStyle;
 import dao.KiemKeDAO;
 import entity.ChiTietPhieuKiemKe;
 import entity.PhieuKiemKe;
@@ -18,20 +18,41 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseAdapter;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
+<<<<<<< HEAD:src/UI/KiemKePanel.java
+import java.time.Duration;
+=======
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422:src/UI/KiemKeUI.java
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Man hinh "Kiem ke kho" - Kiem ke ton kho (nam trong khung TrangChu). */
-public class KiemKePanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
 
     // dao: Đối tượng truy cập dữ liệu kiểm kê.
     private final KiemKeDAO dao = new KiemKeDAO();
@@ -66,8 +87,8 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
     private final JLabel lblChuaKiem = new JLabel("0");
     // lblChenhLech: Nhãn hiển thị: 0 mặt hàng.
     private final JLabel lblChenhLech = new JLabel("0 mặt hàng");
-    // lblBatDau: Nhãn hiển thị: Thời điểm kiểm kê: —.
-    private final JLabel lblBatDau = new JLabel("Thời điểm kiểm kê: —");
+    // lblBatDau: Hiển thị mốc bắt đầu và thời gian đã trôi qua.
+    private final JLabel lblBatDau = new JLabel("Bắt đầu: — | Đã trôi qua: 00:00:00");
     // ngayBatDau: Lưu thời điểm bắt đầu dưới dạng dữ liệu thời gian.
     private LocalDateTime ngayBatDau = LocalDateTime.now();
     private final javax.swing.Timer tmrDemThoiGian;
@@ -83,13 +104,14 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
     private String maPhieu = "";
 
     // Khởi tạo đối tượng với trạng thái ban đầu.
-    public KiemKePanel() {
-        this(() -> { });
+    public KiemKeUI() {
+        this(() -> {
+        });
     }
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số moTraCuu: mở màn hình tra cứu.
-    public KiemKePanel(Runnable moTraCuu) {
+    public KiemKeUI(Runnable moTraCuu) {
         this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
@@ -108,6 +130,7 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
         pnlMocThoiGian.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         lblBatDau.setFont(UIStyle.font(Font.PLAIN, 13));
         lblBatDau.setBorder(new EmptyBorder(4, 0, 4, 0));
+        lblBatDau.setToolTipText("Bắt đầu là lúc tạo phiếu; thời điểm chốt được lưu khi bấm Chốt kiểm kê.");
         pnlMocThoiGian.add(lblBatDau);
         pnlPhanDau.add(pnlMocThoiGian);
         pnlPhanDau.add(Box.createVerticalStrut(12));
@@ -337,12 +360,22 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
     }
 
     private void capNhatThoiGianKiemKe() {
+<<<<<<< HEAD:src/UI/KiemKePanel.java
         long giay = Math.max(0, Duration.between(ngayBatDau, LocalDateTime.now()).getSeconds());
         long gio = giay / 3600;
         long phut = (giay % 3600) / 60;
         long giayLe = giay % 60;
         lblBatDau.setText("Bắt đầu: " + ngayBatDau.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
                 + "  |  Thời gian kiểm kê: " + String.format("%02d:%02d:%02d", gio, phut, giayLe));
+=======
+        long elapsed = Math.max(0, Duration.between(ngayBatDau, LocalDateTime.now()).getSeconds());
+        long hours = elapsed / 3600;
+        long minutes = (elapsed % 3600) / 60;
+        long seconds = elapsed % 60;
+        lblBatDau.setText("Bắt đầu: "
+                + ngayBatDau.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+                + "  |  Đã trôi qua: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422:src/UI/KiemKeUI.java
     }
 
     // Hỏi xác nhận phiếu mới.
@@ -549,7 +582,7 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
             // ds: Danh sách chứa các phần tử kiểu PhieuKiemKe.
             ArrayList<PhieuKiemKe> ds = dao.dsPhieuNhap();
             // colsPhieu: Mảng lưu các cột phiếu.
-            String[] colsPhieu = { "Mã phiếu", "Trạng thái", "Thời điểm kiểm kê", "Mã NV lập" };
+            String[] colsPhieu = { "Mã phiếu", "Trạng thái", "Thời điểm bắt đầu", "Mã NV lập" };
             // modelPhieu: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
             DefaultTableModel modelPhieu = new DefaultTableModel(colsPhieu, 0) {
                 // Không cho phép sửa trực tiếp các ô trong bảng.
@@ -632,9 +665,10 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
                 btnTiepTuc.setEnabled(!p.isTrangThai());
                 try {
                     // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                    lblThongTin2.setText("Phiếu " + p.getMaPhieuKiemKe() + " | " + (p.isTrangThai() ? "Đã chốt" : "Nháp")
-                            + " | Thời điểm kiểm kê: " + dinhDangGio(p.getNgayBatDau())
-                            + " | Mã NV lập: " + p.getMaNhanVien());
+                    lblThongTin2
+                            .setText("Phiếu " + p.getMaPhieuKiemKe() + " | " + (p.isTrangThai() ? "Đã chốt" : "Nháp")
+                                    + " | Bắt đầu: " + dinhDangGio(p.getNgayBatDau())
+                                    + " | Mã NV lập: " + p.getMaNhanVien());
                     modelChiTiet.setRowCount(0);
                     for (ChiTietPhieuKiemKe ct : dao.layChiTiet(p.getMaPhieuKiemKe())) {
                         Integer tt = ct.getSoLuongThucTe();
@@ -666,9 +700,7 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
                     // bd: Lưu bắt đầu dưới dạng dữ liệu thời gian.
                     LocalDateTime bd = p.getNgayBatDau() == null ? LocalDateTime.now() : p.getNgayBatDau();
                     ngayBatDau = bd;
-                    // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                    lblBatDau.setText("Thời điểm kiểm kê: "
-                            + bd.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+                    capNhatThoiGianKiemKe();
                     tatCa.clear();
                     tatCa.addAll(dao.layChiTiet(maPhieu));
                     veLaiBang();

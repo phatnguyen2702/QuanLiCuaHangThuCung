@@ -1,7 +1,7 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.PhienLamViec;
+import UI.TrangChuUI.UIStyle;
 import dao.SanPhamDAO;
 import entity.DanhMuc;
 import entity.NhaCungCap;
@@ -27,7 +27,7 @@ import java.util.List;
  * Man hinh "San pham" - Quan ly san pham (nam trong khung TrangChu).
  * Form Them / Sua san pham la lop long SanPhamDialog o cuoi file.
  */
-public class SanPhamPanel extends JFrame implements ActionListener, MouseListener {
+public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
     @Override
     public void actionPerformed(ActionEvent e) {
     }
@@ -173,7 +173,7 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
 
-    public SanPhamPanel() {
+    public SanPhamUI() {
 
         setLayout(new BorderLayout());
 
@@ -940,7 +940,6 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
 
                 txtMa.setText(maMoi);
-
             }
 
             // Mã sản phẩm tự sinh và không thể chỉnh sửa ở cả hai chế độ.
@@ -1216,11 +1215,17 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
 
             try {
                 int them = (Integer) spnThem.getValue();
-
                 dao.luuSanPhamDayDu(sp, dangSua, dm.getTenDanhMuc(),
                         (String) cmbNhomTuoi.getSelectedItem(),
                         (String) cmbKichThuoc.getSelectedItem(), them, PhienLamViec.maNV);
 
+<<<<<<< HEAD:src/UI/SanPhamPanel.java
+                dao.luuSanPhamDayDu(sp, dangSua, dm.getTenDanhMuc(),
+                        (String) cmbNhomTuoi.getSelectedItem(),
+                        (String) cmbKichThuoc.getSelectedItem(), them, PhienLamViec.maNV);
+
+=======
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422:src/UI/SanPhamUI.java
                 String loiAnh = null;
                 try {
                     luuAnh(ma);
@@ -1229,19 +1234,26 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
                 }
 
                 daLuu = true;
-
                 dispose();
+<<<<<<< HEAD:src/UI/SanPhamPanel.java
 
+=======
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422:src/UI/SanPhamUI.java
                 if (loiAnh != null) {
                     JOptionPane.showMessageDialog(getOwner(),
                             "Thông tin sản phẩm đã được lưu, nhưng ảnh chưa lưu được: " + loiAnh,
                             "Lưu ảnh thất bại", JOptionPane.WARNING_MESSAGE);
                 }
+<<<<<<< HEAD:src/UI/SanPhamPanel.java
 
+=======
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422:src/UI/SanPhamUI.java
             } catch (SQLException ex) {
-
                 UIStyle.loi(this, ex);
+<<<<<<< HEAD:src/UI/SanPhamPanel.java
 
+=======
+>>>>>>> 2e4788f7d75f46194c36ea76509948419e873422:src/UI/SanPhamUI.java
             }
 
         }
