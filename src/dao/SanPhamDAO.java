@@ -520,6 +520,36 @@ public class SanPhamDAO {
         }
     }
 
+    /** Lấy toàn bộ lịch sử xử lý hàng lỗi, hết hạn hoặc trả nhà cung cấp. */
+    public List<Object[]> layLichSuXuLyHang() throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        damBaoCotKinhDoanh();
+        String sql = "SELECT x.maXuLy, x.ngayXuLy, x.maSanPham, sp.tenSanPham, "
+                + "x.maPhieuNhap, x.soLuong, x.lyDo, x.ghiChu, "
+                + "COALESCE(nv.hoTen, x.maNhanVien, N'—') AS nguoiXuLy "
+                + "FROM dbo.ChiTietXuLyHang x "
+                + "JOIN dbo.SanPham sp ON sp.maSanPham=x.maSanPham "
+                + "LEFT JOIN dbo.NhanVien nv ON nv.maNhanVien=x.maNhanVien "
+                + "ORDER BY x.ngayXuLy DESC, x.maXuLy DESC";
+        List<Object[]> rows = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Timestamp ngay = rs.getTimestamp("ngayXuLy");
+                rows.add(new Object[] {
+                        rs.getLong("maXuLy"),
+                        ngay == null ? "" : ngay.toLocalDateTime()
+                                .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                        rs.getString("maSanPham"), rs.getString("tenSanPham"),
+                        rs.getString("maPhieuNhap"), rs.getInt("soLuong"),
+                        rs.getString("lyDo"), rs.getString("ghiChu"), rs.getString("nguoiXuLy")
+                });
+            }
+        }
+        return rows;
+    }
+
     public static final class DotNhap {
         private final String maPhieuNhap;
         private final LocalDateTime ngayNhap;

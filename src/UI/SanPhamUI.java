@@ -251,6 +251,7 @@ public class SanPhamUI extends JFrame implements ActionListener {
         JButton btnXoa = UIStyle.nutPhu("Xóa");
         btnXoa.setForeground(new Color(220, 53, 69));
         JButton btnXuLyHang = UIStyle.nutPhu("Xử lý hàng lỗi / hết hạn");
+        JButton btnLichSuXuLy = UIStyle.nutPhu("Lịch sử xử lý hàng lỗi");
 
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
 
@@ -268,6 +269,7 @@ public class SanPhamUI extends JFrame implements ActionListener {
 
         btnXoa.addActionListener(e -> xoa());
         btnXuLyHang.addActionListener(e -> xuLyHang());
+        btnLichSuXuLy.addActionListener(e -> hienLichSuXuLyHang());
 
         // pnlThanhCongCu: Khung chứa thành phần giao diện thanh công cụ.
 
@@ -287,6 +289,7 @@ public class SanPhamUI extends JFrame implements ActionListener {
 
         pnlThanhCongCu.add(btnXoa);
         pnlThanhCongCu.add(btnXuLyHang);
+        pnlThanhCongCu.add(btnLichSuXuLy);
 
         lblSoLuong2.setFont(UIStyle.font(Font.BOLD, 13));
 
@@ -754,6 +757,60 @@ public class SanPhamUI extends JFrame implements ActionListener {
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
         }
+    }
+
+    /** Mở hộp thoại tra cứu lịch sử xử lý hàng trong kho. */
+    private void hienLichSuXuLyHang() {
+        String[] cot = { "Mã xử lý", "Ngày xử lý", "Mã SP", "Tên sản phẩm",
+                "Đợt nhập", "Số lượng", "Lý do", "Ghi chú", "Người xử lý" };
+        DefaultTableModel lichSuModel = new DefaultTableModel(cot, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        try {
+            for (Object[] dong : dao.layLichSuXuLyHang()) {
+                lichSuModel.addRow(dong);
+            }
+        } catch (SQLException ex) {
+            UIStyle.loi(this, ex);
+            return;
+        }
+
+        JTable bangLichSu = new JTable(lichSuModel);
+        UIStyle.taoBang(bangLichSu);
+        bangLichSu.setAutoCreateRowSorter(true);
+        bangLichSu.setFillsViewportHeight(true);
+        bangLichSu.getColumnModel().getColumn(0).setPreferredWidth(85);
+        bangLichSu.getColumnModel().getColumn(1).setPreferredWidth(135);
+        bangLichSu.getColumnModel().getColumn(3).setPreferredWidth(190);
+        bangLichSu.getColumnModel().getColumn(7).setPreferredWidth(220);
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this),
+                "Lịch sử xử lý hàng lỗi / hết hạn", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        dialog.setLayout(new BorderLayout(10, 10));
+        JPanel noiDung = new JPanel(new BorderLayout(0, 10));
+        noiDung.setBorder(new EmptyBorder(16, 16, 12, 16));
+        noiDung.setBackground(UIStyle.LIGHT_BLUE);
+        JLabel tieuDe = new JLabel("Lịch sử xử lý hàng lỗi / hết hạn / trả nhà cung cấp  ·  "
+                + lichSuModel.getRowCount() + " lượt");
+        tieuDe.setFont(UIStyle.font(Font.BOLD, 16));
+        noiDung.add(tieuDe, BorderLayout.NORTH);
+        noiDung.add(UIStyle.cuon(bangLichSu), BorderLayout.CENTER);
+
+        JButton dong = UIStyle.nutPhu("Đóng");
+        dong.addActionListener(e -> dialog.dispose());
+        JPanel chan = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        chan.setOpaque(false);
+        chan.add(dong);
+        noiDung.add(chan, BorderLayout.SOUTH);
+        dialog.add(noiDung, BorderLayout.CENTER);
+        dialog.setSize(1120, 520);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     // =========================================================
