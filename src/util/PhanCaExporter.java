@@ -10,9 +10,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /** Xuat .xlsx chuan Office Open XML, khong can thu vien ben ngoai. */
-public final class XlsxExporter {
+public final class PhanCaExporter {
     // Ẩn hàm khởi tạo vì lớp chỉ cung cấp các hàm tiện ích dùng chung.
-    private XlsxExporter() {
+    private PhanCaExporter() {
     }
 
     // Xuất dữ liệu ra tệp theo định dạng do lớp cung cấp.
