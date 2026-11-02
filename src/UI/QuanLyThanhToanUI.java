@@ -864,30 +864,23 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
         Object giaTriDangNhap = cmbVoucher.getEditor().getItem();
         try {
             List<entity.ThanhToan.Voucher> voucherMoi = dao.layDanhSachVoucher();
-            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             String maDaiNhat = "VOUCHER000";
             for (entity.ThanhToan.Voucher item : voucherMoi) {
-                String goiY = taoGoiYVoucher(item);
-                model.addElement(goiY);
                 if (item.getMaVoucher().length() > maDaiNhat.length()) {
                     maDaiNhat = item.getMaVoucher();
                 }
             }
             danhSachVoucher.clear();
             danhSachVoucher.addAll(voucherMoi);
+            cmbVoucher.setPrototypeDisplayValue(maDaiNhat);
+            cmbVoucher.setPreferredSize(cmbVoucher.getPreferredSize());
             dangCapNhatGoiYVoucher = true;
             try {
-                cmbVoucher.setModel(model);
-                cmbVoucher.setSelectedItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
                 cmbVoucher.getEditor().setItem(giaTriDangNhap == null ? "" : giaTriDangNhap);
             } finally {
                 dangCapNhatGoiYVoucher = false;
             }
-            cmbVoucher.setPrototypeDisplayValue(maDaiNhat);
-            cmbVoucher.setPreferredSize(cmbVoucher.getPreferredSize());
-            if (giaTriDangNhap != null && !giaTriDangNhap.toString().isBlank()) {
-                capNhatGoiYVoucher();
-            }
+            capNhatGoiYVoucher();
         } catch (SQLException e) {
             hienLoi("Không tải được danh sách voucher: " + e.getMessage());
         }
@@ -1094,19 +1087,29 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
             String maTimKiem = layMaVoucherTuGoiY(tuKhoa);
             String tuKhoaDaChuanHoa = maTimKiem.toLowerCase(Locale.ROOT);
             List<entity.ThanhToan.Voucher> goiY = new ArrayList<>();
-            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
-                String tenVoucher = item.getTenVoucher();
-                if (maCoChuaTatCaKyTu(item.getMaVoucher(), tuKhoaDaChuanHoa)
-                        || (tenVoucher != null
-                                && tenVoucher.toLowerCase(Locale.ROOT)
-                                        .contains(tuKhoaDaChuanHoa))) {
-                    goiY.add(item);
+            try {
+                for (entity.ThanhToan.Voucher item : danhSachVoucher) {
+                    if (kiemTraDieuKienVoucher(item) != null) {
+                        continue;
+                    }
+                    String tenVoucher = item.getTenVoucher();
+                    if (maCoChuaTatCaKyTu(item.getMaVoucher(), tuKhoaDaChuanHoa)
+                            || (tenVoucher != null
+                                    && tenVoucher.toLowerCase(Locale.ROOT)
+                                            .contains(tuKhoaDaChuanHoa))) {
+                        goiY.add(item);
+                    }
                 }
+            } catch (SQLException e) {
+                hienLoi("Không thể kiểm tra điều kiện voucher: " + e.getMessage());
+                return;
             }
-            for (entity.ThanhToan.Voucher item : danhSachVoucher) {
+            for (entity.ThanhToan.Voucher item : goiY) {
                 if (item.getMaVoucher().equalsIgnoreCase(maTimKiem)) {
-                    goiY.clear();
-                    goiY.add(item);
+                    if (goiY.size() > 1) {
+                        goiY.clear();
+                        goiY.add(item);
+                    }
                     break;
                 }
             }
@@ -1164,6 +1167,29 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
     private String layMaVoucherNhap() {
         Object item = cmbVoucher.getEditor().getItem();
         return item == null ? "" : layMaVoucherTuGoiY(item.toString());
+    }
+
+    private void capNhatVoucherSauThayDoiDonHang() {
+        if (voucher != null) {
+            try {
+                String loiDieuKien = kiemTraDieuKienVoucher(voucher);
+                if (loiDieuKien != null) {
+                    String tenVoucher = voucher.getTenVoucher();
+                    voucher = null;
+                    cmbVoucher.getEditor().setItem("");
+                    capNhatTien();
+                    JOptionPane.showMessageDialog(
+                            pnlNoiDung,
+                            "Voucher " + tenVoucher + " đã được gỡ vì " + loiDieuKien,
+                            "Voucher không còn đủ điều kiện",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (SQLException e) {
+                hienLoi("Không thể kiểm tra điều kiện voucher: " + e.getMessage());
+                return;
+            }
+        }
+        capNhatGoiYVoucher();
     }
 
     // Tạo gợi y sản phẩm.
@@ -1246,6 +1272,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
                     : String.join(", ", maPhieuDichVuTrongDonHang));
             tableModel.fireTableDataChanged();
             capNhatTien();
+            capNhatVoucherSauThayDoiDonHang();
         } catch (Exception e) {
             hienLoi("Không tra cứu được khách hàng: " + e.getMessage());
         }
@@ -1264,6 +1291,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
         txtMaPhieuDichVu.setText("");
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         txtKhachHangTomTat.setText("");
+        capNhatVoucherSauThayDoiDonHang();
     }
 
     // Xóa các dòng dịch vụ được thêm từ phiếu.
@@ -1361,6 +1389,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
                 item.setSoLuong(item.getSoLuong() + soLuong);
                 tableModel.fireTableDataChanged();
                 capNhatTien();
+                capNhatVoucherSauThayDoiDonHang();
                 return;
             }
         }
@@ -1368,6 +1397,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
         chiTiet.add(sanPham);
         tableModel.fireTableDataChanged();
         capNhatTien();
+        capNhatVoucherSauThayDoiDonHang();
     }
 
     // Xóa sản phẩm.
@@ -1386,6 +1416,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
         chiTiet.remove(modelRow);
         tableModel.fireTableDataChanged();
         capNhatTien();
+        capNhatVoucherSauThayDoiDonHang();
     }
 
     // Hủy hóa đơn.
@@ -1992,6 +2023,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
                 chiTiet.get(row).setSoLuong(quantity);
                 fireTableRowsUpdated(row, row);
                 capNhatTien();
+                capNhatVoucherSauThayDoiDonHang();
             } catch (IllegalArgumentException e) {
                 hienLoi("Số lượng phải là số nguyên lớn hơn 0.");
                 fireTableRowsUpdated(row, row);
