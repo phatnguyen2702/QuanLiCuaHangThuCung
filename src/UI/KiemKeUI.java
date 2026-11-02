@@ -1,7 +1,7 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.PhienLamViec;
+import UI.TrangChuUI.UIStyle;
 import dao.KiemKeDAO;
 import entity.ChiTietPhieuKiemKe;
 import entity.PhieuKiemKe;
@@ -25,13 +25,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Man hinh "Kiem ke kho" - Kiem ke ton kho (nam trong khung TrangChu). */
-public class KiemKePanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
 
     // dao: Đối tượng truy cập dữ liệu kiểm kê.
     private final KiemKeDAO dao = new KiemKeDAO();
@@ -83,13 +100,14 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
     private String maPhieu = "";
 
     // Khởi tạo đối tượng với trạng thái ban đầu.
-    public KiemKePanel() {
-        this(() -> { });
+    public KiemKeUI() {
+        this(() -> {
+        });
     }
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số moTraCuu: mở màn hình tra cứu.
-    public KiemKePanel(Runnable moTraCuu) {
+    public KiemKeUI(Runnable moTraCuu) {
         this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
@@ -634,9 +652,10 @@ public class KiemKePanel extends JFrame implements ActionListener, MouseListener
                 btnTiepTuc.setEnabled(!p.isTrangThai());
                 try {
                     // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                    lblThongTin2.setText("Phiếu " + p.getMaPhieuKiemKe() + " | " + (p.isTrangThai() ? "Đã chốt" : "Nháp")
-                            + " | Bắt đầu: " + dinhDangGio(p.getNgayBatDau())
-                            + " | Mã NV lập: " + p.getMaNhanVien());
+                    lblThongTin2
+                            .setText("Phiếu " + p.getMaPhieuKiemKe() + " | " + (p.isTrangThai() ? "Đã chốt" : "Nháp")
+                                    + " | Bắt đầu: " + dinhDangGio(p.getNgayBatDau())
+                                    + " | Mã NV lập: " + p.getMaNhanVien());
                     modelChiTiet.setRowCount(0);
                     for (ChiTietPhieuKiemKe ct : dao.layChiTiet(p.getMaPhieuKiemKe())) {
                         Integer tt = ct.getSoLuongThucTe();

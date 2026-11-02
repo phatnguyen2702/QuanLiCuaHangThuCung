@@ -53,9 +53,9 @@ public final class LichChonNgay {
         JPanel pnlHeader = new JPanel(new BorderLayout(8, 0));
         pnlHeader.setBackground(Color.WHITE);
         // btnTruoc: Nút thao tác: ◀.
-        JButton btnTruoc = new JButton("◀");
+        JButton btnTruoc = new JButton("<");
         // btnSau: Nút thao tác: ▶.
-        JButton btnSau = new JButton("▶");
+        JButton btnSau = new JButton(">");
         // lblThang: Nhãn hiển thị tháng đang hiển thị.
         JLabel lblThang = new JLabel("", SwingConstants.CENTER);
         lblThang.setForeground(NAVY);

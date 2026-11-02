@@ -68,7 +68,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
 // Giao diện/chức năng quản lý thanh toán của ứng dụng.
-public class QuanLyThanhToan extends JFrame implements ActionListener, MouseListener {
+public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -94,7 +94,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // vụ.
     private final Runnable capNhatPhieuDichVu;
     // chiTiet: Lưu chi tiết; phần tử có kiểu entity.ThanhToan.
-    private final List<entity.ThanhToan> chiTiet = UI.PhienLamViec.gioHang();
+    private final List<entity.ThanhToan> chiTiet = UI.PhienLamViecUI.gioHang();
     // danhSachKhachHang: Lưu danh sách khách hàng dùng để gợi ý.
     private final List<entity.ThanhToan.KhachHang> danhSachKhachHang = new ArrayList<>();
     // danhSachMaSanPham: Lưu danh sách mã sản phẩm; phần tử có kiểu String.
@@ -170,7 +170,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Khởi tạo đối tượng từ các giá trị được truyền vào.
     // Tham số maNhanVien: mã nhân viên.
     // Tham số moLichSuHoaDon: mở lịch sử hóa đơn.
-    public QuanLyThanhToan(String maNhanVien, Runnable moLichSuHoaDon) {
+    public QuanLyThanhToanUI(String maNhanVien, Runnable moLichSuHoaDon) {
         this(maNhanVien, moLichSuHoaDon, () -> {
         });
     }
@@ -179,7 +179,7 @@ public class QuanLyThanhToan extends JFrame implements ActionListener, MouseList
     // Tham số maNhanVien: mã nhân viên.
     // Tham số moLichSuHoaDon: mở lịch sử hóa đơn.
     // Tham số capNhatPhieuDichVu: cập nhật danh sách phiếu dịch vụ.
-    public QuanLyThanhToan(
+    public QuanLyThanhToanUI(
             String maNhanVien, Runnable moLichSuHoaDon, Runnable capNhatPhieuDichVu) {
         this.maNhanVien = maNhanVien;
         this.moLichSuHoaDon = moLichSuHoaDon;

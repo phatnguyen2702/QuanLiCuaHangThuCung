@@ -1,7 +1,7 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.PhienLamViec;
+import UI.TrangChuUI.UIStyle;
 import dao.NhapKhoDAO;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
@@ -33,20 +33,38 @@ import java.util.function.Consumer;
  * Cac pnlForm2 phu (nha cung cap, chi tiet nhap, phieu nhap nhap) la lop long o
  * cuoi file.
  */
-public class NhapKhoPanel extends JFrame implements ActionListener, MouseListener {
-    @Override public void actionPerformed(ActionEvent e) { }
-    @Override public void mouseClicked(MouseEvent e) { }
-    @Override public void mousePressed(MouseEvent e) { }
-    @Override public void mouseReleased(MouseEvent e) { }
-    @Override public void mouseEntered(MouseEvent e) { }
-    @Override public void mouseExited(MouseEvent e) { }
+public class NhapKhoUI extends JFrame implements ActionListener, MouseListener {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
 
     // dao: Đối tượng truy cập dữ liệu nhập kho.
     private final NhapKhoDAO dao = new NhapKhoDAO();
     // moTraCuu: Hành động được gọi khi cần mở màn hình tra cứu.
     private final Runnable moTraCuu;
 
-    // DINH_DANG_NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
+    // DINH_DANG_NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển
+    // giữa dữ liệu thời gian và chuỗi.
     private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     // ---- thong tin phieu ----
@@ -93,14 +111,14 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
     private boolean daNapDongMau = false;
 
     // Khởi tạo đối tượng với trạng thái ban đầu.
-    public NhapKhoPanel() {
+    public NhapKhoUI() {
         this(() -> {
         });
     }
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số moTraCuu: mở màn hình tra cứu.
-    public NhapKhoPanel(Runnable moTraCuu) {
+    public NhapKhoUI(Runnable moTraCuu) {
         this.moTraCuu = moTraCuu;
 
         setLayout(new BorderLayout(0, 12));
@@ -169,7 +187,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
     private void themHang(JPanel pnlThe, int dong, String nhan1, JComponent c1,
             String nhan2, JComponent c2) {
 
-        // g: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng GridBagLayout.
+        // g: Ràng buộc vị trí, kích thước và khoảng cách khi bố trí thành phần bằng
+        // GridBagLayout.
         GridBagConstraints g = new GridBagConstraints();
         g.gridy = dong;
         g.anchor = GridBagConstraints.WEST;
@@ -231,7 +250,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
 
         UIStyle.taoBang(tblDuLieu2, 2, 3, 4);
 
-        // Khong xuat truc tiep tblDuLieu2 chua luu: chung tu phai lay tu SQL theo ma phieu.
+        // Khong xuat truc tiep tblDuLieu2 chua luu: chung tu phai lay tu SQL theo ma
+        // phieu.
         // lblHuongDanPdf: Nhãn hiển thị: Xuất PDF: Tra cứu nhập kho → Xem chi tiết.
         JLabel lblHuongDanPdf = new JLabel("Xuất PDF: Tra cứu nhập kho → Xem chi tiết");
         lblHuongDanPdf.setFont(new Font("Segoe UI", Font.ITALIC, 12));
@@ -297,10 +317,13 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         }
     }
 
-    /** Điền sẵn vài mặt hàng thật vào phiếu nháp để màn hình có dữ liệu minh họa. */
+    /**
+     * Điền sẵn vài mặt hàng thật vào phiếu nháp để màn hình có dữ liệu minh họa.
+     */
     private void napDongMau() {
         NhaCungCap ncc = (NhaCungCap) cmbNhaCungCap.getSelectedItem();
-        if (ncc == null) return;
+        if (ncc == null)
+            return;
 
         try {
             // sanPham: Lưu sản phẩm; phần tử có kiểu SanPham.
@@ -917,7 +940,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
                     selected = LocalDate.parse(txtHanSuDung.getText().trim(),
                             DateTimeFormatter.ofPattern("dd/MM/uuuu"));
                 }
-            } catch (java.time.format.DateTimeParseException ignored) { }
+            } catch (java.time.format.DateTimeParseException ignored) {
+            }
             LichChonNgayPopup.mo(anchor, selected, date -> txtHanSuDung.setText(
                     date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))));
         }
@@ -933,7 +957,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
      */
     private static class PhieuNhapNhapDialog extends JDialog {
 
-        // NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
+        // NGAY: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu
+        // thời gian và chuỗi.
         private static final DateTimeFormatter NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         // dao: Đối tượng truy cập dữ liệu nhập kho.
@@ -1187,8 +1212,14 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
             btnSau.addActionListener(e -> doiThang(1));
             cmbThang.addActionListener(e -> capNhatThangTuDieuKhien());
             spnNam.addChangeListener(e -> capNhatThangTuDieuKhien());
-            btnXoa.addActionListener(e -> { chonNgay.accept(null); setVisible(false); });
-            btnHomNay.addActionListener(e -> { chonNgay.accept(LocalDate.now()); setVisible(false); });
+            btnXoa.addActionListener(e -> {
+                chonNgay.accept(null);
+                setVisible(false);
+            });
+            btnHomNay.addActionListener(e -> {
+                chonNgay.accept(LocalDate.now());
+                setVisible(false);
+            });
             veLich(selected);
         }
 
@@ -1200,7 +1231,8 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
         }
 
         private void capNhatThangTuDieuKhien() {
-            if (cmbThang.getSelectedIndex() < 0) return;
+            if (cmbThang.getSelectedIndex() < 0)
+                return;
             thangHienTai = YearMonth.of((Integer) spnNam.getValue(), cmbThang.getSelectedIndex() + 1);
             veLich(null);
         }
@@ -1220,8 +1252,12 @@ public class NhapKhoPanel extends JFrame implements ActionListener, MouseListene
                 button.setBackground(date.equals(selected) ? new Color(61, 105, 163) : Color.WHITE);
                 button.setForeground(date.equals(selected) ? Color.WHITE
                         : date.getMonthValue() == thangHienTai.getMonthValue()
-                                ? new Color(35, 45, 60) : new Color(155, 160, 168));
-                button.addActionListener(e -> { chonNgay.accept(date); setVisible(false); });
+                                ? new Color(35, 45, 60)
+                                : new Color(155, 160, 168));
+                button.addActionListener(e -> {
+                    chonNgay.accept(date);
+                    setVisible(false);
+                });
                 pnlNgay.add(button);
             }
             pnlNgay.revalidate();

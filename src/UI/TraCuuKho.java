@@ -4,5 +4,7 @@ package UI;
 public class TraCuuKho extends TraCuuKhoPanel {
     // Khởi tạo đối tượng từ các giá trị được truyền vào.
     // Tham số quayLai: quay lại màn hình trước.
-    public TraCuuKho(Runnable quayLai) { super(false, quayLai); }
+    public TraCuuKho(Runnable quayLai) {
+        super(false, quayLai);
+    }
 }

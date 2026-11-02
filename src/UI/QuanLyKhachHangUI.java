@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.UIStyle;
 import dao.KhachHangChiTietDAO;
 import dao.KhachHangDAO;
 import entity.KhachHang;
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 // Man Quan ly khach hang: tim kiem, them / sua / btnXoa2, lam moi, chon 1 dong de xem thong tin
 // Giao diện/chức năng quản lý khách hàng của ứng dụng.
-public class QuanLyKhachHang extends JPanel {
+public class QuanLyKhachHangUI extends JPanel {
 
         // COLS: Mảng lưu các cột.
         private static final String[] COLS = { "Mã KH", "Họ tên", "Số điện thoại", "Số thú cưng", "Tổng chi" };
@@ -66,13 +66,13 @@ public class QuanLyKhachHang extends JPanel {
         private final JLabel lblVThuCung = new JLabel();
 
         // Khởi tạo đối tượng với trạng thái ban đầu.
-        public QuanLyKhachHang() {
+        public QuanLyKhachHangUI() {
                 this(null);
         }
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
         // Tham số maNV: mã nhân viên.
-        public QuanLyKhachHang(String maNV) {
+        public QuanLyKhachHangUI(String maNV) {
                 setLayout(new BorderLayout(0, 14));
                 setBackground(UIStyle.LIGHT_BLUE);
                 setBorder(new EmptyBorder(18, 24, 18, 24));

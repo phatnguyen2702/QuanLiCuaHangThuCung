@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.UIStyle;
 import dao.DichVuDAO;
 import entity.DichVu;
 
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 /** Man hinh Danh muc > Quan ly dich vu Spa. */
-public class QuanLyDichVu extends JPanel implements ActionListener {
+public class QuanLyDichVuUI extends JPanel implements ActionListener {
 
     // Các nút dùng chung trong actionPerformed().
     private JButton btnTim, btnLamMoi, btnThem, btnSua, btnXoa, btnBoChon;
@@ -50,7 +50,7 @@ public class QuanLyDichVu extends JPanel implements ActionListener {
     private static final NumberFormat TIEN_VN = NumberFormat.getIntegerInstance(Locale.forLanguageTag("vi-VN"));
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-    public QuanLyDichVu() {
+    public QuanLyDichVuUI() {
         setLayout(new BorderLayout(0, 14));
         setBackground(UIStyle.LIGHT_BLUE);
         setBorder(new EmptyBorder(18, 22, 18, 22));

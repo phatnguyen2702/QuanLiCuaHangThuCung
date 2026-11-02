@@ -54,7 +54,7 @@ import entity.ChiTietHoaDon;
 import entity.HoaDon;
 
 // Giao diện/chức năng tra cứu lịch sử hóa đơn của ứng dụng.
-public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseListener {
+public class TraCuuLichSuHoaDonUI extends JFrame implements ActionListener, MouseListener {
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
     private static final Color NAVY = new Color(18, 48, 82);
@@ -64,19 +64,19 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
     private static final Color GREEN = new Color(25, 157, 107);
     // BORDER: Màu dùng cho giao diện: viền.
     private static final Color BORDER = new Color(210, 220, 230);
-    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ liệu thời gian và chuỗi.
-    private static final DateTimeFormatter DATE_TIME =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
+    // liệu thời gian và chuỗi.
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     // MONEY: Bộ định dạng số/tiền dùng để hiển thị dữ liệu trên giao diện.
-    private static final NumberFormat MONEY =
-            NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    private static final NumberFormat MONEY = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
     // dao: Đối tượng truy cập dữ liệu hóa đơn.
     private final HoaDonDAO dao = new HoaDonDAO();
     // quayLai: Hành động được gọi khi cần quay lại màn hình trước.
     private final Runnable quayLai;
     // pnlNoiDung: Phần giao diện được TrangChu nhúng vào CardLayout.
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout());
-    // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng chứa.
+    // cardLayout: Bộ bố trí cho phép chuyển giữa các màn hình trong cùng một vùng
+    // chứa.
     private final CardLayout cardLayout = new CardLayout();
     // pnlScreens: Khung chứa thành phần giao diện các màn hình.
     private final JPanel pnlScreens = new JPanel(cardLayout);
@@ -127,7 +127,7 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số quayLai: quay lại màn hình trước.
-    public TraCuuLichSuHoaDon(Runnable quayLai) {
+    public TraCuuLichSuHoaDonUI(Runnable quayLai) {
         this.quayLai = quayLai;
         setTitle("Tra cứu lịch sử hóa đơn");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -579,7 +579,8 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
             // hoaDons: Dữ liệu hóa đơn tra cứu.
             List<HoaDon> hoaDons = dao.timHoaDon(tuKhoa);
             List<HoaDon> hoaDonGoiY = tuKhoa.isEmpty()
-                    ? hoaDons : dao.timHoaDon("");
+                    ? hoaDons
+                    : dao.timHoaDon("");
             danhSachMaHoaDon.clear();
             for (HoaDon hoaDon : hoaDonGoiY) {
                 danhSachMaHoaDon.add(hoaDon.getMaHoaDon());
@@ -979,7 +980,8 @@ public class TraCuuLichSuHoaDon extends JFrame implements ActionListener, MouseL
         }
     }
 
-    // Nhóm dữ liệu hoặc chức năng hành động trên dòng dùng trong TraCuuLichSuHoaDon.
+    // Nhóm dữ liệu hoặc chức năng hành động trên dòng dùng trong
+    // TraCuuLichSuHoaDon.
     private interface RowAction {
         // Thực hiện hành động ứng với dòng được chọn.
         // Tham số row: chỉ số dòng.

@@ -1,7 +1,7 @@
 package UI;
 
-import UI.TrangChu.PhienLamViec;
-import UI.TrangChu.UIStyle;
+import UI.TrangChuUI.PhienLamViec;
+import UI.TrangChuUI.UIStyle;
 import dao.SanPhamDAO;
 import entity.DanhMuc;
 import entity.NhaCungCap;
@@ -27,7 +27,7 @@ import java.util.List;
  * Man hinh "San pham" - Quan ly san pham (nam trong khung TrangChu).
  * Form Them / Sua san pham la lop long SanPhamDialog o cuoi file.
  */
-public class SanPhamPanel extends JFrame implements ActionListener, MouseListener {
+public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
     @Override
     public void actionPerformed(ActionEvent e) {
     }
@@ -173,7 +173,7 @@ public class SanPhamPanel extends JFrame implements ActionListener, MouseListene
 
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
 
-    public SanPhamPanel() {
+    public SanPhamUI() {
 
         setLayout(new BorderLayout());
 

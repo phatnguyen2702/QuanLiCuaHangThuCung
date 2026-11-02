@@ -10,7 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class DangNhap extends JFrame implements ActionListener {
+public class DangNhapUI extends JFrame implements ActionListener {
 
         private JTextField txtTaiKhoan;
         private JPasswordField txtMatKhau;
@@ -26,7 +26,7 @@ public class DangNhap extends JFrame implements ActionListener {
         private TaiKhoanDAO taiKhoanDAO;
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-        public DangNhap() {
+        public DangNhapUI() {
 
                 setTitle("Pet Shop Pro - Đăng Nhập");
                 setSize(1000, 570);
@@ -275,7 +275,7 @@ public class DangNhap extends JFrame implements ActionListener {
                 // Khoi tao trang chu truoc khi dong cua so dang nhap:
                 // neu trang chu gap loi thi nguoi dung van nhin thay thong bao.
                 try {
-                        TrangChu trangChu = new TrangChu(tk.getMaNhanVien(), tk.getHoTen(), tk.getVaiTro());
+                        TrangChuUI trangChu = new TrangChuUI(tk.getMaNhanVien(), tk.getHoTen(), tk.getVaiTro());
                         trangChu.setVisible(true);
                         dispose();
                         JOptionPane.showMessageDialog(trangChu, "Đăng nhập thành công!", "Thông báo",
