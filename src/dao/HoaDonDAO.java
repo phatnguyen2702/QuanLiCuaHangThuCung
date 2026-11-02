@@ -8,7 +8,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import ConnectDB.connectDB;
 import entity.ChiTietHoaDon;
@@ -108,18 +110,12 @@ public class HoaDonDAO {
         // tham số nếu có.
         String sql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
                 + "kh.maKhachHang, kh.hoTen, "
-                + "kh.soDienThoai, pt.tenPhuongThuc, "
-                + "COALESCE(SUM(ct.soLuong * ct.donGia * "
-                + " (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
+                + "kh.soDienThoai, pt.tenPhuongThuc "
                 + "FROM HoaDon hd "
                 + "JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang "
                 + "JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc "
-                + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
                 + "WHERE (? = '' OR hd.maHoaDon LIKE ? OR kh.hoTen LIKE ? "
                 + "OR kh.soDienThoai LIKE ?) "
-                + "GROUP BY hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
-                + "kh.maKhachHang, kh.hoTen, "
-                + "kh.soDienThoai, pt.tenPhuongThuc "
                 + "ORDER BY hd.ngayLap DESC, hd.maHoaDon DESC";
         // keyword: Lưu từ khóa tìm kiếm.
         String keyword = tuKhoa == null ? "" : tuKhoa.trim();
@@ -148,38 +144,71 @@ public class HoaDonDAO {
                             maKhachHang,
                             rs.getString("hoTen"),
                             rs.getString("soDienThoai"),
-                            rs.getString("tenPhuongThuc"),
-                            rs.getBigDecimal("tongTien"),
-                            Collections.<ChiTietHoaDon>emptyList()));
+                            rs.getString("tenPhuongThuc")));
                 }
             }
         }
         return hoaDons;
     }
 
-    // Lấy chi tiết hóa đơn.
-    // Tham số maHoaDon: mã hóa đơn.
-    // Kết quả: dữ liệu hóa đơn dùng để hiển thị chi tiết.
-    public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
+    public BigDecimal layTongTienHoaDon(String maHoaDon) throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
-        // headerSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String headerSql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
-                + "kh.maKhachHang, kh.hoTen, "
-                + "kh.soDienThoai, pt.tenPhuongThuc, "
-                + "COALESCE(SUM(ct.soLuong * ct.donGia * "
-                + " (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
-                + "FROM HoaDon hd "
-                + "JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang "
-                + "JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc "
-                + "LEFT JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon "
-                + "WHERE hd.maHoaDon = ? "
-                + "GROUP BY hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
-                + "kh.maKhachHang, kh.hoTen, "
-                + "kh.soDienThoai, pt.tenPhuongThuc";
-        // detailSql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String detailSql = "SELECT ct.maHoaDon, ct.maThuCung, ct.maDichVu, ct.maSanPham, "
+        String sql = "SELECT COALESCE(SUM(ct.soLuong * ct.donGia * "
+                + "(1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
+                + "FROM ChiTietHoaDon ct WHERE ct.maHoaDon = ?";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maHoaDon);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException("Không đọc được tổng tiền hóa đơn.");
+                }
+                BigDecimal tongTien = rs.getBigDecimal("tongTien");
+                return tongTien == null ? BigDecimal.ZERO : tongTien;
+            }
+        }
+    }
+
+    public Map<String, BigDecimal> layTongTienHoaDon(List<HoaDon> hoaDons) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        Map<String, BigDecimal> tongTienTheoMa = new LinkedHashMap<>();
+        for (HoaDon hoaDon : hoaDons) {
+            tongTienTheoMa.put(hoaDon.getMaHoaDon(), BigDecimal.ZERO);
+        }
+        if (tongTienTheoMa.isEmpty()) {
+            return tongTienTheoMa;
+        }
+
+        List<String> maHoaDons = new ArrayList<>(tongTienTheoMa.keySet());
+        try (Connection con = connectDB.getConnection()) {
+            for (int batDau = 0; batDau < maHoaDons.size(); batDau += 1000) {
+                List<String> nhomMa = maHoaDons.subList(batDau, Math.min(batDau + 1000, maHoaDons.size()));
+                String placeholders = String.join(", ", Collections.nCopies(nhomMa.size(), "?"));
+                String sql = "SELECT ct.maHoaDon, COALESCE(SUM(ct.soLuong * ct.donGia * "
+                        + "(1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
+                        + "FROM ChiTietHoaDon ct WHERE ct.maHoaDon IN (" + placeholders + ") "
+                        + "GROUP BY ct.maHoaDon";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    for (int i = 0; i < nhomMa.size(); i++) {
+                        ps.setString(i + 1, nhomMa.get(i));
+                    }
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            BigDecimal tongTien = rs.getBigDecimal("tongTien");
+                            tongTienTheoMa.put(
+                                    rs.getString("maHoaDon"),
+                                    tongTien == null ? BigDecimal.ZERO : tongTien);
+                        }
+                    }
+                }
+            }
+        }
+        return tongTienTheoMa;
+    }
+
+    public List<ChiTietHoaDon> layDanhSachChiTietHoaDon(String maHoaDon) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        String sql = "SELECT ct.maHoaDon, ct.maThuCung, ct.maDichVu, ct.maSanPham, "
                 + "COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không xác định') AS tenHang, "
                 + "CASE WHEN sp.maSanPham IS NOT NULL THEN N'Sản phẩm' "
                 + "WHEN dv.maDichVu IS NOT NULL THEN N'Dịch vụ' ELSE N'Thú cưng' END AS loaiHang, "
@@ -192,72 +221,57 @@ public class HoaDonDAO {
                 + "LEFT JOIN ThuCung tc ON tc.maThuCung = ct.maThuCung "
                 + "WHERE ct.maHoaDon = ? "
                 + "ORDER BY COALESCE(ct.maSanPham, ct.maDichVu, ct.maThuCung)";
-
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection con = connectDB.getConnection()) {
-            // maKhachHang: Lưu mã khách hàng.
-            String maKhachHang;
-            String maPhuongThuc;
-            String tenKhachHang;
-            // soDienThoai: Lưu số điện thoại.
-            String soDienThoai;
-            // tenPhuongThuc: Lưu tên phương thức thanh toán.
-            String tenPhuongThuc;
-            // ngayLap: Lưu ngày giờ lập hóa đơn dưới dạng dữ liệu thời gian.
-            Timestamp ngayLap;
-            // tongTien: Giá trị tổng tiền dùng số thập phân chính xác để tính toán tiền/tỷ
-            // lệ.
-            BigDecimal tongTien;
-            try (PreparedStatement ps = con.prepareStatement(headerSql)) {
-                ps.setString(1, maHoaDon);
-                // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        return null;
-                    }
-                    maKhachHang = rs.getString("maKhachHang");
-                    maPhuongThuc = rs.getString("maPhuongThuc");
-                    tenKhachHang = rs.getString("hoTen");
-                    soDienThoai = rs.getString("soDienThoai");
-                    tenPhuongThuc = rs.getString("tenPhuongThuc");
-                    ngayLap = rs.getTimestamp("ngayLap");
-                    tongTien = rs.getBigDecimal("tongTien");
+        List<ChiTietHoaDon> chiTiet = new ArrayList<>();
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maHoaDon);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    chiTiet.add(new ChiTietHoaDon(
+                            rs.getString("maHoaDon"),
+                            rs.getString("maThuCung"),
+                            rs.getString("maDichVu"),
+                            rs.getString("maSanPham"),
+                            rs.getInt("soLuong"),
+                            rs.getDouble("donGia"),
+                            rs.getDouble("phanTramGiam"),
+                            rs.getString("tenHang"),
+                            rs.getString("loaiHang"),
+                            rs.getString("tenThuCungDichVu")));
                 }
             }
+        }
+        return chiTiet;
+    }
 
-            // chiTiet: Lưu các dòng chi tiết hóa đơn.
-            List<ChiTietHoaDon> chiTiet = new ArrayList<>();
-            try (PreparedStatement ps = con.prepareStatement(detailSql)) {
-                ps.setString(1, maHoaDon);
-                // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-                try (ResultSet rs = ps.executeQuery()) {
-                    // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
-                    while (rs.next()) {
-                        chiTiet.add(new ChiTietHoaDon(
-                                rs.getString("maHoaDon"),
-                                rs.getString("maThuCung"),
-                                rs.getString("maDichVu"),
-                                rs.getString("maSanPham"),
-                                rs.getInt("soLuong"),
-                                rs.getDouble("donGia"),
-                                rs.getDouble("phanTramGiam"),
-                                rs.getString("tenHang"),
-                                rs.getString("loaiHang"),
-                                rs.getString("tenThuCungDichVu")));
-                    }
+    // Lấy chi tiết hóa đơn.
+    // Tham số maHoaDon: mã hóa đơn.
+    // Kết quả: dữ liệu hóa đơn dùng để hiển thị chi tiết.
+    public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
+        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        String sql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
+                + "kh.maKhachHang, kh.hoTen, kh.soDienThoai, pt.tenPhuongThuc "
+                + "FROM HoaDon hd "
+                + "JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang "
+                + "JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc "
+                + "WHERE hd.maHoaDon = ?";
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maHoaDon);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
                 }
+                Timestamp ngayLap = rs.getTimestamp("ngayLap");
+                return new HoaDon(
+                        rs.getString("maHoaDon"),
+                        ngayLap == null ? null : ngayLap.toLocalDateTime(),
+                        rs.getString("maPhuongThuc"),
+                        rs.getString("maKhachHang"),
+                        rs.getString("hoTen"),
+                        rs.getString("soDienThoai"),
+                        rs.getString("tenPhuongThuc"));
             }
-            return new HoaDon(
-                    maHoaDon,
-                    ngayLap == null ? null : ngayLap.toLocalDateTime(),
-                    maPhuongThuc,
-                    maKhachHang,
-                    tenKhachHang,
-                    soDienThoai,
-                    tenPhuongThuc,
-                    tongTien,
-                    chiTiet);
         }
     }
 }
