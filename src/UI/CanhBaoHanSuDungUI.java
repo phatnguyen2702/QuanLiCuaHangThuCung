@@ -2,6 +2,7 @@ package UI;
 
 import ConnectDB.connectDB;
 import UI.TrangChuUI.UIStyle;
+import dao.SanPhamDAO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -10,41 +11,19 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Cảnh báo một dòng cho mỗi sản phẩm, dựa trên lô còn tồn gần hết hạn nhất. */
-public class CanhBaoHanSuDungUI extends JFrame implements ActionListener, MouseListener {
+/** Cảnh báo theo từng lô còn tồn, không gộp các hạn sử dụng khác nhau. */
+public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
-    }
-
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[] { "Mã SP", "Tên SP", "Danh mục", "Ngày nhập", "Hạn sử dụng", "Còn lại", "Trạng thái" }, 0) {
+            new String[] { "Mã SP", "Tên SP", "Danh mục", "Đợt nhập", "Ngày nhập", "Hạn sử dụng", "Còn lại", "Trạng thái" }, 0) {
         // Không cho phép sửa trực tiếp các ô trong bảng.
         // Tham số row: chỉ số dòng.
         // Tham số column: chỉ số cột.
@@ -81,11 +60,17 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener, MouseL
         JButton btnRefresh = UIStyle.nutChinh("Làm mới");
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
         btnRefresh.addActionListener(e -> napLai());
+        JButton btnNgungBan = UIStyle.nutPhu("Ngừng kinh doanh");
+        btnNgungBan.addActionListener(e -> ngungKinhDoanhLo());
         // pnlHeader2: Khung chứa thành phần giao diện đầu trang.
         JPanel pnlHeader2 = new JPanel(new BorderLayout());
         pnlHeader2.setOpaque(false);
         pnlHeader2.add(lblTitle2, BorderLayout.WEST);
-        pnlHeader2.add(btnRefresh, BorderLayout.EAST);
+        JPanel pnlHeaderActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        pnlHeaderActions.setOpaque(false);
+        pnlHeaderActions.add(btnNgungBan);
+        pnlHeaderActions.add(btnRefresh);
+        pnlHeader2.add(pnlHeaderActions, BorderLayout.EAST);
 
         // pnlFilters: Khung chứa thành phần giao diện các bộ lọc.
         JPanel pnlFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
@@ -155,73 +140,59 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener, MouseL
     // Nạp lại dữ liệu và cập nhật nội dung màn hình.
     public void napLai() {
         model.setRowCount(0);
-        // expired: Lưu hết hạn; phần tử có kiểu String.
         Set<String> expired = new HashSet<>();
-        // soon: Lưu sắp đến; phần tử có kiểu String.
         Set<String> soon = new HashSet<>();
-        // keyword: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
         String keyword = txtSearch.getText().trim().toLowerCase();
         String selectedStatus = (String) cmbStatus.getSelectedItem();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
         String sql = """
-                WITH Lots AS (
-                  SELECT ct.maSanPham, sp.tenSanPham, dm.tenDanhMuc, pn.maPhieuNhap,
-                         pn.ngayNhap, ct.hanSuDung, ct.soLuongNhap,
-                         SUM(ct.soLuongNhap) OVER(PARTITION BY ct.maSanPham ORDER BY pn.ngayNhap, pn.maPhieuNhap ROWS UNBOUNDED PRECEDING) AS cumQty,
-                         SUM(ct.soLuongNhap) OVER(PARTITION BY ct.maSanPham ORDER BY pn.ngayNhap, pn.maPhieuNhap ROWS UNBOUNDED PRECEDING) - ct.soLuongNhap AS prevQty,
-                         ISNULL((SELECT SUM(hd.soLuong) FROM ChiTietHoaDon hd WHERE hd.maSanPham = ct.maSanPham), 0)
-                         - ISNULL((SELECT SUM(kk.soLuongThucTe - kk.soLuongHeThong)
-                                   FROM ChiTietPhieuKiemKe kk
-                                   JOIN PhieuKiemKe pk ON pk.maPhieuKiemKe = kk.maPhieuKiemKe
-                                   WHERE kk.maSanPham = ct.maSanPham AND pk.trangThai = 1
-                                     AND kk.soLuongThucTe IS NOT NULL), 0) AS sold
+                WITH NguonLo AS (
+                  SELECT ct.maSanPham,sp.tenSanPham,dm.tenDanhMuc,pn.maPhieuNhap,pn.ngayNhap,ct.hanSuDung,
+                         CASE WHEN ISNULL(ct.soLuongNhap,0)>ISNULL(ct.soLuongDaXuLy,0)
+                              THEN ISNULL(ct.soLuongNhap,0)-ISNULL(ct.soLuongDaXuLy,0) ELSE 0 END AS soLuongNhap,
+                         ISNULL(ct.ngungKinhDoanh,0) AS ngungKinhDoanh,
+                         ISNULL((SELECT SUM(h.soLuong) FROM ChiTietHoaDon h WHERE h.maSanPham=ct.maSanPham),0)
+                           - ISNULL((SELECT SUM(k.soLuongThucTe-k.soLuongHeThong)
+                                     FROM ChiTietPhieuKiemKe k JOIN PhieuKiemKe p ON p.maPhieuKiemKe=k.maPhieuKiemKe
+                                     WHERE k.maSanPham=ct.maSanPham AND p.trangThai=1 AND k.soLuongThucTe IS NOT NULL),0) AS daBan
                   FROM ChiTietPhieuNhap ct
-                  JOIN PhieuNhapKho pn ON pn.maPhieuNhap = ct.maPhieuNhap
-                  JOIN SanPham sp ON sp.maSanPham = ct.maSanPham
-                  JOIN DanhMuc dm ON dm.maDanhMuc = sp.maDanhMuc
-                  WHERE pn.trangThai = 1 AND ISNULL(ct.trangThai, 1) = 1 AND ct.hanSuDung IS NOT NULL
-                ), RemainingLots AS (
-                  SELECT maSanPham, tenSanPham, tenDanhMuc, maPhieuNhap, ngayNhap, hanSuDung,
-                         CASE WHEN sold <= prevQty THEN soLuongNhap WHEN sold >= cumQty THEN 0 ELSE cumQty - sold END AS conLai,
-                         DATEDIFF(day, CAST(GETDATE() AS date), hanSuDung) AS ngayCon
+                  JOIN PhieuNhapKho pn ON pn.maPhieuNhap=ct.maPhieuNhap
+                  JOIN SanPham sp ON sp.maSanPham=ct.maSanPham
+                  JOIN DanhMuc dm ON dm.maDanhMuc=sp.maDanhMuc
+                  WHERE pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 AND ct.hanSuDung IS NOT NULL
+                ), Lots AS (
+                  SELECT *,SUM(soLuongNhap) OVER(PARTITION BY maSanPham ORDER BY ngayNhap,maPhieuNhap ROWS UNBOUNDED PRECEDING) AS tonLuyKe,
+                         SUM(soLuongNhap) OVER(PARTITION BY maSanPham ORDER BY ngayNhap,maPhieuNhap ROWS UNBOUNDED PRECEDING)-soLuongNhap AS tonTruoc
+                  FROM NguonLo
+                ), TonLo AS (
+                  SELECT *,CASE WHEN daBan<=tonTruoc THEN soLuongNhap WHEN daBan>=tonLuyKe THEN 0
+                                ELSE tonLuyKe-daBan END
+                         + ISNULL((SELECT SUM(k.soLuongThucTe-k.soLuongHeThong)
+                                   FROM ChiTietPhieuKiemKeLo k JOIN PhieuKiemKe p ON p.maPhieuKiemKe=k.maPhieuKiemKe
+                                   WHERE k.maPhieuNhap=Lots.maPhieuNhap AND k.maSanPham=Lots.maSanPham
+                                     AND p.trangThai=1 AND k.soLuongThucTe IS NOT NULL),0) AS conLai
                   FROM Lots
-                ), AlertLots AS (
-                  SELECT *, ROW_NUMBER() OVER(
-                           PARTITION BY maSanPham ORDER BY hanSuDung, ngayNhap, maPhieuNhap) AS stt
-                  FROM RemainingLots
-                  WHERE conLai > 0
-                    AND hanSuDung <= DATEADD(day, 30, CAST(GETDATE() AS date))
                 )
-                SELECT maSanPham, tenSanPham, tenDanhMuc, ngayNhap, hanSuDung, conLai, ngayCon
-                FROM AlertLots
-                WHERE stt = 1
-                ORDER BY hanSuDung, tenSanPham
+                SELECT maSanPham,tenSanPham,tenDanhMuc,maPhieuNhap,ngayNhap,hanSuDung,conLai,
+                       DATEDIFF(day,CAST(GETDATE() AS date),hanSuDung) AS ngayCon,ngungKinhDoanh
+                FROM TonLo
+                WHERE conLai>0 AND hanSuDung<=DATEADD(day,30,CAST(GETDATE() AS date))
+                ORDER BY hanSuDung,tenSanPham
                 """;
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
         try (Connection connection = connectDB.getConnection(); Statement migration = connection.createStatement()) {
-            migration.execute(
-                    "IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
+            migration.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap','hanSuDung') IS NULL ALTER TABLE ChiTietPhieuNhap ADD hanSuDung DATE NULL");
+            SanPhamDAO.damBaoCotKinhDoanh();
         } catch (SQLException ex) {
             showError("Không thể cập nhật cấu trúc hạn sử dụng", ex);
             return;
         }
 
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection connection = connectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql);
-                ResultSet result = statement.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+        try (Connection connection = connectDB.getConnection(); Statement statement = connection.createStatement();
+                ResultSet result = statement.executeQuery(sql)) {
             while (result.next()) {
                 int days = result.getInt("ngayCon");
                 int quantity = result.getInt("conLai");
-                if (quantity <= 0)
-                    continue;
                 String code = result.getString("maSanPham");
-                // name: Lưu tên.
                 String name = result.getString("tenSanPham");
                 boolean isExpired = days < 0;
                 (isExpired ? expired : soon).add(code);
@@ -229,24 +200,48 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener, MouseL
                     continue;
                 if ("Sắp hết hạn (30 ngày)".equals(selectedStatus) && isExpired)
                     continue;
-                if (!keyword.isEmpty() && !code.toLowerCase().contains(keyword)
-                        && !name.toLowerCase().contains(keyword))
+                if (!keyword.isEmpty() && !code.toLowerCase().contains(keyword) && !name.toLowerCase().contains(keyword))
                     continue;
-                model.addRow(new Object[] { code, name, result.getString("tenDanhMuc"), result.getDate("ngayNhap"),
-                        result.getDate("hanSuDung"), quantity,
-                        isExpired ? "Đã hết hạn" : "Sắp hết hạn · " + days + " ngày" });
+                String status = result.getBoolean("ngungKinhDoanh") ? "Ngừng kinh doanh"
+                        : isExpired ? "Đã hết hạn" : "Sắp hết hạn · " + days + " ngày";
+                model.addRow(new Object[] { code,name,result.getString("tenDanhMuc"),result.getString("maPhieuNhap"),
+                        result.getDate("ngayNhap"),result.getDate("hanSuDung"),quantity,status });
             }
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblExpiredCount.setText(String.valueOf(expired.size()));
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblSoonCount.setText(String.valueOf(soon.size()));
-            // all: Lưu tất cả; phần tử có kiểu String.
             Set<String> all = new HashSet<>(expired);
             all.addAll(soon);
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTotalCount.setText(String.valueOf(all.size()));
         } catch (SQLException ex) {
             showError("Không tải được dữ liệu cảnh báo", ex);
+        }
+    }
+    private void ngungKinhDoanhLo() {
+        int row = tblDuLieu.getSelectedRow();
+        if (row < 0) {
+            UIStyle.canhBao(this, "Chọn lô sản phẩm cần ngừng kinh doanh.");
+            return;
+        }
+        int modelRow = tblDuLieu.convertRowIndexToModel(row);
+        String maSanPham = String.valueOf(model.getValueAt(modelRow, 0));
+        String maPhieuNhap = String.valueOf(model.getValueAt(modelRow, 3));
+        if (!UIStyle.xacNhan(this, "Ngừng kinh doanh sản phẩm " + maSanPham + " của đợt " + maPhieuNhap + "?"))
+            return;
+        try {
+            entity.PhanQuyen.yeuCau(entity.PhanQuyen.Quyen.CANH_BAO_HAN_SU_DUNG);
+            SanPhamDAO.damBaoCotKinhDoanh();
+            try (Connection connection = connectDB.getConnection();
+                    PreparedStatement statement = connection.prepareStatement(
+                            "UPDATE ChiTietPhieuNhap SET ngungKinhDoanh=1 WHERE maPhieuNhap=? AND maSanPham=?")) {
+                statement.setString(1, maPhieuNhap);
+                statement.setString(2, maSanPham);
+                if (statement.executeUpdate() != 1)
+                    throw new SQLException("Không tìm thấy dòng hàng thuộc đợt nhập đã chọn.");
+            }
+            napLai();
+        } catch (SQLException | SecurityException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Không thể ngừng kinh doanh",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 

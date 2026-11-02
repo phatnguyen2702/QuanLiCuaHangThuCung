@@ -21,6 +21,15 @@ public final class LichChonNgay {
     private LichChonNgay() {
     }
 
+    /** Mở bộ chọn ngày đang dùng ở màn hình lịch hẹn spa. */
+    public static LocalDate chonNgayLichHen(Component cha, LocalDate ngayBanDau, boolean chiTuHomNay) {
+        QuanLyLichHenUI.DatePickerDialog picker = new QuanLyLichHenUI.DatePickerDialog(
+                SwingUtilities.getWindowAncestor(cha), ngayBanDau, chiTuHomNay);
+        picker.setLocationRelativeTo(cha);
+        picker.setVisible(true);
+        return picker.getSelectedDate();
+    }
+
     // Chọn ngày.
     // Tham số cha: thành phần cha.
     // Tham số ngayBanDau: ngày chọn ban đầu.

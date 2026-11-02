@@ -23,6 +23,10 @@ public class SanPham {
     private String tenNhaCungCap;
     // tonKho: Lưu số lượng tồn kho.
     private int tonKho;
+    private String maPhieuNhap;
+    private java.time.LocalDate ngayNhap;
+    private java.time.LocalDate hanSuDung;
+    private boolean ngungKinhDoanh;
 
     // Khởi tạo đối tượng với trạng thái ban đầu.
     public SanPham() {
@@ -98,6 +102,14 @@ public class SanPham {
     // Gán số lượng tồn kho từ giá trị được truyền vào.
     // Tham số tonKho: số lượng tồn kho.
     public void setTonKho(int tonKho) { this.tonKho = tonKho; }
+    public String getMaPhieuNhap() { return maPhieuNhap; }
+    public void setMaPhieuNhap(String maPhieuNhap) { this.maPhieuNhap = maPhieuNhap; }
+    public java.time.LocalDate getNgayNhap() { return ngayNhap; }
+    public void setNgayNhap(java.time.LocalDate ngayNhap) { this.ngayNhap = ngayNhap; }
+    public java.time.LocalDate getHanSuDung() { return hanSuDung; }
+    public void setHanSuDung(java.time.LocalDate hanSuDung) { this.hanSuDung = hanSuDung; }
+    public boolean isNgungKinhDoanh() { return ngungKinhDoanh; }
+    public void setNgungKinhDoanh(boolean ngungKinhDoanh) { this.ngungKinhDoanh = ngungKinhDoanh; }
 
     // Trả về chuỗi đại diện của đối tượng để hiển thị.
     @Override

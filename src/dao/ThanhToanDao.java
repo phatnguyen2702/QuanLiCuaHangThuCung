@@ -114,11 +114,18 @@ public class ThanhToanDao {
     // Tham số tuKhoa: từ khóa tìm kiếm.
     // Kết quả: đối tượng/giá trị kiểu List<ThanhToan>.
     public List<ThanhToan> timMatHang(String tuKhoa) throws SQLException {
+        SanPhamDAO.damBaoCotKinhDoanh();
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, "
-                + "giaBan AS donGia FROM SanPham "
-                + "WHERE maSanPham = ? OR tenSanPham LIKE ?";
+                + "giaBan AS donGia FROM SanPham sp "
+                + "WHERE (sp.maSanPham = ? OR sp.tenSanPham LIKE ?) "
+                + "AND (" + SanPhamDAO.BIEU_THUC_TON + ") > 0 "
+                + "AND EXISTS (SELECT 1 FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn "
+                + "ON pn.maPhieuNhap=ct.maPhieuNhap WHERE ct.maSanPham=sp.maSanPham "
+                + "AND pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 "
+                + "AND ISNULL(ct.ngungKinhDoanh,0)=0 "
+                + "AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date)))";
         // matHangs: Lưu các mặt hàng; phần tử có kiểu ThanhToan.
         List<ThanhToan> matHangs = new ArrayList<>();
 
@@ -357,6 +364,7 @@ public class ThanhToanDao {
     public String taoMaHoaDon(String maKhachHang, LocalDateTime ngayLap)
             throws SQLException {
         PhanQuyen.yeuCau(PhanQuyen.Quyen.THANH_TOAN);
+        SanPhamDAO.damBaoCotKinhDoanh();
         if (maKhachHang == null || ngayLap == null) {
             throw new IllegalArgumentException("Thiếu mã khách hàng hoặc ngày lập hóa đơn.");
         }
@@ -473,9 +481,33 @@ public class ThanhToanDao {
                 // nhận tham số nếu có.
                 String sqlTon = "SELECT " + SanPhamDAO.BIEU_THUC_TON
                         + " AS tonKho FROM SanPham sp WITH (UPDLOCK, HOLDLOCK) WHERE sp.maSanPham=?";
+                String sqlTonBanDuoc = "SELECT "
+                        + "ISNULL((SELECT SUM(ct.soLuongNhap) FROM ChiTietPhieuNhap ct "
+                        + "JOIN PhieuNhapKho pn ON pn.maPhieuNhap=ct.maPhieuNhap "
+                        + "WHERE ct.maSanPham=sp.maSanPham AND pn.trangThai=1 "
+                        + "AND ISNULL(ct.trangThai,1)=1 AND ISNULL(ct.ngungKinhDoanh,0)=0 "
+                        + "AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date))),0) "
+                        + "- ISNULL((SELECT SUM(hd.soLuong) FROM ChiTietHoaDon hd "
+                        + "WHERE hd.maSanPham=sp.maSanPham),0) "
+                        + "+ ISNULL((SELECT SUM(k.soLuongThucTe-k.soLuongHeThong) "
+                        + "FROM ChiTietPhieuKiemKe k JOIN PhieuKiemKe p "
+                        + "ON p.maPhieuKiemKe=k.maPhieuKiemKe WHERE k.maSanPham=sp.maSanPham "
+                        + "AND p.trangThai=1 AND k.soLuongThucTe IS NOT NULL),0) "
+                        + "+ ISNULL((SELECT SUM(k.soLuongThucTe-k.soLuongHeThong) "
+                        + "FROM ChiTietPhieuKiemKeLo k JOIN PhieuKiemKe p "
+                        + "ON p.maPhieuKiemKe=k.maPhieuKiemKe WHERE k.maSanPham=sp.maSanPham "
+                        + "AND p.trangThai=1 AND k.soLuongThucTe IS NOT NULL),0) "
+                        + "- ISNULL((SELECT SUM(ct.soLuongDaXuLy) FROM ChiTietPhieuNhap ct "
+                        + "JOIN PhieuNhapKho pn ON pn.maPhieuNhap=ct.maPhieuNhap "
+                        + "WHERE ct.maSanPham=sp.maSanPham AND pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 "
+                        + "AND ISNULL(ct.ngungKinhDoanh,0)=0 "
+                        + "AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date))),0) "
+                        + "AS tonBanDuoc FROM SanPham sp WITH (UPDLOCK,HOLDLOCK) WHERE sp.maSanPham=?";
                 try (PreparedStatement psTon = con.prepareStatement(sqlTon)) {
+                    try (PreparedStatement psBanDuoc = con.prepareStatement(sqlTonBanDuoc)) {
                     for (var entry : soLuongCan.entrySet()) {
                         psTon.setString(1, entry.getKey());
+                        psBanDuoc.setString(1, entry.getKey());
                         // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
                         try (ResultSet rs = psTon.executeQuery()) {
                             if (!rs.next() || rs.getInt("tonKho") < entry.getValue()) {
@@ -483,6 +515,12 @@ public class ThanhToanDao {
                                         + " không đủ tồn kho. Vui lòng tải lại giỏ hàng.");
                             }
                         }
+                        try (ResultSet rs = psBanDuoc.executeQuery()) {
+                            if (!rs.next() || rs.getInt("tonBanDuoc") < entry.getValue())
+                                throw new SQLException("Sản phẩm " + entry.getKey()
+                                        + " không đủ số lượng còn hạn và đang kinh doanh.");
+                        }
+                    }
                     }
                 }
 

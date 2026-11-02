@@ -12,40 +12,19 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
 /** Tra cứu phiếu nhập kho hoặc phiếu kiểm kê kho. */
-public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListener {
+public class TraCuuKhoUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
     }
 
     // NAVY: Màu dùng cho giao diện: xanh đậm.
@@ -53,6 +32,7 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
     // liệu thời gian và chuỗi.
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("dd/MM/uuuu");
     // kiemKe: Cờ cho biết kiểm kê.
     private final boolean kiemKe;
     // txtTuKhoa: Ô nhập/hiển thị văn bản từ khóa tìm kiếm.
@@ -88,7 +68,7 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     // Tham số kiemKe: kiểm kê.
     // Tham số quayLai: quay lại màn hình trước.
-    public TraCuuKhoPanel(boolean kiemKe, Runnable quayLai) {
+    public TraCuuKhoUI(boolean kiemKe, Runnable quayLai) {
         this.kiemKe = kiemKe;
         setLayout(new BorderLayout(0, 12));
         getContentPane().setBackground(new Color(229, 241, 252));
@@ -231,8 +211,10 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
                 selected = parseDate(field.getText());
         } catch (IllegalArgumentException ignored) {
         }
-        NhapKhoUI.LichChonNgayPopup.mo(anchor, selected, date -> field.setText(
-                date == null ? "" : date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))));
+        LocalDate date = LichChonNgay.chonNgayLichHen(anchor, selected, false);
+        if (date != null) {
+            field.setText(date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu")));
+        }
     }
 
     // Nạp nhà cung cấp.
@@ -256,71 +238,103 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
     // Tìm kiểm.
     private void timKiem() {
         try {
+            dao.SanPhamDAO.damBaoCotKinhDoanh();
             if (kiemKe)
                 damBaoCotThoiDiemChot();
-            // from: Lưu chỉ số bắt đầu dưới dạng dữ liệu thời gian.
-            // to: Lưu chỉ số kết thúc dưới dạng dữ liệu thời gian.
-            LocalDate from = parseDate(txtTuNgay.getText()), to = parseDate(txtDenNgay.getText());
+
+            LocalDate from = parseDate(txtTuNgay.getText());
+            LocalDate to = parseDate(txtDenNgay.getText());
             if (from != null && to != null && from.isAfter(to)) {
                 JOptionPane.showMessageDialog(this, "Từ ngày phải trước hoặc bằng đến ngày.", "Bộ lọc ngày",
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-            // tham số nếu có.
-            String sql = kiemKe
-                    ? "SELECT p.maPhieuKiemKe,COALESCE(p.ngayChot,p.ngayKiemKe),p.maNhanVien,p.trangThai,COUNT(d.maSanPham),SUM(CASE WHEN d.soLuongThucTe IS NOT NULL AND d.soLuongThucTe<>d.soLuongHeThong THEN 1 ELSE 0 END),MAX(CASE WHEN d.soLuongThucTe IS NULL THEN 1 ELSE 0 END) FROM PhieuKiemKe p LEFT JOIN ChiTietPhieuKiemKe d ON d.maPhieuKiemKe=p.maPhieuKiemKe WHERE ISNULL(p.trangThai,0)=1 GROUP BY p.maPhieuKiemKe,COALESCE(p.ngayChot,p.ngayKiemKe),p.maNhanVien,p.trangThai ORDER BY COALESCE(p.ngayChot,p.ngayKiemKe) DESC"
-                    : "SELECT p.maPhieuNhap,p.ngayNhap,p.maNhanVien,p.maNhaCungCap,n.tenNhaCungCap,COUNT(d.maSanPham),ISNULL(SUM(d.soLuongNhap*d.donGiaNhap),0),p.trangThai FROM PhieuNhapKho p LEFT JOIN Nhacungcap n ON n.maNhaCungCap=p.maNhaCungCap LEFT JOIN ChiTietPhieuNhap d ON d.maPhieuNhap=p.maPhieuNhap GROUP BY p.maPhieuNhap,p.ngayNhap,p.maNhanVien,p.maNhaCungCap,n.tenNhaCungCap,p.trangThai ORDER BY p.ngayNhap DESC";
-            // result: Lưu kết quả; phần tử có kiểu String[].
+
+            String keyword = txtTuKhoa.getText().trim().toLowerCase(Locale.ROOT);
+            String like = "%" + keyword + "%";
+            String sql = kiemKe ? """
+                    SELECT p.maPhieuKiemKe,COALESCE(p.ngayChot,p.ngayKiemKe),p.maNhanVien,p.trangThai,
+                           COUNT(d.maSanPham),
+                           SUM(CASE WHEN d.soLuongThucTe IS NOT NULL AND d.soLuongThucTe<>d.soLuongHeThong THEN 1 ELSE 0 END),
+                           MAX(CASE WHEN d.soLuongThucTe IS NULL THEN 1 ELSE 0 END)
+                    FROM PhieuKiemKe p
+                    LEFT JOIN NhanVien nv ON nv.maNhanVien=p.maNhanVien
+                    LEFT JOIN (
+                        SELECT maPhieuKiemKe,maSanPham,soLuongHeThong,soLuongThucTe FROM ChiTietPhieuKiemKeLo
+                        UNION ALL
+                        SELECT maPhieuKiemKe,maSanPham,soLuongHeThong,soLuongThucTe FROM ChiTietPhieuKiemKe
+                    ) d ON d.maPhieuKiemKe=p.maPhieuKiemKe
+                    WHERE ISNULL(p.trangThai,0)=1
+                      AND (?=N'' OR LOWER(p.maPhieuKiemKe) LIKE ? OR LOWER(p.maNhanVien) LIKE ? OR LOWER(nv.hoTen) LIKE ?
+                           OR EXISTS (SELECT 1 FROM (
+                               SELECT maPhieuKiemKe,maSanPham FROM ChiTietPhieuKiemKeLo
+                               UNION ALL SELECT maPhieuKiemKe,maSanPham FROM ChiTietPhieuKiemKe
+                           ) x JOIN SanPham s ON s.maSanPham=x.maSanPham
+                           WHERE x.maPhieuKiemKe=p.maPhieuKiemKe
+                             AND (LOWER(x.maSanPham) LIKE ? OR LOWER(s.tenSanPham) LIKE ?)))
+                    GROUP BY p.maPhieuKiemKe,COALESCE(p.ngayChot,p.ngayKiemKe),p.maNhanVien,p.trangThai
+                    ORDER BY COALESCE(p.ngayChot,p.ngayKiemKe) DESC
+                    """ : """
+                    SELECT p.maPhieuNhap,p.ngayNhap,p.maNhanVien,p.maNhaCungCap,n.tenNhaCungCap,
+                           COUNT(d.maSanPham),ISNULL(SUM(d.soLuongNhap*d.donGiaNhap),0),p.trangThai
+                    FROM PhieuNhapKho p
+                    LEFT JOIN Nhacungcap n ON n.maNhaCungCap=p.maNhaCungCap
+                    LEFT JOIN NhanVien nv ON nv.maNhanVien=p.maNhanVien
+                    LEFT JOIN ChiTietPhieuNhap d ON d.maPhieuNhap=p.maPhieuNhap
+                    WHERE (?=N'' OR LOWER(p.maPhieuNhap) LIKE ? OR LOWER(p.maNhanVien) LIKE ? OR LOWER(nv.hoTen) LIKE ?
+                           OR LOWER(p.maNhaCungCap) LIKE ? OR LOWER(n.tenNhaCungCap) LIKE ?
+                           OR EXISTS (SELECT 1 FROM ChiTietPhieuNhap x JOIN SanPham s ON s.maSanPham=x.maSanPham
+                                      WHERE x.maPhieuNhap=p.maPhieuNhap
+                                        AND (LOWER(x.maSanPham) LIKE ? OR LOWER(s.tenSanPham) LIKE ?)))
+                    GROUP BY p.maPhieuNhap,p.ngayNhap,p.maNhanVien,p.maNhaCungCap,n.tenNhaCungCap,p.trangThai
+                    ORDER BY p.ngayNhap DESC
+                    """;
+
             List<String[]> result = new ArrayList<>();
-            // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-            // lệnh.
-            try (Connection c = connectDB.getConnection();
-                    PreparedStatement p = c.prepareStatement(sql);
-                    ResultSet r = p.executeQuery()) {
-                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
-                while (r.next()) {
-                    String id = r.getString(1), staff = r.getString(3);
-                    String status = r.getBoolean(kiemKe ? 4 : 8)
-                            ? (kiemKe ? "Đã chốt" : "Đã hoàn tất")
-                            : "Phiếu nháp";
-                    // ts: Lưu thời điểm dưới dạng dữ liệu thời gian.
-                    Timestamp ts = r.getTimestamp(2);
-                    // date: Lưu ngày dưới dạng dữ liệu thời gian.
-                    LocalDate date = ts == null ? null : ts.toLocalDateTime().toLocalDate();
-                    String supplier = kiemKe ? "" : r.getString(5);
-                    // count: Lưu số phần tử.
-                    int count = r.getInt(kiemKe ? 5 : 6);
-                    String delta = kiemKe ? (r.getInt(6) > 0 ? "Có chênh lệch"
-                            : r.getInt(7) > 0 ? "Chưa kiểm đủ" : "Không chênh lệch") : "";
-                    // keyword: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
-                    String keyword = txtTuKhoa.getText().trim().toLowerCase(Locale.ROOT);
-                    boolean match = keyword.isEmpty()
-                            || (id + " " + staff + " " + r.getString(kiemKe ? 3 : 4) + supplier)
-                                    .toLowerCase(Locale.ROOT).contains(keyword);
-                    if (!match && !keyword.isEmpty())
-                        match = timTrongNhanVien(staff, keyword) || timTrongSanPham(id, keyword);
-                    if (!match || from != null && (date == null || date.isBefore(from))
-                            || to != null && (date == null || date.isAfter(to)))
-                        continue;
-                    if (!kiemKe) {
-                        if (cmbTrangThai2.getSelectedIndex() == 1 && !status.equals("Đã hoàn tất")
-                                || cmbTrangThai2.getSelectedIndex() == 2 && !status.equals("Phiếu nháp"))
+            try (Connection connection = connectDB.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, keyword);
+                int likeCount = kiemKe ? 5 : 7;
+                for (int i = 0; i < likeCount; i++)
+                    statement.setString(i + 2, like);
+
+                try (ResultSet rs = statement.executeQuery()) {
+                    while (rs.next()) {
+                        String id = rs.getString(1);
+                        String staff = rs.getString(3);
+                        Timestamp timestamp = rs.getTimestamp(2);
+                        LocalDate date = timestamp == null ? null : timestamp.toLocalDateTime().toLocalDate();
+                        if (from != null && (date == null || date.isBefore(from))
+                                || to != null && (date == null || date.isAfter(to)))
                             continue;
-                        if (cmbNhaCungCap2.getSelectedIndex() > 0 && !Objects
-                                .equals(cmbNhaCungCap2.getSelectedItem().toString().split(" - ", 2)[0], r.getString(4)))
+
+                        String status = rs.getBoolean(4)
+                                ? (kiemKe ? "Đã chốt" : "Đã hoàn tất") : "Phiếu nháp";
+                        int count = rs.getInt(kiemKe ? 5 : 6);
+                        String dateText = timestamp == null ? "" : DATE_TIME.format(timestamp.toLocalDateTime());
+                        if (kiemKe) {
+                            String delta = rs.getInt(6) > 0 ? "Có chênh lệch"
+                                    : rs.getInt(7) > 0 ? "Chưa kiểm đủ" : "Không chênh lệch";
+                            int filter = cmbKetQuaKiemKe.getSelectedIndex();
+                            if (filter == 1 && !delta.equals("Có chênh lệch")
+                                    || filter == 2 && !delta.equals("Không chênh lệch")
+                                    || filter == 3 && !delta.equals("Chưa kiểm đủ"))
+                                continue;
+                            result.add(new String[] { id, dateText, staff, status, String.valueOf(count), delta });
                             continue;
-                        result.add(new String[] { id, ts == null ? "" : DATE_TIME.format(ts.toLocalDateTime()), staff,
-                                r.getString(4), supplier, String.valueOf(count),
-                                String.format(Locale.forLanguageTag("vi-VN"), "%,.0f ₫", r.getDouble(7)), status });
-                    } else {
-                        int filter = cmbKetQuaKiemKe.getSelectedIndex();
-                        if (filter == 1 && !delta.equals("Có chênh lệch")
-                                || filter == 2 && !delta.equals("Không chênh lệch")
-                                || filter == 3 && !delta.equals("Chưa kiểm đủ"))
+                        }
+
+                        int statusFilter = cmbTrangThai2.getSelectedIndex();
+                        if (statusFilter == 1 && !status.equals("Đã hoàn tất")
+                                || statusFilter == 2 && !status.equals("Phiếu nháp"))
                             continue;
-                        result.add(new String[] { id, ts == null ? "" : DATE_TIME.format(ts.toLocalDateTime()), staff,
-                                status, String.valueOf(count), delta });
+                        String maNhaCungCap = rs.getString(4);
+                        if (cmbNhaCungCap2.getSelectedIndex() > 0) {
+                            String selectedSupplier = cmbNhaCungCap2.getSelectedItem().toString().split(" - ", 2)[0];
+                            if (!Objects.equals(selectedSupplier, maNhaCungCap))
+                                continue;
+                        }
+                        result.add(new String[] { id, dateText, staff, maNhaCungCap, rs.getString(5),
+                                String.valueOf(count), String.format(Locale.forLanguageTag("vi-VN"), "%,.0f ₫", rs.getDouble(7)), status });
                     }
                 }
             }
@@ -328,10 +342,10 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
             model.setRowCount(0);
             for (String[] row : ketQua)
                 model.addRow(row);
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Ngày không hợp lệ", JOptionPane.WARNING_MESSAGE);
-        } catch (SQLException e) {
-            baoLoi(e);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Ngày không hợp lệ", JOptionPane.WARNING_MESSAGE);
+        } catch (SQLException ex) {
+            baoLoi(ex);
         }
     }
 
@@ -349,49 +363,9 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
         if (value == null || value.trim().isEmpty())
             return null;
         try {
-            return LocalDate.parse(value.trim(), DateTimeFormatter.ofPattern("dd/MM/uuuu"));
-        } catch (Exception e) {
+            return LocalDate.parse(value.trim(), DATE_ONLY);
+        } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Ngày phải đúng định dạng dd/MM/yyyy.");
-        }
-    }
-
-    // Tìm trong nhân viên.
-    // Tham số ma: mã.
-    // Tham số keyword: từ khóa tìm kiếm.
-    // Kết quả: true/false theo điều kiện xử lý.
-    private boolean timTrongNhanVien(String ma, String keyword) throws SQLException {
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection c = connectDB.getConnection();
-                PreparedStatement p = c.prepareStatement("SELECT hoTen FROM NhanVien WHERE maNhanVien=?")) {
-            p.setString(1, ma);
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-            try (ResultSet r = p.executeQuery()) {
-                return r.next() && r.getString(1) != null && r.getString(1).toLowerCase(Locale.ROOT).contains(keyword);
-            }
-        }
-    }
-
-    // Tìm trong sản phẩm.
-    // Tham số maPhieu: mã phiếu.
-    // Tham số keyword: từ khóa tìm kiếm.
-    // Kết quả: true/false theo điều kiện xử lý.
-    private boolean timTrongSanPham(String maPhieu, String keyword) throws SQLException {
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = kiemKe
-                ? "SELECT TOP 1 1 FROM ChiTietPhieuKiemKe d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuKiemKe=? AND (LOWER(d.maSanPham) LIKE ? OR LOWER(s.tenSanPham) LIKE ?)"
-                : "SELECT TOP 1 1 FROM ChiTietPhieuNhap d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuNhap=? AND (LOWER(d.maSanPham) LIKE ? OR LOWER(s.tenSanPham) LIKE ?)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, maPhieu);
-            p.setString(2, "%" + keyword + "%");
-            p.setString(3, "%" + keyword + "%");
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-            try (ResultSet r = p.executeQuery()) {
-                return r.next();
-            }
         }
     }
 
@@ -411,11 +385,11 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = kiemKe
-                ? "SELECT d.maSanPham,s.tenSanPham,d.soLuongHeThong,d.soLuongThucTe FROM ChiTietPhieuKiemKe d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuKiemKe=? ORDER BY d.maSanPham"
+                ? "SELECT d.maSanPham,s.tenSanPham,d.maPhieuNhap,pn.ngayNhap,d.soLuongHeThong,d.soLuongThucTe FROM ChiTietPhieuKiemKeLo d JOIN PhieuNhapKho pn ON pn.maPhieuNhap=d.maPhieuNhap JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuKiemKe=? UNION ALL SELECT d.maSanPham,s.tenSanPham,CAST(NULL AS VARCHAR(10)),CAST(NULL AS DATETIME2),d.soLuongHeThong,d.soLuongThucTe FROM ChiTietPhieuKiemKe d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuKiemKe=? ORDER BY 1,3"
                 : "SELECT d.maSanPham,s.tenSanPham,d.soLuongNhap,d.donGiaNhap,d.hanSuDung FROM ChiTietPhieuNhap d JOIN SanPham s ON s.maSanPham=d.maSanPham WHERE d.maPhieuNhap=? ORDER BY d.maSanPham";
         // btnDetail: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
         DefaultTableModel detail = new DefaultTableModel(kiemKe
-                ? new String[] { "Mã SP", "Tên sản phẩm", "Tồn hệ thống", "Tồn thực tế", "Chênh lệch", "Kết quả" }
+                ? new String[] { "Mã SP", "Tên sản phẩm", "Đợt nhập", "Ngày nhập", "Tồn hệ thống", "Tồn thực tế", "Chênh lệch", "Kết quả" }
                 : new String[] { "Mã SP", "Tên sản phẩm", "Số lượng nhập", "Đơn giá", "Thành tiền", "Hạn sử dụng" },
                 0) {
             // Không cho phép sửa trực tiếp các ô trong bảng.
@@ -431,15 +405,20 @@ public class TraCuuKhoPanel extends JFrame implements ActionListener, MouseListe
         // lệnh.
         try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, id);
+            if (kiemKe)
+                p.setString(2, id);
             // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet r = p.executeQuery()) {
                 // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (r.next()) {
                     if (kiemKe) {
-                        int system = r.getInt(3);
-                        Object raw = r.getObject(4);
+                        int system = r.getInt(5);
+                        Object raw = r.getObject(6);
                         Integer actual = raw == null ? null : ((Number) raw).intValue();
-                        detail.addRow(new Object[] { r.getString(1), r.getString(2), system,
+                        Timestamp lotDate = r.getTimestamp(4);
+                        detail.addRow(new Object[] { r.getString(1), r.getString(2),
+                                r.getString(3) == null ? "Lịch sử cũ" : r.getString(3),
+                                lotDate == null ? "—" : lotDate.toLocalDateTime().toLocalDate(), system,
                                 actual == null ? "Chưa kiểm" : actual,
                                 actual == null ? "—" : actual - system,
                                 actual == null ? "Chưa kiểm" : actual == system ? "Khớp" : "Chênh lệch" });

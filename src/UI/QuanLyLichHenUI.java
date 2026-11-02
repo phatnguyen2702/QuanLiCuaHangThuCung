@@ -557,8 +557,8 @@ public class QuanLyLichHenUI extends JPanel {
         // Tham số winParent: thành phần cha.
         // Tham số ngayHienTai: ngày hiện tại.
         // Tham số chiTuHomNay: chỉ cho chọn từ hôm nay.
-        public DatePickerDialog(Frame winParent, LocalDate ngayHienTai, boolean chiTuHomNay) {
-            super(winParent, "Chọn ngày", true);
+        public DatePickerDialog(Window winParent, LocalDate ngayHienTai, boolean chiTuHomNay) {
+            super(winParent, "Chọn ngày", Dialog.ModalityType.APPLICATION_MODAL);
             this.chiTuHomNay = chiTuHomNay;
             this.currentMonth = YearMonth.from(ngayHienTai != null ? ngayHienTai : LocalDate.now());
             setSize(320, 280);

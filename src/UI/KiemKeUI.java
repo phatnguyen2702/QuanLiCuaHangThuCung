@@ -14,9 +14,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -25,29 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Man hinh "Kiem ke kho" - Kiem ke ton kho (nam trong khung TrangChu). */
-public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
+public class KiemKeUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
     }
 
     // dao: Đối tượng truy cập dữ liệu kiểm kê.
@@ -57,7 +36,7 @@ public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
 
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[] { "Mã SP", "Tên sản phẩm", "Tồn hệ thống",
+            new String[] { "Mã SP", "Tên sản phẩm", "Đợt nhập", "Tồn hệ thống",
                     "Tồn thực tế", "Chênh lệch", "Trạng thái" },
             0) {
         // Không cho phép sửa trực tiếp các ô trong bảng.
@@ -341,6 +320,8 @@ public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
                 ChiTietPhieuKiemKe ct = new ChiTietPhieuKiemKe();
                 ct.setMaSanPham(sp.getMaSanPham());
                 ct.setTenSanPham(sp.getTenSanPham());
+                ct.setMaPhieuNhap(sp.getMaPhieuNhap());
+                ct.setNgayNhap(sp.getNgayNhap());
                 ct.setSoLuongHeThong(sp.getTonKho());
                 ct.setSoLuongThucTe(null);
                 tatCa.add(ct);
@@ -409,6 +390,8 @@ public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
             model.addRow(new Object[] {
                     ct.getMaSanPham(),
                     ct.getTenSanPham(),
+                    ct.getMaPhieuNhap() + (ct.getNgayNhap() == null ? "" : " · "
+                            + ct.getNgayNhap().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
                     ct.getSoLuongHeThong(),
                     thucTe,
                     chenh,
@@ -503,10 +486,15 @@ public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
             // tonMoi: Bảng ánh xạ khóa đến giá trị dùng cho tồn mới.
             java.util.Map<String, Integer> tonMoi = new java.util.HashMap<>();
             for (SanPham sp : dao.laySanPhamKemTon())
-                tonMoi.put(sp.getMaSanPham(), sp.getTonKho());
+                tonMoi.put(khoaLo(sp.getMaSanPham(), sp.getMaPhieuNhap()), sp.getTonKho());
+            boolean coLoKhongConTon = tatCa.removeIf(ct -> !tonMoi.containsKey(
+                    khoaLo(ct.getMaSanPham(), ct.getMaPhieuNhap())));
+            if (coLoKhongConTon)
+                UIStyle.thongBao(this, "Các đợt đã hết tồn được loại khỏi phiếu kiểm kê.");
             for (ChiTietPhieuKiemKe ct : tatCa) {
-                if (ct.daKiem() && tonMoi.containsKey(ct.getMaSanPham()))
-                    ct.setSoLuongHeThong(tonMoi.get(ct.getMaSanPham()));
+                String khoa = khoaLo(ct.getMaSanPham(), ct.getMaPhieuNhap());
+                if (ct.daKiem() && tonMoi.containsKey(khoa))
+                    ct.setSoLuongHeThong(tonMoi.get(khoa));
             }
             veLaiBang();
         } catch (SQLException ex) {
@@ -561,6 +549,10 @@ public class KiemKeUI extends JFrame implements ActionListener, MouseListener {
         } catch (SQLException ex) {
             UIStyle.loi(this, ex);
         }
+    }
+
+    private String khoaLo(String maSanPham, String maPhieuNhap) {
+        return maSanPham + "|" + maPhieuNhap;
     }
 
     // Xem lịch sử.

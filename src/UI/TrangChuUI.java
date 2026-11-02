@@ -95,8 +95,8 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
     // HashMap: ánh xạ mã chức năng -> giao diện Swing đã tạo.
     private final Map<String, Component> mapManHinhKhac = new HashMap<>();
     private TraCuuLichSuHoaDonUI pnlTraCuuHoaDon;
-    private TraCuuKhoPanel pnlTraCuuNhapKho;
-    private TraCuuKhoPanel pnlTraCuuKiemKe;
+    private TraCuuKhoUI pnlTraCuuNhapKho;
+    private TraCuuKhoUI pnlTraCuuKiemKe;
     private ThongKeDoanhThuUI pnlThongKeDoanhThu;
     private QuanLyThanhToanUI pnlThanhToan;
     // Swing Timer: phát sự kiện định kỳ để cập nhật đồng hồ, không truy vấn thống
@@ -374,7 +374,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
     private void moTraCuuNhapKho() {
         hienManHinh("tracuukho", "Tra cứu nhập kho", btnTimKiem,
                 () -> {
-                    pnlTraCuuNhapKho = new TraCuuKho(
+                    pnlTraCuuNhapKho = new TraCuuKhoUI(false,
                             () -> chuyenTuNhom(btnXuLy, () -> chuyenKho(2)));
                     return pnlTraCuuNhapKho.getContentPane();
                 });

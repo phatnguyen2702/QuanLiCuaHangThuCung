@@ -11,8 +11,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.net.URL;
 import java.sql.SQLException;
@@ -24,29 +22,9 @@ import java.util.List;
 import java.util.Locale;
 
 /** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
-public class GoiYThucAnUI extends JFrame implements ActionListener, MouseListener {
+public class GoiYThucAnUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
     }
 
     // cmbPet: Hộp lựa chọn thú cưng.
@@ -168,7 +146,7 @@ public class GoiYThucAnUI extends JFrame implements ActionListener, MouseListene
             lblNote.setText(count == 0
                     ? "Không có sản phẩm thức ăn còn hàng phù hợp với loài thú cưng đã chọn."
                     : count + " sản phẩm thức ăn còn hàng. Độ tuổi/kích thước là tiêu chí tham khảo; hãy kiểm tra nhãn bao bì.");
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblNote.setText("Không tải được sản phẩm: " + ex.getMessage());
         }

@@ -7,6 +7,8 @@ public class ChiTietPhieuKiemKe {
     private String maPhieuKiemKe;
     // maSanPham: Lưu mã sản phẩm.
     private String maSanPham;
+    private String maPhieuNhap;
+    private java.time.LocalDate ngayNhap;
     // soLuongHeThong: Lưu số lượng theo hệ thống.
     private int soLuongHeThong;
     // soLuongThucTe: Lưu số lượng kiểm đếm thực tế.
@@ -49,6 +51,10 @@ public class ChiTietPhieuKiemKe {
     // Gán mã sản phẩm từ giá trị được truyền vào.
     // Tham số maSanPham: mã sản phẩm.
     public void setMaSanPham(String maSanPham) { this.maSanPham = maSanPham; }
+    public String getMaPhieuNhap() { return maPhieuNhap; }
+    public void setMaPhieuNhap(String maPhieuNhap) { this.maPhieuNhap = maPhieuNhap; }
+    public java.time.LocalDate getNgayNhap() { return ngayNhap; }
+    public void setNgayNhap(java.time.LocalDate ngayNhap) { this.ngayNhap = ngayNhap; }
 
     // Trả về số lượng theo hệ thống của đối tượng.
     public int getSoLuongHeThong() { return soLuongHeThong; }

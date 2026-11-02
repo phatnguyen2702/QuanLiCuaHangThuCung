@@ -12,9 +12,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,29 +26,9 @@ import java.util.List;
  * Man hinh "San pham" - Quan ly san pham (nam trong khung TrangChu).
  * Form Them / Sua san pham la lop long SanPhamDialog o cuoi file.
  */
-public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
+public class SanPhamUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
     }
 
     // dao: Đối tượng truy cập dữ liệu sản phẩm.
@@ -57,7 +36,8 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
             new String[] { "Ảnh", "Mã SP", "Tên sản phẩm", "Danh mục",
-                    "Nhà cung cấp", "Giá nhập", "Giá bán", "Tồn" },
+                    "Nhà cung cấp", "Đợt nhập", "Ngày nhập", "Hạn sử dụng", "Trạng thái",
+                    "Giá nhập", "Giá bán", "Tồn" },
             0) {
         // Không cho phép sửa trực tiếp các ô trong bảng.
         // Tham số row: chỉ số dòng.
@@ -66,8 +46,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
         @Override
 
         public boolean isCellEditable(int row, int col) {
-
-            return false;
+            return col == 5;
 
         }
 
@@ -84,6 +63,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
     // cmbDanhMuc: Hộp lựa chọn danh mục.
 
     private final JComboBox<Muc> cmbDanhMuc = new JComboBox<>();
+    private final java.util.Map<String, String> maDotTheoTen = new java.util.LinkedHashMap<>();
 
     // lblSoLuong2: Nhãn hiển thị: 0 sản phẩm.
 
@@ -92,6 +72,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
     // dsHienTai: Lưu danh sách hiện tại; phần tử có kiểu SanPham.
 
     private ArrayList<SanPham> dsHienTai = new ArrayList<>();
+    private ArrayList<SanPham> dsTongHop = new ArrayList<>();
 
     // dangNapCombo: Cờ cho biết đang nạp danh sách lựa chọn.
 
@@ -267,7 +248,9 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
         // btnXoa: Nút thao tác xóa.
 
-        JButton btnXoa = UIStyle.nutXoa("Xóa");
+        JButton btnXoa = UIStyle.nutPhu("Xóa");
+        btnXoa.setForeground(new Color(220, 53, 69));
+        JButton btnXuLyHang = UIStyle.nutPhu("Xử lý hàng lỗi / hết hạn");
 
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
 
@@ -284,6 +267,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
         // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
 
         btnXoa.addActionListener(e -> xoa());
+        btnXuLyHang.addActionListener(e -> xuLyHang());
 
         // pnlThanhCongCu: Khung chứa thành phần giao diện thanh công cụ.
 
@@ -302,6 +286,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
         pnlThanhCongCu.add(btnSua);
 
         pnlThanhCongCu.add(btnXoa);
+        pnlThanhCongCu.add(btnXuLyHang);
 
         lblSoLuong2.setFont(UIStyle.font(Font.BOLD, 13));
 
@@ -325,7 +310,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
         pnlPhanTren.add(lblSoLuong2);
 
-        UIStyle.taoBang(tblDuLieu2, 5, 6, 7);
+        UIStyle.taoBang(tblDuLieu2, 9, 10, 11);
 
         tblDuLieu2.setRowHeight(84);
 
@@ -334,6 +319,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
         tblDuLieu2.getColumnModel().getColumn(0).setMaxWidth(110);
 
         tblDuLieu2.getColumnModel().getColumn(0).setCellRenderer(new ImageRenderer());
+        tblDuLieu2.getColumnModel().getColumn(5).setCellEditor(taoBoChonDotNhap());
 
         tblDuLieu2.addMouseListener(new MouseAdapter() {
 
@@ -345,7 +331,8 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
             public void mouseClicked(MouseEvent e) {
 
-                if (e.getClickCount() == 2 && tblDuLieu2.getSelectedRow() >= 0) {
+                if (e.getClickCount() == 2 && tblDuLieu2.getSelectedRow() >= 0
+                        && tblDuLieu2.columnAtPoint(e.getPoint()) != 5) {
 
                     sua();
 
@@ -411,6 +398,12 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
             }
 
+            maDotTheoTen.clear();
+            for (SanPhamDAO.DotNhap dot : dao.layDanhSachDotNhap()) {
+                String ten = dot.toString();
+                maDotTheoTen.put(ten, dot.getMaPhieuNhap());
+            }
+
         } catch (SQLException ex) {
 
             UIStyle.loi(this, ex);
@@ -425,6 +418,76 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
     // Nạp bảng dữ liệu.
 
+    private javax.swing.table.TableCellEditor taoBoChonDotNhap() {
+        JComboBox<String> combo = new JComboBox<>();
+        combo.setFont(UIStyle.font(Font.PLAIN, 12));
+        return new javax.swing.DefaultCellEditor(combo) {
+            @Override
+            public Component getTableCellEditorComponent(JTable table, Object value, boolean selected,
+                    int row, int column) {
+                int modelRow = table.convertRowIndexToModel(row);
+                combo.removeAllItems();
+                combo.addItem("Tổng các đợt nhập");
+                try {
+                    for (SanPhamDAO.DotNhap dot : dao.layDanhSachDotNhap(dsTongHop.get(modelRow).getMaSanPham()))
+                        combo.addItem(dot.toString());
+                } catch (SQLException ex) {
+                    UIStyle.loi(SanPhamUI.this, ex);
+                }
+                combo.setSelectedItem(value == null ? "Tổng các đợt nhập" : value.toString());
+                return super.getTableCellEditorComponent(table, value, selected, row, column);
+            }
+
+            @Override
+            public boolean stopCellEditing() {
+                int row = tblDuLieu2.getEditingRow();
+                int modelRow = row < 0 ? -1 : tblDuLieu2.convertRowIndexToModel(row);
+                String tenDot = (String) combo.getSelectedItem();
+                if (modelRow >= 0 && !hienThiDotNhap(modelRow, tenDot))
+                    return false;
+                return super.stopCellEditing();
+            }
+        };
+    }
+
+    private boolean hienThiDotNhap(int row, String tenDot) {
+        String maSanPham = dsTongHop.get(row).getMaSanPham();
+        SanPham sp;
+        if (tenDot == null || tenDot.equals("Tổng các đợt nhập")) {
+            sp = dsTongHop.get(row);
+            dsHienTai.set(row, sp);
+        } else {
+            String maDot = maDotTheoTen.get(tenDot);
+            if (maDot == null)
+                return false;
+            try {
+                sp = dao.timKiemTheoDotNhap("", null, maDot, maSanPham).stream().findFirst().orElse(null);
+            } catch (SQLException ex) {
+                UIStyle.loi(this, ex);
+                return false;
+            }
+            if (sp == null) {
+                UIStyle.canhBao(this, "Lô này đã hết tồn hoặc không còn đủ điều kiện kinh doanh.");
+                return false;
+            }
+            dsHienTai.set(row, sp);
+        }
+        boolean tongHop = sp.getMaPhieuNhap() == null;
+        model.setValueAt(tenDot == null ? "Tổng các đợt nhập" : tenDot, row, 5);
+        model.setValueAt(tongHop || sp.getNgayNhap() == null ? "" : sp.getNgayNhap().format(
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), row, 6);
+        model.setValueAt(tongHop || sp.getHanSuDung() == null ? "" : sp.getHanSuDung().format(
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), row, 7);
+        String trangThai = tongHop ? "" : (sp.getHanSuDung() != null
+                && sp.getHanSuDung().isBefore(java.time.LocalDate.now()) ? "Hết hạn"
+                        : sp.isNgungKinhDoanh() ? "Ngừng kinh doanh" : "Đang kinh doanh");
+        model.setValueAt(trangThai, row, 8);
+        model.setValueAt(tongHop ? "" : UIStyle.tien(sp.getGiaNhap()), row, 9);
+        model.setValueAt(tongHop ? "" : UIStyle.tien(sp.getGiaBan()), row, 10);
+        model.setValueAt(sp.getTonKho(), row, 11);
+        return true;
+    }
+
     private void napBang() {
 
         try {
@@ -436,6 +499,7 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
             String maDanhMuc = muc == null ? null : muc.ma;
 
             dsHienTai = dao.timKiem(txtTim.getText(), maDanhMuc, null);
+            dsTongHop = new ArrayList<>(dsHienTai);
 
             model.setRowCount(0);
 
@@ -453,10 +517,8 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
                         sp.getTenNhaCungCap(),
 
-                        UIStyle.tien(sp.getGiaNhap()),
-
-                        UIStyle.tien(sp.getGiaBan()),
-
+                        "Tổng các đợt nhập", "", "", "",
+                        "", "",
                         sp.getTonKho()
 
                 });
@@ -518,6 +580,20 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
         SanPham sp = dangChon();
 
         if (sp != null) {
+
+            if (sp.getMaPhieuNhap() != null) {
+                try {
+                    SanPham hoSo = dao.timKiem(sp.getMaSanPham(), null, null).stream()
+                            .filter(x -> x.getMaSanPham().equals(sp.getMaSanPham())).findFirst().orElse(null);
+                    if (hoSo != null) {
+                        sp.setGiaNhap(hoSo.getGiaNhap());
+                        sp.setTonKho(hoSo.getTonKho());
+                    }
+                } catch (SQLException ex) {
+                    UIStyle.loi(this, ex);
+                    return;
+                }
+            }
 
             moForm(sp);
 
@@ -621,6 +697,65 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
     }
 
+    /** Ghi nhận hàng trả/hủy theo đúng sản phẩm và đợt nhập đang chọn. */
+    private void xuLyHang() {
+        SanPham sp = dangChon();
+        if (sp == null)
+            return;
+        if (sp.getMaPhieuNhap() == null) {
+            UIStyle.canhBao(this, "Chọn một đợt nhập cụ thể trong cột Đợt nhập trước.");
+            return;
+        }
+        if (sp.getTonKho() <= 0) {
+            UIStyle.canhBao(this, "Đợt nhập này hiện không còn tồn để xử lý.");
+            return;
+        }
+
+        JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
+        JSpinner soLuong = new JSpinner(new SpinnerNumberModel(1, 1, sp.getTonKho(), 1));
+        JComboBox<String> lyDo = new JComboBox<>(new String[] {
+                "Hết hạn", "Hư hỏng", "Lỗi sản phẩm", "Trả nhà cung cấp", "Khác"
+        });
+        JTextField ghiChu = new JTextField(22);
+        form.add(new JLabel("Sản phẩm"));
+        form.add(new JLabel(sp.getMaSanPham() + " - " + sp.getTenSanPham()));
+        form.add(new JLabel("Đợt nhập"));
+        form.add(new JLabel(sp.getMaPhieuNhap()));
+        form.add(new JLabel("Tồn hiện tại"));
+        form.add(new JLabel(String.valueOf(sp.getTonKho())));
+        form.add(new JLabel("Số lượng xử lý"));
+        form.add(soLuong);
+        form.add(new JLabel("Lý do"));
+        form.add(lyDo);
+        form.add(new JLabel("Ghi chú"));
+        form.add(ghiChu);
+
+        if (JOptionPane.showConfirmDialog(this, form, "Xử lý hàng lỗi / hết hạn",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION)
+            return;
+
+        int soLuongXuLy = (Integer) soLuong.getValue();
+        String thongTinXacNhan = "Xác nhận hủy " + soLuongXuLy + " sản phẩm "
+                + sp.getMaSanPham() + " - " + sp.getTenSanPham()
+                + " thuộc đợt nhập " + sp.getMaPhieuNhap() + "?\n"
+                + "Lý do: " + lyDo.getSelectedItem() + "\n\n"
+                + "Số lượng này sẽ bị trừ khỏi tồn kho và không thể hoàn tác trực tiếp.";
+        if (JOptionPane.showConfirmDialog(this, thongTinXacNhan,
+                "Xác nhận hủy hàng lỗi", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION)
+            return;
+
+        try {
+            dao.xuLyHangTheoDot(sp.getMaSanPham(), sp.getMaPhieuNhap(),
+                    soLuongXuLy, (String) lyDo.getSelectedItem(), ghiChu.getText(),
+                    PhienLamViec.maNV);
+            UIStyle.thongBao(this, "Đã xác nhận hủy hàng lỗi. Số lượng đã được trừ khỏi tồn kho và lưu lịch sử xử lý.");
+            napLai();
+        } catch (SQLException ex) {
+            UIStyle.loi(this, ex);
+        }
+    }
+
     // =========================================================
 
     // MUC CUA COMBOBOX
@@ -718,10 +853,6 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
         // txtHanSuDung: Ô nhập/hiển thị văn bản hạn sử dụng.
 
         private final JTextField txtHanSuDung = UIStyle.oChiDoc("Chưa có dữ liệu");
-
-        // spnThem: Ô chọn giá trị bằng nút tăng/giảm thêm.
-
-        private final JSpinner spnThem = new JSpinner(new SpinnerNumberModel(0, 0, 1_000_000, 1));
 
         // cmbDanhMuc: Hộp lựa chọn danh mục.
 
@@ -821,8 +952,6 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
             btnChonAnh.addActionListener(e -> chonAnh());
 
-            spnThem.setFont(UIStyle.font(Font.PLAIN, 13));
-
             int dongTiep = 9;
 
             if (sp != null) {
@@ -849,11 +978,13 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
 
                         UIStyle.oChiDoc(String.valueOf(sp.getTonKho())), false);
 
+                if (sp.getTonKho() > 0) {
+                    txtGiaNhap.setEditable(false);
+                    txtGiaNhap.setBackground(UIStyle.READONLY);
+                    txtGiaNhap.setToolTipText("Chỉ được đổi giá nhập khi tồn kho bằng 0.");
+                }
+
             }
-
-            UIStyle.hang(pnlForm2, dongTiep,
-
-                    sp == null ? "Số lượng ban đầu" : "Thêm số lượng", spnThem, false);
 
             if (dangSua) {
 
@@ -1214,10 +1345,9 @@ public class SanPhamUI extends JFrame implements ActionListener, MouseListener {
                     dm.getMaDanhMuc(), ncc.getMaNhaCungCap());
 
             try {
-                int them = (Integer) spnThem.getValue();
                 dao.luuSanPhamDayDu(sp, dangSua, dm.getTenDanhMuc(),
                         (String) cmbNhomTuoi.getSelectedItem(),
-                        (String) cmbKichThuoc.getSelectedItem(), them, PhienLamViec.maNV);
+                        (String) cmbKichThuoc.getSelectedItem(), PhienLamViec.maNV);
 
                 String loiAnh = null;
                 try {
