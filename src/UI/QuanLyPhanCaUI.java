@@ -2,7 +2,7 @@ package UI;
 
 import dao.LichPhanCaDAO;
 import entity.LichPhanCa;
-import util.XlsxExporter;
+import util.PhanCaExporter;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -720,26 +720,58 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
         // Xuất Excel theo NGÀY ĐANG CHỌN ở bộ lọc, không theo ngày hiện tại.
         // Không phụ thuộc vào việc người dùng đã nhấn nút Lọc hay chưa.
+        /**
+         * Xuất lịch phân ca Excel đơn giản, cho phép chọn xuất theo ngày hoặc theo
+         * tuần.
+         * Theo ngày: ưu tiên ngày đã chọn ở bộ lọc, nếu trống sẽ mở lịch chọn ngày.
+         * Theo tuần: chọn một ngày bất kỳ, hệ thống xác định thứ Hai đến Chủ nhật.
+         */
         private void xuatExcel() {
-                LocalDate ngayXuat = docNgay(txtLocNgay.getText());
-                if (ngayXuat == null) {
-                        // Nếu chưa chọn ngày lọc, yêu cầu chọn ngày cần xuất.
-                        // false: cho phép xuất cả lịch phân ca của ngày trong quá khứ.
-                        LocalDate chon = LichChonNgay.chonNgay(this, null, false);
-                        if (chon == null)
+                String[] tuyChon = { "Theo ngày", "Theo tuần", "Hủy" };
+                int kieu = JOptionPane.showOptionDialog(this,
+                                "Chọn phạm vi xuất lịch phân ca:",
+                                "Xuất lịch phân ca Excel",
+                                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                                null, tuyChon, tuyChon[0]);
+                if (kieu != 0 && kieu != 1)
+                        return;
+
+                boolean theoTuan = kieu == 1;
+                LocalDate ngayDangLoc = docNgay(txtLocNgay.getText());
+                LocalDate ngayChon;
+
+                if (!theoTuan && ngayDangLoc != null) {
+                        // Theo ngày: dùng ngay ngày đã chọn ở bộ lọc.
+                        ngayChon = ngayDangLoc;
+                } else {
+                        // Theo tuần: chọn một ngày trong tuần muốn xuất.
+                        // Theo ngày: nếu chưa lọc ngày thì yêu cầu chọn ngày.
+                        ngayChon = LichChonNgay.chonNgay(this,
+                                        ngayDangLoc != null ? ngayDangLoc : LocalDate.now(), false);
+                        if (ngayChon == null)
                                 return;
-                        ngayXuat = chon;
-                        txtLocNgay.setText(ngayXuat.format(DINH_DANG_NGAY));
+                        if (!theoTuan)
+                                txtLocNgay.setText(ngayChon.format(DINH_DANG_NGAY));
                 }
 
-                // Lọc dữ liệu thực tế theo ngày được chọn, không lấy các dòng đang
-                // hiển thị (bảng có thể chưa được cập nhật sau khi đổi ngày lọc).
+                LocalDate tuNgay = theoTuan ? dauTuan(ngayChon) : ngayChon;
+                LocalDate denNgay = theoTuan ? tuNgay.plusDays(6) : tuNgay;
+                String phamVi = theoTuan
+                                ? "tuần " + khoangTuan(tuNgay)
+                                : "ngày " + tuNgay.format(DINH_DANG_NGAY);
+
+                // Giữ nguyên tùy chọn lọc nhân viên và ca (nếu người dùng đã chọn).
                 String maNV = maDaChon(cmbLocNhanVien);
                 String maCa = maDaChon(cmbLocCa);
                 List<String[]> rows = new ArrayList<>();
                 try {
-                        for (LichPhanCa pc : dao.getAll()) {
-                                if (!ngayXuat.equals(pc.getNgayLamViec()))
+                        List<LichPhanCa> danhSach = new ArrayList<>(dao.getAll());
+                        danhSach.sort(java.util.Comparator.comparing(LichPhanCa::getNgayLamViec)
+                                        .thenComparing(LichPhanCa::getMaNhanVien));
+
+                        for (LichPhanCa pc : danhSach) {
+                                LocalDate ngay = pc.getNgayLamViec();
+                                if (ngay == null || ngay.isBefore(tuNgay) || ngay.isAfter(denNgay))
                                         continue;
                                 if (!maNV.isEmpty() && !"Tất cả".equals(maNV)
                                                 && !maNV.equalsIgnoreCase(pc.getMaNhanVien()))
@@ -747,9 +779,10 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                                 if (!maCa.isEmpty() && !"Tất cả".equals(maCa)
                                                 && !maCa.equalsIgnoreCase(pc.getMaCa()))
                                         continue;
+
                                 rows.add(new String[] {
                                                 pc.getMaPhanCa(),
-                                                pc.getNgayLamViec().format(DINH_DANG_NGAY),
+                                                ngay.format(DINH_DANG_NGAY),
                                                 pc.getMaNhanVien(),
                                                 pc.getHoTen(),
                                                 pc.getMaCa(),
@@ -760,32 +793,37 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         baoLoi(ex);
                         return;
                 }
+
                 if (rows.isEmpty()) {
-                        canhBao("Không có phân ca để xuất trong ngày "
-                                        + ngayXuat.format(DINH_DANG_NGAY) + ".");
+                        canhBao("Không có phân ca để xuất trong " + phamVi + ".");
                         return;
                 }
 
-                JFileChooser fchChonTep = new JFileChooser();
-                fchChonTep.setDialogTitle("Xuất lịch phân ca ngày " + ngayXuat.format(DINH_DANG_NGAY));
-                fchChonTep.setFileFilter(new FileNameExtensionFilter("Excel Workbook (*.xlsx)", "xlsx"));
-                fchChonTep.setSelectedFile(new File("LichPhanCa_" + ngayXuat + ".xlsx"));
-                if (fchChonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
+                // Không thay đổi XlsxExporter: xuất 1 sheet, 6 cột, không cần thư viện thêm.
+                String tenTep = theoTuan
+                                ? "LichPhanCa_Tuan_" + tuNgay + "_den_" + denNgay + ".xlsx"
+                                : "LichPhanCa_Ngay_" + tuNgay + ".xlsx";
+                JFileChooser chonTep = new JFileChooser();
+                chonTep.setDialogTitle("Xuất lịch phân ca " + phamVi);
+                chonTep.setFileFilter(new FileNameExtensionFilter("Excel (*.xlsx)", "xlsx"));
+                chonTep.setSelectedFile(new File(tenTep));
+                if (chonTep.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
                         return;
 
-                File f = fchChonTep.getSelectedFile();
-                if (!f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".xlsx"))
-                        f = new File(f.getParentFile(), f.getName() + ".xlsx");
-                if (f.exists() && JOptionPane.showConfirmDialog(this, "Tệp đã tồn tại. Ghi đè?",
-                                "Xác nhận", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
+                File tep = chonTep.getSelectedFile();
+                if (!tep.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".xlsx"))
+                        tep = new File(tep.getParentFile(), tep.getName() + ".xlsx");
+                if (tep.exists() && JOptionPane.showConfirmDialog(this,
+                                "Tệp đã tồn tại. Bạn có muốn ghi đè?", "Xác nhận",
+                                JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
                         return;
 
-                String[] cols = { "Mã phân ca", "Ngày làm việc", "Mã nhân viên", "Họ tên", "Mã ca", "Ca làm" };
+                String[] tenCot = { "Mã phân ca", "Ngày làm việc", "Mã nhân viên",
+                                "Họ tên", "Mã ca", "Ca làm" };
                 try {
-                        XlsxExporter.xuat(f.toPath(), cols, rows);
-                        thongBao("Đã xuất " + rows.size() + " phân ca ngày "
-                                        + ngayXuat.format(DINH_DANG_NGAY)
-                                        + " sang Excel:\n" + f.getAbsolutePath());
+                        PhanCaExporter.xuat(tep.toPath(), tenCot, rows);
+                        thongBao("Đã xuất " + rows.size() + " phân ca trong " + phamVi
+                                        + " sang Excel:\n" + tep.getAbsolutePath());
                 } catch (IOException ex) {
                         baoLoi(ex);
                 }
