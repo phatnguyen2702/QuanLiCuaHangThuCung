@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import ConnectDB.connectDB;
 import entity.DanhMuc;
 import entity.NhaCungCap;
@@ -447,7 +449,7 @@ public class SanPhamDAO {
     /** Ghi nhận hàng hủy/trả theo một đợt nhập, không xóa dữ liệu phiếu nhập. */
     public void xuLyHangTheoDot(String maSanPham, String maPhieuNhap, int soLuong,
             String lyDo, String ghiChu, String maNhanVien) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
         if (soLuong <= 0)
             throw new SQLException("Số lượng xử lý phải lớn hơn 0.");
         damBaoCotKinhDoanh();
@@ -537,7 +539,7 @@ public class SanPhamDAO {
 
     /** Lấy toàn bộ lịch sử xử lý hàng lỗi, hết hạn hoặc trả nhà cung cấp. */
     public List<Object[]> layLichSuXuLyHang() throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
         damBaoCotKinhDoanh();
         String sql = "SELECT x.maXuLy, x.ngayXuLy, x.maSanPham, sp.tenSanPham, "
                 + "x.maPhieuNhap, x.soLuong, x.lyDo, x.ghiChu, "
@@ -589,7 +591,7 @@ public class SanPhamDAO {
     /** Lưu thông tin sản phẩm và metadata gợi ý trong một giao dịch. */
     public void luuSanPhamDayDu(SanPham sp, boolean dangSua, String tenDanhMuc,
             String nhomTuoi, String kichThuoc, String maNhanVien) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
         damBaoCotKinhDoanh();
         damBaoBangGoiYThucAn();
 
@@ -680,7 +682,7 @@ public class SanPhamDAO {
     // Tham số sp: sản phẩm cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(SanPham sp) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
 
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
@@ -709,7 +711,7 @@ public class SanPhamDAO {
     // Tham số sp: sản phẩm cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(SanPham sp) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
 
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
@@ -743,7 +745,7 @@ public class SanPhamDAO {
      */
     public void luuThongTinGoiY(String maSanPham, String tenDanhMuc, String tenSanPham,
             String nhomTuoi, String kichThuoc) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
         String nguon = ((tenDanhMuc == null ? "" : tenDanhMuc) + " " +
                 (tenSanPham == null ? "" : tenSanPham)).toLowerCase(java.util.Locale.ROOT);
         boolean laThucAn = nguon.contains("thức ăn") || nguon.contains("thuc an")
@@ -819,7 +821,7 @@ public class SanPhamDAO {
     // Tham số maSanPham: mã sản phẩm.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean xoa(String maSanPham) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.SAN_PHAM);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.SAN_PHAM);
         damBaoBangGoiYThucAn();
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.

@@ -1,14 +1,26 @@
 package control;
 
-/** Dữ liệu phiên đăng nhập cho nghiệp vụ kiểm tra quyền; không phụ thuộc UI. */
+import entity.ThanhToan;
+import java.util.ArrayList;
+import java.util.List;
+
 public final class PhienLamViecControl {
-    private static volatile String maNV;
-    private static volatile String vaiTro;
-    private PhienLamViecControl() {}
-    public static void dat(String ma, String role) {
+    private static final List<ThanhToan> GIO_HANG = new ArrayList<>();
+    public static String maNV;
+    public static String hoTen;
+    public static String vaiTro;
+
+    private PhienLamViecControl() {
+    }
+
+    public static void dat(String ma, String ten, String role) {
+        GIO_HANG.clear();
         maNV = ma;
+        hoTen = ten;
         vaiTro = role;
     }
-    public static String maNV() { return maNV; }
-    public static String vaiTro() { return vaiTro; }
+
+    public static List<ThanhToan> gioHang() {
+        return GIO_HANG;
+    }
 }

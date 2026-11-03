@@ -12,16 +12,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
-/** Man hinh Danh muc > Quan ly dich vu Spa. */
 public class QuanLyDichVuUI extends JPanel implements ActionListener {
 
-    // Các nút dùng chung trong actionPerformed().
     private JButton btnTim, btnLamMoi, btnThem, btnSua, btnXoa, btnBoChon;
 
     private final DichVuControl control = new DichVuControl();
@@ -29,27 +26,26 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
     private final JTextField txtMa = UIStyle.oChiDoc("(Tự động)");
     private final JTextField txtTen = UIStyle.o(19);
     private final JTextField txtGia = UIStyle.o(19);
-    // txaMoTa: Vùng văn bản nhiều dòng mô tả.
+
     private final JTextArea txaMoTa = new JTextArea(4, 20);
     private final JLabel lblSoLuong = UIStyle.nhan("0 dịch vụ");
     private final DefaultTableModel model = new DefaultTableModel(
             new String[] { "Mã dịch vụ", "Tên dịch vụ", "Đơn giá", "Mô tả" }, 0) {
-        // Không cho phép sửa trực tiếp các ô trong bảng.
+
         @Override
         public boolean isCellEditable(int row, int col) {
             return false;
         }
     };
-    // tblDichVu: Bảng hiển thị dữ liệu dịch vụ.
+
     private final JTable tblDichVu = new JTable(model);
-    // chứa.
+
     private final CardLayout cardHanhDong = new CardLayout();
     private final JPanel pnlHanhDong = new JPanel(cardHanhDong);
     private ArrayList<DichVu> dsHienThi = new ArrayList<>();
     private String maDangSua = null;
     private static final NumberFormat TIEN_VN = NumberFormat.getIntegerInstance(Locale.forLanguageTag("vi-VN"));
 
-    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
     public QuanLyDichVuUI() {
         setLayout(new BorderLayout(0, 14));
         setBackground(UIStyle.LIGHT_BLUE);
@@ -88,7 +84,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
 
         UIStyle.taoBang(tblDichVu, 2);
         tblDichVu.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        // MouseListener: nhấn chuột chọn dịch vụ để đưa lên biểu mẫu.
+
         tblDichVu.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -130,14 +126,12 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         themHang(pnlNhap, "Mô tả", scrMoTa, 96);
         pnlForm.add(pnlNhap, BorderLayout.CENTER);
 
-        // Chưa chọn dịch vụ: chỉ có nút Thêm dịch vụ.
         btnThem = UIStyle.nutXanh("+ Thêm dịch vụ");
         btnThem.addActionListener(this);
         JPanel pnlThem = new JPanel(new GridLayout(1, 1));
         pnlThem.setOpaque(false);
         pnlThem.add(btnThem);
 
-        // Đã chọn một dòng: ẩn hoàn toàn nút Thêm, chỉ hiện Lưu / Xóa / Bỏ chọn.
         btnSua = UIStyle.nutChinh("Lưu");
         btnXoa = UIStyle.nutXoa("Xóa");
         btnBoChon = UIStyle.nutPhu("Bỏ chọn");
@@ -163,7 +157,6 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         add(pnlGiua, BorderLayout.CENTER);
     }
 
-    // Thêm hàng.
     private static void themHang(JPanel pnlCha, String nhan, JComponent truong, int cao) {
         JLabel lblLbl = UIStyle.nhan(nhan);
         lblLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -176,13 +169,11 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         pnlCha.add(Box.createVerticalStrut(12));
     }
 
-    // Lấy dòng đang được chọn trên bảng.
     private DichVu dongDangChon() {
         int i = tblDichVu.getSelectedRow();
         return i >= 0 && i < dsHienThi.size() ? dsHienThi.get(i) : null;
     }
 
-    // Nạp dòng mục đang chọn.
     private void napDongDangChon() {
         DichVu dv = dongDangChon();
         if (dv == null)
@@ -195,19 +186,16 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         capNhatNutHanhDong();
     }
 
-    // Cập nhật nút hành động.
     private void capNhatNutHanhDong() {
         cardHanhDong.show(pnlHanhDong, maDangSua == null ? "THEM" : "SUA");
     }
 
-    // Làm mới dữ liệu hoặc trạng thái của màn hình.
     public void lamMoi() {
         taiLai(maDangSua);
         if (maDangSua == null)
             hienMaDuKien();
     }
 
-    // Tải lại danh sách và chọn lại bản ghi theo mã nếu có.
     private void taiLai(String maCanChon) {
         try {
             dsHienThi = control.timKiem(txtTim.getText());
@@ -235,7 +223,6 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         }
     }
 
-    // Hiển thị mã đủ kiện.
     private void hienMaDuKien() {
         try {
             txtMa.setText(control.maDuKien());
@@ -244,7 +231,6 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         }
     }
 
-    // Bỏ chọn.
     private void boChon() {
         tblDichVu.clearSelection();
         maDangSua = null;
@@ -255,20 +241,21 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         capNhatNutHanhDong();
     }
 
-    // Đọc và kiểm tra dữ liệu nhập trên biểu mẫu.
     private DichVu docForm() {
         try {
             return control.taoDichVu(maDangSua, txtTen.getText(), txtGia.getText(), txaMoTa.getText());
         } catch (IllegalArgumentException ex) {
             UIStyle.canhBao(this, ex.getMessage());
-            if (ex.getMessage().startsWith("Tên")) txtTen.requestFocus();
-            else if (ex.getMessage().startsWith("Mô tả")) txaMoTa.requestFocus();
-            else txtGia.requestFocus();
+            if (ex.getMessage().startsWith("Tên"))
+                txtTen.requestFocus();
+            else if (ex.getMessage().startsWith("Mô tả"))
+                txaMoTa.requestFocus();
+            else
+                txtGia.requestFocus();
             return null;
         }
     }
 
-    // Xử lý yêu cầu thêm dữ liệu từ giao diện.
     private void them() {
         if (maDangSua != null) {
             UIStyle.canhBao(this, "Bạn đang chọn dịch vụ " + maDangSua + ". Hãy nhấn Bỏ chọn để thêm mới.");
@@ -287,7 +274,6 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         }
     }
 
-    // Xử lý yêu cầu sửa bản ghi đang chọn.
     private void sua() {
         if (maDangSua == null) {
             UIStyle.canhBao(this, "Hãy chọn một dịch vụ trong bảng trước khi sửa.");
@@ -307,7 +293,6 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         }
     }
 
-    // Xử lý yêu cầu xóa bản ghi đang chọn.
     private void xoa() {
         DichVu dv = dongDangChon();
         if (dv == null) {

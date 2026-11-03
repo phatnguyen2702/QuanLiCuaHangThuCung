@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuKiemKe;
 import entity.PhieuKiemKe;
@@ -39,7 +41,7 @@ public class KiemKeDAO {
     // Tham số chiTiet: chi tiết.
     public void luu(PhieuKiemKe phieu,
             List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KIEM_KE);
 
         damBaoCotKiemKe();
         SanPhamDAO.damBaoCotKinhDoanh();
@@ -132,7 +134,7 @@ public class KiemKeDAO {
     // Tham số phieu: phiếu.
     // Tham số chiTiet: chi tiết.
     public void luuNhap(PhieuKiemKe phieu, List<ChiTietPhieuKiemKe> chiTiet) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.KIEM_KE);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KIEM_KE);
         damBaoCotKiemKe();
         SanPhamDAO.damBaoCotKinhDoanh();
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối

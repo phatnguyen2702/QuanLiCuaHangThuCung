@@ -16,16 +16,14 @@ public class DangNhapUI extends JFrame implements ActionListener {
         private JPasswordField txtMatKhau;
         private JButton btnDangNhap;
 
-        // NAVY: Màu dùng cho giao diện: xanh đậm.
         private final Color NAVY = new Color(18, 48, 82);
-        // LIGHT_BLUE: Màu dùng cho giao diện: xanh dương.
+
         private final Color LIGHT_BLUE = new Color(229, 241, 252);
-        // GREEN: Màu dùng cho giao diện: xanh lá.
+
         private final Color GREEN = new Color(72, 196, 62);
 
         private final DangNhapControl control = new DangNhapControl();
 
-        // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
         public DangNhapUI() {
 
                 setTitle("Pet Shop Pro - Đăng Nhập");
@@ -33,8 +31,6 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 setLocationRelativeTo(null);
                 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 setResizable(false);
-
-                
 
                 JPanel pnlMainPanel = new JPanel(new GridLayout(1, 2));
 
@@ -59,17 +55,17 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 pnlBranding.setOpaque(false);
 
                 pnlBranding.setLayout(new BoxLayout(pnlBranding, BoxLayout.Y_AXIS));
-                // Ten he thong
+
                 JLabel lblTen = new JLabel("PET SHOP PRO");
                 lblTen.setForeground(Color.WHITE);
                 lblTen.setFont(new Font("Segoe UI", Font.BOLD, 26));
                 lblTen.setAlignmentX(Component.CENTER_ALIGNMENT);
-                // Tieu de
+
                 JLabel lblTieuDe2 = new JLabel("HỆ THỐNG QUẢN LÝ CỬA HÀNG THÚ CƯNG");
                 lblTieuDe2.setForeground(new Color(255, 105, 90));
                 lblTieuDe2.setFont(new Font("Segoe UI", Font.BOLD, 16));
                 lblTieuDe2.setAlignmentX(Component.CENTER_ALIGNMENT);
-                // lblSlogan
+
                 JLabel lblSlogan = new JLabel(
                                 "<html>" + "<div style='text-align:center;'>"
                                                 + "Vận hành gọn gàng<br>"
@@ -90,7 +86,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 JPanel pnlTinhNang = new JPanel(new GridBagLayout());
                 pnlTinhNang.setBackground(new Color(169, 194, 218));
                 pnlTinhNang.setBorder(new EmptyBorder(15, 18, 15, 18));
-                // dsTinhNang: Mảng lưu danh sách tính năng.
+
                 JLabel lblTinhNang = new JLabel(
                                 "<html>"
                                                 + "<div>"
@@ -123,7 +119,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 pnlStatus.add(lblCham);
                 pnlStatus.add(lblTrangThai2);
                 pnlContent.add(pnlStatus, BorderLayout.SOUTH);
-                // THEM CONTENT VAO PANEL
+
                 pnlKhung.add(pnlContent, BorderLayout.CENTER);
                 return pnlKhung;
         }
@@ -155,10 +151,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 txtTaiKhoan.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
                 txtTaiKhoan.setAlignmentX(Component.LEFT_ALIGNMENT);
-                // Khi nguoi dung nhap chu:
-                // tu dong chuyen thanh chu thuong
-                // DocumentListener: tự đổi tên đăng nhập thành chữ thường và bỏ ký tự ngoài
-                // a-z, 0-9.
+
                 txtTaiKhoan.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
                         private void locTaiKhoan() {
                                 SwingUtilities.invokeLater(() -> {
@@ -199,7 +192,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 txtMatKhau.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
                 txtMatKhau.setAlignmentX(Component.LEFT_ALIGNMENT);
                 pnlCard.add(txtMatKhau);
-                // Khoang cach giua truong mat khau va nut dang nhap.
+
                 pnlCard.add(Box.createVerticalStrut(20));
                 btnDangNhap = new JButton("ĐĂNG NHẬP");
                 btnDangNhap.setBackground(GREEN);
@@ -222,8 +215,6 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 return pnlBackground;
         }
 
-        // Kiểm tra thông tin đăng nhập và mở màn hình tương ứng khi xác thực thành
-        // công.
         private void xuLyDangNhap() {
         char[] matKhau = txtMatKhau.getPassword();
         NhanVien tk;
@@ -263,7 +254,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-                // Cả nhấn nút và Enter trong ô mật khẩu đều đăng nhập như trước.
+
                 Object nguon = e.getSource();
                 if (nguon == btnDangNhap || nguon == txtMatKhau) {
                         xuLyDangNhap();

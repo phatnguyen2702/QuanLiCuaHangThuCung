@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import entity.KhachHang;
 
 import java.sql.*;
@@ -247,7 +249,7 @@ public class KhachHangDAO {
         public String them(
                         KhachHang kh,
                         ArrayList<ThuCungMoi> thuCungs) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KHACH_HANG);
 
                 // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
                 // lệnh.
@@ -333,7 +335,7 @@ public class KhachHangDAO {
         // Tham số maKhachHang: mã khách hàng.
         // Kết quả: chuỗi kết quả.
         public String xoa(String maKhachHang) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KHACH_HANG);
 
                 // rangBuoc: Mảng lưu ràng buộc.
                 String[][] rangBuoc = {

@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -168,7 +170,7 @@ public class ThongKeDoanhThuDAO {
     // Tham số ngayThamChieu: ngày tham chiếu.
     // Kết quả: đối tượng/giá trị kiểu BaoCao.
     public BaoCao layBaoCao(CheDo cheDo, LocalDate ngayThamChieu) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.THONG_KE_DOANH_THU);
         if (cheDo == null || ngayThamChieu == null) {
             throw new IllegalArgumentException("Thiếu kỳ thống kê doanh thu.");
         }

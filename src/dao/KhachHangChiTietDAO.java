@@ -100,7 +100,7 @@ public class KhachHangChiTietDAO {
         // Tham số kh: khách hàng cần xử lý.
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean sua(KhachHang kh) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.KHACH_HANG);
+                control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.KHACH_HANG);
 
                 // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
                 // lệnh.

@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
@@ -39,7 +41,7 @@ public class NhapKhoDAO {
     // Tham số chiTiet: chi tiết.
     public void luu(PhieuNhapKho phieu,
             List<ChiTietPhieuNhap> chiTiet) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
 
         damBaoCotHanSuDung();
 
@@ -232,7 +234,7 @@ public class NhapKhoDAO {
      * Vi du chi tiet va PDF deu dung cung bo du lieu tu database.
      */
     public BanInPhieuNhap layBanInPhieuNhap(String maPhieu) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_NHAP_KHO);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TRA_CUU_NHAP_KHO);
         if (maPhieu == null || maPhieu.isBlank())
             throw new IllegalArgumentException("Vui lòng chọn mã phiếu nhập hợp lệ.");
         damBaoCotHanSuDung();
@@ -364,7 +366,7 @@ public class NhapKhoDAO {
 
     /** Hoan tat phieu nhap: phieu + moi dong chi tiet chuyen sang trangThai 1. */
     public void hoanTatPhieuNhap(String maPhieu) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
 
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
@@ -403,7 +405,7 @@ public class NhapKhoDAO {
 
     /** Xoa phieu nhap (chi phieu con la nhap, khong dung toi ton kho). */
     public void xoaPhieuNhap(String maPhieu) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
 
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
@@ -489,7 +491,7 @@ public class NhapKhoDAO {
     // Tham số n: nhà cung cấp cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean themNhaCungCap(NhaCungCap n) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.NHAP_KHO);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
 
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
