@@ -1,6 +1,6 @@
 package UI;
 
-import dao.LichPhanCaDAO;
+import control.PhanCaControl;
 import entity.LichPhanCa;
 import util.PhanCaExporter;
 
@@ -49,7 +49,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         .withResolverStyle(ResolverStyle.STRICT);
 
         // dao: Đối tượng truy cập dữ liệu lịch phân ca.
-        private final LichPhanCaDAO dao = new LichPhanCaDAO();
+        private final PhanCaControl control = new PhanCaControl();
         // fntNoiDung: Phông chữ dùng cho phông chữ nội dung.
         private final Font fntNoiDung = new Font("Segoe UI", Font.PLAIN, 12);
         // txtMaPhanCa: Ô nhập/hiển thị văn bản mã phân ca.
@@ -400,25 +400,18 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
          * nhiều ca.
          */
         private void taiThongKeHomNay() {
-                LocalDate homNay = LocalDate.now();
-                lblNgayThongKe.setText("Ngày " + homNay.format(DINH_DANG_NGAY));
-                try {
-                        List<LichPhanCa> lich = dao.layPhanCaTheoNgay(homNay);
-                        java.util.Set<String> nhanVienKhacNhau = new java.util.HashSet<>();
-                        for (LichPhanCa pc : lich) {
-                                nhanVienKhacNhau.add(pc.getMaNhanVien());
-                        }
-                        // Một nhân viên có nhiều ca vẫn chỉ tính là 1 nhân viên.
-                        lblSoNhanVienHomNay.setText(String.valueOf(nhanVienKhacNhau.size()));
-                        // Mỗi phân ca trong danh sách tương ứng một ca làm việc.
-                        lblSoCaHomNay.setText(String.valueOf(lich.size()));
-                } catch (Exception ex) {
-                        // Không hiển thị 0 gây hiểu nhầm khi không kết nối được DB.
-                        lblSoNhanVienHomNay.setText("—");
-                        lblSoCaHomNay.setText("—");
-                        ex.printStackTrace();
-                }
+        LocalDate homNay = LocalDate.now();
+        lblNgayThongKe.setText("Ngày " + homNay.format(DINH_DANG_NGAY));
+        try {
+            PhanCaControl.ThongKe tk = control.thongKeNgay(homNay);
+            lblSoNhanVienHomNay.setText(String.valueOf(tk.soNhanVien()));
+            lblSoCaHomNay.setText(String.valueOf(tk.soCa()));
+        } catch (Exception ex) {
+            lblSoNhanVienHomNay.setText("—");
+            lblSoCaHomNay.setText("—");
+            ex.printStackTrace();
         }
+    }
 
         // Thêm trường nhập liệu.
         // Tham số pnlPnl: khung giao diện.
@@ -449,7 +442,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         cmbNhanVien.removeAllItems();
                         cmbLocNhanVien.removeAllItems();
                         cmbLocNhanVien.addItem("Tất cả");
-                        for (String[] nv : dao.getDanhSachNhanVien()) {
+                        for (String[] nv : control.layNhanVien()) {
                                 String item = nv[0] + " - " + nv[1];
                                 cmbNhanVien.addItem(item);
                                 cmbLocNhanVien.addItem(item);
@@ -459,7 +452,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         cmbCa.removeAllItems();
                         cmbLocCa.removeAllItems();
                         cmbLocCa.addItem("Tất cả");
-                        for (String[] ca : dao.getDanhSachCa()) {
+                        for (String[] ca : control.layCaLam()) {
                                 cmbCa.addItem(ca[0] + " - " + ca[1] + ": " + ca[2] + "–" + ca[3]);
                                 cmbLocCa.addItem(ca[0] + " - " + ca[1]);
                         }
@@ -471,7 +464,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
         // Đọc dữ liệu qua DAO và cập nhật giao diện.
         private void taiDuLieu() {
-                hienThiDuLieu(dao.getAll());
+                hienThiDuLieu(control.layDanhSach());
                 taiThongKeHomNay();
         }
 
@@ -526,13 +519,9 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
         // Tham số cmbCbo: hộp lựa chọn.
         // Kết quả: chuỗi kết quả.
         private String maDaChon(JComboBox<String> cmbCbo) {
-                if (cmbCbo == null || cmbCbo.getSelectedItem() == null)
-                        return "";
-                // selected: Lưu trạng thái được chọn.
-                String selected = cmbCbo.getSelectedItem().toString();
-                int pos = selected.indexOf(" - ");
-                return pos >= 0 ? selected.substring(0, pos) : selected;
-        }
+        if (cmbCbo == null || cmbCbo.getSelectedItem() == null) return "";
+        return PhanCaControl.maDaChon(cmbCbo.getSelectedItem().toString());
+    }
 
         // Cập nhật họ tên.
         private void capNhatHoTen() {
@@ -549,81 +538,48 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
         // Tham số sua: sửa.
         // Kết quả: đối tượng/giá trị kiểu LichPhanCa.
         private LichPhanCa layDuLieuForm(boolean sua) {
-                if (cmbNhanVien.getSelectedItem() == null || cmbCa.getSelectedItem() == null) {
-                        canhBao("Vui lòng chọn nhân viên và ca làm việc.");
-                        return null;
-                }
-                // maNhanVien: Lưu mã nhân viên.
-                String maNhanVien = maDaChon(cmbNhanVien);
-                // maCa: Lưu mã ca.
-                String maCa = maDaChon(cmbCa);
-                if (!maNhanVien.matches("NV\\d{3}") || !maCa.matches("CA\\d{3}")) {
-                        canhBao("Hãy chọn nhân viên và ca làm hợp lệ từ danh sách.");
-                        return null;
-                }
-                if (sua && (maDangSua == null || maDangSua.isBlank())) {
-                        canhBao("Vui lòng chọn phân ca cần sửa.");
-                        return null;
-                }
-                // ngay: Lưu ngày dưới dạng dữ liệu thời gian.
-                LocalDate ngay = docNgay(txtNgayLamViec.getText());
-                if (ngay == null) {
-                        canhBao("Vui lòng chọn ngày làm việc từ lịch.");
-                        return null;
-                }
-                if (ngay.isBefore(LocalDate.now())) {
-                        canhBao("Không được thêm hoặc sửa phân ca cho ngày đã qua.");
-                        return null;
-                }
-                return new LichPhanCa(sua ? maDangSua : dao.taoMaPhanCa(),
-                                ngay, maNhanVien, maCa);
+        try {
+            return control.taoPhanCa(maDangSua, sua,
+                    maDaChon(cmbNhanVien), maDaChon(cmbCa), txtNgayLamViec.getText());
+        } catch (IllegalArgumentException ex) {
+            canhBao(ex.getMessage());
+            return null;
         }
+    }
 
         // Xử lý yêu cầu thêm dữ liệu từ giao diện.
         private void them() {
-                LichPhanCa pc = layDuLieuForm(false);
-                if (pc == null)
-                        return;
-                try {
-                        if (dao.trungGio(pc.getMaNhanVien(), pc.getMaCa(), pc.getNgayLamViec(), null)) {
-                                canhBao("Nhân viên đã có ca trùng hoặc chồng giờ trong ngày này.");
-                                return;
-                        }
-                        if (dao.them(pc)) {
-                                thongBao("Thêm phân ca thành công.");
-                                taiDuLieu();
-                                lamMoiForm();
-                        } else
-                                canhBao("Không thể thêm phân ca. Kiểm tra kết nối hoặc mã đã tồn tại.");
-                } catch (Exception ex) {
-                        baoLoi(ex);
-                }
+        LichPhanCa pc = layDuLieuForm(false);
+        if (pc == null) return;
+        try {
+            if (control.them(pc)) {
+                thongBao("Thêm phân ca thành công.");
+                taiDuLieu();
+                lamMoiForm();
+            } else canhBao("Không thể thêm phân ca. Kiểm tra kết nối hoặc mã đã tồn tại.");
+        } catch (IllegalArgumentException ex) {
+            canhBao(ex.getMessage());
+        } catch (Exception ex) {
+            baoLoi(ex);
         }
+    }
 
         // Xử lý yêu cầu sửa bản ghi đang chọn.
         private void sua() {
-                if (maDangSua == null) {
-                        canhBao("Vui lòng chọn dòng phân ca cần sửa.");
-                        return;
-                }
-                LichPhanCa pc = layDuLieuForm(true);
-                if (pc == null)
-                        return;
-                try {
-                        if (dao.trungGio(pc.getMaNhanVien(), pc.getMaCa(), pc.getNgayLamViec(), pc.getMaPhanCa())) {
-                                canhBao("Nhân viên đã có ca trùng hoặc chồng giờ với phân ca khác.");
-                                return;
-                        }
-                        if (dao.sua(pc)) {
-                                thongBao("Cập nhật phân ca " + pc.getMaPhanCa() + " thành công.");
-                                taiDuLieu();
-                                lamMoiForm();
-                        } else
-                                canhBao("Không thể sửa. Không cho sửa phân ca của ngày đã qua hoặc mã không tồn tại.");
-                } catch (Exception ex) {
-                        baoLoi(ex);
-                }
+        LichPhanCa pc = layDuLieuForm(true);
+        if (pc == null) return;
+        try {
+            if (control.sua(pc)) {
+                thongBao("Cập nhật phân ca " + pc.getMaPhanCa() + " thành công.");
+                taiDuLieu();
+                lamMoiForm();
+            } else canhBao("Không thể sửa. Không cho sửa phân ca của ngày đã qua hoặc mã không tồn tại.");
+        } catch (IllegalArgumentException ex) {
+            canhBao(ex.getMessage());
+        } catch (Exception ex) {
+            baoLoi(ex);
         }
+    }
 
         // Xử lý yêu cầu xóa bản ghi đang chọn.
         private void xoa() {
@@ -639,7 +595,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 if (JOptionPane.showConfirmDialog(this, "Xóa phân ca " + ma + "?",
                                 "Xác nhận xóa", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
                         return;
-                if (dao.xoa(ma)) {
+                if (control.xoa(ma)) {
                         thongBao("Đã xóa phân ca " + ma + ".");
                         taiDuLieu();
                         lamMoiForm();
@@ -649,52 +605,31 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
         // Lọc dữ liệu.
         private void locDuLieu() {
-                // maNV: Lưu mã nhân viên.
-                String maNV = maDaChon(cmbLocNhanVien);
-                // maCa: Lưu mã ca.
-                String maCa = maDaChon(cmbLocCa);
-                // ngayNhap: Đọc nội dung chữ từ ô nhập để xử lý ngày giờ nhập kho.
-                String ngayNhap = txtLocNgay.getText().trim();
-                // ngay: Lưu ngày dưới dạng dữ liệu thời gian.
-                LocalDate ngay = docNgay(ngayNhap);
-                if (!ngayNhap.isEmpty() && ngay == null) {
-                        canhBao("Ngày lọc không hợp lệ. Hãy chọn lại từ lịch (dd/MM/yyyy).");
-                        txtLocNgay.requestFocusInWindow();
-                        return;
-                }
-                // ketQua: Lưu kết quả; phần tử có kiểu LichPhanCa.
-                List<LichPhanCa> ketQua = new ArrayList<>();
-                for (LichPhanCa pc : dao.getAll()) {
-                        if (ngay != null && !ngay.equals(pc.getNgayLamViec()))
-                                continue;
-                        if (!maNV.isEmpty() && !"Tất cả".equals(maNV) && !maNV.equalsIgnoreCase(pc.getMaNhanVien()))
-                                continue;
-                        if (!maCa.isEmpty() && !"Tất cả".equals(maCa) && !maCa.equalsIgnoreCase(pc.getMaCa()))
-                                continue;
-                        ketQua.add(pc);
-                }
-                hienThiDuLieu(ketQua);
-                lamMoiFormKhongXoaBoLoc();
+        String maNV = maDaChon(cmbLocNhanVien);
+        String maCa = maDaChon(cmbLocCa);
+        String ngayNhap = txtLocNgay.getText().trim();
+        LocalDate ngay = PhanCaControl.docNgay(ngayNhap);
+        if (!ngayNhap.isEmpty() && ngay == null) {
+            canhBao("Ngày lọc không hợp lệ. Hãy chọn lại từ lịch (dd/MM/yyyy).");
+            txtLocNgay.requestFocusInWindow();
+            return;
         }
+        hienThiDuLieu(control.loc(ngay, ngay, maNV, maCa));
+        lamMoiFormKhongXoaBoLoc();
+    }
 
         // Đọc chuỗi ngày từ bộ lọc thành đối tượng LocalDate.
         // Tham số text: nội dung chữ.
         // Kết quả: đối tượng/giá trị kiểu LocalDate.
         private LocalDate docNgay(String text) {
-                if (text == null || text.trim().isEmpty())
-                        return null;
-                try {
-                        return LocalDate.parse(text.trim(), DINH_DANG_NGAY);
-                } catch (Exception ex) {
-                        return null;
-                }
-        }
+        return PhanCaControl.docNgay(text);
+    }
 
         // Làm mới biểu mẫu không xóa bỏ lọc.
         private void lamMoiFormKhongXoaBoLoc() {
                 maDangSua = null;
                 // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                txtMaPhanCa.setText(dao.taoMaPhanCa());
+                txtMaPhanCa.setText(control.taoMaPhanCa());
                 // Định dạng dữ liệu thành chuỗi rồi hiển thị trong control bằng setText().
                 txtNgayLamViec.setText(LocalDate.now().format(DINH_DANG_NGAY));
                 tblPhanCa.clearSelection();
@@ -763,35 +698,12 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 // Giữ nguyên tùy chọn lọc nhân viên và ca (nếu người dùng đã chọn).
                 String maNV = maDaChon(cmbLocNhanVien);
                 String maCa = maDaChon(cmbLocCa);
-                List<String[]> rows = new ArrayList<>();
+                List<String[]> rows;
                 try {
-                        List<LichPhanCa> danhSach = new ArrayList<>(dao.getAll());
-                        danhSach.sort(java.util.Comparator.comparing(LichPhanCa::getNgayLamViec)
-                                        .thenComparing(LichPhanCa::getMaNhanVien));
-
-                        for (LichPhanCa pc : danhSach) {
-                                LocalDate ngay = pc.getNgayLamViec();
-                                if (ngay == null || ngay.isBefore(tuNgay) || ngay.isAfter(denNgay))
-                                        continue;
-                                if (!maNV.isEmpty() && !"Tất cả".equals(maNV)
-                                                && !maNV.equalsIgnoreCase(pc.getMaNhanVien()))
-                                        continue;
-                                if (!maCa.isEmpty() && !"Tất cả".equals(maCa)
-                                                && !maCa.equalsIgnoreCase(pc.getMaCa()))
-                                        continue;
-
-                                rows.add(new String[] {
-                                                pc.getMaPhanCa(),
-                                                ngay.format(DINH_DANG_NGAY),
-                                                pc.getMaNhanVien(),
-                                                pc.getHoTen(),
-                                                pc.getMaCa(),
-                                                pc.getThongTinCa()
-                                });
-                        }
+                    rows = control.duLieuExcel(tuNgay, denNgay, maNV, maCa);
                 } catch (RuntimeException ex) {
-                        baoLoi(ex);
-                        return;
+                    baoLoi(ex);
+                    return;
                 }
 
                 if (rows.isEmpty()) {
@@ -818,10 +730,8 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                                 JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
                         return;
 
-                String[] tenCot = { "Mã phân ca", "Ngày làm việc", "Mã nhân viên",
-                                "Họ tên", "Mã ca", "Ca làm" };
                 try {
-                        PhanCaExporter.xuat(tep.toPath(), tenCot, rows);
+                        control.xuatExcel(tep.toPath(), rows);
                         thongBao("Đã xuất " + rows.size() + " phân ca trong " + phamVi
                                         + " sang Excel:\n" + tep.getAbsolutePath());
                 } catch (IOException ex) {
@@ -831,14 +741,13 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
         /** Lấy thứ Hai của tuần có chứa ngày đầu vào. */
         private LocalDate dauTuan(LocalDate ngay) {
-                return ngay.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        }
+        return PhanCaControl.dauTuan(ngay);
+    }
 
         /** Hiển thị khoảng ngày theo cách viết quen thuộc của cửa hàng. */
         private String khoangTuan(LocalDate thuHai) {
-                return thuHai.format(DINH_DANG_NGAY) + " – "
-                                + thuHai.plusDays(6).format(DINH_DANG_NGAY);
-        }
+        return PhanCaControl.khoangTuan(thuHai);
+    }
 
         /** Xem bảng lịch tuần: mỗi hàng là một nhân viên, mỗi cột là một ngày. */
         private void xemLichTheoTuan() {
@@ -928,37 +837,15 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                                 for (int c = 1; c < 8; c++)
                                         bangTuan.getColumnModel().getColumn(c).setPreferredWidth(163);
                                 modelTuan.setRowCount(0);
-                                List<LichPhanCa> phanCaTuan = dao.layPhanCaTrongTuan(thuHai);
+                                List<LichPhanCa> phanCaTuan = control.layPhanCaTrongTuan(thuHai);
                                 // Chỉ hiển thị nhân viên thực sự có ít nhất một phân ca
                                 // trong tuần được chọn; không nạp toàn bộ danh sách nhân viên.
-                                Map<String, StringBuilder[]> bangTheoNguoi = new LinkedHashMap<>();
-                                for (LichPhanCa pc : phanCaTuan) {
-                                        String nhanVien = pc.getMaNhanVien() + " - " + pc.getHoTen();
-                                        if (!bangTheoNguoi.containsKey(nhanVien)) {
-                                                StringBuilder[] ngay = new StringBuilder[7];
-                                                for (int i = 0; i < 7; i++)
-                                                        ngay[i] = new StringBuilder();
-                                                bangTheoNguoi.put(nhanVien, ngay);
-                                        }
-                                        int thuIndex = pc.getNgayLamViec().getDayOfWeek().getValue() - 1;
-                                        StringBuilder o = bangTheoNguoi.get(nhanVien)[thuIndex];
-                                        if (o.length() > 0)
-                                                o.append("\n");
-                                        o.append(pc.getMaCa()).append(" - ").append(pc.getTenCa())
-                                                        .append(" (").append(pc.getGioBatDau()).append("–")
-                                                        .append(pc.getGioKetThuc()).append(")");
-                                }
-                                for (Map.Entry<String, StringBuilder[]> hang : bangTheoNguoi.entrySet()) {
-                                        Object[] duLieu = new Object[8];
-                                        duLieu[0] = hang.getKey();
-                                        for (int i = 0; i < 7; i++)
-                                                duLieu[i + 1] = hang.getValue()[i].toString();
-                                        modelTuan.addRow(duLieu);
-                                }
+                                List<Object[]> hangTuan = control.bangLichTuan(phanCaTuan);
+                                for (Object[] hang : hangTuan) modelTuan.addRow(hang);
                                 tongKet.setText(phanCaTuan.isEmpty()
                                                 ? "Không có nhân viên được phân ca trong tuần này."
                                                 : "Tổng: " + phanCaTuan.size() + " phân ca / "
-                                                                + bangTheoNguoi.size() + " nhân viên có ca");
+                                                                + hangTuan.size() + " nhân viên có ca");
                         } catch (Exception ex) {
                                 baoLoi(ex);
                         }
@@ -1080,10 +967,10 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         saoChep.setEnabled(false);
                         chonNguon.setEnabled(false);
                         chonDich.setEnabled(false);
-                        new SwingWorker<LichPhanCaDAO.KetQuaSaoChep, Void>() {
+                        new SwingWorker<PhanCaControl.KetQuaSaoChep, Void>() {
                                 @Override
-                                protected LichPhanCaDAO.KetQuaSaoChep doInBackground() throws Exception {
-                                        return dao.saoChepLichTheoTuan(nguon[0], dich[0]);
+                                protected PhanCaControl.KetQuaSaoChep doInBackground() throws Exception {
+                                        return control.saoChepTuan(nguon[0], dich[0]);
                                 }
 
                                 @Override
@@ -1092,7 +979,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                                         chonNguon.setEnabled(true);
                                         chonDich.setEnabled(true);
                                         try {
-                                                LichPhanCaDAO.KetQuaSaoChep kq = get();
+                                                PhanCaControl.KetQuaSaoChep kq = get();
                                                 JOptionPane.showMessageDialog(dialog,
                                                                 "Tổng lịch tuần nguồn: " + kq.getTongNguon() + "\n"
                                                                                 + "Đã sao chép: " + kq.getDaThem()

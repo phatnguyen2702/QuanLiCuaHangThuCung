@@ -1,7 +1,11 @@
 package entity;
 
-// Lớp dữ liệu biểu diễn tài khoản, gồm thuộc tính và các phương thức truy cập.
-public class TaiKhoan {
+/**
+ * Entity ánh xạ bảng NhanVien trong SQL Server.
+ * Các cột đều là VARCHAR hoặc NVARCHAR nên dùng String.
+ * Giữ số điện thoại dưới dạng String để không mất số 0 đầu.
+ */
+public class NhanVien {
 
         // maNhanVien: Lưu mã nhân viên.
         private String maNhanVien;
@@ -19,7 +23,7 @@ public class TaiKhoan {
         private String vaiTro;
 
         // Khởi tạo đối tượng với trạng thái ban đầu.
-        public TaiKhoan() {
+        public NhanVien() {
         }
 
         // Khởi tạo đối tượng từ các giá trị được truyền vào.
@@ -30,7 +34,7 @@ public class TaiKhoan {
         // Tham số matKhau: mật khẩu.
         // Tham số gioiTinh: giới tính.
         // Tham số vaiTro: vai trò.
-        public TaiKhoan(
+        public NhanVien(
                         String maNhanVien,
                         String hoTen,
                         String soDienThoai,

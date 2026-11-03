@@ -2,7 +2,6 @@ package dao;
 
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuKiemKe;
-import entity.PhanQuyen;
 import entity.PhieuKiemKe;
 import entity.SanPham;
 

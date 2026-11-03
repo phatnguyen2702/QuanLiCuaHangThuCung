@@ -1,7 +1,6 @@
 package dao;
 
 import entity.KhachHang;
-import entity.PhanQuyen;
 
 import java.sql.*;
 import java.text.SimpleDateFormat;

@@ -23,7 +23,9 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
 
     // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
     private final DefaultTableModel model = new DefaultTableModel(
-            new String[] { "Mã SP", "Tên SP", "Danh mục", "Đợt nhập", "Ngày nhập", "Hạn sử dụng", "Còn lại", "Trạng thái" }, 0) {
+            new String[] { "Mã SP", "Tên SP", "Danh mục", "Đợt nhập", "Ngày nhập", "Hạn sử dụng", "Còn lại",
+                    "Trạng thái" },
+            0) {
         // Không cho phép sửa trực tiếp các ô trong bảng.
         // Tham số row: chỉ số dòng.
         // Tham số column: chỉ số cột.
@@ -180,14 +182,16 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
                 """;
 
         try (Connection connection = connectDB.getConnection(); Statement migration = connection.createStatement()) {
-            migration.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap','hanSuDung') IS NULL ALTER TABLE ChiTietPhieuNhap ADD hanSuDung DATE NULL");
+            migration.execute(
+                    "IF COL_LENGTH('dbo.ChiTietPhieuNhap','hanSuDung') IS NULL ALTER TABLE ChiTietPhieuNhap ADD hanSuDung DATE NULL");
             SanPhamDAO.damBaoCotKinhDoanh();
         } catch (SQLException ex) {
             showError("Không thể cập nhật cấu trúc hạn sử dụng", ex);
             return;
         }
 
-        try (Connection connection = connectDB.getConnection(); Statement statement = connection.createStatement();
+        try (Connection connection = connectDB.getConnection();
+                Statement statement = connection.createStatement();
                 ResultSet result = statement.executeQuery(sql)) {
             while (result.next()) {
                 int days = result.getInt("ngayCon");
@@ -200,12 +204,13 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
                     continue;
                 if ("Sắp hết hạn (30 ngày)".equals(selectedStatus) && isExpired)
                     continue;
-                if (!keyword.isEmpty() && !code.toLowerCase().contains(keyword) && !name.toLowerCase().contains(keyword))
+                if (!keyword.isEmpty() && !code.toLowerCase().contains(keyword)
+                        && !name.toLowerCase().contains(keyword))
                     continue;
                 String status = result.getBoolean("ngungKinhDoanh") ? "Ngừng kinh doanh"
                         : isExpired ? "Đã hết hạn" : "Sắp hết hạn · " + days + " ngày";
-                model.addRow(new Object[] { code,name,result.getString("tenDanhMuc"),result.getString("maPhieuNhap"),
-                        result.getDate("ngayNhap"),result.getDate("hanSuDung"),quantity,status });
+                model.addRow(new Object[] { code, name, result.getString("tenDanhMuc"), result.getString("maPhieuNhap"),
+                        result.getDate("ngayNhap"), result.getDate("hanSuDung"), quantity, status });
             }
             lblExpiredCount.setText(String.valueOf(expired.size()));
             lblSoonCount.setText(String.valueOf(soon.size()));
@@ -216,6 +221,7 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
             showError("Không tải được dữ liệu cảnh báo", ex);
         }
     }
+
     private void ngungKinhDoanhLo() {
         int row = tblDuLieu.getSelectedRow();
         if (row < 0) {
@@ -228,7 +234,7 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
         if (!UIStyle.xacNhan(this, "Ngừng kinh doanh sản phẩm " + maSanPham + " của đợt " + maPhieuNhap + "?"))
             return;
         try {
-            entity.PhanQuyen.yeuCau(entity.PhanQuyen.Quyen.CANH_BAO_HAN_SU_DUNG);
+            dao.PhanQuyen.yeuCau(dao.PhanQuyen.Quyen.CANH_BAO_HAN_SU_DUNG);
             SanPhamDAO.damBaoCotKinhDoanh();
             try (Connection connection = connectDB.getConnection();
                     PreparedStatement statement = connection.prepareStatement(

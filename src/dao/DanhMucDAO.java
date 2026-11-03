@@ -2,7 +2,6 @@ package dao;
 
 import ConnectDB.connectDB;
 import entity.DanhMuc;
-import entity.PhanQuyen;
 import entity.SanPham;
 
 import java.sql.*;

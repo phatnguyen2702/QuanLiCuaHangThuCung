@@ -1,7 +1,6 @@
 package dao;
 
 import ConnectDB.connectDB;
-import entity.PhanQuyen;
 import entity.ThuCung;
 import java.sql.*;
 import java.util.ArrayList;

@@ -1,7 +1,6 @@
 package dao;
 
 import entity.LichHen;
-import entity.PhanQuyen;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

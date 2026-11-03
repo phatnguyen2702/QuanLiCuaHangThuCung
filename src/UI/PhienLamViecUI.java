@@ -31,6 +31,8 @@ public final class PhienLamViecUI {
         maNV = ma;
         hoTen = ten;
         vaiTro = role;
+        // Đồng bộ phiên của tầng xử lý phân quyền.
+        control.PhienLamViecControl.dat(ma, role);
     }
 
     /** Giỏ hàng dùng chung giữa màn hình gợi ý và màn hình thanh toán. */

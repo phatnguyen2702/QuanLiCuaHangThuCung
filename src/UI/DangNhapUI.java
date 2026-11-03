@@ -3,8 +3,8 @@ package UI;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import dao.TaiKhoanDAO;
-import entity.TaiKhoan;
+import control.DangNhapControl;
+import entity.NhanVien;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -23,7 +23,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
         // GREEN: Màu dùng cho giao diện: xanh lá.
         private final Color GREEN = new Color(72, 196, 62);
 
-        private TaiKhoanDAO taiKhoanDAO;
+        private final DangNhapControl control = new DangNhapControl();
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
         public DangNhapUI() {
@@ -34,7 +34,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
                 setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 setResizable(false);
 
-                taiKhoanDAO = new TaiKhoanDAO();
+                
 
                 JPanel pnlMainPanel = new JPanel(new GridLayout(1, 2));
 
@@ -163,8 +163,7 @@ public class DangNhapUI extends JFrame implements ActionListener {
                         private void locTaiKhoan() {
                                 SwingUtilities.invokeLater(() -> {
                                         String hienTai = txtTaiKhoan.getText();
-                                        String hopLe = hienTai.toLowerCase(java.util.Locale.ROOT)
-                                                        .replaceAll("[^a-z0-9]", "");
+                                        String hopLe = control.chuanHoaTaiKhoan(hienTai);
                                         if (!hienTai.equals(hopLe))
                                                 txtTaiKhoan.setText(hopLe);
                                 });
@@ -226,68 +225,41 @@ public class DangNhapUI extends JFrame implements ActionListener {
         // Kiểm tra thông tin đăng nhập và mở màn hình tương ứng khi xác thực thành
         // công.
         private void xuLyDangNhap() {
-
-                // taiKhoan: Đọc nội dung chữ từ ô nhập để xử lý tài khoản.
-                String taiKhoan = txtTaiKhoan.getText().trim().toLowerCase();
-
-                String matKhau = new String(txtMatKhau.getPassword());
-
-                if (taiKhoan.isEmpty()) {
-                        JOptionPane.showMessageDialog(this, "Vui lòng nhập tài khoản!", "Thông báo",
-                                        JOptionPane.WARNING_MESSAGE);
-                        txtTaiKhoan.requestFocus();
-                        return;
-                }
-
-                // kiểm tra mật khẩu
-                if (matKhau.isEmpty()) {
-                        JOptionPane.showMessageDialog(this, "Vui lòng nhập mật khẩu!", "Thong bao",
-                                        JOptionPane.WARNING_MESSAGE);
-                        txtMatKhau.requestFocus();
-                        return;
-                }
-
-                // Xac thuc khong yeu cau phien dang nhap.
-                // getAll() chi dung cho man hinh QUAN LY TAI KHOAN,
-                // vi ham do yeu cau quyen TAI_KHOAN.
-                TaiKhoan tk;
-                try {
-                        tk = taiKhoanDAO.xacThuc(taiKhoan, matKhau);
-                } catch (java.sql.SQLException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Không thể kết nối hoặc truy vấn SQL Server!\nChi tiết: " + ex.getMessage(),
-                                        "Lỗi cơ sở dữ liệu",
-                                        JOptionPane.ERROR_MESSAGE);
-                        return;
-                }
-                if (tk == null) {
-                        JOptionPane.showMessageDialog(
-                                        this,
-                                        "Tài khoản hoặc mật khẩu không chính xác!",
-                                        "Đăng nhập thất bại",
-                                        JOptionPane.ERROR_MESSAGE);
-                        txtMatKhau.selectAll();
-                        txtMatKhau.requestFocus();
-                        return;
-                }
-                // Khoi tao trang chu truoc khi dong cua so dang nhap:
-                // neu trang chu gap loi thi nguoi dung van nhin thay thong bao.
-                try {
-                        TrangChuUI trangChu = new TrangChuUI(tk.getMaNhanVien(), tk.getHoTen(), tk.getVaiTro());
-                        trangChu.setVisible(true);
-                        dispose();
-                        JOptionPane.showMessageDialog(trangChu, "Đăng nhập thành công!", "Thông báo",
-                                        JOptionPane.INFORMATION_MESSAGE);
-                } catch (RuntimeException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(this,
-                                        "Đã xác thực tài khoản nhưng không thể mở Trang chủ!\nChi tiết: "
-                                                        + ex.getMessage(),
-                                        "Lỗi mở giao diện", JOptionPane.ERROR_MESSAGE);
-                }
+        char[] matKhau = txtMatKhau.getPassword();
+        NhanVien tk;
+        try {
+            tk = control.dangNhap(txtTaiKhoan.getText(), matKhau);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Thông báo", JOptionPane.WARNING_MESSAGE);
+            if (txtTaiKhoan.getText().isBlank()) txtTaiKhoan.requestFocus();
+            else txtMatKhau.requestFocus();
+            return;
+        } catch (java.sql.SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Không thể kết nối hoặc truy vấn SQL Server!\nChi tiết: " + ex.getMessage(),
+                    "Lỗi cơ sở dữ liệu", JOptionPane.ERROR_MESSAGE);
+            return;
+        } finally {
+            java.util.Arrays.fill(matKhau, '\0');
         }
+        if (tk == null) {
+            JOptionPane.showMessageDialog(this, "Tài khoản hoặc mật khẩu không chính xác!",
+                    "Đăng nhập thất bại", JOptionPane.ERROR_MESSAGE);
+            txtMatKhau.selectAll();
+            txtMatKhau.requestFocus();
+            return;
+        }
+        try {
+            TrangChuUI trangChu = new TrangChuUI(tk.getMaNhanVien(), tk.getHoTen(), tk.getVaiTro());
+            trangChu.setVisible(true);
+            dispose();
+            JOptionPane.showMessageDialog(trangChu, "Đăng nhập thành công!", "Thông báo",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (RuntimeException ex) {
+            JOptionPane.showMessageDialog(this, "Đã xác thực nhưng không mở được Trang chủ!\n" + ex.getMessage(),
+                    "Lỗi mở giao diện", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
         @Override
         public void actionPerformed(ActionEvent e) {

@@ -2,7 +2,6 @@ package dao;
 
 import ConnectDB.connectDB;
 import entity.DichVu;
-import entity.PhanQuyen;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

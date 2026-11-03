@@ -1,7 +1,7 @@
 package UI;
 
 import UI.TrangChuUI.UIStyle;
-import dao.DichVuDAO;
+import control.DichVuControl;
 import entity.DichVu;
 
 import javax.swing.*;
@@ -24,7 +24,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
     // Các nút dùng chung trong actionPerformed().
     private JButton btnTim, btnLamMoi, btnThem, btnSua, btnXoa, btnBoChon;
 
-    private final DichVuDAO dao = new DichVuDAO();
+    private final DichVuControl control = new DichVuControl();
     private final JTextField txtTim = UIStyle.o(18);
     private final JTextField txtMa = UIStyle.oChiDoc("(Tự động)");
     private final JTextField txtTen = UIStyle.o(19);
@@ -210,7 +210,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
     // Tải lại danh sách và chọn lại bản ghi theo mã nếu có.
     private void taiLai(String maCanChon) {
         try {
-            dsHienThi = dao.timKiem(txtTim.getText());
+            dsHienThi = control.timKiem(txtTim.getText());
             tblDichVu.clearSelection();
             model.setRowCount(0);
             int chon = -1;
@@ -238,7 +238,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
     // Hiển thị mã đủ kiện.
     private void hienMaDuKien() {
         try {
-            txtMa.setText(dao.maDuKien());
+            txtMa.setText(control.maDuKien());
         } catch (SQLException ex) {
             txtMa.setText("(Tự động)");
         }
@@ -257,35 +257,15 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
 
     // Đọc và kiểm tra dữ liệu nhập trên biểu mẫu.
     private DichVu docForm() {
-        // ten: Đọc nội dung chữ từ ô nhập để xử lý tên.
-        String ten = txtTen.getText().trim();
-        // moTa: Đọc nội dung chữ từ ô nhập để xử lý mô tả.
-        String moTa = txaMoTa.getText().trim();
-        if (ten.length() < 2 || ten.length() > 50) {
-            UIStyle.canhBao(this, "Tên dịch vụ phải từ 2 đến 50 ký tự.");
-            txtTen.requestFocus();
+        try {
+            return control.taoDichVu(maDangSua, txtTen.getText(), txtGia.getText(), txaMoTa.getText());
+        } catch (IllegalArgumentException ex) {
+            UIStyle.canhBao(this, ex.getMessage());
+            if (ex.getMessage().startsWith("Tên")) txtTen.requestFocus();
+            else if (ex.getMessage().startsWith("Mô tả")) txaMoTa.requestFocus();
+            else txtGia.requestFocus();
             return null;
         }
-        if (moTa.length() > 255) {
-            UIStyle.canhBao(this, "Mô tả không được quá 255 ký tự.");
-            txaMoTa.requestFocus();
-            return null;
-        }
-        // giaNhap: Đọc nội dung chữ từ ô nhập để xử lý giá nhập.
-        String giaNhap = txtGia.getText().trim().replace(".", "").replace(" ", "");
-        if (!giaNhap.matches("[0-9]{1,16}")) {
-            UIStyle.canhBao(this, "Giá dịch vụ phải là số nguyên dương (VNĐ), ví dụ 150000.");
-            txtGia.requestFocus();
-            return null;
-        }
-        // gia: Giá trị giá dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
-        BigDecimal gia = new BigDecimal(giaNhap);
-        if (gia.signum() <= 0 || gia.precision() > 16) {
-            UIStyle.canhBao(this, "Giá dịch vụ phải lớn hơn 0 và vừa kiểu DECIMAL(18,2).");
-            txtGia.requestFocus();
-            return null;
-        }
-        return new DichVu(maDangSua, ten, gia, moTa.isEmpty() ? null : moTa);
     }
 
     // Xử lý yêu cầu thêm dữ liệu từ giao diện.
@@ -298,7 +278,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         if (dv == null)
             return;
         try {
-            String maMoi = dao.them(dv);
+            String maMoi = control.them(dv);
             UIStyle.thongBao(this, "Đã thêm dịch vụ " + maMoi + ".");
             txtTim.setText("");
             taiLai(maMoi);
@@ -317,7 +297,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         if (dv == null)
             return;
         try {
-            if (dao.sua(dv)) {
+            if (control.sua(dv)) {
                 UIStyle.thongBao(this, "Đã cập nhật dịch vụ " + maDangSua + ".");
                 taiLai(maDangSua);
             } else
@@ -335,24 +315,21 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
             return;
         }
         try {
-            // lienQuan: Mảng lưu liên quan.
-            int[] lienQuan = dao.demLienQuan(dv.getMaDichVu());
-            if (lienQuan[0] + lienQuan[1] + lienQuan[2] > 0) {
-                UIStyle.canhBao(this, "Không thể xóa " + dv.getMaDichVu() + " vì đã được sử dụng trong:\n"
-                        + "• Lịch hẹn Spa: " + lienQuan[0] + "\n"
-                        + "• Phiếu dịch vụ: " + lienQuan[1] + "\n"
-                        + "• Hóa đơn: " + lienQuan[2] + "\n"
-                        + "Cần giữ dịch vụ để bảo toàn lịch sử. Bạn có thể sửa tên/giá/mô tả.");
+            String lyDo = control.lyDoKhongTheXoa(dv.getMaDichVu());
+            if (lyDo != null) {
+                UIStyle.canhBao(this, lyDo);
                 return;
             }
             if (!UIStyle.xacNhan(this, "Xóa dịch vụ " + dv.getMaDichVu() + " - " + dv.getTenDichVu() + "?"))
                 return;
-            if (dao.xoa(dv.getMaDichVu())) {
+            if (control.xoa(dv.getMaDichVu())) {
                 UIStyle.thongBao(this, "Đã xóa dịch vụ " + dv.getMaDichVu() + ".");
                 boChon();
                 taiLai(null);
             } else
                 UIStyle.canhBao(this, "Dịch vụ không còn tồn tại.");
+        } catch (IllegalStateException ex) {
+            UIStyle.canhBao(this, ex.getMessage());
         } catch (SQLException ex) {
             if (ex.getErrorCode() == 547) {
                 UIStyle.canhBao(this, "Không thể xóa: dịch vụ đã được liên kết với dữ liệu nghiệp vụ.");

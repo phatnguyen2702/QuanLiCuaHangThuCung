@@ -1,6 +1,5 @@
 package dao;
 
-import entity.PhanQuyen;
 import entity.Voucher;
 
 import java.sql.*;
