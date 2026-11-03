@@ -1,11 +1,10 @@
 package UI;
 
-import ConnectDB.connectDB;
-import dao.HoaDonDAO;
-import dao.LichHenDAO;
-import dao.TaiKhoanDAO;
+import control.TrangChuControl;
+import dao.PhanQuyen;
+import control.PhanQuyenControl;
+
 import entity.LichHen;
-import entity.PhanQuyen;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -18,9 +17,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -28,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -60,6 +55,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
     private final String maNV;
     private final String hoTen;
     private final String vaiTro;
+    private final TrangChuControl control = new TrangChuControl();
 
     // Mảng hằng tên bốn màn hình kho, dùng chung khi chọn tab.
     private static final String[] TEN_TAB = {
@@ -123,10 +119,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
 
         // Validation: từ chối mở cửa sổ khi mã nhân viên rỗng hoặc vai trò không hợp
         // lệ.
-        if (maNV == null || maNV.isBlank()
-                || PhanQuyen.vaiTro(vaiTro) == PhanQuyen.VaiTro.KHONG_HOP_LE) {
-            throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
-        }
+        control.kiemTraPhien(maNV, vaiTro);
 
         // Lưu phiên đăng nhập dùng trong TrangChu và các chức năng liên quan.
         PhienLamViec.dat(maNV, hoTen, vaiTro);
@@ -455,7 +448,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
      */
     private void moQuanLyTaiKhoan() {
         hienManHinh("taikhoan", "Quản lý tài khoản", btnHeThong,
-                QuanLyTaiKhoanUI::new);
+                QuanLyNhanVienUI::new);
     }
 
     /**
@@ -680,14 +673,14 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
      * Runnable.
      */
     private void themMuc(JPopupMenu pmnPopMenu, String ten, JButton btnNhom, Runnable hanhDong) {
-        PhanQuyen.Quyen q = PhanQuyen.tuTenMenu(ten);
+        PhanQuyen.Quyen q = PhanQuyenControl.tuTenMenu(ten);
         // JMenuItem: một lựa chọn trong menu thả xuống (JPopupMenu).
         JMenuItem mniChucNang = new JMenuItem(ten);
         mniChucNang.setFont(UIStyle.font(Font.PLAIN, 13));
         mniChucNang.setBorder(new EmptyBorder(9, 14, 9, 14));
         // Giữ mọi mục trong menu; mục không được cấp quyền sẽ có màu xám và không thể
         // nhấn.
-        mniChucNang.setEnabled(PhanQuyen.coQuyen(q));
+        mniChucNang.setEnabled(PhanQuyenControl.coQuyen(q));
         dangKyHanhDong(mniChucNang, () -> chuyenTuNhom(btnNhom, hanhDong));
         pmnPopMenu.add(mniChucNang);
     }
@@ -880,27 +873,13 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
             char[] arrMatKhauMoi = txtMatKhauMoi.getPassword();
             char[] arrXacNhan = txtXacNhanMatKhau.getPassword();
             try {
-                if (arrMatKhauCu.length == 0 || arrMatKhauMoi.length == 0 || arrXacNhan.length == 0) {
-                    JOptionPane.showMessageDialog(winDoiMatKhau,
-                            "Vui lòng nhập đầy đủ ba ô mật khẩu.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (arrMatKhauMoi.length < 6) {
-                    JOptionPane.showMessageDialog(winDoiMatKhau,
-                            "Mật khẩu mới phải có ít nhất 6 ký tự.", "Mật khẩu không hợp lệ",
-                            JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (Arrays.equals(arrMatKhauCu, arrMatKhauMoi)) {
-                    JOptionPane.showMessageDialog(winDoiMatKhau,
-                            "Mật khẩu mới phải khác mật khẩu hiện tại.", "Mật khẩu không hợp lệ",
-                            JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (!Arrays.equals(arrMatKhauMoi, arrXacNhan)) {
-                    JOptionPane.showMessageDialog(winDoiMatKhau,
-                            "Xác nhận mật khẩu mới không khớp.", "Mật khẩu không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                    txtXacNhanMatKhau.setText("");
+                try {
+                    control.kiemTraDoiMatKhau(arrMatKhauCu, arrMatKhauMoi, arrXacNhan);
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(winDoiMatKhau, ex.getMessage(),
+                            "Mật khẩu không hợp lệ", JOptionPane.WARNING_MESSAGE);
+                    if (ex.getMessage().startsWith("Xác nhận"))
+                        txtXacNhanMatKhau.setText("");
                     return;
                 }
 
@@ -917,7 +896,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
                     // doInBackground(): xử lý công việc nền, không cập nhật trực tiếp thành phần
                     // Swing.
                     protected Boolean doInBackground() throws Exception {
-                        return new TaiKhoanDAO().doiMatKhau(maNV, strMatKhauCu, strMatKhauMoi);
+                        return control.doiMatKhau(maNV, strMatKhauCu, strMatKhauMoi);
                     }
 
                     @Override
@@ -1292,9 +1271,9 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
         if (lblDoanhThuHomNay == null)
             return;
         // Kiểm tra quyền riêng cho nhóm số liệu doanh thu.
-        boolean xemThongKe = PhanQuyen.coQuyen(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
-        boolean xemSpa = PhanQuyen.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA);
-        boolean xemKho = PhanQuyen.coQuyen(PhanQuyen.Quyen.NHAP_KHO);
+        boolean xemThongKe = PhanQuyenControl.coQuyen(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
+        boolean xemSpa = PhanQuyenControl.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA);
+        boolean xemKho = PhanQuyenControl.coQuyen(PhanQuyen.Quyen.NHAP_KHO);
         lblDoanhThuHomNay.setText("Không có quyền");
         lblLuotMuaHomNay.setText("—");
         lblLichSpaHomNay.setText("—");
@@ -1302,7 +1281,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
         if (xemThongKe) {
             try {
                 // DAO Pattern: tách phần lấy dữ liệu hóa đơn khỏi bố cục Swing.
-                HoaDonDAO.ThongKe tk = new HoaDonDAO().layThongKe();
+                TrangChuControl.ThongKeHoaDon tk = control.thongKeHoaDon();
                 lblDoanhThuHomNay.setText(formatVnd(tk.getDoanhThuHomNay()));
                 lblLuotMuaHomNay.setText(String.valueOf(tk.getHoaDonHomNay()));
             } catch (Exception ex) {
@@ -1331,22 +1310,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
      * quả.
      */
     private int demLichSpaHomNay() throws SQLException {
-        // SQL COUNT(*): đếm các bản ghi lịch hẹn thỏa điều kiện trong ngày.
-        String sql = "SELECT COUNT(*) FROM LichHen "
-                + "WHERE ngayGioHen >= ? AND ngayGioHen < ? "
-                + "AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
-        java.time.LocalDate homNay = java.time.LocalDate.now();
-        // try-with-resources: tự đóng Connection và PreparedStatement, kể cả khi lỗi.
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            // PreparedStatement: truyền mốc thời gian bắt đầu ngày, tránh ghép chuỗi SQL.
-            ps.setTimestamp(1, java.sql.Timestamp.valueOf(homNay.atStartOfDay()));
-            ps.setTimestamp(2, java.sql.Timestamp.valueOf(homNay.plusDays(1).atStartOfDay()));
-            // ResultSet: nhận dữ liệu trả về từ lệnh SELECT.
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        }
+        return control.demLichSpaHomNay();
     }
 
     /**
@@ -1354,13 +1318,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
      * JDBC kết hợp SQL COUNT(*) và GETDATE() của SQL Server.
      */
     private int demPhieuNhapHomNay() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM PhieuNhapKho WHERE CAST(ngayNhap AS DATE) = CAST(GETDATE() AS DATE)";
-        // try-with-resources: tự đóng Connection và PreparedStatement, kể cả khi lỗi.
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
-        }
+        return control.demPhieuNhapHomNay();
     }
 
     /**
@@ -1421,7 +1379,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
     private void napLichSpaSapToi() {
         if (pnlLichSpaNoiDung == null || lblPhuDeLichSpa == null)
             return;
-        if (!PhanQuyen.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA)) {
+        if (!PhanQuyenControl.coQuyen(PhanQuyen.Quyen.LICH_HEN_SPA)) {
             pnlLichSpaNoiDung.removeAll();
             lblPhuDeLichSpa.setText("Không có quyền xem lịch Spa");
             // revalidate(): yêu cầu Swing cập nhật lại cách sắp xếp danh sách lịch.
@@ -1433,25 +1391,12 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
 
         pnlLichSpaNoiDung.removeAll();
         LocalDateTime now = LocalDateTime.now();
-        java.time.LocalDate homNay = now.toLocalDate();
-
         try {
             // LichHenDAO: lấy danh sách lịch Spa từ SQL Server.
-            List<LichHen> tatCa = new LichHenDAO().getAll();
+            // Việc truy vấn, lọc trạng thái và sắp xếp được xử lý ở TrangChuControl.
             // Stream.filter(): chỉ lấy lịch trong hôm nay và chưa bị hủy.
-            List<LichHen> lichHomNay = tatCa.stream()
-                    .filter(lh -> lh.getNgayGioHen() != null
-                            && lh.getNgayGioHen().toLocalDate().equals(homNay)
-                            && !"Đã hủy".equalsIgnoreCase(
-                                    lh.getTrangThai() == null ? "" : lh.getTrangThai().trim()))
-                    // Comparator.comparing(): sắp xếp các lịch theo giờ hẹn tăng dần.
-                    .sorted(Comparator.comparing(LichHen::getNgayGioHen))
-                    .toList();
-
-            // Lọc lần hai để chỉ giữ lịch chưa đến giờ; không lấy lịch ngày mai.
-            List<LichHen> lichConLai = lichHomNay.stream()
-                    .filter(lh -> !lh.getNgayGioHen().isBefore(now))
-                    .toList();
+            List<LichHen> lichHomNay = control.lichSpaHomNay(now);
+            List<LichHen> lichConLai = control.lichSpaConLai(lichHomNay, now);
             long tongLichHomNay = lichHomNay.size();
 
             if (!lichConLai.isEmpty()) {
@@ -1626,7 +1571,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
         btnTruyCap.setBackground(MENU_BLUE);
         btnTruyCap.setFocusPainted(false);
         btnTruyCap.setBorderPainted(false);
-        btnTruyCap.setEnabled(PhanQuyen.coQuyen(quyen));
+        btnTruyCap.setEnabled(PhanQuyenControl.coQuyen(quyen));
         if (!btnTruyCap.isEnabled())
             btnTruyCap.setToolTipText("Vai trò hiện tại không có quyền");
         dangKyHanhDong(btnTruyCap, hanhDong);

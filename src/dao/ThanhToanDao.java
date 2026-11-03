@@ -1,7 +1,6 @@
 package dao;
 
 import ConnectDB.connectDB;
-import entity.PhanQuyen;
 import entity.ThanhToan;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -505,22 +504,22 @@ public class ThanhToanDao {
                         + "AS tonBanDuoc FROM SanPham sp WITH (UPDLOCK,HOLDLOCK) WHERE sp.maSanPham=?";
                 try (PreparedStatement psTon = con.prepareStatement(sqlTon)) {
                     try (PreparedStatement psBanDuoc = con.prepareStatement(sqlTonBanDuoc)) {
-                    for (var entry : soLuongCan.entrySet()) {
-                        psTon.setString(1, entry.getKey());
-                        psBanDuoc.setString(1, entry.getKey());
-                        // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-                        try (ResultSet rs = psTon.executeQuery()) {
-                            if (!rs.next() || rs.getInt("tonKho") < entry.getValue()) {
-                                throw new SQLException("Sản phẩm " + entry.getKey()
-                                        + " không đủ tồn kho. Vui lòng tải lại giỏ hàng.");
+                        for (var entry : soLuongCan.entrySet()) {
+                            psTon.setString(1, entry.getKey());
+                            psBanDuoc.setString(1, entry.getKey());
+                            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+                            try (ResultSet rs = psTon.executeQuery()) {
+                                if (!rs.next() || rs.getInt("tonKho") < entry.getValue()) {
+                                    throw new SQLException("Sản phẩm " + entry.getKey()
+                                            + " không đủ tồn kho. Vui lòng tải lại giỏ hàng.");
+                                }
+                            }
+                            try (ResultSet rs = psBanDuoc.executeQuery()) {
+                                if (!rs.next() || rs.getInt("tonBanDuoc") < entry.getValue())
+                                    throw new SQLException("Sản phẩm " + entry.getKey()
+                                            + " không đủ số lượng còn hạn và đang kinh doanh.");
                             }
                         }
-                        try (ResultSet rs = psBanDuoc.executeQuery()) {
-                            if (!rs.next() || rs.getInt("tonBanDuoc") < entry.getValue())
-                                throw new SQLException("Sản phẩm " + entry.getKey()
-                                        + " không đủ số lượng còn hạn và đang kinh doanh.");
-                        }
-                    }
                     }
                 }
 

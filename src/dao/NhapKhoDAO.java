@@ -3,7 +3,6 @@ package dao;
 import ConnectDB.connectDB;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
-import entity.PhanQuyen;
 import entity.PhieuNhapKho;
 import entity.SanPham;
 

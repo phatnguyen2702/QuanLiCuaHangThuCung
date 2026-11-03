@@ -1,7 +1,7 @@
 package UI;
 
-import dao.CaLamDAO;
-import dao.MaTuDongDAO;
+import control.CaLamControl;
+
 import entity.CaLam;
 
 import javax.swing.*;
@@ -44,7 +44,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
         private JTable tblDuLieu;
         private DefaultTableModel model;
         // DAO: lớp truy vấn và cập nhật ca làm trong SQL Server.
-        private final CaLamDAO caLamDAO = new CaLamDAO();
+        private final CaLamControl control = new CaLamControl();
 
         public QuanLyCaLamUI() {
                 // BorderLayout: tiêu đề phía trên, form và bảng ở giữa.
@@ -257,7 +257,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
         // Nạp danh sách ca làm từ DAO lên bảng.
         private void loadData() {
                 model.setRowCount(0);
-                for (CaLam ca : caLamDAO.getAll())
+                for (CaLam ca : control.layDanhSach())
                         addRow(ca);
         }
 
@@ -297,7 +297,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                         return;
                 CaLam ca = getCaLamFromForm();
                 try {
-                        if (caLamDAO.them(ca)) {
+                        if (control.them(ca)) {
                                 thongBao("Thêm ca làm thành công! Mã ca: " + ca.getMaCa());
                                 capNhatSauLuu();
                         } else {
@@ -315,7 +315,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                         return;
                 if (!kiemTraDuLieu())
                         return;
-                if (caLamDAO.sua(getCaLamFromForm())) {
+                if (control.sua(getCaLamFromForm())) {
                         JOptionPane.showMessageDialog(this, "Cập nhật ca làm thành công!",
                                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                         capNhatSauLuu();
@@ -333,7 +333,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 if (JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa ca " + maCa + "?",
                                 "Xác nhận", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION)
                         return;
-                if (caLamDAO.xoa(maCa)) {
+                if (control.xoa(maCa)) {
                         JOptionPane.showMessageDialog(this, "Xóa ca làm thành công!",
                                         "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                         capNhatSauLuu();
@@ -363,21 +363,9 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
         // Tìm kiếm theo mã, tên hoặc giờ; giữ nguyên tìm kiếm không phân biệt
         // hoa/thường.
         private void timKiem() {
-                String keyword = txtTimKiem.getText().trim().toLowerCase();
-                if (keyword.isEmpty()) {
-                        loadData();
-                        return;
-                }
-                model.setRowCount(0);
-                for (CaLam ca : caLamDAO.getAll()) {
-                        if (safe(ca.getMaCa()).contains(keyword)
-                                        || safe(ca.getTenCa()).contains(keyword)
-                                        || safe(ca.getGioBatDau()).contains(keyword)
-                                        || safe(ca.getGioKetThuc()).contains(keyword)) {
-                                addRow(ca);
-                        }
-                }
-        }
+        model.setRowCount(0);
+        for (CaLam ca : control.timKiem(txtTimKiem.getText())) addRow(ca);
+    }
 
         private String safe(String value) {
                 return value == null ? "" : value.toLowerCase();
@@ -385,7 +373,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
 
         // Làm mới: xóa form, bỏ chọn dòng, gợi ý mã ca tự động.
         private void lamMoi() {
-                txtMaCa.setText(MaTuDongDAO.goiY(MaTuDongDAO.Loai.CA_LAM));
+                txtMaCa.setText(control.goiYMa());
                 txtTenCa.setText("");
                 txtGioBatDau.setValue(null);
                 txtGioKetThuc.setValue(null);
@@ -396,23 +384,17 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
 
         // Validation: tên ca 3–50 ký tự; thời gian HH:mm hợp lệ và không trùng nhau.
         private boolean kiemTraDuLieu() {
-                String ten = txtTenCa.getText().trim();
-                String batDau = txtGioBatDau.getText().trim();
-                String ketThuc = txtGioKetThuc.getText().trim();
-                if (ten.length() < 3 || ten.length() > 50 || !ten.matches("[\\p{L}0-9 ]+")) {
-                        return baoLoiTruong(txtTenCa, "Tên ca từ 3–50 ký tự, chỉ gồm chữ, số và khoảng trắng.");
-                }
-                if (!kiemTraGio(batDau, txtGioBatDau, "Giờ bắt đầu")
-                                || !kiemTraGio(ketThuc, txtGioKetThuc, "Giờ kết thúc"))
-                        return false;
-
-                // Ca qua đêm (22:00–06:00) hợp lệ; chỉ cấm hai giờ bằng nhau.
-                if (LocalTime.parse(batDau, FORMAT_GIO).equals(LocalTime.parse(ketThuc, FORMAT_GIO))) {
-                        return baoLoiTruong(txtGioKetThuc,
-                                        "Giờ bắt đầu và kết thúc không được trùng nhau.");
-                }
-                return true;
+        try {
+            control.taoCaLam(txtMaCa.getText(), txtTenCa.getText(),
+                    txtGioBatDau.getText(), txtGioKetThuc.getText());
+            return true;
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage();
+            JComponent focus = msg.startsWith("Tên") ? txtTenCa :
+                    msg.startsWith("Giờ bắt đầu") ? txtGioBatDau : txtGioKetThuc;
+            return baoLoiTruong(focus, msg);
         }
+    }
 
         private boolean baoLoiTruong(JComponent field, String message) {
                 JOptionPane.showMessageDialog(this, message,
@@ -421,38 +403,16 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return false;
         }
 
-        private boolean kiemTraGio(String value, JFormattedTextField field, String label) {
-                if (!value.matches("\\d{2}:\\d{2}")) {
-                        JOptionPane.showMessageDialog(this, label + " phải có định dạng HH:mm, ví dụ 06:00.",
-                                        "Giờ không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                        field.requestFocusInWindow();
-                        return false;
-                }
-                try {
-                        LocalTime.parse(value, FORMAT_GIO);
-                        return true;
-                } catch (DateTimeParseException ex) {
-                        JOptionPane.showMessageDialog(this,
-                                        label + " không hợp lệ. Giờ phải từ 00 đến 23, phút từ 00 đến 59.",
-                                        "Giờ không hợp lệ", JOptionPane.WARNING_MESSAGE);
-                        field.requestFocusInWindow();
-                        return false;
-                }
-        }
-
         // Entity: chuyển dữ liệu trên form thành đối tượng CaLam để gọi DAO.
         private CaLam getCaLamFromForm() {
-                return new CaLam(txtMaCa.getText().trim(), txtTenCa.getText().trim(),
-                                txtGioBatDau.getText().trim(), txtGioKetThuc.getText().trim());
-        }
+        return control.taoCaLam(txtMaCa.getText(), txtTenCa.getText(),
+                txtGioBatDau.getText(), txtGioKetThuc.getText());
+    }
 
         // Chỉ hiển thị HH:mm, không làm thay đổi giá trị giờ lưu trong SQL Server.
-        private String dinhDangGio(String gio) {
-                if (gio == null)
-                        return "";
-                String text = gio.trim();
-                return text.length() >= 5 ? text.substring(0, 5) : text;
-        }
+        private String dinhDangGio(LocalTime gio) {
+        return CaLamControl.dinhDangGio(gio);
+    }
 
         // Một ActionListener chung để giữ luồng thao tác của sáu nút.
         @Override

@@ -1,7 +1,6 @@
 package dao;
 
-import entity.PhanQuyen;
-import entity.TaiKhoan;
+import entity.NhanVien;
 
 import java.sql.*;
 import java.text.Normalizer;
@@ -9,10 +8,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 // Lớp truy cập cơ sở dữ liệu cho tài khoản.
-public class TaiKhoanDAO {
+public class NhanVienDAO {
 
         /** Xác thực bằng tài khoản suy ra từ họ tên + 3 số cuối mã nhân viên. */
-        public TaiKhoan xacThuc(String tenDangNhap, String matKhau) throws SQLException {
+        public NhanVien xacThuc(String tenDangNhap, String matKhau) throws SQLException {
                 // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
                 // tham số nếu có.
                 String sql = "SELECT maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro FROM NhanVien";
@@ -39,7 +38,7 @@ public class TaiKhoanDAO {
                                                 || ma.equalsIgnoreCase(tenDangNhap))
                                                 && rs.getString("matKhau") != null
                                                 && rs.getString("matKhau").equals(matKhau)) {
-                                        return new TaiKhoan(ma, ten, rs.getString("soDienThoai"), rs.getString("email"),
+                                        return new NhanVien(ma, ten, rs.getString("soDienThoai"), rs.getString("email"),
                                                         rs.getString("matKhau"), rs.getString("gioiTinh"),
                                                         rs.getString("vaiTro"));
                                 }
@@ -53,12 +52,12 @@ public class TaiKhoanDAO {
         // =========================================================
 
         // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
-        // Kết quả: đối tượng/giá trị kiểu ArrayList<TaiKhoan>.
-        public ArrayList<TaiKhoan> getAll() {
+        // Kết quả: đối tượng/giá trị kiểu ArrayList<NhanVien>.
+        public ArrayList<NhanVien> getAll() {
                 PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
 
-                // list: Danh sách chứa các phần tử kiểu TaiKhoan.
-                ArrayList<TaiKhoan> list = new ArrayList<>();
+                // list: Danh sách chứa các phần tử kiểu NhanVien.
+                ArrayList<NhanVien> list = new ArrayList<>();
 
                 // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
                 // tham số nếu có.
@@ -78,7 +77,7 @@ public class TaiKhoanDAO {
                         // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                         while (rs.next()) {
 
-                                TaiKhoan tk = new TaiKhoan(
+                                NhanVien tk = new NhanVien(
                                                 rs.getString("maNhanVien"),
                                                 rs.getString("hoTen"),
                                                 rs.getString("soDienThoai"),
@@ -106,7 +105,7 @@ public class TaiKhoanDAO {
         // Thêm dữ liệu tài khoản trong cơ sở dữ liệu.
         // Tham số tk: tài khoản cần xử lý.
         // Kết quả: true/false theo điều kiện xử lý.
-        public boolean them(TaiKhoan tk) throws SQLException {
+        public boolean them(NhanVien tk) throws SQLException {
                 PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
                 // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
                 // tham số nếu có.
@@ -152,7 +151,7 @@ public class TaiKhoanDAO {
         // Tham số tk: tài khoản cần xử lý.
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean sua(
-                        TaiKhoan tk) {
+                        NhanVien tk) {
                 PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
 
                 // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận

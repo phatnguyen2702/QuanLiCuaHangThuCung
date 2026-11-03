@@ -18,7 +18,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
-import entity.PhanQuyen;
+import dao.PhanQuyen;
 
 /** Xem ma trận quyền cố định: quản lý cấp vai trò tại Quản lý tài khoản. */
 public final class MaTranPhanQuyenUI extends JPanel implements ActionListener, MouseListener {

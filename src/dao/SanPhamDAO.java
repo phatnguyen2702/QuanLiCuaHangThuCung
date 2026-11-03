@@ -3,7 +3,6 @@ package dao;
 import ConnectDB.connectDB;
 import entity.DanhMuc;
 import entity.NhaCungCap;
-import entity.PhanQuyen;
 import entity.SanPham;
 
 import java.sql.*;
@@ -188,7 +187,8 @@ public class SanPhamDAO {
         String sql = SELECT_CO_BAN + " WHERE (" + BIEU_THUC_TON + ") > 0 " +
                 "AND EXISTS (SELECT 1 FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn ON pn.maPhieuNhap=ct.maPhieuNhap " +
                 "WHERE ct.maSanPham=sp.maSanPham AND pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 " +
-                "AND ISNULL(ct.ngungKinhDoanh,0)=0 AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date))) " +
+                "AND ISNULL(ct.ngungKinhDoanh,0)=0 AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date))) "
+                +
                 "AND EXISTS (SELECT 1 FROM GoiYThucAn gy WHERE gy.maSanPham = sp.maSanPham " +
                 "AND gy.loaiThuCung = ? " +
                 "AND (? = N'Tất cả độ tuổi' OR gy.nhomTuoi = ? OR gy.nhomTuoi = N'Mọi độ tuổi') " +
@@ -336,11 +336,13 @@ public class SanPhamDAO {
         ArrayList<DotNhap> ds = new ArrayList<>();
         String sql = "SELECT p.maPhieuNhap,p.ngayNhap FROM PhieuNhapKho p WHERE p.trangThai=1 "
                 + "ORDER BY p.ngayNhap DESC,p.maPhieuNhap DESC";
-        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp timestamp = rs.getTimestamp("ngayNhap");
-                ds.add(new DotNhap(rs.getString("maPhieuNhap"), timestamp == null ? null : timestamp.toLocalDateTime()));
+                ds.add(new DotNhap(rs.getString("maPhieuNhap"),
+                        timestamp == null ? null : timestamp.toLocalDateTime()));
             }
         }
         return ds;
@@ -357,14 +359,17 @@ public class SanPhamDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Timestamp timestamp = rs.getTimestamp("ngayNhap");
-                    ds.add(new DotNhap(rs.getString("maPhieuNhap"), timestamp == null ? null : timestamp.toLocalDateTime()));
+                    ds.add(new DotNhap(rs.getString("maPhieuNhap"),
+                            timestamp == null ? null : timestamp.toLocalDateTime()));
                 }
             }
         }
         return ds;
     }
 
-    /** Trả về tồn và giá theo một đợt nhập; null nghĩa là tổng hợp tất cả các đợt. */
+    /**
+     * Trả về tồn và giá theo một đợt nhập; null nghĩa là tổng hợp tất cả các đợt.
+     */
     public ArrayList<SanPham> timKiemTheoDotNhap(String tuKhoa, String maDanhMuc, String maPhieuNhap)
             throws SQLException {
         return timKiemTheoDotNhap(tuKhoa, maDanhMuc, maPhieuNhap, null);
@@ -407,21 +412,31 @@ public class SanPhamDAO {
                 """;
         String like = "%" + (tuKhoa == null ? "" : tuKhoa.trim()) + "%";
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maPhieuNhap); ps.setString(2, like); ps.setString(3, like);
-            ps.setString(4, maDanhMuc); ps.setString(5, maDanhMuc);
-            ps.setString(6, maSanPham); ps.setString(7, maSanPham);
+            ps.setString(1, maPhieuNhap);
+            ps.setString(2, like);
+            ps.setString(3, like);
+            ps.setString(4, maDanhMuc);
+            ps.setString(5, maDanhMuc);
+            ps.setString(6, maSanPham);
+            ps.setString(7, maSanPham);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     SanPham sp = new SanPham();
-                    sp.setMaSanPham(rs.getString("maSanPham")); sp.setTenSanPham(rs.getString("tenSanPham"));
-                    sp.setGiaNhap(rs.getDouble("donGiaNhap")); sp.setGiaBan(rs.getDouble("giaBan"));
-                    sp.setMaDanhMuc(rs.getString("maDanhMuc")); sp.setTenDanhMuc(rs.getString("tenDanhMuc"));
-                    sp.setMaNhaCungCap(rs.getString("maNhaCungCap")); sp.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
+                    sp.setMaSanPham(rs.getString("maSanPham"));
+                    sp.setTenSanPham(rs.getString("tenSanPham"));
+                    sp.setGiaNhap(rs.getDouble("donGiaNhap"));
+                    sp.setGiaBan(rs.getDouble("giaBan"));
+                    sp.setMaDanhMuc(rs.getString("maDanhMuc"));
+                    sp.setTenDanhMuc(rs.getString("tenDanhMuc"));
+                    sp.setMaNhaCungCap(rs.getString("maNhaCungCap"));
+                    sp.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
                     sp.setMaPhieuNhap(rs.getString("maPhieuNhap"));
                     Timestamp date = rs.getTimestamp("ngayNhap");
                     sp.setNgayNhap(date == null ? null : date.toLocalDateTime().toLocalDate());
-                    Date expiry = rs.getDate("hanSuDung"); sp.setHanSuDung(expiry == null ? null : expiry.toLocalDate());
-                    sp.setTonKho(rs.getInt("tonLo")); sp.setNgungKinhDoanh(rs.getBoolean("ngungKinhDoanh"));
+                    Date expiry = rs.getDate("hanSuDung");
+                    sp.setHanSuDung(expiry == null ? null : expiry.toLocalDate());
+                    sp.setTonKho(rs.getInt("tonLo"));
+                    sp.setNgungKinhDoanh(rs.getBoolean("ngungKinhDoanh"));
                     list.add(sp);
                 }
             }
@@ -539,8 +554,9 @@ public class SanPhamDAO {
                 Timestamp ngay = rs.getTimestamp("ngayXuLy");
                 rows.add(new Object[] {
                         rs.getLong("maXuLy"),
-                        ngay == null ? "" : ngay.toLocalDateTime()
-                                .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                        ngay == null ? ""
+                                : ngay.toLocalDateTime()
+                                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
                         rs.getString("maSanPham"), rs.getString("tenSanPham"),
                         rs.getString("maPhieuNhap"), rs.getInt("soLuong"),
                         rs.getString("lyDo"), rs.getString("ghiChu"), rs.getString("nguoiXuLy")
@@ -553,10 +569,20 @@ public class SanPhamDAO {
     public static final class DotNhap {
         private final String maPhieuNhap;
         private final LocalDateTime ngayNhap;
-        public DotNhap(String maPhieuNhap, LocalDateTime ngayNhap) { this.maPhieuNhap=maPhieuNhap; this.ngayNhap=ngayNhap; }
-        public String getMaPhieuNhap() { return maPhieuNhap; }
-        @Override public String toString() {
-            return maPhieuNhap + (ngayNhap == null ? "" : " · " + ngayNhap.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+        public DotNhap(String maPhieuNhap, LocalDateTime ngayNhap) {
+            this.maPhieuNhap = maPhieuNhap;
+            this.ngayNhap = ngayNhap;
+        }
+
+        public String getMaPhieuNhap() {
+            return maPhieuNhap;
+        }
+
+        @Override
+        public String toString() {
+            return maPhieuNhap + (ngayNhap == null ? ""
+                    : " · " + ngayNhap.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         }
     }
 

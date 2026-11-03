@@ -1,12 +1,14 @@
 package dao;
 
 import entity.CaLam;
-import entity.PhanQuyen;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Types;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 import ConnectDB.connectDB;
@@ -35,8 +37,8 @@ public class CaLamDAO {
                 CaLam ca = new CaLam();
                 ca.setMaCa(rs.getString("maCa"));
                 ca.setTenCa(rs.getString("tenCa"));
-                ca.setGioBatDau(rs.getString("gioBatDau"));
-                ca.setGioKetThuc(rs.getString("gioKetThuc"));
+                ca.setGioBatDau(docGio(rs, "gioBatDau"));
+                ca.setGioKetThuc(docGio(rs, "gioKetThuc"));
                 list.add(ca);
             }
 
@@ -69,8 +71,8 @@ public class CaLamDAO {
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, maMoi);
                     ps.setString(2, ca.getTenCa());
-                    ps.setString(3, ca.getGioBatDau());
-                    ps.setString(4, ca.getGioKetThuc());
+                    ghiGio(ps, 3, ca.getGioBatDau());
+                    ghiGio(ps, 4, ca.getGioKetThuc());
                     if (ps.executeUpdate() != 1)
                         throw new SQLException("Không thể thêm ca làm.");
                 }
@@ -104,8 +106,8 @@ public class CaLamDAO {
                 Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, ca.getTenCa());
-            ps.setString(2, ca.getGioBatDau());
-            ps.setString(3, ca.getGioKetThuc());
+            ghiGio(ps, 2, ca.getGioBatDau());
+            ghiGio(ps, 3, ca.getGioKetThuc());
             ps.setString(4, ca.getMaCa());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -132,5 +134,19 @@ public class CaLamDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /** SQL TIME -> LocalTime (hỗ trợ cột NULL). */
+    private static LocalTime docGio(ResultSet rs, String tenCot) throws SQLException {
+        Time sqlTime = rs.getTime(tenCot);
+        return sqlTime == null ? null : sqlTime.toLocalTime();
+    }
+
+    /** LocalTime -> SQL TIME, không gửi giá trị giờ dưới dạng chuỗi. */
+    private static void ghiGio(PreparedStatement ps, int viTri, LocalTime gio) throws SQLException {
+        if (gio == null)
+            ps.setNull(viTri, Types.TIME);
+        else
+            ps.setTime(viTri, Time.valueOf(gio));
     }
 }

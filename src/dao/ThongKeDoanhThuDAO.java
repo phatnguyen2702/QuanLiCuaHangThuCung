@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 
 import ConnectDB.connectDB;
-import entity.PhanQuyen;
 
 // Lớp truy cập cơ sở dữ liệu cho thống kê doanh thu.
 public class ThongKeDoanhThuDAO {

@@ -15,7 +15,6 @@ import java.util.Map;
 import ConnectDB.connectDB;
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
-import entity.PhanQuyen;
 
 // Lớp truy cập cơ sở dữ liệu cho hóa đơn.
 public class HoaDonDAO {

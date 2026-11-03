@@ -1,9 +1,9 @@
 package UI;
 
-import dao.TaiKhoanDAO;
+import dao.NhanVienDAO;
 import dao.MaTuDongDAO;
 import java.sql.SQLException;
-import entity.TaiKhoan;
+import entity.NhanVien;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,7 +15,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 import java.util.ArrayList;
 
-public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
+public class QuanLyNhanVienUI extends JPanel implements ActionListener {
 
         // NAVY: Màu dùng cho giao diện: xanh đậm.
         private final Color NAVY = new Color(18, 48, 82);
@@ -48,12 +48,12 @@ public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
         private JTable tblDuLieu;
         private DefaultTableModel model;
 
-        private TaiKhoanDAO taiKhoanDAO;
+        private NhanVienDAO taiKhoanDAO;
 
         // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
-        public QuanLyTaiKhoanUI() {
+        public QuanLyNhanVienUI() {
 
-                taiKhoanDAO = new TaiKhoanDAO();
+                taiKhoanDAO = new NhanVienDAO();
 
                 setLayout(
                                 new BorderLayout());
@@ -322,10 +322,10 @@ public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
 
                 model.setRowCount(0);
 
-                // lstDanhSach: Danh sách chứa các phần tử kiểu TaiKhoan.
-                ArrayList<TaiKhoan> list = taiKhoanDAO.getAll();
+                // lstDanhSach: Danh sách chứa các phần tử kiểu NhanVien.
+                ArrayList<NhanVien> list = taiKhoanDAO.getAll();
 
-                for (TaiKhoan tk : list) {
+                for (NhanVien tk : list) {
 
                         model.addRow(
                                         new Object[] {
@@ -401,7 +401,7 @@ public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
                 }
                 if (!kiemTraDuLieu())
                         return;
-                TaiKhoan tk = getTaiKhoanFromForm();
+                NhanVien tk = getTaiKhoanFromForm();
                 try {
                         if (taiKhoanDAO.them(tk)) {
                                 JOptionPane.showMessageDialog(this,
@@ -436,7 +436,7 @@ public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
                         return;
                 }
 
-                TaiKhoan tk = getTaiKhoanFromForm();
+                NhanVien tk = getTaiKhoanFromForm();
 
                 if (taiKhoanDAO.sua(tk)) {
 
@@ -529,10 +529,10 @@ public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
 
                 model.setRowCount(0);
 
-                // lstDanhSach: Danh sách chứa các phần tử kiểu TaiKhoan.
-                ArrayList<TaiKhoan> list = taiKhoanDAO.getAll();
+                // lstDanhSach: Danh sách chứa các phần tử kiểu NhanVien.
+                ArrayList<NhanVien> list = taiKhoanDAO.getAll();
 
-                for (TaiKhoan tk : list) {
+                for (NhanVien tk : list) {
 
                         boolean match = safe(tk.getMaNhanVien())
                                         .contains(keyword)
@@ -645,9 +645,9 @@ public class QuanLyTaiKhoanUI extends JPanel implements ActionListener {
                 return false;
         }
 
-        private TaiKhoan getTaiKhoanFromForm() {
+        private NhanVien getTaiKhoanFromForm() {
 
-                return new TaiKhoan(
+                return new NhanVien(
                                 txtMaNV.getText().trim(),
                                 txtHoTen.getText().trim(),
                                 txtSoDienThoai.getText().trim(),
