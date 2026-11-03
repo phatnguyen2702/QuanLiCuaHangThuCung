@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import ConnectDB.connectDB;
 import entity.ThuCung;
 import java.sql.*;
@@ -156,7 +158,7 @@ public class ThuCungDAO {
     // Tham số tc: thú cưng cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(ThuCung tc) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.THU_CUNG);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "INSERT INTO ThuCung "
@@ -213,7 +215,7 @@ public class ThuCungDAO {
     // Tham số tc: thú cưng cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(ThuCung tc) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.THU_CUNG);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "UPDATE ThuCung SET tenThuCung=?, loai=?, giong=?, "
@@ -249,7 +251,7 @@ public class ThuCungDAO {
     // Tham số maThuCung: mã thú cưng.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean xoa(String maThuCung) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.THU_CUNG);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.THU_CUNG);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "DELETE FROM ThuCung WHERE maThuCung=?";

@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import entity.LichPhanCa;
 
 import java.sql.Connection;
@@ -13,21 +15,15 @@ import java.time.LocalTime;
 
 import ConnectDB.connectDB;
 
-// Lớp truy cập cơ sở dữ liệu cho lịch phân ca.
 public class LichPhanCaDAO {
 
-    // Cập nhật dữ liệu lịch phân ca trong cơ sở dữ liệu.
-    // Tham số pc: lịch phân ca cần xử lý.
-    // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(LichPhanCa pc) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
+
         String sql = "UPDATE LichPhanCa SET ngayLamViec=?, maNhanVien=?, maCa=? "
                 + "WHERE maPhanCa=? AND ngayLamViec >= CONVERT(date, GETDATE()) "
                 + "AND ? >= CONVERT(date, GETDATE())";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
+
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setDate(1, java.sql.Date.valueOf(pc.getNgayLamViec()));
             ps.setString(2, pc.getMaNhanVien());
@@ -38,44 +34,36 @@ public class LichPhanCaDAO {
         }
     }
 
-    // Kiểm tra ca làm có trùng thời gian với lịch phân ca đã có hay không.
-    // Tham số maNhanVien: mã nhân viên.
-    // Tham số maCa: mã ca.
-    // Tham số ngay: ngày.
-    // Tham số boQuaMaPhanCa: mã phân ca bỏ qua khi kiểm tra trùng.
-    // Kết quả: true/false theo điều kiện xử lý.
     public boolean trungGio(String maNhanVien, String maCa, LocalDate ngay, String boQuaMaPhanCa)
             throws SQLException {
-        // gioMoi: Mảng lưu giờ mới.
+
         LocalTime[] gioMoi = layGioCa(maCa);
-        // batDau: Lưu bắt đầu dưới dạng dữ liệu thời gian.
+
         LocalDateTime batDau = LocalDateTime.of(ngay, gioMoi[0]);
-        // ketThuc: Lưu kết thực dưới dạng dữ liệu thời gian.
+
         LocalDateTime ketThuc = LocalDateTime.of(ngay, gioMoi[1]);
         if (!ketThuc.isAfter(batDau))
             ketThuc = ketThuc.plusDays(1);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+
         String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc "
                 + "FROM LichPhanCa pc JOIN CaLam c ON c.maCa=pc.maCa "
                 + "WHERE pc.maNhanVien=? AND pc.ngayLamViec BETWEEN DATEADD(day,-1,?) AND DATEADD(day,1,?)";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
+
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maNhanVien);
             ps.setDate(2, java.sql.Date.valueOf(ngay));
             ps.setDate(3, java.sql.Date.valueOf(ngay));
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
             try (ResultSet rs = ps.executeQuery()) {
-                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+
                 while (rs.next()) {
                     if (boQuaMaPhanCa != null && boQuaMaPhanCa.equals(rs.getString("maPhanCa")))
                         continue;
-                    // ngayCu: Lưu ngày cụ dưới dạng dữ liệu thời gian.
+
                     LocalDate ngayCu = rs.getDate("ngayLamViec").toLocalDate();
-                    // dauCu: Lưu đầu cụ dưới dạng dữ liệu thời gian.
+
                     LocalDateTime dauCu = LocalDateTime.of(ngayCu, LocalTime.parse(rs.getString("gioBatDau").trim()));
-                    // cuoiCu: Lưu cuối cụ dưới dạng dữ liệu thời gian.
+
                     LocalDateTime cuoiCu = LocalDateTime.of(ngayCu, LocalTime.parse(rs.getString("gioKetThuc").trim()));
                     if (!cuoiCu.isAfter(dauCu))
                         cuoiCu = cuoiCu.plusDays(1);
@@ -87,17 +75,13 @@ public class LichPhanCaDAO {
         return false;
     }
 
-    // Lấy giờ ca.
-    // Tham số maCa: mã ca.
-    // Kết quả: đối tượng/giá trị kiểu LocalTime[].
     private LocalTime[] layGioCa(String maCa) throws SQLException {
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
+
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT gioBatDau, gioKetThuc FROM CaLam WHERE maCa=?")) {
             ps.setString(1, maCa);
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next())
                     throw new SQLException("Không tìm thấy ca làm: " + maCa);
@@ -107,15 +91,11 @@ public class LichPhanCaDAO {
         }
     }
 
-    // LAY TAT CA LICH PHAN CA
-    // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<LichPhanCa>.
     public ArrayList<LichPhanCa> getAll() {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
-        // list: Danh sách chứa các phần tử kiểu LichPhanCa.
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
+
         ArrayList<LichPhanCa> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+
         String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, " +
                 "pc.maNhanVien, nv.hoTen, " +
                 "pc.maCa, c.tenCa, c.gioBatDau, c.gioKetThuc " +
@@ -129,7 +109,7 @@ public class LichPhanCaDAO {
                 Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+
             while (rs.next()) {
                 LichPhanCa pc = new LichPhanCa();
                 pc.setMaPhanCa(
@@ -152,14 +132,9 @@ public class LichPhanCaDAO {
         return list;
     }
 
-    // THEM PHAN CA
-    // Thêm dữ liệu lịch phân ca trong cơ sở dữ liệu.
-    // Tham số pc: lịch phân ca cần xử lý.
-    // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(LichPhanCa pc) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
+
         String sql = "INSERT INTO LichPhanCa " +
                 "(maPhanCa, ngayLamViec, maNhanVien, maCa) " +
                 "VALUES (?, ?, ?, ?)";
@@ -183,14 +158,9 @@ public class LichPhanCaDAO {
         }
     }
 
-    // XOA PHAN CA
-    // Xử lý xóa dữ liệu lịch phân ca trong cơ sở dữ liệu.
-    // Tham số maPhanCa: mã phân ca.
-    // Kết quả: true/false theo điều kiện xử lý.
     public boolean xoa(String maPhanCa) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
+
         String sql = "DELETE FROM LichPhanCa " +
                 "WHERE maPhanCa = ?";
         try (
@@ -204,18 +174,11 @@ public class LichPhanCaDAO {
         }
     }
 
-    // KIEM TRA NHAN VIEN DA DUOC PHAN CA CHUA
-    // Kiểm tra nhân viên đã được phân vào ca trong ngày hay chưa.
-    // Tham số maNhanVien: mã nhân viên.
-    // Tham số maCa: mã ca.
-    // Tham số ngayLamViec: ngày làm việc.
-    // Kết quả: true/false theo điều kiện xử lý.
     public boolean daPhanCa(
             String maNhanVien,
             String maCa,
             java.sql.Date ngayLamViec) {
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+
         String sql = "SELECT COUNT(*) " +
                 "FROM LichPhanCa " +
                 "WHERE maNhanVien = ? " +
@@ -227,7 +190,7 @@ public class LichPhanCaDAO {
             ps.setString(1, maNhanVien);
             ps.setString(2, maCa);
             ps.setDate(3, ngayLamViec);
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
@@ -239,13 +202,8 @@ public class LichPhanCaDAO {
         return false;
     }
 
-    // TAO MA PHAN CA TU DONG
-    // Tạo mã phân ca.
-    // Kết quả: chuỗi kết quả.
     public String taoMaPhanCa() {
 
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
         String sql = "SELECT MAX(maPhanCa) " +
                 "FROM LichPhanCa " +
                 "WHERE maPhanCa LIKE 'PC%'";
@@ -274,14 +232,10 @@ public class LichPhanCaDAO {
         return "PC001";
     }
 
-    // DANH SACH NHAN VIEN
-    // Lấy danh sách nhân viên.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<String[]>.
     public ArrayList<String[]> getDanhSachNhanVien() {
-        // list: Danh sách chứa các phần tử kiểu String[].
+
         ArrayList<String[]> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+
         String sql = "SELECT maNhanVien, hoTen " +
                 "FROM NhanVien " +
                 "ORDER BY maNhanVien";
@@ -289,9 +243,9 @@ public class LichPhanCaDAO {
                 Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+
             while (rs.next()) {
-                // nv: Mảng lưu NV.
+
                 String[] nv = new String[2];
                 nv[0] = rs.getString("maNhanVien");
                 nv[1] = rs.getString("hoTen");
@@ -303,14 +257,10 @@ public class LichPhanCaDAO {
         return list;
     }
 
-    // DANH SACH CA LAM
-    // Lấy danh sách ca.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<String[]>.
     public ArrayList<String[]> getDanhSachCa() {
-        // list: Danh sách chứa các phần tử kiểu String[].
+
         ArrayList<String[]> list = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
+
         String sql = "SELECT maCa, tenCa, gioBatDau, gioKetThuc " +
                 "FROM CaLam " +
                 "ORDER BY maCa";
@@ -318,9 +268,9 @@ public class LichPhanCaDAO {
                 Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+
             while (rs.next()) {
-                // ca: Mảng lưu ca.
+
                 String[] ca = new String[4];
                 ca[0] = rs.getString("maCa");
                 ca[1] = rs.getString("tenCa");
@@ -334,30 +284,23 @@ public class LichPhanCaDAO {
         return list;
     }
 
-    // Chuẩn hóa chuỗi giờ để hiển thị.
-    // Tham số gio: giờ.
-    // Kết quả: chuỗi kết quả.
     private String formatGio(String gio) {
         if (gio == null || gio.trim().isEmpty()) {
             return "";
         }
         gio = gio.trim();
-        // Vi du:
-        // 06:00:00.0000000
-        // 14:00:00.0000000
-        // index: Lưu chỉ số phần tử.
+
         int index = gio.indexOf(":");
         if (index < 0) {
             return gio;
         }
-        // Lay HH:mm
+
         if (gio.length() >= 5) {
             return gio.substring(0, 5);
         }
         return gio;
     }
 
-    /** Kết quả sao chép: không ghi đè các phân ca đã tồn tại. */
     public static final class KetQuaSaoChep {
         private final int tongNguon;
         private final int daThem;
@@ -388,13 +331,8 @@ public class LichPhanCaDAO {
         }
     }
 
-    /**
-     * Các ca được PHÂN CÔNG cho một ngày chính xác; không lệ thuộc bộ lọc giao
-     * diện.
-     * Ném SQLException khi lỗi kết nối, tránh hiển thị số 0 sai.
-     */
     public ArrayList<LichPhanCa> layPhanCaTheoNgay(LocalDate ngay) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
         if (ngay == null)
             throw new IllegalArgumentException("Ngày thống kê không được rỗng");
         String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, pc.maNhanVien, nv.hoTen, "
@@ -425,12 +363,8 @@ public class LichPhanCaDAO {
         return ds;
     }
 
-    /**
-     * Lấy phân ca trong một tuần (thứ Hai đến Chủ nhật). Khác getAll(),
-     * lỗi truy vấn được ném lên giao diện thay vì bị nuốt và hiện bảng trống.
-     */
     public ArrayList<LichPhanCa> layPhanCaTrongTuan(LocalDate ngayTrongTuan) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
         LocalDate dauTuan = ngayTrongTuan.with(java.time.DayOfWeek.MONDAY);
         String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, pc.maNhanVien, nv.hoTen, "
                 + "pc.maCa, c.tenCa, c.gioBatDau, c.gioKetThuc "
@@ -460,7 +394,6 @@ public class LichPhanCaDAO {
         return danhSach;
     }
 
-    /** Dùng ngày giờ thực tế, kể cả ca qua đêm, để so sánh trùng. */
     private static final class KhungCa {
         final LocalDateTime batDau;
         final LocalDateTime ketThuc;
@@ -479,14 +412,9 @@ public class LichPhanCaDAO {
         }
     }
 
-    /**
-     * Sao chép từ tuần nguồn sang tuần đích bằng một giao dịch SQL Server.
-     * Không xóa hay ghi đè phân ca đích. Bỏ qua ngày đã qua và ca bị chồng giờ
-     * (bao gồm ca kéo qua nửa đêm). Tạo mã PC mới ngay trong transaction.
-     */
     public KetQuaSaoChep saoChepLichTheoTuan(LocalDate ngayNguon, LocalDate ngayDich)
             throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHAN_CA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
         if (ngayNguon == null || ngayDich == null)
             throw new IllegalArgumentException("Vui lòng chọn tuần nguồn và tuần đích.");
         LocalDate dauNguon = ngayNguon.with(java.time.DayOfWeek.MONDAY);
@@ -532,7 +460,7 @@ public class LichPhanCaDAO {
                 }
 
                 java.util.List<KhungCa> daCo = new ArrayList<>();
-                // Lấy thêm ngày trước và ngày sau để phát hiện ca qua đêm.
+
                 try (PreparedStatement ps = con.prepareStatement(sqlLanCan)) {
                     ps.setDate(1, java.sql.Date.valueOf(dauDich.minusDays(1)));
                     ps.setDate(2, java.sql.Date.valueOf(dauDich.plusDays(7)));
@@ -548,7 +476,7 @@ public class LichPhanCaDAO {
                 }
 
                 int soLonNhat = 0;
-                // Khóa dãy mã PC trong transaction để hạn chế trùng mã khi chép đồng thời.
+
                 try (PreparedStatement ps = con.prepareStatement(sqlMa);
                         ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -557,7 +485,7 @@ public class LichPhanCaDAO {
                             try {
                                 soLonNhat = Math.max(soLonNhat, Integer.parseInt(ma.substring(2)));
                             } catch (NumberFormatException boQua) {
-                                // Bản ghi có mã ngoại lệ; không sử dụng để tính mã mới.
+
                             }
                         }
                     }
@@ -595,7 +523,7 @@ public class LichPhanCaDAO {
                         ps.setString(4, pc.getMaCa());
                         if (ps.executeUpdate() != 1)
                             throw new SQLException("Không lưu được lịch phân ca " + maMoi);
-                        daCo.add(canThem); // Ngăn trùng giữa chính các phân ca đang sao chép.
+                        daCo.add(canThem);
                         them++;
                     }
                 }

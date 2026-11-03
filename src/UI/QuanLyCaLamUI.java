@@ -16,38 +16,29 @@ import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 
-/** Giao diện quản lý ca làm; giữ luồng Form -> Entity -> DAO -> SQL Server. */
 public class QuanLyCaLamUI extends JPanel implements ActionListener {
 
-        // Màu sắc và định dạng dùng chung trong giao diện.
         private static final Color NAVY = new Color(18, 48, 82);
         private static final Color BG = new Color(245, 247, 250);
         private static final Color GREEN = new Color(72, 196, 62);
         private static final Color RED = new Color(210, 70, 70);
         private static final Color ORANGE = new Color(230, 150, 50);
         private static final Font FONT = new Font("Segoe UI", Font.PLAIN, 13);
-        private static final DateTimeFormatter FORMAT_GIO = DateTimeFormatter
-                        .ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
 
-        // JTextField: ô nhập liệu; mã ca chỉ đọc vì hệ thống tự sinh mã.
         private JTextField txtMaCa, txtTenCa, txtTimKiem;
-        // JFormattedTextField: nhập giờ có mặt nạ HH:mm.
+
         private JFormattedTextField txtGioBatDau, txtGioKetThuc;
-        // JButton: các thao tác của màn hình.
+
         private JButton btnThem, btnSua, btnXoa, btnLamMoi, btnTim, btnTatCa;
-        // JTable / DefaultTableModel: hiển thị danh sách ca làm, không chỉnh sửa trực
-        // tiếp.
+
         private JTable tblDuLieu;
         private DefaultTableModel model;
-        // DAO: lớp truy vấn và cập nhật ca làm trong SQL Server.
+
         private final CaLamControl control = new CaLamControl();
 
         public QuanLyCaLamUI() {
-                // BorderLayout: tiêu đề phía trên, form và bảng ở giữa.
+
                 setLayout(new BorderLayout());
                 setBackground(BG);
                 add(createTitle(), BorderLayout.NORTH);
@@ -56,7 +47,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 lamMoi();
         }
 
-        // JPanel: khung tiêu đề; BoxLayout: xếp tiêu đề và mô tả theo chiều dọc.
         private JPanel createTitle() {
                 JPanel header = new JPanel(new BorderLayout());
                 header.setBackground(Color.WHITE);
@@ -76,7 +66,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return header;
         }
 
-        // JPanel: khung nội dung; BorderLayout: form phía trên, bảng phía dưới.
         private JPanel createCenter() {
                 JPanel content = new JPanel(new BorderLayout(15, 15));
                 content.setBackground(BG);
@@ -86,7 +75,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return content;
         }
 
-        // GridBagLayout: bố trí 4 trường nhập trên 2 hàng, dưới cùng là hàng nút.
         private JPanel createForm() {
                 JPanel form = createWhitePanel(new GridBagLayout(), 15);
                 txtMaCa = createTextField();
@@ -101,7 +89,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 addField(form, "Giờ bắt đầu:", txtGioBatDau, 0, 1);
                 addField(form, "Giờ kết thúc:", txtGioKetThuc, 2, 1);
 
-                // GridBagConstraints: hàng cuối chiếm đủ 4 cột của form.
                 GridBagConstraints gbc = new GridBagConstraints();
                 gbc.gridx = 0;
                 gbc.gridy = 2;
@@ -113,7 +100,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return form;
         }
 
-        // Hàm dùng chung để tránh lặp code đặt JLabel và trường nhập ở mỗi hàng.
         private void addField(JPanel panel, String name, JComponent field, int x, int y) {
                 GridBagConstraints gbc = new GridBagConstraints();
                 gbc.gridy = y;
@@ -134,7 +120,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return label;
         }
 
-        // Tạo ô nhập theo cùng font và kích thước.
         private JTextField createTextField() {
                 JTextField field = new JTextField();
                 styleTextField(field);
@@ -146,7 +131,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 field.setFont(FONT);
         }
 
-        // MaskFormatter: tự đặt dấu ':' và yêu cầu đủ 4 chữ số (HH:mm).
         private JFormattedTextField taoOChonGio() {
                 try {
                         MaskFormatter mask = new MaskFormatter("##:##");
@@ -161,7 +145,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 }
         }
 
-        // FlowLayout.RIGHT: nút Thêm, Sửa, Xóa và Làm mới nằm bên phải biểu mẫu.
         private JPanel createButtonPanel() {
                 JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
                 buttons.setBackground(Color.WHITE);
@@ -175,7 +158,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return buttons;
         }
 
-        // Dùng chung cách tạo nút và đăng ký ActionListener cho mọi thao tác.
         private JButton createButton(String text, Color color, int width, int height, int fontSize) {
                 JButton button = new JButton(text);
                 button.setBackground(color);
@@ -188,7 +170,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return button;
         }
 
-        // Khung nền trắng có viền giống form và bảng của phiên bản gốc.
         private JPanel createWhitePanel(LayoutManager layout, int padding) {
                 JPanel panel = new JPanel(layout);
                 panel.setBackground(Color.WHITE);
@@ -198,7 +179,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return panel;
         }
 
-        // JPanel + JTable: khu vực tìm kiếm và danh sách ca làm.
         private JPanel createTablePanel() {
                 JPanel panel = createWhitePanel(new BorderLayout(10, 10), 10);
                 JPanel top = new JPanel(new BorderLayout());
@@ -218,7 +198,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 top.add(search, BorderLayout.EAST);
                 panel.add(top, BorderLayout.NORTH);
 
-                // DefaultTableModel: khóa chỉnh sửa trực tiếp từng ô trong JTable.
                 model = new DefaultTableModel(new String[] {
                                 "Mã ca", "Tên ca", "Giờ bắt đầu", "Giờ kết thúc"
                 }, 0) {
@@ -236,16 +215,13 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 tblDuLieu.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 tblDuLieu.setAutoCreateRowSorter(true);
 
-                // ListSelectionListener: chọn dòng bằng chuột hoặc bàn phím đều đổ dữ liệu lên
-                // form.
-                // MouseListener: lấy dữ liệu khi nhấp chuột vào một ca trên JTable.
                 tblDuLieu.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
                                 hienThiDuLieu();
                         }
                 });
-                // ListSelectionListener: vẫn cho phép chọn dòng bằng bàn phím.
+
                 tblDuLieu.getSelectionModel().addListSelectionListener(e -> {
                         if (!e.getValueIsAdjusting())
                                 hienThiDuLieu();
@@ -254,14 +230,12 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return panel;
         }
 
-        // Nạp danh sách ca làm từ DAO lên bảng.
         private void loadData() {
                 model.setRowCount(0);
                 for (CaLam ca : control.layDanhSach())
                         addRow(ca);
         }
 
-        // Dùng lại một hàm thêm dòng cho cả nạp danh sách và tìm kiếm.
         private void addRow(CaLam ca) {
                 model.addRow(new Object[] {
                                 ca.getMaCa(), ca.getTenCa(),
@@ -269,7 +243,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 });
         }
 
-        // Khi chọn JTable, convertRowIndexToModel để lấy đúng dòng dù đã sắp xếp.
         private void hienThiDuLieu() {
                 int selected = tblDuLieu.getSelectedRow();
                 if (selected < 0)
@@ -287,7 +260,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return value == null ? "" : value.toString();
         }
 
-        // Thêm: không cho thêm khi đang chọn ca cũ; mã ca do DAO tự sinh.
         private void them() {
                 if (tblDuLieu.getSelectedRow() >= 0) {
                         thongBao("Đang chọn ca cũ. Nhấn Làm mới để thêm ca mới.");
@@ -309,7 +281,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 }
         }
 
-        // Sửa: yêu cầu chọn dòng, kiểm tra form rồi gọi DAO cập nhật.
         private void sua() {
                 if (!daChonCa("Vui lòng chọn ca cần sửa!"))
                         return;
@@ -325,7 +296,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 }
         }
 
-        // Xóa: người dùng phải chọn ca và xác nhận trước khi xóa.
         private void xoa() {
                 if (!daChonCa("Vui lòng chọn ca cần xóa!"))
                         return;
@@ -343,7 +313,6 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 }
         }
 
-        // Hai hàm dùng chung để giảm các đoạn kiểm tra/chạy lại bảng bị lặp.
         private boolean daChonCa(String message) {
                 if (tblDuLieu.getSelectedRow() >= 0)
                         return true;
@@ -360,18 +329,12 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 JOptionPane.showMessageDialog(this, message);
         }
 
-        // Tìm kiếm theo mã, tên hoặc giờ; giữ nguyên tìm kiếm không phân biệt
-        // hoa/thường.
         private void timKiem() {
-        model.setRowCount(0);
-        for (CaLam ca : control.timKiem(txtTimKiem.getText())) addRow(ca);
-    }
-
-        private String safe(String value) {
-                return value == null ? "" : value.toLowerCase();
+                model.setRowCount(0);
+                for (CaLam ca : control.timKiem(txtTimKiem.getText()))
+                        addRow(ca);
         }
 
-        // Làm mới: xóa form, bỏ chọn dòng, gợi ý mã ca tự động.
         private void lamMoi() {
                 txtMaCa.setText(control.goiYMa());
                 txtTenCa.setText("");
@@ -382,19 +345,18 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 tblDuLieu.clearSelection();
         }
 
-        // Validation: tên ca 3–50 ký tự; thời gian HH:mm hợp lệ và không trùng nhau.
         private boolean kiemTraDuLieu() {
-        try {
-            control.taoCaLam(txtMaCa.getText(), txtTenCa.getText(),
-                    txtGioBatDau.getText(), txtGioKetThuc.getText());
-            return true;
-        } catch (IllegalArgumentException ex) {
-            String msg = ex.getMessage();
-            JComponent focus = msg.startsWith("Tên") ? txtTenCa :
-                    msg.startsWith("Giờ bắt đầu") ? txtGioBatDau : txtGioKetThuc;
-            return baoLoiTruong(focus, msg);
+                try {
+                        control.taoCaLam(txtMaCa.getText(), txtTenCa.getText(),
+                                        txtGioBatDau.getText(), txtGioKetThuc.getText());
+                        return true;
+                } catch (IllegalArgumentException ex) {
+                        String msg = ex.getMessage();
+                        JComponent focus = msg.startsWith("Tên") ? txtTenCa
+                                        : msg.startsWith("Giờ bắt đầu") ? txtGioBatDau : txtGioKetThuc;
+                        return baoLoiTruong(focus, msg);
+                }
         }
-    }
 
         private boolean baoLoiTruong(JComponent field, String message) {
                 JOptionPane.showMessageDialog(this, message,
@@ -403,18 +365,15 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 return false;
         }
 
-        // Entity: chuyển dữ liệu trên form thành đối tượng CaLam để gọi DAO.
         private CaLam getCaLamFromForm() {
-        return control.taoCaLam(txtMaCa.getText(), txtTenCa.getText(),
-                txtGioBatDau.getText(), txtGioKetThuc.getText());
-    }
+                return control.taoCaLam(txtMaCa.getText(), txtTenCa.getText(),
+                                txtGioBatDau.getText(), txtGioKetThuc.getText());
+        }
 
-        // Chỉ hiển thị HH:mm, không làm thay đổi giá trị giờ lưu trong SQL Server.
         private String dinhDangGio(LocalTime gio) {
-        return CaLamControl.dinhDangGio(gio);
-    }
+                return CaLamControl.dinhDangGio(gio);
+        }
 
-        // Một ActionListener chung để giữ luồng thao tác của sáu nút.
         @Override
         public void actionPerformed(ActionEvent e) {
                 Object source = e.getSource();

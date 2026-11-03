@@ -5,9 +5,6 @@ import java.util.EnumSet;
 import java.util.Locale;
 import javax.swing.JOptionPane;
 
-import dao.PhanQuyen.Quyen;
-import dao.PhanQuyen.VaiTro;
-
 import java.awt.Component;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,6 +13,18 @@ import java.sql.SQLException;
 
 /** Quy tắc kiểm tra quyền được chuyển ra khỏi entity/UI. */
 public final class PhanQuyenControl {
+    public enum VaiTro {
+        QUAN_LY, THU_NGAN, NHAN_VIEN_KHO, NHAN_VIEN_SPA, KHONG_HOP_LE
+    }
+
+    public enum Quyen {
+        TAI_KHOAN, PHAN_QUYEN, CA_LAM, PHAN_CA,
+        DANH_MUC_SAN_PHAM, SAN_PHAM, KHACH_HANG, THU_CUNG, DICH_VU, VOUCHER,
+        NHAP_KHO, KIEM_KE, TRA_CUU_NHAP_KHO, TRA_CUU_KIEM_KE, CANH_BAO_HAN_SU_DUNG,
+        LICH_HEN_SPA, PHIEU_DICH_VU, THANH_TOAN, TRA_CUU_HOA_DON,
+        GOI_Y_THUC_AN, THONG_KE_DOANH_THU
+    }
+
     private PhanQuyenControl() {
     }
 
@@ -47,9 +56,9 @@ public final class PhanQuyenControl {
     // Tham số q: q.
     // Kết quả: true/false theo điều kiện xử lý.
     public static boolean coQuyen(Quyen q) {
-        if (q == null || PhienLamViecControl.maNV() == null || PhienLamViecControl.maNV().isBlank())
+        if (q == null || PhienLamViecControl.maNV == null || PhienLamViecControl.maNV.isBlank())
             return false;
-        return duocPhep(vaiTro(PhienLamViecControl.vaiTro()), q);
+        return duocPhep(vaiTro(PhienLamViecControl.vaiTro), q);
     }
 
     /** Dùng để trình bày ma trận quyền mà không phải thay đổi phiên đăng nhập. */
@@ -89,10 +98,10 @@ public final class PhanQuyenControl {
         // lệnh.
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, PhienLamViecControl.maNV());
+            ps.setString(1, PhienLamViecControl.maNV);
             // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(PhienLamViecControl.vaiTro())) {
+                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(PhienLamViecControl.vaiTro)) {
                     throw new SecurityException("Vai trò đã thay đổi hoặc tài khoản không tồn tại. "
                             + "Vui lòng đăng xuất và đăng nhập lại.");
                 }

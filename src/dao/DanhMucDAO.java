@@ -101,7 +101,7 @@ public class DanhMucDAO {
     // Tham số dm: danh mục cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(DanhMuc dm) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
 
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
@@ -125,7 +125,7 @@ public class DanhMucDAO {
     // Tham số dm: danh mục cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(DanhMuc dm) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
 
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
@@ -187,7 +187,7 @@ public class DanhMucDAO {
 
     /** Chỉ xóa danh mục rỗng để không làm mất sản phẩm và lịch sử giao dịch. */
     public boolean xoa(String maDanhMuc) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.DANH_MUC_SAN_PHAM);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
         try (Connection con = connectDB.getConnection()) {

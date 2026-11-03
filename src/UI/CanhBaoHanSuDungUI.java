@@ -1,5 +1,7 @@
 package UI;
 
+import control.PhanQuyenControl;
+
 import ConnectDB.connectDB;
 import UI.TrangChuUI.UIStyle;
 import dao.SanPhamDAO;
@@ -234,7 +236,7 @@ public class CanhBaoHanSuDungUI extends JFrame implements ActionListener {
         if (!UIStyle.xacNhan(this, "Ngừng kinh doanh sản phẩm " + maSanPham + " của đợt " + maPhieuNhap + "?"))
             return;
         try {
-            dao.PhanQuyen.yeuCau(dao.PhanQuyen.Quyen.CANH_BAO_HAN_SU_DUNG);
+            PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.CANH_BAO_HAN_SU_DUNG);
             SanPhamDAO.damBaoCotKinhDoanh();
             try (Connection connection = connectDB.getConnection();
                     PreparedStatement statement = connection.prepareStatement(

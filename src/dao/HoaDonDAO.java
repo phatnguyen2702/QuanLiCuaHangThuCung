@@ -71,7 +71,7 @@ public class HoaDonDAO {
     // Lấy thống kê.
     // Kết quả: đối tượng/giá trị kiểu ThongKe.
     public ThongKe layThongKe() throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.THONG_KE_DOANH_THU);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.THONG_KE_DOANH_THU);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "SELECT "
@@ -104,7 +104,7 @@ public class HoaDonDAO {
     // Tham số tuKhoa: từ khóa tìm kiếm.
     // Kết quả: danh sách dữ liệu hóa đơn dùng để hiển thị khi tra cứu.
     public List<HoaDon> timHoaDon(String tuKhoa) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
@@ -151,7 +151,7 @@ public class HoaDonDAO {
     }
 
     public BigDecimal layTongTienHoaDon(String maHoaDon) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         String sql = "SELECT COALESCE(SUM(ct.soLuong * ct.donGia * "
                 + "(1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien "
                 + "FROM ChiTietHoaDon ct WHERE ct.maHoaDon = ?";
@@ -169,7 +169,7 @@ public class HoaDonDAO {
     }
 
     public Map<String, BigDecimal> layTongTienHoaDon(List<HoaDon> hoaDons) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         Map<String, BigDecimal> tongTienTheoMa = new LinkedHashMap<>();
         for (HoaDon hoaDon : hoaDons) {
             tongTienTheoMa.put(hoaDon.getMaHoaDon(), BigDecimal.ZERO);
@@ -206,7 +206,7 @@ public class HoaDonDAO {
     }
 
     public List<ChiTietHoaDon> layDanhSachChiTietHoaDon(String maHoaDon) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         String sql = "SELECT ct.maHoaDon, ct.maThuCung, ct.maDichVu, ct.maSanPham, "
                 + "COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không xác định') AS tenHang, "
                 + "CASE WHEN sp.maSanPham IS NOT NULL THEN N'Sản phẩm' "
@@ -247,7 +247,7 @@ public class HoaDonDAO {
     // Tham số maHoaDon: mã hóa đơn.
     // Kết quả: dữ liệu hóa đơn dùng để hiển thị chi tiết.
     public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.TRA_CUU_HOA_DON);
+        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         String sql = "SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, "
                 + "kh.maKhachHang, kh.hoTen, kh.soDienThoai, pt.tenPhuongThuc "
                 + "FROM HoaDon hd "

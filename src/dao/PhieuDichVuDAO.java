@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import entity.PhieuDichVu;
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,7 +14,7 @@ public class PhieuDichVuDAO {
     // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
     // Kết quả: đối tượng/giá trị kiểu ArrayList<PhieuDichVu>.
     public ArrayList<PhieuDichVu> getAll() {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHIEU_DICH_VU);
         // list: Danh sách chứa các phần tử kiểu PhieuDichVu.
         ArrayList<PhieuDichVu> list = new ArrayList<>();
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
@@ -188,7 +190,7 @@ public class PhieuDichVuDAO {
      * toán.
      */
     public boolean them(PhieuDichVu p, List<String[]> dichVuDuocChon) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHIEU_DICH_VU);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "INSERT INTO PhieuDichVu "
@@ -230,7 +232,7 @@ public class PhieuDichVuDAO {
 
     /** Chỉ sửa phiếu chưa thanh toán; không đổi trạng thái do ứng dụng Spa. */
     public boolean sua(PhieuDichVu p, List<String[]> dichVuDuocChon) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHIEU_DICH_VU);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "UPDATE PhieuDichVu SET maKhachHang=?, maThuCung=?, maNhanVien=?, maLichHen=? "
@@ -277,7 +279,7 @@ public class PhieuDichVuDAO {
 
     /** Xóa phiếu chưa thanh toán và chi tiết một cách nguyên tử. */
     public boolean xoa(String maPhieu) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.PHIEU_DICH_VU);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHIEU_DICH_VU);
         // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
         // lệnh.
         try (Connection con = connectDB.getConnection()) {

@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import entity.NhanVien;
 
 import java.sql.*;
@@ -7,33 +9,28 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Locale;
 
-// Lớp truy cập cơ sở dữ liệu cho tài khoản.
 public class NhanVienDAO {
 
-        /** Xác thực bằng tài khoản suy ra từ họ tên + 3 số cuối mã nhân viên. */
         public NhanVien xacThuc(String tenDangNhap, String matKhau) throws SQLException {
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
                 String sql = "SELECT maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro FROM NhanVien";
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+
                 try (Connection con = ConnectDB.connectDB.getConnection();
                                 PreparedStatement ps = con.prepareStatement(sql);
                                 ResultSet rs = ps.executeQuery()) {
-                        // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+
                         while (rs.next()) {
-                                // ma: Lưu mã.
+
                                 String ma = rs.getString("maNhanVien");
-                                // ten: Lưu tên.
+
                                 String ten = rs.getString("hoTen");
                                 if (ma == null || ten == null || ma.length() < 3)
                                         continue;
                                 String normalized = java.text.Normalizer.normalize(ten, java.text.Normalizer.Form.NFD)
-                                                .replaceAll("\\p{M}", "").replace("đ", "d").replace("Đ", "D")
+                                                .replaceAll("\\p{M}", "").replace("Ä‘", "d").replace("Ä", "D")
                                                 .toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", "")
                                                 + ma.substring(ma.length() - 3);
-                                // Cho phep dang nhap bang ma NV (NV001) hoac tai khoan
-                                // sinh tu ho ten va 3 so cuoi ma NV (vi du nguyenminhanh002).
+
                                 if ((normalized.equalsIgnoreCase(tenDangNhap)
                                                 || ma.equalsIgnoreCase(tenDangNhap))
                                                 && rs.getString("matKhau") != null
@@ -47,20 +44,11 @@ public class NhanVienDAO {
                 return null;
         }
 
-        // =========================================================
-        // LAY TAT CA
-        // =========================================================
-
-        // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
-        // Kết quả: đối tượng/giá trị kiểu ArrayList<NhanVien>.
         public ArrayList<NhanVien> getAll() {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
 
-                // list: Danh sách chứa các phần tử kiểu NhanVien.
                 ArrayList<NhanVien> list = new ArrayList<>();
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
                 String sql = "SELECT maNhanVien, hoTen, "
                                 + "soDienThoai, email, matKhau, "
                                 + "gioiTinh, vaiTro "
@@ -74,7 +62,6 @@ public class NhanVienDAO {
 
                                 ResultSet rs = ps.executeQuery()) {
 
-                        // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                         while (rs.next()) {
 
                                 NhanVien tk = new NhanVien(
@@ -97,29 +84,18 @@ public class NhanVienDAO {
                 return list;
         }
 
-        // =========================================================
-        // THEM
-        // =========================================================
-
-        // Mã nhân viên được cấp khi INSERT trong cùng transaction.
-        // Thêm dữ liệu tài khoản trong cơ sở dữ liệu.
-        // Tham số tk: tài khoản cần xử lý.
-        // Kết quả: true/false theo điều kiện xử lý.
         public boolean them(NhanVien tk) throws SQLException {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
+
                 String sql = "INSERT INTO NhanVien "
                                 + "(maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro) "
                                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
-                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-                        // nhau.
+
                         con.setAutoCommit(false);
                         try {
-                                // maMoi: Lưu mã mới.
+
                                 String maMoi = MaTuDongDAO.taoMaTrongGiaoDich(
                                                 con, MaTuDongDAO.Loai.NHAN_VIEN);
                                 try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -131,31 +107,25 @@ public class NhanVienDAO {
                                         ps.setString(6, tk.getGioiTinh());
                                         ps.setString(7, tk.getVaiTro());
                                         if (ps.executeUpdate() != 1) {
-                                                throw new SQLException("Không thể thêm nhân viên.");
+                                                throw new SQLException("KhÃ´ng thá»ƒ thÃªm nhÃ¢n viÃªn.");
                                         }
                                 }
-                                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
+
                                 con.commit();
                                 tk.setMaNhanVien(maMoi);
                                 return true;
                         } catch (SQLException ex) {
-                                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
+
                                 con.rollback();
                                 throw ex;
                         }
                 }
         }
 
-        // SUA
-        // Cập nhật dữ liệu tài khoản trong cơ sở dữ liệu.
-        // Tham số tk: tài khoản cần xử lý.
-        // Kết quả: true/false theo điều kiện xử lý.
         public boolean sua(
                         NhanVien tk) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
                 String sql = "UPDATE NhanVien SET "
                                 + "hoTen = ?, "
                                 + "soDienThoai = ?, "
@@ -189,15 +159,10 @@ public class NhanVienDAO {
                 }
         }
 
-        // XOA
-        // Xử lý xóa dữ liệu tài khoản trong cơ sở dữ liệu.
-        // Tham số maNhanVien: mã nhân viên.
-        // Kết quả: true/false theo điều kiện xử lý.
         public boolean xoa(
                         String maNhanVien) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
+
                 String sql = "DELETE FROM NhanVien "
                                 + "WHERE maNhanVien = ?";
                 try (
@@ -211,22 +176,16 @@ public class NhanVienDAO {
                 }
         }
 
-        /**
-         * Doi chieu thong tin nhan vien. TUYET DOI KHONG doc/tra lai mat khau.
-         * 5 thong tin nay khong du de tu cap lai mat khau; can phe duyet quan ly.
-         */
         public boolean xacMinhThongTinNhanVien(String maNhanVien, String hoTen,
                         String vaiTro, String email, String soDienThoai) throws SQLException {
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
                 String sql = "SELECT hoTen, vaiTro, email, soDienThoai "
                                 + "FROM NhanVien WHERE maNhanVien = ?";
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+
                 try (Connection con = ConnectDB.connectDB.getConnection();
                                 PreparedStatement ps = con.prepareStatement(sql)) {
                         ps.setString(1, maNhanVien.trim());
-                        // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
                         try (ResultSet rs = ps.executeQuery()) {
                                 if (!rs.next())
                                         return false;
@@ -239,29 +198,22 @@ public class NhanVienDAO {
                 }
         }
 
-        /**
-         * Cap mat khau TAM THOI sau khi quan ly xac thuc tai cho.
-         * Cap nhat co dieu kien bang SQL, khong bao gio hien mat khau cu.
-         */
         public boolean capLaiMatKhauCoPheDuyet(String maNV, String maQuanLy,
                         String matKhauQuanLy, String matKhauMoi) throws SQLException {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
                 if (maNV == null || maNV.trim().isEmpty() || maQuanLy == null
                                 || maQuanLy.trim().isEmpty() || matKhauQuanLy == null
                                 || matKhauQuanLy.isEmpty() || matKhauMoi == null
                                 || matKhauMoi.length() < 6) {
                         return false;
                 }
-                // Bản SQL học tập hiện lưu matKhau dạng văn bản; cần nâng cấp băm mật khẩu.
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
                 String sql = "UPDATE NhanVien SET matKhau = ? "
                                 + "WHERE maNhanVien = ? AND EXISTS ( "
                                 + " SELECT 1 FROM NhanVien q WHERE q.maNhanVien = ? "
                                 + " AND q.matKhau = ? "
-                                + " AND (LOWER(q.vaiTro) = N'quan ly' OR LOWER(q.vaiTro) = N'quản lý') )";
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+                                + " AND (LOWER(q.vaiTro) = N'quan ly' OR LOWER(q.vaiTro) = N'quáº£n lÃ½') )";
+
                 try (Connection con = ConnectDB.connectDB.getConnection();
                                 PreparedStatement ps = con.prepareStatement(sql)) {
                         ps.setString(1, matKhauMoi);
@@ -272,22 +224,15 @@ public class NhanVienDAO {
                 }
         }
 
-        /**
-         * Giu tuong thich voi man hinh QuanLyTaiKhoan co nut "Cap lai MK".
-         * Chi goi tu luong quan tri da duoc phan quyen; nen nang cap
-         * kiem tra quyen o may chu trong phien ban thuc te.
-         */
         public boolean capLaiMatKhau(String maNhanVien, String matKhauMoi) throws SQLException {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
                 if (maNhanVien == null || maNhanVien.trim().isEmpty()
                                 || matKhauMoi == null || matKhauMoi.length() < 6) {
                         throw new IllegalArgumentException("Ma NV hoac mat khau moi khong hop le.");
                 }
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
                 String sql = "UPDATE NhanVien SET matKhau = ? WHERE maNhanVien = ?";
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+
                 try (Connection con = ConnectDB.connectDB.getConnection();
                                 PreparedStatement ps = con.prepareStatement(sql)) {
                         ps.setString(1, matKhauMoi);
@@ -296,18 +241,10 @@ public class NhanVienDAO {
                 }
         }
 
-        /**
-         * Cap lai mat khau cho nhan vien theo quy trinh:
-         * (1) Nhan vien nhap ma NV; (2) quan ly dang nhap bang ten tai khoan
-         * Pet Shop Pro (hoac ma NV) + mat khau; (3) cap mat khau tam thoi.
-         * Chi phep tai khoan co vai tro Quan ly phe duyet. Thuc hien trong 1
-         * transaction.
-         * Chu y: du an hien tai luu mat khau dang text, chi phu hop bai tap.
-         */
         public boolean capLaiMatKhauQuaTaiKhoanQuanLy(String maNhanVienCanKhoiPhuc,
                         String taiKhoanQuanLy, String matKhauQuanLy, String matKhauTamThoi)
                         throws SQLException {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.TAI_KHOAN);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
                 if (maNhanVienCanKhoiPhuc == null || maNhanVienCanKhoiPhuc.trim().isEmpty()
                                 || taiKhoanQuanLy == null || taiKhoanQuanLy.trim().isEmpty()
                                 || matKhauQuanLy == null || matKhauQuanLy.isEmpty()
@@ -315,27 +252,20 @@ public class NhanVienDAO {
                         return false;
                 }
 
-                // sqlQuanLy: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-                // nhận tham số nếu có.
                 String sqlQuanLy = "SELECT maNhanVien, hoTen, vaiTro FROM NhanVien WHERE matKhau = ?";
-                // sqlCapLai: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-                // nhận tham số nếu có.
+
                 String sqlCapLai = "UPDATE NhanVien SET matKhau = ? WHERE maNhanVien = ?";
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
-                        // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-                        // nhau.
+
                         con.setAutoCommit(false);
                         try {
                                 boolean blnDungQuanLy = false;
                                 try (PreparedStatement psQuanLy = con.prepareStatement(sqlQuanLy)) {
                                         psQuanLy.setString(1, matKhauQuanLy);
-                                        // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
                                         try (ResultSet rs = psQuanLy.executeQuery()) {
-                                                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ
-                                                // liệu.
+
                                                 while (rs.next()) {
                                                         String strMaQuanLy = rs.getString("maNhanVien");
                                                         String strVaiTro = rs.getString("vaiTro");
@@ -354,7 +284,7 @@ public class NhanVienDAO {
                                         }
                                 }
                                 if (!blnDungQuanLy) {
-                                        // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
+
                                         con.rollback();
                                         return false;
                                 }
@@ -366,36 +296,27 @@ public class NhanVienDAO {
                                         intSoDong = psCapLai.executeUpdate();
                                 }
                                 if (intSoDong != 1) {
-                                        // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
+
                                         con.rollback();
                                         return false;
                                 }
-                                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
+
                                 con.commit();
                                 return true;
                         } catch (SQLException | RuntimeException ex) {
-                                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
+
                                 con.rollback();
                                 throw ex;
                         }
                 }
         }
 
-        /**
-         * Doi mat khau cua tai khoan dang dang nhap.
-         * So sanh mat khau cu theo BIN2 de khong nham chu HOA/thuong
-         * du SQL Server mac dinh co the dung collation khong phan biet hoa/thuong.
-         * Khong tra lai / in ra mat khau cu.
-         *
-         * Luu y: CSDL cua do an dang luu mat khau dang chuoi thuan.
-         * Khi nang cap len password hash can doi logic xac thuc va cap nhat.
-         */
         public boolean doiMatKhau(String maNhanVien, String matKhauCu,
                         String matKhauMoi) throws SQLException {
-                // Khong cho phep doi mat khau thay nguoi khac, ke ca khi biet mat khau cu.
-                if (maNhanVien == null || UI.PhienLamViecUI.maNV == null
-                                || !maNhanVien.trim().equals(UI.PhienLamViecUI.maNV)) {
-                        throw new SecurityException("Chỉ được đổi mật khẩu của tài khoản đang đăng nhập.");
+
+                if (maNhanVien == null || control.PhienLamViecControl.maNV == null
+                                || !maNhanVien.trim().equals(control.PhienLamViecControl.maNV)) {
+                        throw new SecurityException("Chá»‰ Ä‘Æ°á»£c Ä‘á»•i máº­t kháº©u cá»§a tÃ i khoáº£n Ä‘ang Ä‘Äƒng nháº­p.");
                 }
 
                 if (maNhanVien == null || maNhanVien.isBlank()
@@ -405,14 +326,10 @@ public class NhanVienDAO {
                         return false;
                 }
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
                 String sql = "UPDATE NhanVien SET matKhau = ? "
                                 + "WHERE maNhanVien = ? "
                                 + "AND matKhau COLLATE Latin1_General_100_BIN2 = ?";
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
                 try (Connection con = ConnectDB.connectDB.getConnection();
                                 PreparedStatement ps = con.prepareStatement(sql)) {
                         ps.setString(1, matKhauMoi);
@@ -422,10 +339,6 @@ public class NhanVienDAO {
                 }
         }
 
-        // Tạo tên đăng nhập từ họ tên không dấu và ba ký tự cuối mã nhân viên.
-        // Tham số hoTen: họ tên.
-        // Tham số maNhanVien: mã nhân viên.
-        // Kết quả: chuỗi kết quả.
         private static String taoTaiKhoanKhongDau(String hoTen, String maNhanVien) {
                 if (hoTen == null || maNhanVien == null || maNhanVien.length() < 3)
                         return "";
@@ -437,13 +350,10 @@ public class NhanVienDAO {
                 return strTen + maNhanVien.substring(maNhanVien.length() - 3);
         }
 
-        // Chuẩn hóa chuỗi trước khi đối chiếu dữ liệu.
-        // Tham số str: chuỗi đầu vào.
-        // Kết quả: chuỗi kết quả.
         private static String chuanHoa(String str) {
                 if (str == null)
                         return "";
-                // s: Lưu chuỗi đầu vào.
+
                 String s = Normalizer.normalize(str.trim(), Normalizer.Form.NFD)
                                 .replaceAll("\\p{M}", "")
                                 .replace('đ', 'd').replace('Đ', 'D')
@@ -451,16 +361,10 @@ public class NhanVienDAO {
                 return s.replaceAll("\\s+", " ");
         }
 
-        // Chuẩn hóa email trước khi so sánh.
-        // Tham số str: chuỗi đầu vào.
-        // Kết quả: chuỗi kết quả.
         private static String chuanHoaEmail(String str) {
                 return str == null ? "" : str.trim().toLowerCase(Locale.ROOT);
         }
 
-        // Chuẩn hóa số điện thoại trước khi so sánh.
-        // Tham số str: chuỗi đầu vào.
-        // Kết quả: chuỗi kết quả.
         private static String chuanHoaSoDienThoai(String str) {
                 return str == null ? "" : str.replaceAll("[\\s.-]", "");
         }

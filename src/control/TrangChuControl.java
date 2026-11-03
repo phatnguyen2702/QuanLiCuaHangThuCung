@@ -3,7 +3,7 @@ package control;
 import ConnectDB.connectDB;
 import dao.HoaDonDAO;
 import dao.LichHenDAO;
-import dao.PhanQuyen;
+
 import dao.NhanVienDAO;
 import entity.LichHen;
 
@@ -23,7 +23,7 @@ import java.util.List;
 public final class TrangChuControl {
     public void kiemTraPhien(String maNV, String vaiTro) {
         if (maNV == null || maNV.isBlank()
-                || PhanQuyenControl.vaiTro(vaiTro) == PhanQuyen.VaiTro.KHONG_HOP_LE)
+                || PhanQuyenControl.vaiTro(vaiTro) == PhanQuyenControl.VaiTro.KHONG_HOP_LE)
             throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
     }
 

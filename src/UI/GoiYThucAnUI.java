@@ -21,38 +21,38 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 
-/** Gợi ý thức ăn đang còn hàng theo loài thú cưng và danh mục sản phẩm. */
+/** Gá»£i Ã½ thá»©c Äƒn Ä‘ang cÃ²n hÃ ng theo loÃ i thÃº cÆ°ng vÃ  danh má»¥c sáº£n pháº©m. */
 public class GoiYThucAnUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
     }
 
-    // cmbPet: Hộp lựa chọn thú cưng.
-    private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", "Mèo" });
-    // cmbAge: Hộp lựa chọn tuổi.
+    // cmbPet: Há»™p lá»±a chá»n thÃº cÆ°ng.
+    private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "ChÃ³", "MÃ¨o" });
+    // cmbAge: Há»™p lá»±a chá»n tuá»•i.
     private final JComboBox<String> cmbAge = new JComboBox<>(
-            new String[] { "Tất cả độ tuổi", "Con non", "Trưởng thành", "Cao tuổi" });
-    // cmbSize: Hộp lựa chọn kích thước.
+            new String[] { "Táº¥t cáº£ Ä‘á»™ tuá»•i", "Con non", "TrÆ°á»Ÿng thÃ nh", "Cao tuá»•i" });
+    // cmbSize: Há»™p lá»±a chá»n kÃ­ch thÆ°á»›c.
     private final JComboBox<String> cmbSize = new JComboBox<>(
-            new String[] { "Tất cả kích thước", "Nhỏ", "Trung bình", "Lớn" });
-    // txtSearch: Ô nhập/hiển thị văn bản tìm kiếm.
+            new String[] { "Táº¥t cáº£ kÃ­ch thÆ°á»›c", "Nhá»", "Trung bÃ¬nh", "Lá»›n" });
+    // txtSearch: Ã” nháº­p/hiá»ƒn thá»‹ vÄƒn báº£n tÃ¬m kiáº¿m.
     private final JTextField txtSearch = new JTextField(15);
-    // pnlCards: Khung chứa thành phần giao diện các trang nội dung.
+    // pnlCards: Khung chá»©a thÃ nh pháº§n giao diá»‡n cÃ¡c trang ná»™i dung.
     private final JPanel pnlCards = new JPanel(new GridLayout(0, 3, 12, 12));
-    // lblNote: Nhãn hiển thị: Chọn loại thú cưng để xem thức ăn còn hàng..
-    private final JLabel lblNote = new JLabel("Chọn loại thú cưng để xem thức ăn còn hàng.");
-    // btnSelectedButton: Nút thao tác nút đang được chọn.
-    private final JButton btnSelectedButton = UIStyle.nutPhu("Giỏ hàng (0)");
-    // dao: Đối tượng truy cập dữ liệu sản phẩm.
+    // lblNote: NhÃ£n hiá»ƒn thá»‹: Chá»n loáº¡i thÃº cÆ°ng Ä‘á»ƒ xem thá»©c Äƒn cÃ²n hÃ ng..
+    private final JLabel lblNote = new JLabel("Chá»n loáº¡i thÃº cÆ°ng Ä‘á»ƒ xem thá»©c Äƒn cÃ²n hÃ ng.");
+    // btnSelectedButton: NÃºt thao tÃ¡c nÃºt Ä‘ang Ä‘Æ°á»£c chá»n.
+    private final JButton btnSelectedButton = UIStyle.nutPhu("Giá» hÃ ng (0)");
+    // dao: Äá»‘i tÆ°á»£ng truy cáº­p dá»¯ liá»‡u sáº£n pháº©m.
     private final SanPhamDAO dao = new SanPhamDAO();
     private final Runnable moThanhToan;
-    // products: Lưu danh sách sản phẩm; phần tử có kiểu SanPham.
+    // products: LÆ°u danh sÃ¡ch sáº£n pháº©m; pháº§n tá»­ cÃ³ kiá»ƒu SanPham.
     private List<SanPham> products = List.of();
-    // anhSanPhamCache: Bảng ánh xạ khóa đến giá trị dùng cho bộ nhớ đệm ảnh sản
-    // phẩm.
+    // anhSanPhamCache: Báº£ng Ã¡nh xáº¡ khÃ³a Ä‘áº¿n giÃ¡ trá»‹ dÃ¹ng cho bá»™ nhá»› Ä‘á»‡m áº£nh sáº£n
+    // pháº©m.
     private final Map<String, Icon> anhSanPhamCache = new HashMap<>();
 
-    // Khởi tạo giao diện và thiết lập các thành phần, sự kiện ban đầu.
+    // Khá»Ÿi táº¡o giao diá»‡n vÃ  thiáº¿t láº­p cÃ¡c thÃ nh pháº§n, sá»± kiá»‡n ban Ä‘áº§u.
     public GoiYThucAnUI() {
         this(null);
     }
@@ -63,35 +63,35 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
         getContentPane().setBackground(UIStyle.LIGHT_BLUE);
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(22, 25, 22, 25));
 
-        // lblTitle2: Nhãn hiển thị: Gợi ý thức ăn theo loại thú cưng.
-        JLabel lblTitle2 = new JLabel("Gợi ý thức ăn theo loại thú cưng");
+        // lblTitle2: NhÃ£n hiá»ƒn thá»‹: Gá»£i Ã½ thá»©c Äƒn theo loáº¡i thÃº cÆ°ng.
+        JLabel lblTitle2 = new JLabel("Gá»£i Ã½ thá»©c Äƒn theo loáº¡i thÃº cÆ°ng");
         lblTitle2.setFont(UIStyle.font(Font.BOLD, 24));
-        // pnlHeader2: Khung chứa thành phần giao diện đầu trang.
+        // pnlHeader2: Khung chá»©a thÃ nh pháº§n giao diá»‡n Ä‘áº§u trang.
         JPanel pnlHeader2 = new JPanel(new BorderLayout());
         pnlHeader2.setOpaque(false);
         pnlHeader2.add(lblTitle2, BorderLayout.WEST);
         pnlHeader2.add(btnSelectedButton, BorderLayout.EAST);
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         btnSelectedButton.addActionListener(e -> moDanhSachDaChon());
 
-        // pnlFilters: Khung chứa thành phần giao diện các bộ lọc.
+        // pnlFilters: Khung chá»©a thÃ nh pháº§n giao diá»‡n cÃ¡c bá»™ lá»c.
         JPanel pnlFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         pnlFilters.setBackground(Color.WHITE);
         pnlFilters.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(206, 222, 237)), new EmptyBorder(8, 10, 8, 10)));
-        pnlFilters.add(new JLabel("Loại thú cưng:"));
+        pnlFilters.add(new JLabel("Loáº¡i thÃº cÆ°ng:"));
         pnlFilters.add(cmbPet);
-        pnlFilters.add(new JLabel("Độ tuổi:"));
+        pnlFilters.add(new JLabel("Äá»™ tuá»•i:"));
         pnlFilters.add(cmbAge);
-        pnlFilters.add(new JLabel("Kích thước:"));
+        pnlFilters.add(new JLabel("KÃ­ch thÆ°á»›c:"));
         pnlFilters.add(cmbSize);
-        pnlFilters.add(new JLabel("Tên sản phẩm:"));
+        pnlFilters.add(new JLabel("TÃªn sáº£n pháº©m:"));
         pnlFilters.add(txtSearch);
-        // btnFind: Nút thao tác tìm.
-        JButton btnFind = UIStyle.nutChinh("Tìm kiếm");
+        // btnFind: NÃºt thao tÃ¡c tÃ¬m.
+        JButton btnFind = UIStyle.nutChinh("TÃ¬m kiáº¿m");
         pnlFilters.add(btnFind);
 
-        // pnlTop2: Khung chứa thành phần giao diện trên.
+        // pnlTop2: Khung chá»©a thÃ nh pháº§n giao diá»‡n trÃªn.
         JPanel pnlTop2 = new JPanel();
         pnlTop2.setOpaque(false);
         pnlTop2.setLayout(new BoxLayout(pnlTop2, BoxLayout.Y_AXIS));
@@ -103,128 +103,128 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
         add(pnlTop2, BorderLayout.NORTH);
 
         pnlCards.setBackground(UIStyle.LIGHT_BLUE);
-        // scrCuon2: Khung cuộn khung cuộn.
+        // scrCuon2: Khung cuá»™n khung cuá»™n.
         JScrollPane scrCuon2 = new JScrollPane(pnlCards);
         scrCuon2.setBorder(new EmptyBorder(0, 0, 0, 0));
         scrCuon2.getViewport().setBackground(UIStyle.LIGHT_BLUE);
         add(scrCuon2, BorderLayout.CENTER);
 
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         btnFind.addActionListener(e -> napLai());
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         txtSearch.addActionListener(e -> napLai());
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         cmbPet.addActionListener(e -> napLai());
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         cmbAge.addActionListener(e -> napLai());
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         cmbSize.addActionListener(e -> napLai());
         napLai();
     }
 
-    // Nạp lại dữ liệu và cập nhật nội dung màn hình.
+    // Náº¡p láº¡i dá»¯ liá»‡u vÃ  cáº­p nháº­t ná»™i dung mÃ n hÃ¬nh.
     public void napLai() {
         pnlCards.removeAll();
         try {
             String kind = (String) cmbPet.getSelectedItem();
             products = dao.goiYThucAn(kind, (String) cmbAge.getSelectedItem(), (String) cmbSize.getSelectedItem());
-            // keyword: Đọc nội dung chữ từ ô nhập để xử lý từ khóa tìm kiếm.
+            // keyword: Äá»c ná»™i dung chá»¯ tá»« Ã´ nháº­p Ä‘á»ƒ xá»­ lÃ½ tá»« khÃ³a tÃ¬m kiáº¿m.
             String keyword = txtSearch.getText().trim().toLowerCase(Locale.ROOT);
-            // count: Lưu số phần tử.
+            // count: LÆ°u sá»‘ pháº§n tá»­.
             int count = 0;
             for (SanPham product : products) {
                 if (product.getTonKho() <= 0)
                     continue;
-                // name: Lưu tên.
+                // name: LÆ°u tÃªn.
                 String name = product.getTenSanPham() == null ? "" : product.getTenSanPham().toLowerCase(Locale.ROOT);
                 if (!keyword.isEmpty() && !name.contains(keyword))
                     continue;
                 pnlCards.add(taoTheSanPham(product));
                 count++;
             }
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
+            // Cáº­p nháº­t ná»™i dung chá»¯ hiá»ƒn thá»‹ trong control báº±ng setText().
             lblNote.setText(count == 0
-                    ? "Không có sản phẩm thức ăn còn hàng phù hợp với loài thú cưng đã chọn."
-                    : count + " sản phẩm thức ăn còn hàng. Độ tuổi/kích thước là tiêu chí tham khảo; hãy kiểm tra nhãn bao bì.");
+                    ? "KhÃ´ng cÃ³ sáº£n pháº©m thá»©c Äƒn cÃ²n hÃ ng phÃ¹ há»£p vá»›i loÃ i thÃº cÆ°ng Ä‘Ã£ chá»n."
+                    : count + " sáº£n pháº©m thá»©c Äƒn cÃ²n hÃ ng. Äá»™ tuá»•i/kÃ­ch thÆ°á»›c lÃ  tiÃªu chÃ­ tham kháº£o; hÃ£y kiá»ƒm tra nhÃ£n bao bÃ¬.");
         } catch (SQLException ex) {
-            // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-            lblNote.setText("Không tải được sản phẩm: " + ex.getMessage());
+            // Cáº­p nháº­t ná»™i dung chá»¯ hiá»ƒn thá»‹ trong control báº±ng setText().
+            lblNote.setText("KhÃ´ng táº£i Ä‘Æ°á»£c sáº£n pháº©m: " + ex.getMessage());
         }
-        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-        btnSelectedButton.setText("Giỏ hàng (" + tongSoLuongTrongGio() + ")");
+        // Cáº­p nháº­t ná»™i dung chá»¯ hiá»ƒn thá»‹ trong control báº±ng setText().
+        btnSelectedButton.setText("Giá» hÃ ng (" + tongSoLuongTrongGio() + ")");
         pnlCards.revalidate();
         pnlCards.repaint();
     }
 
-    // Tạo thẻ sản phẩm.
-    // Tham số product: sản phẩm.
-    // Kết quả: đối tượng/giá trị kiểu JPanel.
+    // Táº¡o tháº» sáº£n pháº©m.
+    // Tham sá»‘ product: sáº£n pháº©m.
+    // Káº¿t quáº£: Ä‘á»‘i tÆ°á»£ng/giÃ¡ trá»‹ kiá»ƒu JPanel.
     private JPanel taoTheSanPham(SanPham product) {
-        // pnlCard: Khung chứa thành phần giao diện thẻ.
+        // pnlCard: Khung chá»©a thÃ nh pháº§n giao diá»‡n tháº».
         JPanel pnlCard = new JPanel(new BorderLayout(7, 7));
         pnlCard.setBackground(Color.WHITE);
         pnlCard.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(205, 218, 232)), new EmptyBorder(10, 10, 10, 10)));
 
-        // lblImage: Nhãn hiển thị hình ảnh.
+        // lblImage: NhÃ£n hiá»ƒn thá»‹ hÃ¬nh áº£nh.
         JLabel lblImage = new JLabel(anhSanPham(product), SwingConstants.CENTER);
         lblImage.setPreferredSize(new Dimension(150, 115));
         lblImage.setOpaque(true);
         lblImage.setBackground(new Color(246, 249, 252));
         pnlCard.add(lblImage, BorderLayout.NORTH);
 
-        // details: Lưu các dòng chi tiết.
+        // details: LÆ°u cÃ¡c dÃ²ng chi tiáº¿t.
         String details = "<html><b>" + escape(product.getTenSanPham()) + "</b><br>"
                 + escape(product.getTenDanhMuc()) + "<br><font color='#087b43'>"
-                + String.format("%,.0f đ", product.getGiaBan()) + " · Tồn "
+                + String.format("%,.0f Ä‘", product.getGiaBan()) + " Â· Tá»“n "
                 + product.getTonKho() + "</font></html>";
-        // lblDescription: Nhãn hiển thị mô tả.
+        // lblDescription: NhÃ£n hiá»ƒn thá»‹ mÃ´ táº£.
         JLabel lblDescription = new JLabel(details);
         lblDescription.setFont(UIStyle.font(Font.PLAIN, 13));
         pnlCard.add(lblDescription, BorderLayout.CENTER);
 
         entity.ThanhToan daThem = timTrongGio(product.getMaSanPham());
-        // btnAdd: Nút thao tác thêm.
-        JButton btnAdd = UIStyle.nutXanh(daThem == null ? "Thêm vào giỏ hàng"
-                : "Đã thêm · SL " + daThem.getSoLuong() + " · thêm tiếp");
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // btnAdd: NÃºt thao tÃ¡c thÃªm.
+        JButton btnAdd = UIStyle.nutXanh(daThem == null ? "ThÃªm vÃ o giá» hÃ ng"
+                : "ÄÃ£ thÃªm Â· SL " + daThem.getSoLuong() + " Â· thÃªm tiáº¿p");
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         btnAdd.addActionListener(e -> themVaoGio(product));
         pnlCard.add(btnAdd, BorderLayout.SOUTH);
         return pnlCard;
     }
 
-    // Tìm trong giờ.
-    // Tham số maSanPham: mã sản phẩm.
-    // Kết quả: đối tượng/giá trị kiểu entity.ThanhToan.
+    // TÃ¬m trong giá».
+    // Tham sá»‘ maSanPham: mÃ£ sáº£n pháº©m.
+    // Káº¿t quáº£: Ä‘á»‘i tÆ°á»£ng/giÃ¡ trá»‹ kiá»ƒu entity.ThanhToan.
     private entity.ThanhToan timTrongGio(String maSanPham) {
-        for (entity.ThanhToan item : UI.PhienLamViecUI.gioHang()) {
+        for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
             if (maSanPham.equals(item.getMaSanPham()))
                 return item;
         }
         return null;
     }
 
-    // Cộng số lượng các mặt hàng trong giỏ.
-    // Kết quả: giá trị số nguyên.
+    // Cá»™ng sá»‘ lÆ°á»£ng cÃ¡c máº·t hÃ ng trong giá».
+    // Káº¿t quáº£: giÃ¡ trá»‹ sá»‘ nguyÃªn.
     private int tongSoLuongTrongGio() {
-        return UI.PhienLamViecUI.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
+        return control.PhienLamViecControl.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
     }
 
-    // Thêm vào giờ.
-    // Tham số product: sản phẩm.
+    // ThÃªm vÃ o giá».
+    // Tham sá»‘ product: sáº£n pháº©m.
     private void themVaoGio(SanPham product) {
         entity.ThanhToan item = timTrongGio(product.getMaSanPham());
         if (item != null) {
             if (item.getSoLuong() >= product.getTonKho()) {
-                JOptionPane.showMessageDialog(this, "Số lượng trong giỏ đã bằng tồn kho hiện có.",
-                        "Không đủ tồn kho", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Sá»‘ lÆ°á»£ng trong giá» Ä‘Ã£ báº±ng tá»“n kho hiá»‡n cÃ³.",
+                        "KhÃ´ng Ä‘á»§ tá»“n kho", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             item.setSoLuong(item.getSoLuong() + 1);
         } else {
             if (product.getTonKho() < 1)
                 return;
-            UI.PhienLamViecUI.gioHang().add(entity.ThanhToan.sanPham(
+            control.PhienLamViecControl.gioHang().add(entity.ThanhToan.sanPham(
                     product.getMaSanPham(), product.getTenSanPham(), BigDecimal.valueOf(product.getGiaBan())));
         }
         napLai();
@@ -237,17 +237,17 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
      * Cache de khong phai mo va scale anh moi lan tim kiem / thay doi bo loc.
      */
     private Icon anhSanPham(SanPham product) {
-        // maSanPham: Lưu mã sản phẩm.
+        // maSanPham: LÆ°u mÃ£ sáº£n pháº©m.
         String maSanPham = product == null ? null : product.getMaSanPham();
         if (maSanPham == null || !maSanPham.matches("[A-Za-z0-9_-]+")) {
-            return new TextIcon("Chưa có ảnh sản phẩm");
+            return new TextIcon("ChÆ°a cÃ³ áº£nh sáº£n pháº©m");
         }
         return anhSanPhamCache.computeIfAbsent(maSanPham, this::taiAnhTheoMa);
     }
 
-    // Tải ảnh theo mã.
-    // Tham số maSanPham: mã sản phẩm.
-    // Kết quả: đối tượng/giá trị kiểu Icon.
+    // Táº£i áº£nh theo mÃ£.
+    // Tham sá»‘ maSanPham: mÃ£ sáº£n pháº©m.
+    // Káº¿t quáº£: Ä‘á»‘i tÆ°á»£ng/giÃ¡ trá»‹ kiá»ƒu Icon.
     private Icon taiAnhTheoMa(String maSanPham) {
         for (String extension : new String[] { ".png", ".jpg", ".jpeg" }) {
             String tenFile = maSanPham + extension;
@@ -260,7 +260,7 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
 
             // Khi chay Java truc tiep tu thu muc project (khong dong goi JAR).
             if (nguon == null || nguon.getIconWidth() <= 0) {
-                // file: Đường dẫn tệp dùng cho tệp.
+                // file: ÄÆ°á»ng dáº«n tá»‡p dÃ¹ng cho tá»‡p.
                 File file = new File("src/img/products/", tenFile);
                 if (!file.isFile()) {
                     file = new File("img/products/", tenFile);
@@ -279,9 +279,9 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
                 int rongAnh = Math.max(1, (int) Math.round(nguon.getIconWidth() * tyLe));
                 int caoAnh = Math.max(1, (int) Math.round(nguon.getIconHeight() * tyLe));
 
-                // ve: Ảnh trong bộ nhớ dùng cho về.
+                // ve: áº¢nh trong bá»™ nhá»› dÃ¹ng cho vá».
                 BufferedImage ve = new BufferedImage(rongKhung, caoKhung, BufferedImage.TYPE_INT_ARGB);
-                // g: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
+                // g: Ngá»¯ cáº£nh váº½ dÃ¹ng Ä‘á»ƒ thiáº¿t láº­p mÃ u, phÃ´ng vÃ  váº½ ná»™i dung.
                 Graphics2D g = ve.createGraphics();
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
                 g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
@@ -291,34 +291,34 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
                 return new ImageIcon(ve);
             }
         }
-        return new TextIcon("Chưa có ảnh sản phẩm");
+        return new TextIcon("ChÆ°a cÃ³ áº£nh sáº£n pháº©m");
     }
 
-    // Mã hóa các ký tự đặc biệt trước khi hiển thị chuỗi trong HTML.
-    // Tham số value: giá trị.
-    // Kết quả: chuỗi kết quả.
+    // MÃ£ hÃ³a cÃ¡c kÃ½ tá»± Ä‘áº·c biá»‡t trÆ°á»›c khi hiá»ƒn thá»‹ chuá»—i trong HTML.
+    // Tham sá»‘ value: giÃ¡ trá»‹.
+    // Káº¿t quáº£: chuá»—i káº¿t quáº£.
     private String escape(String value) {
         return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    // Mở danh sách đã chọn.
+    // Má»Ÿ danh sÃ¡ch Ä‘Ã£ chá»n.
     private void moDanhSachDaChon() {
-        // model: Mô hình lưu dữ liệu và cung cấp các ô cho bảng giao diện.
+        // model: MÃ´ hÃ¬nh lÆ°u dá»¯ liá»‡u vÃ  cung cáº¥p cÃ¡c Ã´ cho báº£ng giao diá»‡n.
         DefaultTableModel model = new DefaultTableModel(
-                new String[] { "Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền" }, 0) {
-            // Quy định ô của bảng có được chỉnh sửa trực tiếp hay không.
-            // Tham số row: chỉ số dòng.
-            // Tham số column: chỉ số cột.
-            // Kết quả: true/false theo điều kiện xử lý.
+                new String[] { "MÃ£ SP", "TÃªn sáº£n pháº©m", "Sá»‘ lÆ°á»£ng", "ÄÆ¡n giÃ¡", "ThÃ nh tiá»n" }, 0) {
+            // Quy Ä‘á»‹nh Ã´ cá»§a báº£ng cÃ³ Ä‘Æ°á»£c chá»‰nh sá»­a trá»±c tiáº¿p hay khÃ´ng.
+            // Tham sá»‘ row: chá»‰ sá»‘ dÃ²ng.
+            // Tham sá»‘ column: chá»‰ sá»‘ cá»™t.
+            // Káº¿t quáº£: true/false theo Ä‘iá»u kiá»‡n xá»­ lÃ½.
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 2;
             }
 
-            // Cập nhật giá trị được nhập vào ô của bảng.
-            // Tham số value: giá trị tại mới.
-            // Tham số row: chỉ số dòng.
-            // Tham số column: chỉ số cột.
+            // Cáº­p nháº­t giÃ¡ trá»‹ Ä‘Æ°á»£c nháº­p vÃ o Ã´ cá»§a báº£ng.
+            // Tham sá»‘ value: giÃ¡ trá»‹ táº¡i má»›i.
+            // Tham sá»‘ row: chá»‰ sá»‘ dÃ²ng.
+            // Tham sá»‘ column: chá»‰ sá»‘ cá»™t.
             @Override
             public void setValueAt(Object value, int row, int column) {
                 if (column != 2) {
@@ -332,38 +332,38 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
                         throw new NumberFormatException();
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(GoiYThucAnUI.this,
-                            "Số lượng phải là số nguyên lớn hơn 0.", "Số lượng không hợp lệ",
+                            "Sá»‘ lÆ°á»£ng pháº£i lÃ  sá»‘ nguyÃªn lá»›n hÆ¡n 0.", "Sá»‘ lÆ°á»£ng khÃ´ng há»£p lá»‡",
                             JOptionPane.WARNING_MESSAGE);
                     fireTableCellUpdated(row, column);
                     return;
                 }
 
                 String code = String.valueOf(getValueAt(row, 0));
-                for (entity.ThanhToan item : UI.PhienLamViecUI.gioHang()) {
+                for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
                     if (code.equals(item.getMaSanPham())) {
                         final int tonKho;
                         try {
                             tonKho = dao.layTonKho(code);
                         } catch (SQLException ex) {
                             JOptionPane.showMessageDialog(GoiYThucAnUI.this,
-                                    "Không kiểm tra được tồn kho; số lượng chưa thay đổi.\n" + ex.getMessage(),
-                                    "Không kiểm tra được tồn kho", JOptionPane.ERROR_MESSAGE);
+                                    "KhÃ´ng kiá»ƒm tra Ä‘Æ°á»£c tá»“n kho; sá»‘ lÆ°á»£ng chÆ°a thay Ä‘á»•i.\n" + ex.getMessage(),
+                                    "KhÃ´ng kiá»ƒm tra Ä‘Æ°á»£c tá»“n kho", JOptionPane.ERROR_MESSAGE);
                             fireTableCellUpdated(row, column);
                             return;
                         }
                         if (quantity > tonKho) {
                             JOptionPane.showMessageDialog(GoiYThucAnUI.this,
-                                    "Số lượng yêu cầu (" + quantity + ") vượt tồn hiện tại (" + tonKho
-                                            + "). Số lượng trong giỏ được giữ nguyên.",
-                                    "Không đủ tồn kho", JOptionPane.WARNING_MESSAGE);
+                                    "Sá»‘ lÆ°á»£ng yÃªu cáº§u (" + quantity + ") vÆ°á»£t tá»“n hiá»‡n táº¡i (" + tonKho
+                                            + "). Sá»‘ lÆ°á»£ng trong giá» Ä‘Æ°á»£c giá»¯ nguyÃªn.",
+                                    "KhÃ´ng Ä‘á»§ tá»“n kho", JOptionPane.WARNING_MESSAGE);
                             fireTableCellUpdated(row, column);
                             return;
                         }
                         item.setSoLuong(quantity);
                         super.setValueAt(quantity, row, column);
-                        super.setValueAt(String.format("%,.0f đ", item.getThanhTien()), row, 4);
-                        // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-                        btnSelectedButton.setText("Giỏ hàng (" + tongSoLuongTrongGio() + ")");
+                        super.setValueAt(String.format("%,.0f Ä‘", item.getThanhTien()), row, 4);
+                        // Cáº­p nháº­t ná»™i dung chá»¯ hiá»ƒn thá»‹ trong control báº±ng setText().
+                        btnSelectedButton.setText("Giá» hÃ ng (" + tongSoLuongTrongGio() + ")");
                         napLai();
                         return;
                     }
@@ -371,52 +371,52 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
                 fireTableCellUpdated(row, column);
             }
         };
-        for (entity.ThanhToan item : UI.PhienLamViecUI.gioHang()) {
+        for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
             model.addRow(new Object[] { item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
-                    String.format("%,.0f đ", item.getDonGia()), String.format("%,.0f đ", item.getThanhTien()) });
+                    String.format("%,.0f Ä‘", item.getDonGia()), String.format("%,.0f Ä‘", item.getThanhTien()) });
         }
-        // tblDuLieu: Bảng hiển thị các dòng do mô hình dữ liệu cung cấp.
+        // tblDuLieu: Báº£ng hiá»ƒn thá»‹ cÃ¡c dÃ²ng do mÃ´ hÃ¬nh dá»¯ liá»‡u cung cáº¥p.
         JTable tblDuLieu = new JTable(model);
-        tblDuLieu.setToolTipText("Bấm đúp vào ô trong cột Số lượng để chỉnh sửa.");
+        tblDuLieu.setToolTipText("Báº¥m Ä‘Ãºp vÃ o Ã´ trong cá»™t Sá»‘ lÆ°á»£ng Ä‘á»ƒ chá»‰nh sá»­a.");
         UIStyle.taoBang(tblDuLieu, 1, 2, 3);
-        // btnRemove: Nút thao tác xóa.
-        JButton btnRemove = UIStyle.nutXoa("Xóa sản phẩm khỏi giỏ");
-        // btnCheckout: Nút thao tác thanh toán.
-        JButton btnCheckout = UIStyle.nutXanh("Chuyển sang thanh toán");
-        btnCheckout.setEnabled(!UI.PhienLamViecUI.gioHang().isEmpty());
-        // btnClose: Nút thao tác đóng.
-        JButton btnClose = UIStyle.nutPhu("Đóng");
-        // pnlActions: Khung chứa thành phần giao diện thao tác.
+        // btnRemove: NÃºt thao tÃ¡c xÃ³a.
+        JButton btnRemove = UIStyle.nutXoa("XÃ³a sáº£n pháº©m khá»i giá»");
+        // btnCheckout: NÃºt thao tÃ¡c thanh toÃ¡n.
+        JButton btnCheckout = UIStyle.nutXanh("Chuyá»ƒn sang thanh toÃ¡n");
+        btnCheckout.setEnabled(!control.PhienLamViecControl.gioHang().isEmpty());
+        // btnClose: NÃºt thao tÃ¡c Ä‘Ã³ng.
+        JButton btnClose = UIStyle.nutPhu("ÄÃ³ng");
+        // pnlActions: Khung chá»©a thÃ nh pháº§n giao diá»‡n thao tÃ¡c.
         JPanel pnlActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlActions.add(btnRemove);
         pnlActions.add(btnCheckout);
         pnlActions.add(btnClose);
-        // pnlContent: Khung chứa thành phần giao diện nội dung.
+        // pnlContent: Khung chá»©a thÃ nh pháº§n giao diá»‡n ná»™i dung.
         JPanel pnlContent = new JPanel(new BorderLayout(8, 8));
         pnlContent.setPreferredSize(new Dimension(760, 340));
-        pnlContent.add(new JLabel("Bấm đúp vào cột Số lượng để nhập số lượng mới."), BorderLayout.NORTH);
+        pnlContent.add(new JLabel("Báº¥m Ä‘Ãºp vÃ o cá»™t Sá»‘ lÆ°á»£ng Ä‘á»ƒ nháº­p sá»‘ lÆ°á»£ng má»›i."), BorderLayout.NORTH);
         pnlContent.add(new JScrollPane(tblDuLieu), BorderLayout.CENTER);
         pnlContent.add(pnlActions, BorderLayout.SOUTH);
         Window winOwner = SwingUtilities.getWindowAncestor(this);
-        // winDialog: Hộp thoại hộp thoại.
-        JDialog winDialog = new JDialog(winOwner, "Giỏ hàng", Dialog.ModalityType.APPLICATION_MODAL);
+        // winDialog: Há»™p thoáº¡i há»™p thoáº¡i.
+        JDialog winDialog = new JDialog(winOwner, "Giá» hÃ ng", Dialog.ModalityType.APPLICATION_MODAL);
         winDialog.setContentPane(pnlContent);
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         btnRemove.addActionListener(e -> {
             if (tblDuLieu.isEditing() && !tblDuLieu.getCellEditor().stopCellEditing())
                 return;
-            // row: Lưu chỉ số dòng.
+            // row: LÆ°u chá»‰ sá»‘ dÃ²ng.
             int row = tblDuLieu.getSelectedRow();
             if (row < 0)
                 return;
-            // maSanPham: Lưu mã sản phẩm.
+            // maSanPham: LÆ°u mÃ£ sáº£n pháº©m.
             String maSanPham = String.valueOf(model.getValueAt(tblDuLieu.convertRowIndexToModel(row), 0));
-            UI.PhienLamViecUI.gioHang().removeIf(item -> maSanPham.equals(item.getMaSanPham()));
+            control.PhienLamViecControl.gioHang().removeIf(item -> maSanPham.equals(item.getMaSanPham()));
             model.removeRow(tblDuLieu.convertRowIndexToModel(row));
-            btnCheckout.setEnabled(!UI.PhienLamViecUI.gioHang().isEmpty());
+            btnCheckout.setEnabled(!control.PhienLamViecControl.gioHang().isEmpty());
             napLai();
         });
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         btnCheckout.addActionListener(e -> {
             if (tblDuLieu.isEditing() && !tblDuLieu.getCellEditor().stopCellEditing())
                 return;
@@ -426,48 +426,48 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
             } else if (winOwner instanceof TrangChuUI) {
                 ((TrangChuUI) winOwner).moThanhToanTuGioHang();
             } else {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy màn hình thanh toán.",
-                        "Giỏ hàng", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "KhÃ´ng tÃ¬m tháº¥y mÃ n hÃ¬nh thanh toÃ¡n.",
+                        "Giá» hÃ ng", JOptionPane.ERROR_MESSAGE);
             }
         });
-        // Đăng ký hành động xử lý khi người dùng kích hoạt control này.
+        // ÄÄƒng kÃ½ hÃ nh Ä‘á»™ng xá»­ lÃ½ khi ngÆ°á»i dÃ¹ng kÃ­ch hoáº¡t control nÃ y.
         btnClose.addActionListener(e -> winDialog.dispose());
         winDialog.pack();
         winDialog.setLocationRelativeTo(this);
         winDialog.setVisible(true);
     }
 
-    // Nhóm dữ liệu hoặc chức năng chữ biểu tượng dùng trong GoiYThucAnPanel.
+    // NhÃ³m dá»¯ liá»‡u hoáº·c chá»©c nÄƒng chá»¯ biá»ƒu tÆ°á»£ng dÃ¹ng trong GoiYThucAnPanel.
     private static final class TextIcon implements Icon {
-        // text: Lưu nội dung chữ.
+        // text: LÆ°u ná»™i dung chá»¯.
         private final String text;
 
-        // Khởi tạo đối tượng từ các giá trị được truyền vào.
-        // Tham số text: nội dung chữ.
+        // Khá»Ÿi táº¡o Ä‘á»‘i tÆ°á»£ng tá»« cÃ¡c giÃ¡ trá»‹ Ä‘Æ°á»£c truyá»n vÃ o.
+        // Tham sá»‘ text: ná»™i dung chá»¯.
         private TextIcon(String text) {
             this.text = text;
         }
 
-        // Trả về chiều rộng của biểu tượng.
+        // Tráº£ vá» chiá»u rá»™ng cá»§a biá»ƒu tÆ°á»£ng.
         @Override
         public int getIconWidth() {
             return 150;
         }
 
-        // Trả về chiều cao của biểu tượng.
+        // Tráº£ vá» chiá»u cao cá»§a biá»ƒu tÆ°á»£ng.
         @Override
         public int getIconHeight() {
             return 110;
         }
 
-        // Vẽ biểu tượng tại vị trí được yêu cầu.
-        // Tham số component: thành phần giao diện.
-        // Tham số graphics: ngữ cảnh vẽ.
-        // Tham số x: tọa độ ngang.
-        // Tham số y: tọa độ dọc.
+        // Váº½ biá»ƒu tÆ°á»£ng táº¡i vá»‹ trÃ­ Ä‘Æ°á»£c yÃªu cáº§u.
+        // Tham sá»‘ component: thÃ nh pháº§n giao diá»‡n.
+        // Tham sá»‘ graphics: ngá»¯ cáº£nh váº½.
+        // Tham sá»‘ x: tá»a Ä‘á»™ ngang.
+        // Tham sá»‘ y: tá»a Ä‘á»™ dá»c.
         @Override
         public void paintIcon(Component component, Graphics graphics, int x, int y) {
-            // g: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
+            // g: Ngá»¯ cáº£nh váº½ dÃ¹ng Ä‘á»ƒ thiáº¿t láº­p mÃ u, phÃ´ng vÃ  váº½ ná»™i dung.
             Graphics2D g = (Graphics2D) graphics.create();
             g.setColor(new Color(246, 249, 252));
             g.fillRect(x, y, getIconWidth(), getIconHeight());

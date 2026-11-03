@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import entity.Voucher;
 
 import java.sql.*;
@@ -16,7 +18,7 @@ public class VoucherDAO {
         // Tham số tuKhoa: từ khóa tìm kiếm.
         // Kết quả: đối tượng/giá trị kiểu ArrayList<Voucher>.
         public ArrayList<Voucher> getAll(String tuKhoa) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
                 // list: Danh sách chứa các phần tử kiểu Voucher.
                 ArrayList<Voucher> list = new ArrayList<>();
@@ -131,7 +133,7 @@ public class VoucherDAO {
         // Tham số v: giá trị đầu vào.
         // Kết quả: chuỗi kết quả.
         public String them(Voucher v) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
                 // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
                 // lệnh.
@@ -174,7 +176,7 @@ public class VoucherDAO {
         // Tham số v: giá trị đầu vào.
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean sua(Voucher v) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
                 // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
                 // tham số nếu có.
@@ -209,7 +211,7 @@ public class VoucherDAO {
         // Tham số hoatDong: đang hoạt động.
         // Kết quả: true/false theo điều kiện xử lý.
         public boolean doiTrangThai(String maVoucher, boolean hoatDong) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
                 // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
                 // tham số nếu có.
@@ -241,7 +243,7 @@ public class VoucherDAO {
         // Tham số maVoucher: mã voucher.
         // Kết quả: chuỗi kết quả.
         public String xoa(String maVoucher) {
-                PhanQuyen.yeuCau(PhanQuyen.Quyen.VOUCHER);
+                PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
                 // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
                 // lệnh.

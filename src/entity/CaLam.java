@@ -2,18 +2,13 @@ package entity;
 
 import java.time.LocalTime;
 
-/**
- * Entity tương ứng bảng CaLam trong SQL Server.
- * SQL TIME được ánh xạ thành java.time.LocalTime, không dùng String.
- */
 public class CaLam {
     private String maCa;
     private String tenCa;
     private LocalTime gioBatDau;
     private LocalTime gioKetThuc;
 
-    public CaLam() {
-    }
+    public CaLam() {}
 
     public CaLam(String maCa, String tenCa, LocalTime gioBatDau, LocalTime gioKetThuc) {
         this.maCa = maCa;

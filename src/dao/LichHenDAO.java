@@ -1,5 +1,7 @@
 package dao;
 
+import control.PhanQuyenControl;
+
 import entity.LichHen;
 
 import java.sql.Connection;
@@ -49,7 +51,7 @@ public class LichHenDAO {
     // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
     // Kết quả: đối tượng/giá trị kiểu ArrayList<LichHen>.
     public ArrayList<LichHen> getAll() {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.LICH_HEN_SPA);
         // list: Danh sách chứa các phần tử kiểu LichHen.
         ArrayList<LichHen> list = new ArrayList<>();
 
@@ -118,7 +120,7 @@ public class LichHenDAO {
 
     /** Hủy mềm để bảo toàn lịch sử, không hủy lịch đã có phiếu dịch vụ. */
     public boolean huy(String maLichHen) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.LICH_HEN_SPA);
         // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
         // tham số nếu có.
         String sql = "UPDATE LichHen SET trangThai = N'Đã hủy' "
@@ -141,7 +143,7 @@ public class LichHenDAO {
     // =========================================================
     /** Tên phương thức tương thích code cũ; luôn hủy mềm, không DELETE. */
     public boolean xoa(String maLichHen) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.LICH_HEN_SPA);
         return huy(maLichHen);
     }
 
@@ -237,7 +239,7 @@ public class LichHenDAO {
     // Tham số lh: lịch hẹn cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean them(LichHen lh) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.LICH_HEN_SPA);
         if (lh == null) {
             throw new IllegalArgumentException("Thông tin lịch hẹn không hợp lệ.");
         }
@@ -287,7 +289,7 @@ public class LichHenDAO {
     // Tham số lh: lịch hẹn cần xử lý.
     // Kết quả: true/false theo điều kiện xử lý.
     public boolean sua(LichHen lh) {
-        PhanQuyen.yeuCau(PhanQuyen.Quyen.LICH_HEN_SPA);
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.LICH_HEN_SPA);
         if (lh == null) {
             throw new IllegalArgumentException("Thông tin lịch hẹn không hợp lệ.");
         }

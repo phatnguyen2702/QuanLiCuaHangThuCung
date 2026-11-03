@@ -864,15 +864,15 @@ public class SanPhamUI extends JFrame implements ActionListener {
     // =========================================================
 
     /**
-     * 
+     *
      * Form Them / Sua san pham - dung cac cot cua tblDuLieu2 SanPham:
-     * 
+     *
      * ma, ten, giaNhap, giaBan, maDanhMuc, maNhaCungCap.
-     * 
+     *
      * Ton kho khong phai cot cua SanPham, nen o "Them so luong" duoc luu thanh
-     * 
+     *
      * 1 phieu nhap kho hoan tat (ton = tong nhap - ban +/- kiem ke van khop).
-     * 
+     *
      */
 
     private static class SanPhamDialog extends JDialog {
