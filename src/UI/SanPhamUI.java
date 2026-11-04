@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChuUI.PhienLamViec;
+import control.PhienLamViecControl;
 import UI.TrangChuUI.UIStyle;
 import dao.SanPhamDAO;
 import entity.DanhMuc;
@@ -751,7 +751,7 @@ public class SanPhamUI extends JFrame implements ActionListener {
         try {
             dao.xuLyHangTheoDot(sp.getMaSanPham(), sp.getMaPhieuNhap(),
                     soLuongXuLy, (String) lyDo.getSelectedItem(), ghiChu.getText(),
-                    PhienLamViec.maNV);
+                    PhienLamViecControl.maNV);
             UIStyle.thongBao(this, "Đã xác nhận hủy hàng lỗi. Số lượng đã được trừ khỏi tồn kho và lưu lịch sử xử lý.");
             napLai();
         } catch (SQLException ex) {
@@ -1404,7 +1404,7 @@ public class SanPhamUI extends JFrame implements ActionListener {
             try {
                 dao.luuSanPhamDayDu(sp, dangSua, dm.getTenDanhMuc(),
                         (String) cmbNhomTuoi.getSelectedItem(),
-                        (String) cmbKichThuoc.getSelectedItem(), PhienLamViec.maNV);
+                        (String) cmbKichThuoc.getSelectedItem(), PhienLamViecControl.maNV);
 
                 String loiAnh = null;
                 try {

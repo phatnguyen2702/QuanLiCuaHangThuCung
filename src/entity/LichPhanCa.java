@@ -1,25 +1,36 @@
 package entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class LichPhanCa {
     private String maPhanCa;
     private LocalDate ngayLamViec;
-    private String maNhanVien;
-    private String maCa;
+    private NhanVien nhanVien;
+    private CaLam caLam;
     private String hoTen;
     private String tenCa;
-    private String gioBatDau;
-    private String gioKetThuc;
+    private LocalDateTime gioBatDau;
+    private LocalDateTime gioKetThuc;
 
-    public LichPhanCa() {}
+    public LichPhanCa() {
+    }
 
     public LichPhanCa(String maPhanCa, LocalDate ngayLamViec,
             String maNhanVien, String maCa) {
         this.maPhanCa = maPhanCa;
         this.ngayLamViec = ngayLamViec;
-        this.maNhanVien = maNhanVien;
-        this.maCa = maCa;
+        setMaNhanVien(maNhanVien);
+        setMaCa(maCa);
+    }
+
+    public LichPhanCa(String maPhanCa, LocalDate ngayLamViec,
+            NhanVien nhanVien, CaLam caLam) {
+        this.maPhanCa = maPhanCa;
+        this.ngayLamViec = ngayLamViec;
+        this.nhanVien = nhanVien;
+        this.caLam = caLam;
     }
 
     public String getMaPhanCa() {
@@ -39,19 +50,41 @@ public class LichPhanCa {
     }
 
     public String getMaNhanVien() {
-        return maNhanVien;
+        return nhanVien == null ? null : nhanVien.getMaNhanVien();
     }
 
     public void setMaNhanVien(String maNhanVien) {
-        this.maNhanVien = maNhanVien;
+        this.nhanVien = maNhanVien == null ? null : new NhanVien();
+        if (this.nhanVien != null) {
+            this.nhanVien.setMaNhanVien(maNhanVien);
+        }
+    }
+
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
+
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
     }
 
     public String getMaCa() {
-        return maCa;
+        return caLam == null ? null : caLam.getMaCa();
     }
 
     public void setMaCa(String maCa) {
-        this.maCa = maCa;
+        this.caLam = maCa == null ? null : new CaLam();
+        if (this.caLam != null) {
+            this.caLam.setMaCa(maCa);
+        }
+    }
+
+    public CaLam getCaLam() {
+        return caLam;
+    }
+
+    public void setCaLam(CaLam caLam) {
+        this.caLam = caLam;
     }
 
     public String getHoTen() {
@@ -70,34 +103,35 @@ public class LichPhanCa {
         this.tenCa = tenCa;
     }
 
-    public String getGioBatDau() {
+    public LocalDateTime getGioBatDau() {
         return gioBatDau;
     }
 
-    public void setGioBatDau(String gioBatDau) {
+    public void setGioBatDau(LocalDateTime gioBatDau) {
         this.gioBatDau = gioBatDau;
     }
 
-    public String getGioKetThuc() {
+    public LocalDateTime getGioKetThuc() {
         return gioKetThuc;
     }
 
-    public void setGioKetThuc(String gioKetThuc) {
+    public void setGioKetThuc(LocalDateTime gioKetThuc) {
         this.gioKetThuc = gioKetThuc;
     }
 
     public String getThongTinCa() {
         if (tenCa == null) {
-            return maCa;
+            return getMaCa();
         }
 
         if (gioBatDau != null && gioKetThuc != null) {
-            return maCa + " - " + tenCa
-                    + ": " + gioBatDau
-                    + "-" + gioKetThuc;
+            DateTimeFormatter gio = DateTimeFormatter.ofPattern("HH:mm");
+            return getMaCa() + " - " + tenCa
+                    + ": " + gioBatDau.format(gio)
+                    + "-" + gioKetThuc.format(gio);
         }
 
-        return maCa + " - " + tenCa;
+        return getMaCa() + " - " + tenCa;
     }
 
     @Override

@@ -10,8 +10,6 @@ import entity.LichHen;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,7 +37,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 
-public class TrangChuUI extends JFrame implements ActionListener, MouseListener {
+public class TrangChuUI extends JFrame implements ActionListener {
 
     private final Color LIGHT_BLUE = new Color(229, 241, 252);
     private final Color MENU_BLUE = new Color(207, 222, 235);
@@ -99,8 +97,6 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
         this.vaiTro = vaiTro;
 
         control.kiemTraPhien(maNV, vaiTro);
-
-        PhienLamViec.dat(maNV, hoTen, vaiTro);
 
         PhienLamViecControl.dat(maNV, hoTen, vaiTro);
 
@@ -333,7 +329,7 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
     }
 
     private void moQuanLyTaiKhoan() {
-        hienManHinh("taikhoan", "Quản lý tài khoản", btnHeThong,
+        hienManHinh("taikhoan", "Quản lý nhân viên", btnHeThong,
                 QuanLyNhanVienUI::new);
     }
 
@@ -760,7 +756,6 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
 
     private void dangXuat() {
         PhienLamViecControl.dat(null, null, null);
-        PhienLamViec.dat(null, null, null);
         dispose();
         new DangNhapUI().setVisible(true);
     }
@@ -1276,21 +1271,6 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
         pnlParent.add(Box.createVerticalStrut(5));
     }
 
-    public static final class PhienLamViec {
-        public static String maNV;
-        public static String hoTen;
-        public static String vaiTro;
-
-        private PhienLamViec() {
-        }
-
-        public static void dat(String ma, String ten, String role) {
-            maNV = ma;
-            hoTen = ten;
-            vaiTro = role;
-        }
-    }
-
     public static final class UIStyle {
         public static final Color NAVY = new Color(18, 48, 82);
         public static final Color LIGHT_BLUE = new Color(229, 241, 252);
@@ -1667,26 +1647,6 @@ public class TrangChuUI extends JFrame implements ActionListener, MouseListener 
                 hanhDong.run();
             }
         }
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
     }
 
 }

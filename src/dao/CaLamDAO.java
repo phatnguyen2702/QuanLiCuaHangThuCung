@@ -47,7 +47,7 @@ public class CaLamDAO {
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
-                String maMoi = MaTuDongDAO.taoMaTrongGiaoDich(con, MaTuDongDAO.Loai.CA_LAM);
+                String maMoi = taoMaTrongGiaoDich(con);
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, maMoi);
                     ps.setString(2, ca.getTenCa());
@@ -63,6 +63,36 @@ public class CaLamDAO {
                 con.rollback();
                 throw ex;
             }
+        }
+    }
+
+    public String goiYMa() {
+        try (Connection con = connectDB.getConnection()) {
+            return taoMa(con, false);
+        } catch (SQLException ex) {
+            return "Tự động khi lưu";
+        }
+    }
+
+    private static String taoMaTrongGiaoDich(Connection con) throws SQLException {
+        if (con.getAutoCommit()) {
+            throw new SQLException("Phải bắt đầu transaction trước khi sinh mã ca làm.");
+        }
+        return taoMa(con, true);
+    }
+
+    private static String taoMa(Connection con, boolean khoaBang) throws SQLException {
+        String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maCa, 3, 3))), 0) "
+                + "FROM dbo.CaLam" + (khoaBang ? " WITH (TABLOCKX, HOLDLOCK)" : "")
+                + " WHERE maCa LIKE 'CA[0-9][0-9][0-9]'";
+        try (PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            if (!rs.next())
+                throw new SQLException("Không đọc được mã ca làm mới.");
+            int tiepTheo = rs.getInt(1) + 1;
+            if (tiepTheo > 999)
+                throw new SQLException("Đã hết mã ca làm trong giới hạn hiện tại.");
+            return String.format(java.util.Locale.ROOT, "CA%03d", tiepTheo);
         }
     }
 
