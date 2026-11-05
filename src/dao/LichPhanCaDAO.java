@@ -9,6 +9,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -329,7 +330,7 @@ public class LichPhanCaDAO {
     private List<LichPhanCa> layLichNguon(Connection con, LocalDate dauTuan,
             Map<String, LocalTime[]> gioTheoCa) throws SQLException {
         String sql = "SELECT pc.ngayLamViec, pc.maNhanVien, pc.maCa, c.gioBatDau, c.gioKetThuc " +
-                "FROM LichPhanCa pc WITH (HOLDLOCK) JOIN CaLam c ON c.maCa=pc.maCa " +
+                "FROM LichPhanCa pc JOIN CaLam c ON c.maCa = pc.maCa " +
                 "WHERE pc.ngayLamViec BETWEEN ? AND ? " +
                 "ORDER BY pc.ngayLamViec, pc.maNhanVien, c.gioBatDau";
         List<LichPhanCa> ds = new ArrayList<>();
@@ -350,8 +351,8 @@ public class LichPhanCaDAO {
 
     private List<KhungCa> layLichDaCo(Connection con, LocalDate dauTuan) throws SQLException {
         String sql = "SELECT pc.ngayLamViec, pc.maNhanVien, c.gioBatDau, c.gioKetThuc " +
-                "FROM LichPhanCa pc WITH (UPDLOCK, HOLDLOCK) " +
-                "JOIN CaLam c ON c.maCa=pc.maCa " +
+                "FROM LichPhanCa pc " +
+                "JOIN CaLam c ON c.maCa = pc.maCa " +
                 "WHERE pc.ngayLamViec BETWEEN ? AND ?";
         List<KhungCa> ds = new ArrayList<>();
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -367,16 +368,13 @@ public class LichPhanCaDAO {
     }
 
     private int soPhanCaLonNhat(Connection con) throws SQLException {
-        int lonNhat = 0;
         try (PreparedStatement ps = con.prepareStatement(
-                "SELECT MAX(CAST(SUBSTRING(maPhanCa, 3, 10) AS INT)) FROM LichPhanCa "
-                        + "WITH (UPDLOCK, HOLDLOCK) WHERE maPhanCa LIKE 'PC[0-9]%'");
+                "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maPhanCa, 3, 10))), 0) " +
+                        "FROM LichPhanCa " +
+                        "WHERE maPhanCa LIKE 'PC[0-9]%'");
                 ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                lonNhat = rs.getInt(1);
-            }
+            return rs.next() ? rs.getInt(1) : 0;
         }
-        return lonNhat;
     }
 
     public KetQuaSaoChep saoChepLichTheoTuan(LocalDate ngayNguon, LocalDate ngayDich)
@@ -393,7 +391,6 @@ public class LichPhanCaDAO {
 
         String sqlThem = "INSERT INTO LichPhanCa (maPhanCa, ngayLamViec, maNhanVien, maCa) VALUES (?, ?, ?, ?)";
         try (Connection con = connectDB.getConnection()) {
-            con.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             con.setAutoCommit(false);
             try {
                 Map<String, LocalTime[]> gioTheoCa = new HashMap<>();
@@ -405,17 +402,18 @@ public class LichPhanCaDAO {
 
                 try (PreparedStatement ps = con.prepareStatement(sqlThem)) {
                     for (LichPhanCa pc : lichNguon) {
-                        LocalDate ngayMoi = dauDich.plusDays(java.time.temporal.ChronoUnit.DAYS
-                                .between(dauNguon, pc.getNgayLamViec()));
+                        LocalDate ngayMoi = dauDich.plusDays(
+                                ChronoUnit.DAYS.between(dauNguon, pc.getNgayLamViec()));
                         if (ngayMoi.isBefore(homNay)) {
                             quaKhu++;
                             continue;
                         }
 
                         LocalTime[] gio = gioTheoCa.get(pc.getMaCa());
+                        if (gio == null)
+                            throw new SQLException("Không tìm thấy giờ cho ca làm: " + pc.getMaCa());
                         KhungCa caMoi = new KhungCa(ngayMoi, pc.getMaNhanVien(), gio[0], gio[1]);
-                        boolean biTrung = daCo.stream().anyMatch(caMoi::trungGio);
-                        if (biTrung) {
+                        if (daCo.stream().anyMatch(caMoi::trungGio)) {
                             trung++;
                             continue;
                         }

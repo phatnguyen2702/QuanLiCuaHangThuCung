@@ -35,6 +35,10 @@ public class NhanVienControl {
         return dao.xoa(maNhanVien);
     }
 
+    public String goiYMa() {
+        return dao.goiYMa();
+    }
+
     public KetQuaThaoTac themNhanVien(NhanVien nhanVien) {
         KetQuaKiemTra ketQua = kiemTra(nhanVien);
         if (!ketQua.hopLe()) {
@@ -66,40 +70,10 @@ public class NhanVienControl {
                 : new KetQuaThaoTac(false, "Xóa tài khoản thất bại!");
     }
 
-    public record DuLieuLamMoi(String maNhanVien) {
-    }
-
-    public DuLieuLamMoi duLieuLamMoi() {
-        return new DuLieuLamMoi(goiYMaNhanVien());
-    }
-
-    public String goiYMaNhanVien() {
-        return dao.goiYMa();
-    }
-
     public NhanVien taoNhanVien(String ma, String hoTen, String soDienThoai,
             String email, String matKhau, String gioiTinh, String vaiTro) {
-        return new NhanVien(ma, hoTen, chuyenSoDienThoai(soDienThoai), email, matKhau,
+        return new NhanVien(ma, hoTen, chuoiAnToan(soDienThoai).trim(), email, matKhau,
                 gioiTinh, vaiTro);
-    }
-
-    public int chuyenSoDienThoai(String soDienThoai) {
-        String giaTri = chuoiAnToan(soDienThoai).trim();
-        if (!giaTri.matches("0\\d{9}")) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(giaTri.substring(1));
-        } catch (NumberFormatException ex) {
-            return 0;
-        }
-    }
-
-    public String dinhDangSoDienThoai(int soDienThoai) {
-        if (soDienThoai < 0 || soDienThoai > 999_999_999) {
-            return "";
-        }
-        return "0" + String.format(Locale.ROOT, "%09d", soDienThoai);
     }
 
     public KetQuaKiemTra kiemTra(NhanVien nhanVien) {
@@ -113,7 +87,7 @@ public class NhanVienControl {
                     "Họ tên từ 2–50 ký tự, chỉ chứa chữ cái (có dấu) và dấu cách.", "hoTen");
         }
 
-        String soDienThoai = dinhDangSoDienThoai(nhanVien.getSoDienThoai());
+        String soDienThoai = chuoiAnToan(nhanVien.getSoDienThoai()).trim();
         if (!soDienThoai.matches("0\\d{9}")) {
             return new KetQuaKiemTra(false,
                     "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.", "soDienThoai");
@@ -152,7 +126,7 @@ public class NhanVienControl {
             String[] duLieuTimKiem = {
                     nhanVien.getMaNhanVien(),
                     nhanVien.getHoTen(),
-                    dinhDangSoDienThoai(nhanVien.getSoDienThoai()),
+                    nhanVien.getSoDienThoai(),
                     nhanVien.getEmail(),
                     nhanVien.getGioiTinh(),
                     hienThiVaiTro(nhanVien.getVaiTro())

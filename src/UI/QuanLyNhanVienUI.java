@@ -365,7 +365,7 @@ public class QuanLyNhanVienUI extends JPanel implements ActionListener {
                         model.addRow(new Object[] {
                                         nv.getMaNhanVien(),
                                         nv.getHoTen(),
-                                        nhanVienControl.dinhDangSoDienThoai(nv.getSoDienThoai()),
+                                        nv.getSoDienThoai(),
                                         nv.getEmail(),
                                         nv.getMatKhau(),
                                         nv.getGioiTinh(),
@@ -375,7 +375,7 @@ public class QuanLyNhanVienUI extends JPanel implements ActionListener {
         }
 
         private void lamMoi() {
-                txtMaNV.setText(nhanVienControl.duLieuLamMoi().maNhanVien());
+                txtMaNV.setText(nhanVienControl.goiYMa());
                 txtHoTen.setText("");
                 txtSoDienThoai.setText("");
                 txtEmail.setText("");
