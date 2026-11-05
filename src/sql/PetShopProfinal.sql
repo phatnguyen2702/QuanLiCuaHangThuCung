@@ -30,7 +30,7 @@ CREATE TABLE Nhacungcap (
 CREATE TABLE NhanVien (
     maNhanVien VARCHAR(10) NOT NULL PRIMARY KEY,
     hoTen NVARCHAR(50) NULL,
-    soDienThoai INT NULL,
+    soDienThoai VARCHAR(15) NULL,
     email VARCHAR(30) NULL,
     matKhau NVARCHAR(255) NULL,
     gioiTinh NVARCHAR(10) NULL,

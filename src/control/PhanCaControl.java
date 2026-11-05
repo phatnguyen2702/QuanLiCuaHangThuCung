@@ -182,31 +182,38 @@ public final class PhanCaControl {
                 kq.getBoQuaTrungGio(), kq.getBoQuaQuaKhu());
     }
 
-    /** Nhóm lịch theo nhân viên: mỗi dòng gồm tên và 7 cột thứ Hai tới Chủ nhật. */
     public List<Object[]> bangLichTuan(List<LichPhanCa> phanCaTuan) {
         java.util.Map<String, StringBuilder[]> bangTheoNguoi = new java.util.LinkedHashMap<>();
         for (LichPhanCa pc : phanCaTuan) {
             String nhanVien = pc.getMaNhanVien() + " - " + pc.getHoTen();
             if (!bangTheoNguoi.containsKey(nhanVien)) {
                 StringBuilder[] ngay = new StringBuilder[7];
-                for (int i = 0; i < 7; i++)
+                for (int i = 0; i < 7; i++) {
                     ngay[i] = new StringBuilder();
+                }
                 bangTheoNguoi.put(nhanVien, ngay);
             }
             int thuIndex = pc.getNgayLamViec().getDayOfWeek().getValue() - 1;
             StringBuilder o = bangTheoNguoi.get(nhanVien)[thuIndex];
-            if (o.length() > 0)
+            if (o.length() > 0) {
                 o.append("\n");
-            o.append(pc.getMaCa()).append(" - ").append(pc.getTenCa())
-                    .append(" (").append(dinhDangGio(pc.getGioBatDau())).append("–")
-                    .append(dinhDangGio(pc.getGioKetThuc())).append(")");
+            }
+            o.append(pc.getMaCa())
+                    .append(" - ")
+                    .append(pc.getTenCa())
+                    .append(" (")
+                    .append(dinhDangGio(pc.getGioBatDau()))
+                    .append("–")
+                    .append(dinhDangGio(pc.getGioKetThuc()))
+                    .append(")");
         }
         List<Object[]> rows = new ArrayList<>();
         for (java.util.Map.Entry<String, StringBuilder[]> hang : bangTheoNguoi.entrySet()) {
             Object[] duLieu = new Object[8];
             duLieu[0] = hang.getKey();
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < 7; i++) {
                 duLieu[i + 1] = hang.getValue()[i].toString();
+            }
             rows.add(duLieu);
         }
         return rows;
