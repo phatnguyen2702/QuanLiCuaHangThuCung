@@ -11,6 +11,23 @@ import java.util.Locale;
 
 public class NhanVienDAO {
 
+        private void kiemTraKichThuoc(NhanVien tk) throws SQLException {
+                kiemTraDoDai("Mã nhân viên", tk.getMaNhanVien(), 10, true);
+                kiemTraDoDai("Họ tên", tk.getHoTen(), 50, false);
+                kiemTraDoDai("Email", tk.getEmail(), 30, false);
+                kiemTraDoDai("Mật khẩu", tk.getMatKhau(), 255, false);
+                kiemTraDoDai("Giới tính", tk.getGioiTinh(), 10, false);
+                kiemTraDoDai("Vai trò", tk.getVaiTro(), 50, false);
+        }
+
+        private void kiemTraDoDai(String tenTruong, String giaTri, int gioiHan, boolean batBuoc)
+                        throws SQLException {
+                if ((giaTri == null || giaTri.isBlank()) && batBuoc)
+                        throw new SQLException(tenTruong + " không được để trống.");
+                if (giaTri != null && giaTri.length() > gioiHan)
+                        throw new SQLException(tenTruong + " không được vượt quá " + gioiHan + " ký tự.");
+        }
+
         public NhanVien xacThuc(String tenDangNhap, String matKhau) throws SQLException {
 
                 String sql = "SELECT maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro FROM NhanVien";
@@ -27,7 +44,7 @@ public class NhanVienDAO {
                                 if (ma == null || ten == null || ma.length() < 3)
                                         continue;
                                 String normalized = java.text.Normalizer.normalize(ten, java.text.Normalizer.Form.NFD)
-                                                .replaceAll("\\p{M}", "").replace("Ä‘", "d").replace("Ä", "D")
+                                                .replaceAll("\\p{M}", "").replace('đ', 'd').replace('Đ', 'D')
                                                 .toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", "")
                                                 + ma.substring(ma.length() - 3);
 
@@ -35,8 +52,8 @@ public class NhanVienDAO {
                                                 || ma.equalsIgnoreCase(tenDangNhap))
                                                 && rs.getString("matKhau") != null
                                                 && rs.getString("matKhau").equals(matKhau)) {
-                                        return new NhanVien(ma, ten, rs.getString("soDienThoai"), rs.getString("email"),
-                                                        rs.getString("matKhau"), rs.getString("gioiTinh"),
+                                        return new NhanVien(ma, ten, rs.getInt("soDienThoai"), rs.getString("email"),
+                                                        rs.getString("matKhau"), chuanHoaGioiTinh(rs.getString("gioiTinh")),
                                                         rs.getString("vaiTro"));
                                 }
                         }
@@ -67,10 +84,10 @@ public class NhanVienDAO {
                                 NhanVien tk = new NhanVien(
                                                 rs.getString("maNhanVien"),
                                                 rs.getString("hoTen"),
-                                                rs.getString("soDienThoai"),
+                                                rs.getInt("soDienThoai"),
                                                 rs.getString("email"),
                                                 rs.getString("matKhau"),
-                                                rs.getString("gioiTinh"),
+                                                chuanHoaGioiTinh(rs.getString("gioiTinh")),
                                                 rs.getString("vaiTro"));
 
                                 list.add(tk);
@@ -86,6 +103,7 @@ public class NhanVienDAO {
 
         public boolean them(NhanVien tk) throws SQLException {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
+                kiemTraKichThuoc(tk);
 
                 String sql = "INSERT INTO NhanVien "
                                 + "(maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro) "
@@ -96,12 +114,11 @@ public class NhanVienDAO {
                         con.setAutoCommit(false);
                         try {
 
-                                String maMoi = MaTuDongDAO.taoMaTrongGiaoDich(
-                                                con, MaTuDongDAO.Loai.NHAN_VIEN);
+                                String maMoi = taoMaTrongGiaoDich(con);
                                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                                         ps.setString(1, maMoi);
                                         ps.setString(2, tk.getHoTen());
-                                        ps.setString(3, tk.getSoDienThoai());
+                                        ps.setInt(3, tk.getSoDienThoai());
                                         ps.setString(4, tk.getEmail());
                                         ps.setString(5, tk.getMatKhau());
                                         ps.setString(6, tk.getGioiTinh());
@@ -125,6 +142,12 @@ public class NhanVienDAO {
         public boolean sua(
                         NhanVien tk) {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
+                try {
+                        kiemTraKichThuoc(tk);
+                } catch (SQLException e) {
+                        e.printStackTrace();
+                        return false;
+                }
 
                 String sql = "UPDATE NhanVien SET "
                                 + "hoTen = ?, "
@@ -141,7 +164,7 @@ public class NhanVienDAO {
 
                         ps.setString(1, tk.getHoTen());
 
-                        ps.setString(2, tk.getSoDienThoai());
+                        ps.setInt(2, tk.getSoDienThoai());
 
                         ps.setString(3, tk.getEmail());
 
@@ -192,8 +215,7 @@ public class NhanVienDAO {
                                 return chuanHoa(rs.getString("hoTen")).equals(chuanHoa(hoTen))
                                                 && chuanHoa(rs.getString("vaiTro")).equals(chuanHoa(vaiTro))
                                                 && chuanHoaEmail(rs.getString("email")).equals(chuanHoaEmail(email))
-                                                && chuanHoaSoDienThoai(rs.getString("soDienThoai"))
-                                                                .equals(chuanHoaSoDienThoai(soDienThoai));
+                                                && rs.getInt("soDienThoai") == chuanHoaSoDienThoai(soDienThoai);
                         }
                 }
         }
@@ -365,7 +387,53 @@ public class NhanVienDAO {
                 return str == null ? "" : str.trim().toLowerCase(Locale.ROOT);
         }
 
-        private static String chuanHoaSoDienThoai(String str) {
-                return str == null ? "" : str.replaceAll("[\\s.-]", "");
+        private static int chuanHoaSoDienThoai(String str) {
+                String giaTri = str == null ? "" : str.replaceAll("[\\s.-]", "");
+                if (!giaTri.matches("0\\d{9}")) {
+                        return -1;
+                }
+                try {
+                        return Integer.parseInt(giaTri.substring(1));
+                } catch (NumberFormatException ex) {
+                        return -1;
+                }
+        }
+
+        private static String chuanHoaGioiTinh(String gioiTinh) {
+                String giaTri = gioiTinh == null ? "" : gioiTinh.trim();
+                if ("Nu".equalsIgnoreCase(giaTri) || "Nữ".equals(giaTri)) {
+                        return "Nữ";
+                }
+                return giaTri;
+        }
+
+        public String goiYMa() {
+                try (Connection con = ConnectDB.connectDB.getConnection()) {
+                        return taoMa(con, false);
+                } catch (SQLException ex) {
+                        return "Tự động khi lưu";
+                }
+        }
+
+        private static String taoMaTrongGiaoDich(Connection con) throws SQLException {
+                if (con.getAutoCommit()) {
+                        throw new SQLException("Phải bắt đầu transaction trước khi sinh mã nhân viên.");
+                }
+                return taoMa(con, true);
+        }
+
+        private static String taoMa(Connection con, boolean khoaBang) throws SQLException {
+                String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maNhanVien, 3, 3))), 0) "
+                                + "FROM dbo.NhanVien" + (khoaBang ? " WITH (TABLOCKX, HOLDLOCK)" : "")
+                                + " WHERE maNhanVien LIKE 'NV[0-9][0-9][0-9]'";
+                try (PreparedStatement ps = con.prepareStatement(sql);
+                                ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next())
+                                throw new SQLException("Không đọc được mã nhân viên mới.");
+                        int tiepTheo = rs.getInt(1) + 1;
+                        if (tiepTheo > 999)
+                                throw new SQLException("Đã hết mã nhân viên trong giới hạn hiện tại.");
+                        return String.format(java.util.Locale.ROOT, "NV%03d", tiepTheo);
+                }
         }
 }

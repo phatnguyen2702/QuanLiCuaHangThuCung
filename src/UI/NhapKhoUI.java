@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChuUI.PhienLamViec;
+import control.PhienLamViecControl;
 import UI.TrangChuUI.UIStyle;
 import dao.NhapKhoDAO;
 import entity.ChiTietPhieuNhap;
@@ -46,7 +46,7 @@ public class NhapKhoUI extends JFrame implements ActionListener {
     // txtNgayNhap: Ô nhập/hiển thị văn bản ngày giờ nhập kho.
     private final JTextField txtNgayNhap = UIStyle.oChiDoc("");
     // txtNhanVien: Ô nhập/hiển thị văn bản nhân viên.
-    private final JTextField txtNhanVien = UIStyle.oChiDoc(PhienLamViec.hoTen);
+    private final JTextField txtNhanVien = UIStyle.oChiDoc(PhienLamViecControl.hoTen);
     // cmbNhaCungCap: Hộp lựa chọn nhà cung cấp.
     private final JComboBox<NhaCungCap> cmbNhaCungCap = new JComboBox<>();
 
@@ -367,7 +367,7 @@ public class NhapKhoUI extends JFrame implements ActionListener {
         // Định dạng dữ liệu thành chuỗi rồi hiển thị trong control bằng setText().
         txtNgayNhap.setText(ngayNhap.format(DINH_DANG_NGAY));
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
-        txtNhanVien.setText(PhienLamViec.hoTen);
+        txtNhanVien.setText(PhienLamViecControl.hoTen);
 
         dong.clear();
         veLaiBang();
@@ -610,7 +610,7 @@ public class NhapKhoUI extends JFrame implements ActionListener {
                 maPhieu,
                 ngayNhap,
                 hoanTat,
-                PhienLamViec.maNV,
+                PhienLamViecControl.maNV,
                 ncc.getMaNhaCungCap());
 
         try {

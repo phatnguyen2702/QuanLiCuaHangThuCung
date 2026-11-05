@@ -1,6 +1,6 @@
 package UI;
 
-import UI.TrangChuUI.PhienLamViec;
+import control.PhienLamViecControl;
 import UI.TrangChuUI.UIStyle;
 import dao.KiemKeDAO;
 import entity.ChiTietPhieuKiemKe;
@@ -535,7 +535,7 @@ public class KiemKeUI extends JFrame implements ActionListener {
                 maPhieu,
                 gioChot,
                 true,
-                PhienLamViec.maNV);
+                PhienLamViecControl.maNV);
         phieu.setNgayBatDau(ngayBatDau);
         phieu.setNgayChot(gioChot);
 
@@ -705,7 +705,7 @@ public class KiemKeUI extends JFrame implements ActionListener {
     // Lưu nhập.
     private void luuNhap() {
         try {
-            PhieuKiemKe p = new PhieuKiemKe(maPhieu, ngayBatDau, false, PhienLamViec.maNV);
+            PhieuKiemKe p = new PhieuKiemKe(maPhieu, ngayBatDau, false, PhienLamViecControl.maNV);
             p.setNgayBatDau(ngayBatDau);
             dao.luuNhap(p, tatCa);
             UIStyle.thongBao(this, "Đã lưu nháp phiếu " + maPhieu + ".");

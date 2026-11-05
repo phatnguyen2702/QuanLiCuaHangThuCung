@@ -1,7 +1,6 @@
 package control;
 
 import dao.CaLamDAO;
-import dao.MaTuDongDAO;
 import entity.CaLam;
 import java.sql.SQLException;
 import java.time.LocalTime;
@@ -16,7 +15,7 @@ public final class CaLamControl {
     private static final DateTimeFormatter GIO = DateTimeFormatter.ofPattern("HH:mm");
 
     public ArrayList<CaLam> layDanhSach() { return dao.getAll(); }
-    public String goiYMa() { return MaTuDongDAO.goiY(MaTuDongDAO.Loai.CA_LAM); }
+    public String goiYMa() { return dao.goiYMa(); }
     public boolean them(CaLam ca) throws SQLException { kiemTra(ca); return dao.them(ca); }
     public boolean sua(CaLam ca) { kiemTra(ca); return dao.sua(ca); }
     public boolean xoa(String maCa) { return dao.xoa(maCa); }

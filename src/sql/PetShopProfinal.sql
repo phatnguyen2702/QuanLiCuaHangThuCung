@@ -23,14 +23,14 @@ CREATE TABLE DanhMuc (
 CREATE TABLE Nhacungcap (
     maNhaCungCap VARCHAR(10) NOT NULL PRIMARY KEY,
     tenNhaCungCap NVARCHAR(50) NULL,
-    soDienThoai VARCHAR(15) NULL,
+    soDienThoai INT NULL,
     email VARCHAR(50) NULL,
     diaChi NVARCHAR(50) NULL
 );
 CREATE TABLE NhanVien (
     maNhanVien VARCHAR(10) NOT NULL PRIMARY KEY,
     hoTen NVARCHAR(50) NULL,
-    soDienThoai VARCHAR(15) NULL,
+    soDienThoai INT NULL,
     email VARCHAR(30) NULL,
     matKhau NVARCHAR(255) NULL,
     gioiTinh NVARCHAR(10) NULL,
@@ -365,7 +365,7 @@ END;
 INSERT INTO NhanVien
 (maNhanVien, hoTen, soDienThoai, email, matKhau, gioiTinh, vaiTro)
 VALUES
-('NV001', N'Đặng Đình An', '01239415224', 'dangdinhan01@gmail.com', '123456', N'Nam', N'Quan ly'),
+('NV001', N'Đặng Đình An', '0123941524', 'dangdinhan01@gmail.com', '123456', N'Nam', N'Quan ly'),
 ('NV002', N'Nguyễn Minh Anh', '0901234567', 'minhanh@gmail.com', '123456', N'Nữ', N'Thu ngan'),
 ('NV003', N'Trần Quốc Bảo', '0912345678', 'quocbao@gmail.com', '123456', N'Nam', N'Nhan vien kho'),
 ('NV004', N'Lê Ngọc Mai', '0987654321', 'ngocmai@gmail.com', '123456', N'Nữ', N'Nhan vien Spa');
