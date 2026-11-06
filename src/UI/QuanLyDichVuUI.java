@@ -12,12 +12,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseListener;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
-public class QuanLyDichVuUI extends JPanel implements ActionListener {
+public class QuanLyDichVuUI extends JPanel implements ActionListener, MouseListener {
 
     private JButton btnTim, btnLamMoi, btnThem, btnSua, btnXoa, btnBoChon;
 
@@ -67,9 +68,9 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         pnlBang.setLayout(new BorderLayout(0, 12));
         btnTim = UIStyle.nutChinh("Tìm kiếm");
         btnLamMoi = UIStyle.nutPhu("Làm mới");
-        btnTim.addActionListener(this);
         txtTim.addActionListener(this);
-        btnLamMoi.addActionListener(this);
+        btnTim.addMouseListener(this);
+        btnLamMoi.addMouseListener(this);
         JPanel pnlTim = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         pnlTim.setOpaque(false);
         pnlTim.add(UIStyle.nhan("Mã / tên / mô tả:"));
@@ -127,7 +128,7 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         pnlForm.add(pnlNhap, BorderLayout.CENTER);
 
         btnThem = UIStyle.nutXanh("+ Thêm dịch vụ");
-        btnThem.addActionListener(this);
+        btnThem.addMouseListener(this);
         JPanel pnlThem = new JPanel(new GridLayout(1, 1));
         pnlThem.setOpaque(false);
         pnlThem.add(btnThem);
@@ -135,9 +136,9 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         btnSua = UIStyle.nutChinh("Lưu");
         btnXoa = UIStyle.nutXoa("Xóa");
         btnBoChon = UIStyle.nutPhu("Bỏ chọn");
-        btnSua.addActionListener(this);
-        btnXoa.addActionListener(this);
-        btnBoChon.addActionListener(this);
+        btnSua.addMouseListener(this);
+        btnXoa.addMouseListener(this);
+        btnBoChon.addMouseListener(this);
         JPanel pnlSua = new JPanel(new GridLayout(1, 3, 7, 0));
         pnlSua.setOpaque(false);
         pnlSua.add(btnSua);
@@ -325,8 +326,15 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == txtTim) {
+            taiLai(maDangSua);
+        }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
         Object nguon = e.getSource();
-        if (nguon == btnTim || nguon == txtTim) {
+        if (nguon == btnTim) {
             taiLai(maDangSua);
         } else if (nguon == btnLamMoi) {
             txtTim.setText("");
@@ -341,6 +349,22 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener {
         } else if (nguon == btnBoChon) {
             boChon();
         }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
     }
 
 }

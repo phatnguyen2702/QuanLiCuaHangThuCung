@@ -27,8 +27,8 @@ public final class TrangChuControl {
             throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
     }
 
-    public record ThongKeHoaDon(java.math.BigDecimal doanhThuHomNay, int hoaDonHomNay) {
-        public java.math.BigDecimal getDoanhThuHomNay() {
+    public record ThongKeHoaDon(double doanhThuHomNay, int hoaDonHomNay) {
+        public double getDoanhThuHomNay() {
             return doanhThuHomNay;
         }
 

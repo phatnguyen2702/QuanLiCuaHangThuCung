@@ -53,27 +53,6 @@ public class NhanVienDAO {
         ps.setString(7, nv.getMaNhanVien());
     }
 
-    public NhanVien xacThuc(String tenDangNhap, String matKhau) throws SQLException {
-        String sql = "SELECT " + COT_NHAN_VIEN + " FROM NhanVien";
-        try (Connection con = ConnectDB.connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                String ma = rs.getString("maNhanVien");
-                String ten = rs.getString("hoTen");
-                if (ma == null || ten == null || ma.length() < 3)
-                    continue;
-
-                boolean dungTaiKhoan = taoTaiKhoanKhongDau(ten, ma).equalsIgnoreCase(tenDangNhap)
-                        || ma.equalsIgnoreCase(tenDangNhap);
-                if (dungTaiKhoan && matKhau != null && matKhau.equals(rs.getString("matKhau")))
-                    return docNhanVien(rs);
-            }
-        }
-        return null;
-    }
-
     public ArrayList<NhanVien> getAll() {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
         ArrayList<NhanVien> list = new ArrayList<>();
@@ -153,21 +132,26 @@ public class NhanVienDAO {
 
     public boolean doiMatKhau(String maNhanVien, String matKhauCu, String matKhauMoi)
             throws SQLException {
-        if (maNhanVien == null || control.PhienLamViecControl.maNV == null)
+        String maDangNhap = control.PhienLamViecControl.maNV;
+
+        if (maNhanVien == null || maDangNhap == null)
             return false;
-        if (!maNhanVien.trim().equals(control.PhienLamViecControl.maNV))
+
+        String maCanDoi = maNhanVien.trim();
+        if (!maCanDoi.equals(maDangNhap))
             throw new SecurityException("Chỉ được đổi mật khẩu của tài khoản đang đăng nhập.");
 
-        if (maNhanVien.isBlank() || matKhauCu == null || matKhauCu.isEmpty()
+        if (maCanDoi.isEmpty() || matKhauCu == null || matKhauCu.isEmpty()
                 || matKhauMoi == null || matKhauMoi.length() < 6 || matKhauCu.equals(matKhauMoi))
             return false;
 
         String sql = "UPDATE NhanVien SET matKhau=? WHERE maNhanVien=? "
                 + "AND matKhau COLLATE Latin1_General_100_BIN2=?";
+
         try (Connection con = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, matKhauMoi);
-            ps.setString(2, maNhanVien.trim());
+            ps.setString(2, maCanDoi);
             ps.setString(3, matKhauCu);
             return ps.executeUpdate() == 1;
         }
@@ -184,6 +168,27 @@ public class NhanVienDAO {
         return ten + maNhanVien.substring(maNhanVien.length() - 3);
     }
 
+    public NhanVien xacThuc(String tenDangNhap, String matKhau) throws SQLException {
+        String sql = "SELECT " + COT_NHAN_VIEN + " FROM NhanVien";
+        try (Connection con = ConnectDB.connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String ma = rs.getString("maNhanVien");
+                String ten = rs.getString("hoTen");
+                if (ma == null || ten == null || ma.length() < 3)
+                    continue;
+
+                boolean dungTaiKhoan = taoTaiKhoanKhongDau(ten, ma).equalsIgnoreCase(tenDangNhap)
+                        || ma.equalsIgnoreCase(tenDangNhap);
+                if (dungTaiKhoan && matKhau != null && matKhau.equals(rs.getString("matKhau")))
+                    return docNhanVien(rs);
+            }
+        }
+        return null;
+    }
+
     public String goiYMa() {
         try (Connection con = ConnectDB.connectDB.getConnection()) {
             return taoMa(con);
@@ -194,7 +199,7 @@ public class NhanVienDAO {
 
     private static String taoMa(Connection con) throws SQLException {
         String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maNhanVien, 3, 3))), 0) "
-                + "FROM dbo.NhanVien WITH "
+                + "FROM dbo.NhanVien "
                 + "WHERE maNhanVien LIKE 'NV[0-9][0-9][0-9]'";
         try (PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {

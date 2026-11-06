@@ -9,27 +9,49 @@ import java.util.ArrayList;
 /** Xác thực dữ liệu và điều phối CRUD dịch vụ. Không phụ thuộc Swing. */
 public final class DichVuControl {
     private final DichVuDAO dao = new DichVuDAO();
-    public ArrayList<DichVu> timKiem(String keyword) throws SQLException { return dao.timKiem(keyword); }
-    public String maDuKien() throws SQLException { return dao.maDuKien(); }
-    public String them(DichVu dv) throws SQLException { kiemTra(dv); return dao.them(dv); }
-    public boolean sua(DichVu dv) throws SQLException { kiemTra(dv); return dao.sua(dv); }
-    public int[] demLienQuan(String ma) throws SQLException { return dao.demLienQuan(ma); }
+
+    public ArrayList<DichVu> timKiem(String keyword) throws SQLException {
+        return dao.timKiem(keyword);
+    }
+
+    public String maDuKien() throws SQLException {
+        return dao.maDuKien();
+    }
+
+    public String them(DichVu dv) throws SQLException {
+        kiemTra(dv);
+        return dao.them(dv);
+    }
+
+    public boolean sua(DichVu dv) throws SQLException {
+        kiemTra(dv);
+        return dao.sua(dv);
+    }
+
+    public int[] demLienQuan(String ma) throws SQLException {
+        return dao.demLienQuan(ma);
+    }
+
     /** Trả thông báo nếu dịch vụ đã được sử dụng; null nếu có thể xóa. */
+
     public String lyDoKhongTheXoa(String ma) throws SQLException {
         int[] lienQuan = dao.demLienQuan(ma);
-        if (lienQuan[0] + lienQuan[1] + lienQuan[2] == 0) return null;
+        if (lienQuan[0] + lienQuan[1] + lienQuan[2] == 0)
+            return null;
         return "Không thể xóa " + ma + " vì đã được sử dụng trong:\n"
                 + "• Lịch hẹn Spa: " + lienQuan[0] + "\n"
                 + "• Phiếu dịch vụ: " + lienQuan[1] + "\n"
                 + "• Hóa đơn: " + lienQuan[2] + "\n"
                 + "Cần giữ dịch vụ để bảo toàn lịch sử. Bạn có thể sửa tên/giá/mô tả.";
     }
+
     public boolean xoa(String ma) throws SQLException {
         int[] lienQuan = dao.demLienQuan(ma);
         if (lienQuan[0] + lienQuan[1] + lienQuan[2] > 0)
             throw new IllegalStateException("Không thể xóa dịch vụ vì đã có dữ liệu liên quan.");
         return dao.xoa(ma);
     }
+
     public DichVu taoDichVu(String ma, String tenNhap, String giaText, String moTaNhap) {
         String ten = tenNhap == null ? "" : tenNhap.trim();
         String moTa = moTaNhap == null ? "" : moTaNhap.trim();
@@ -45,6 +67,7 @@ public final class DichVuControl {
             throw new IllegalArgumentException("Giá dịch vụ phải lớn hơn 0 và vừa kiểu DECIMAL(18,2).");
         return new DichVu(ma, ten, gia, moTa.isEmpty() ? null : moTa);
     }
+
     public void kiemTra(DichVu dv) {
         // Giữ chung một quy tắc cho form và cả lời gọi từ nơi khác.
         taoDichVu(dv.getMaDichVu(), dv.getTenDichVu(),

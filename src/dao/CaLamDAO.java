@@ -42,12 +42,13 @@ public class CaLamDAO {
 
     public boolean them(CaLam ca) throws SQLException {
         control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.CA_LAM);
+        kiemTraGioLam(ca);
         String sql = "INSERT INTO CaLam (maCa, tenCa, gioBatDau, gioKetThuc) "
                 + "VALUES (?, ?, ?, ?)";
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
-                String maMoi = taoMaTrongGiaoDich(con);
+                String maMoi = taoMaMoi(con);
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, maMoi);
                     ps.setString(2, ca.getTenCa());
@@ -59,45 +60,46 @@ public class CaLamDAO {
                 con.commit();
                 ca.setMaCa(maMoi);
                 return true;
-            } catch (SQLException ex) {
+            } catch (SQLException e) {
                 con.rollback();
-                throw ex;
+                throw e;
             }
         }
     }
 
     public String goiYMa() {
         try (Connection con = connectDB.getConnection()) {
-            return taoMa(con, false);
+            String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maCa, 3, 3))), 0) "
+                    + "FROM dbo.CaLam WHERE maCa LIKE 'CA[0-9][0-9][0-9]'";
+            try (PreparedStatement ps = con.prepareStatement(sql);
+                    ResultSet rs = ps.executeQuery()) {
+                if (!rs.next())
+                    return "Tự động khi lưu";
+                return String.format(java.util.Locale.ROOT, "CA%03d", rs.getInt(1) + 1);
+            }
         } catch (SQLException ex) {
             return "Tự động khi lưu";
         }
     }
 
-    private static String taoMaTrongGiaoDich(Connection con) throws SQLException {
-        if (con.getAutoCommit()) {
-            throw new SQLException("Phải bắt đầu transaction trước khi sinh mã ca làm.");
-        }
-        return taoMa(con, true);
-    }
+    private static String taoMaMoi(Connection con) throws SQLException {
 
-    private static String taoMa(Connection con, boolean khoaBang) throws SQLException {
         String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maCa, 3, 3))), 0) "
-                + "FROM dbo.CaLam" + (khoaBang ? " WITH (TABLOCKX, HOLDLOCK)" : "")
+                + "FROM dbo.CaLam"
                 + " WHERE maCa LIKE 'CA[0-9][0-9][0-9]'";
         try (PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             if (!rs.next())
                 throw new SQLException("Không đọc được mã ca làm mới.");
             int tiepTheo = rs.getInt(1) + 1;
-            if (tiepTheo > 999)
-                throw new SQLException("Đã hết mã ca làm trong giới hạn hiện tại.");
+
             return String.format(java.util.Locale.ROOT, "CA%03d", tiepTheo);
         }
     }
 
     public boolean sua(CaLam ca) {
         control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.CA_LAM);
+        kiemTraGioLam(ca);
         String sql = "UPDATE CaLam SET " +
                 "tenCa = ?, " +
                 "gioBatDau = ?, " +
@@ -141,5 +143,19 @@ public class CaLamDAO {
             ps.setNull(viTri, Types.TIME);
         else
             ps.setTime(viTri, Time.valueOf(gio));
+    }
+
+    private static void kiemTraGioLam(CaLam ca) {
+        LocalTime batDau = ca == null ? null : ca.getGioBatDau();
+        LocalTime ketThuc = ca == null ? null : ca.getGioKetThuc();
+        LocalTime moCua = LocalTime.of(6, 0);
+        LocalTime dongCua = LocalTime.of(22, 0);
+
+        if (batDau == null || ketThuc == null
+                || batDau.isBefore(moCua) || ketThuc.isAfter(dongCua)
+                || !ketThuc.isAfter(batDau)) {
+            throw new IllegalArgumentException(
+                    "Ca làm không hợp lệ: phải nằm trong 06:00-22:00 và kết thúc sau giờ bắt đầu.");
+        }
     }
 }
