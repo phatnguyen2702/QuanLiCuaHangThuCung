@@ -13,7 +13,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.SQLException;
@@ -987,49 +986,34 @@ public class TrangChuUI extends JFrame implements ActionListener {
         if (lblDoanhThuHomNay == null)
             return;
 
-        boolean xemThongKe = PhanQuyenControl.coQuyen(PhanQuyenControl.Quyen.THONG_KE_DOANH_THU);
-        boolean xemSpa = PhanQuyenControl.coQuyen(PhanQuyenControl.Quyen.LICH_HEN_SPA);
-        boolean xemKho = PhanQuyenControl.coQuyen(PhanQuyenControl.Quyen.NHAP_KHO);
         lblDoanhThuHomNay.setText("Không có quyền");
         lblLuotMuaHomNay.setText("—");
         lblLichSpaHomNay.setText("—");
         lblPhieuNhapHomNay.setText("—");
-        if (xemThongKe) {
-            try {
 
+        if (PhanQuyenControl.coQuyen(PhanQuyenControl.Quyen.THONG_KE_DOANH_THU)) {
+            try {
                 TrangChuControl.ThongKeHoaDon tk = control.thongKeHoaDon();
-                lblDoanhThuHomNay.setText(formatVnd(tk.getDoanhThuHomNay()));
+                lblDoanhThuHomNay.setText(UIStyle.tien(tk.getDoanhThuHomNay()));
                 lblLuotMuaHomNay.setText(String.valueOf(tk.getHoaDonHomNay()));
             } catch (Exception ex) {
                 lblDoanhThuHomNay.setText("—");
             }
         }
-        if (xemSpa) {
+        if (PhanQuyenControl.coQuyen(PhanQuyenControl.Quyen.LICH_HEN_SPA)) {
             try {
-                lblLichSpaHomNay.setText(String.valueOf(demLichSpaHomNay()));
+                lblLichSpaHomNay.setText(String.valueOf(control.demLichSpaHomNay()));
             } catch (SQLException ex) {
                 lblLichSpaHomNay.setText("—");
             }
         }
-        if (xemKho) {
+        if (PhanQuyenControl.coQuyen(PhanQuyenControl.Quyen.NHAP_KHO)) {
             try {
-                lblPhieuNhapHomNay.setText(String.valueOf(demPhieuNhapHomNay()));
+                lblPhieuNhapHomNay.setText(String.valueOf(control.demPhieuNhapHomNay()));
             } catch (SQLException ex) {
                 lblPhieuNhapHomNay.setText("—");
             }
         }
-    }
-
-    private int demLichSpaHomNay() throws SQLException {
-        return control.demLichSpaHomNay();
-    }
-
-    private int demPhieuNhapHomNay() throws SQLException {
-        return control.demPhieuNhapHomNay();
-    }
-
-    private String formatVnd(BigDecimal soTien) {
-        return UIStyle.tien(soTien == null ? 0 : soTien.doubleValue());
     }
 
     private JPanel taoPnlLichSpaSapToi() {

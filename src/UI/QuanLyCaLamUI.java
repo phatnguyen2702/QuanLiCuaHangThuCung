@@ -137,7 +137,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                         mask.setPlaceholderCharacter('_');
                         JFormattedTextField field = new JFormattedTextField(mask);
                         field.setFocusLostBehavior(JFormattedTextField.PERSIST);
-                        field.setToolTipText("Giờ theo HH:mm (00:00 - 23:59). Ví dụ: 06:00");
+                        field.setToolTipText("Giờ theo HH:mm, trong khung 06:00 - 22:00. Ví dụ: 06:00");
                         styleTextField(field);
                         return field;
                 } catch (ParseException ex) {

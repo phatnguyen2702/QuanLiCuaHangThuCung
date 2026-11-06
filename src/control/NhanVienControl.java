@@ -10,29 +10,54 @@ import java.util.Locale;
 public class NhanVienControl {
     private final NhanVienDAO dao = new NhanVienDAO();
 
-    public record KetQuaKiemTra(boolean hopLe, String thongBao, String truong) {
+    public static class KetQuaKiemTra {
+        private final boolean hopLe;
+        private final String thongBao;
+        private final String truong;
+
+        public KetQuaKiemTra(boolean hopLe, String thongBao, String truong) {
+            this.hopLe = hopLe;
+            this.thongBao = thongBao;
+            this.truong = truong;
+        }
+
         public static KetQuaKiemTra thanhCong() {
             return new KetQuaKiemTra(true, null, null);
         }
+
+        public boolean hopLe() {
+            return hopLe;
+        }
+
+        public String thongBao() {
+            return thongBao;
+        }
+
+        public String truong() {
+            return truong;
+        }
     }
 
-    public record KetQuaThaoTac(boolean thanhCong, String thongBao) {
+    public static class KetQuaThaoTac {
+        private final boolean thanhCong;
+        private final String thongBao;
+
+        public KetQuaThaoTac(boolean thanhCong, String thongBao) {
+            this.thanhCong = thanhCong;
+            this.thongBao = thongBao;
+        }
+
+        public boolean thanhCong() {
+            return thanhCong;
+        }
+
+        public String thongBao() {
+            return thongBao;
+        }
     }
 
     public ArrayList<NhanVien> layDanhSach() {
         return dao.getAll();
-    }
-
-    public boolean them(NhanVien nhanVien) throws SQLException {
-        return dao.them(nhanVien);
-    }
-
-    public boolean sua(NhanVien nhanVien) {
-        return dao.sua(nhanVien);
-    }
-
-    public boolean xoa(String maNhanVien) {
-        return dao.xoa(maNhanVien);
     }
 
     public String goiYMa() {
@@ -72,7 +97,8 @@ public class NhanVienControl {
 
     public NhanVien taoNhanVien(String ma, String hoTen, String soDienThoai,
             String email, String matKhau, String gioiTinh, String vaiTro) {
-        return new NhanVien(ma, hoTen, chuoiAnToan(soDienThoai).trim(), email, matKhau,
+        return new NhanVien(ma, chuoiAnToan(hoTen).trim(),
+                chuoiAnToan(soDienThoai).trim(), chuoiAnToan(email).trim(), matKhau,
                 gioiTinh, vaiTro);
     }
 
@@ -81,7 +107,7 @@ public class NhanVienControl {
             return new KetQuaKiemTra(false, "Dữ liệu nhân viên không hợp lệ.", null);
         }
 
-        String hoTen = nhanVien.getHoTen() == null ? "" : nhanVien.getHoTen().trim();
+        String hoTen = chuoiAnToan(nhanVien.getHoTen()).trim();
         if (hoTen.length() < 2 || hoTen.length() > 50 || !hoTen.matches("[\\p{L} ]+")) {
             return new KetQuaKiemTra(false,
                     "Họ tên từ 2–50 ký tự, chỉ chứa chữ cái (có dấu) và dấu cách.", "hoTen");
@@ -93,23 +119,22 @@ public class NhanVienControl {
                     "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.", "soDienThoai");
         }
 
-        String email = nhanVien.getEmail() == null ? "" : nhanVien.getEmail().trim();
+        String email = chuoiAnToan(nhanVien.getEmail()).trim();
         if (email.length() > 30 || !email.matches(
                 "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             return new KetQuaKiemTra(false,
                     "Email không hợp lệ. Ví dụ: ten@example.com.", "email");
         }
 
-        String matKhau = nhanVien.getMatKhau() == null ? "" : nhanVien.getMatKhau();
+        String matKhau = chuoiAnToan(nhanVien.getMatKhau());
         if (matKhau.length() < 6 || matKhau.length() > 255) {
             return new KetQuaKiemTra(false, "Mật khẩu phải có từ 6–255 ký tự.", "matKhau");
         }
 
-        if (!"Nam".equals(nhanVien.getGioiTinh())
-                && !"Nữ".equals(nhanVien.getGioiTinh())) {
+        if (!"Nam".equals(nhanVien.getGioiTinh()) && !"Nữ".equals(nhanVien.getGioiTinh())) {
             return new KetQuaKiemTra(false, "Giới tính chỉ được chọn Nam/Nữ.", "gioiTinh");
         }
-        if (nhanVien.getVaiTro() == null || nhanVien.getVaiTro().isBlank()) {
+        if (chuoiAnToan(nhanVien.getVaiTro()).isBlank()) {
             return new KetQuaKiemTra(false, "Vui lòng chọn vai trò.", "vaiTro");
         }
         return KetQuaKiemTra.thanhCong();
@@ -120,22 +145,17 @@ public class NhanVienControl {
         if (keyword.isEmpty()) {
             return layDanhSach();
         }
-
         ArrayList<NhanVien> ketQua = new ArrayList<>();
         for (NhanVien nhanVien : layDanhSach()) {
-            String[] duLieuTimKiem = {
-                    nhanVien.getMaNhanVien(),
-                    nhanVien.getHoTen(),
-                    nhanVien.getSoDienThoai(),
-                    nhanVien.getEmail(),
-                    nhanVien.getGioiTinh(),
-                    hienThiVaiTro(nhanVien.getVaiTro())
-            };
+            String duLieuTimKiem = String.join(" ",
+                    chuoiAnToan(nhanVien.getMaNhanVien()),
+                    chuoiAnToan(nhanVien.getHoTen()),
+                    chuoiAnToan(nhanVien.getSoDienThoai()),
+                    chuoiAnToan(nhanVien.getEmail()),
+                    chuoiAnToan(nhanVien.getGioiTinh()),
+                    chuoiAnToan(hienThiVaiTro(nhanVien.getVaiTro())));
 
-            if (java.util.Arrays.stream(duLieuTimKiem)
-                    .map(this::chuoiAnToan)
-                    .map(giaTri -> giaTri.toLowerCase(Locale.ROOT))
-                    .anyMatch(giaTri -> giaTri.contains(keyword))) {
+            if (chuoiAnToan(duLieuTimKiem).toLowerCase(Locale.ROOT).contains(keyword)) {
                 ketQua.add(nhanVien);
             }
         }

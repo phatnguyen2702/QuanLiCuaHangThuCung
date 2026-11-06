@@ -5,25 +5,28 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.sql.Types;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import ConnectDB.connectDB;
 import control.PhanQuyenControl;
 import entity.CaLam;
 import entity.LichPhanCa;
 import entity.NhanVien;
-import microsoft.sql.Types;
 
 public class LichPhanCaDAO {
+    private static final String TRUY_VAN_LICH = "SELECT pc.maPhanCa, pc.ngayLamViec, pc.maNhanVien, nv.hoTen, "
+            + "pc.maCa, c.tenCa, c.gioBatDau, c.gioKetThuc "
+            + "FROM LichPhanCa pc "
+            + "JOIN NhanVien nv ON nv.maNhanVien = pc.maNhanVien "
+            + "JOIN CaLam c ON c.maCa = pc.maCa ";
 
     private static LichPhanCa docPhanCa(ResultSet rs) throws SQLException {
         java.sql.Date ngay = rs.getDate("ngayLamViec");
@@ -67,10 +70,7 @@ public class LichPhanCaDAO {
     public ArrayList<LichPhanCa> getAll() {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
         ArrayList<LichPhanCa> list = new ArrayList<>();
-        String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, pc.maNhanVien, nv.hoTen, "
-                + "pc.maCa, c.tenCa, c.gioBatDau, c.gioKetThuc FROM LichPhanCa pc "
-                + "JOIN NhanVien nv ON nv.maNhanVien = pc.maNhanVien "
-                + "JOIN CaLam c ON c.maCa = pc.maCa "
+        String sql = TRUY_VAN_LICH
                 + "ORDER BY pc.ngayLamViec DESC, pc.maPhanCa";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
@@ -91,7 +91,7 @@ public class LichPhanCaDAO {
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, pc.getMaPhanCa());
             if (pc.getNgayLamViec() == null)
-                ps.setNull(2, Types.DATETIME);
+                ps.setNull(2, Types.DATE);
             else
                 ps.setDate(2, java.sql.Date.valueOf(pc.getNgayLamViec()));
             ps.setString(3, pc.getMaNhanVien());
@@ -198,13 +198,9 @@ public class LichPhanCaDAO {
     public ArrayList<LichPhanCa> layPhanCaTheoNgay(LocalDate ngay) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
         if (ngay == null)
-            throw new IllegalArgumentException("Ngày thống kê không được rỗng");
+            throw new IllegalArgumentException("Ngày không được rỗng");
         ArrayList<LichPhanCa> list = new ArrayList<>();
-        String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, pc.maNhanVien, nv.hoTen, " +
-                "pc.maCa, c.tenCa, c.gioBatDau, c.gioKetThuc " +
-                "FROM LichPhanCa pc " +
-                "JOIN NhanVien nv ON nv.maNhanVien = pc.maNhanVien " +
-                "JOIN CaLam c ON c.maCa = pc.maCa " +
+        String sql = TRUY_VAN_LICH +
                 "WHERE pc.ngayLamViec = ? " +
                 "ORDER BY c.gioBatDau, nv.hoTen, pc.maCa";
         try (Connection con = connectDB.getConnection();
@@ -222,14 +218,10 @@ public class LichPhanCaDAO {
     public ArrayList<LichPhanCa> layPhanCaTrongTuan(LocalDate ngayTrongTuan) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
         if (ngayTrongTuan == null)
-            throw new IllegalArgumentException("Ngày thống kê không được rỗng");
+            throw new IllegalArgumentException("Ngày không được rỗng");
         LocalDate dauTuan = ngayTrongTuan.with(DayOfWeek.MONDAY);
         ArrayList<LichPhanCa> list = new ArrayList<>();
-        String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, pc.maNhanVien, nv.hoTen, " +
-                "pc.maCa, c.tenCa, c.gioBatDau, c.gioKetThuc " +
-                "FROM LichPhanCa pc " +
-                "JOIN NhanVien nv ON nv.maNhanVien = pc.maNhanVien " +
-                "JOIN CaLam c ON c.maCa = pc.maCa " +
+        String sql = TRUY_VAN_LICH +
                 "WHERE pc.ngayLamViec BETWEEN ? AND ? " +
                 "ORDER BY nv.hoTen, pc.ngayLamViec, c.gioBatDau";
         try (Connection con = connectDB.getConnection();
@@ -252,8 +244,7 @@ public class LichPhanCaDAO {
         KhungCa(LocalDate ngay, String maNV, LocalTime gioDau, LocalTime gioCuoi) {
             maNhanVien = maNV;
             batDau = ngay.atTime(gioDau);
-            LocalDateTime cuoi = ngay.atTime(gioCuoi);
-            ketThuc = cuoi.isAfter(batDau) ? cuoi : cuoi.plusDays(1);
+            ketThuc = ngay.atTime(gioCuoi);
         }
 
         boolean trungGio(KhungCa ca) {
@@ -262,38 +253,35 @@ public class LichPhanCaDAO {
         }
     }
 
-    private KhungCa khungCa(String maNV, String maCa, LocalDate ngay) throws SQLException {
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement("SELECT gioBatDau, gioKetThuc FROM CaLam WHERE maCa=?")) {
-            ps.setString(1, maCa);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next())
-                    throw new SQLException("Không tìm thấy ca làm: " + maCa);
-                return new KhungCa(ngay, maNV, layGio(rs, "gioBatDau"), layGio(rs, "gioKetThuc"));
-            }
-        }
-    }
-
     public boolean trungGio(String maNhanVien, String maCa, LocalDate ngay, String boQuaMaPhanCa)
             throws SQLException {
-        KhungCa canKiemTra = khungCa(maNhanVien, maCa, ngay);
-        String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc " +
-                "FROM LichPhanCa pc JOIN CaLam c ON c.maCa=pc.maCa " +
-                "WHERE pc.maNhanVien=? AND pc.ngayLamViec " +
-                "BETWEEN DATEADD(day,-1,?) AND DATEADD(day,1,?)";
+        String sql =         "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc " +
+        "FROM LichPhanCa pc JOIN CaLam c ON c.maCa=pc.maCa " +
+        "WHERE pc.maNhanVien=? AND pc.ngayLamViec=?";
         try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maNhanVien);
-            ps.setDate(2, java.sql.Date.valueOf(ngay));
-            ps.setDate(3, java.sql.Date.valueOf(ngay));
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    if (boQuaMaPhanCa != null && boQuaMaPhanCa.equals(rs.getString("maPhanCa")))
-                        continue;
-                    KhungCa daCo = new KhungCa(rs.getDate("ngayLamViec").toLocalDate(), maNhanVien,
-                            layGio(rs, "gioBatDau"), layGio(rs, "gioKetThuc"));
-                    if (canKiemTra.trungGio(daCo))
-                        return true;
+                PreparedStatement psCa = con.prepareStatement(
+                        "SELECT gioBatDau, gioKetThuc FROM CaLam WHERE maCa=?")) {
+            psCa.setString(1, maCa);
+            KhungCa canKiemTra;
+            try (ResultSet rsCa = psCa.executeQuery()) {
+                if (!rsCa.next())
+                    throw new SQLException("Không tìm thấy ca làm: " + maCa);
+                canKiemTra = new KhungCa(ngay, maNhanVien,
+                        layGio(rsCa, "gioBatDau"), layGio(rsCa, "gioKetThuc"));
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, maNhanVien);
+                ps.setDate(2, java.sql.Date.valueOf(ngay));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        if (boQuaMaPhanCa != null && boQuaMaPhanCa.equals(rs.getString("maPhanCa")))
+                            continue;
+                        KhungCa daCo = new KhungCa(rs.getDate("ngayLamViec").toLocalDate(), maNhanVien,
+                                layGio(rs, "gioBatDau"), layGio(rs, "gioKetThuc"));
+                        if (canKiemTra.trungGio(daCo))
+                            return true;
+                    }
                 }
             }
         }
@@ -327,8 +315,7 @@ public class LichPhanCaDAO {
         }
     }
 
-    private List<LichPhanCa> layLichNguon(Connection con, LocalDate dauTuan,
-            Map<String, LocalTime[]> gioTheoCa) throws SQLException {
+    private List<LichPhanCa> layLichNguon(Connection con, LocalDate dauTuan) throws SQLException {
         String sql = "SELECT pc.ngayLamViec, pc.maNhanVien, pc.maCa, c.gioBatDau, c.gioKetThuc " +
                 "FROM LichPhanCa pc JOIN CaLam c ON c.maCa = pc.maCa " +
                 "WHERE pc.ngayLamViec BETWEEN ? AND ? " +
@@ -340,9 +327,15 @@ public class LichPhanCaDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String maCa = rs.getString("maCa");
-                    ds.add(new LichPhanCa(null, rs.getDate("ngayLamViec").toLocalDate(),
-                            rs.getString("maNhanVien"), maCa));
-                    gioTheoCa.put(maCa, new LocalTime[] { layGio(rs, "gioBatDau"), layGio(rs, "gioKetThuc") });
+                    LichPhanCa pc = new LichPhanCa(null,
+                            rs.getDate("ngayLamViec").toLocalDate(),
+                            rs.getString("maNhanVien"), maCa);
+                    CaLam ca = new CaLam();
+                    ca.setMaCa(maCa);
+                    ca.setGioBatDau(layGio(rs, "gioBatDau"));
+                    ca.setGioKetThuc(layGio(rs, "gioKetThuc"));
+                    pc.setCaLam(ca);
+                    ds.add(pc);
                 }
             }
         }
@@ -393,8 +386,7 @@ public class LichPhanCaDAO {
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
-                Map<String, LocalTime[]> gioTheoCa = new HashMap<>();
-                List<LichPhanCa> lichNguon = layLichNguon(con, dauNguon, gioTheoCa);
+                List<LichPhanCa> lichNguon = layLichNguon(con, dauNguon);
                 List<KhungCa> daCo = layLichDaCo(con, dauDich);
                 int soLonNhat = soPhanCaLonNhat(con);
                 int them = 0, trung = 0, quaKhu = 0;
@@ -409,10 +401,9 @@ public class LichPhanCaDAO {
                             continue;
                         }
 
-                        LocalTime[] gio = gioTheoCa.get(pc.getMaCa());
-                        if (gio == null)
-                            throw new SQLException("Không tìm thấy giờ cho ca làm: " + pc.getMaCa());
-                        KhungCa caMoi = new KhungCa(ngayMoi, pc.getMaNhanVien(), gio[0], gio[1]);
+                        CaLam ca = pc.getCaLam();
+                        KhungCa caMoi = new KhungCa(ngayMoi, pc.getMaNhanVien(),
+                                ca.getGioBatDau(), ca.getGioKetThuc());
                         if (daCo.stream().anyMatch(caMoi::trungGio)) {
                             trung++;
                             continue;
