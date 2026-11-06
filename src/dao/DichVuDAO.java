@@ -49,7 +49,7 @@ public class DichVuDAO {
 
     private String timMaTiepTheo(Connection con, boolean khoaBang) throws SQLException {
 
-        String sql = "SELECT maDichVu FROM DichVu" + (khoaBang ? " WITH (TABLOCKX, HOLDLOCK)" : "");
+        String sql = "SELECT maDichVu FROM DichVu" + khoaBang;
         int max = 0;
         try (PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -61,12 +61,12 @@ public class DichVuDAO {
                     try {
                         max = Math.max(max, Integer.parseInt(ma.substring(2)));
                     } catch (NumberFormatException ignored) {
-                         }
+                    }
                 }
             }
         }
         if (max >= 999) {
-            throw new SQLException("Đã dùng hết dải mã DV001 đến DV999. Cần mở rộng quy tắc mã dịch vụ.");
+            throw new SQLException("Đã dùng hết dải mã DV001 đến DV999.");
         }
         return String.format("DV%03d", max + 1);
     }
@@ -74,34 +74,24 @@ public class DichVuDAO {
     public String them(DichVu dv) throws SQLException {
         control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DICH_VU);
 
-        String sql = "INSERT INTO DichVu (maDichVu, tenDichVu, giaDichVu, moTa) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO DichVu (maDichVu, tenDichVu, giaDichVu, moTa) "
+                + "VALUES (?, ?, ?, ?)";
 
         try (Connection con = connectDB.getConnection()) {
+            String ma = timMaTiepTheo(con, false);
 
-            con.setAutoCommit(false);
-            try {
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, ma);
+                ps.setString(2, dv.getTenDichVu());
+                ps.setBigDecimal(3, dv.getGiaDichVu());
+                ps.setString(4, dv.getMoTa());
 
-                String ma = timMaTiepTheo(con, true);
-                try (PreparedStatement ps = con.prepareStatement(sql)) {
-                    ps.setString(1, ma);
-                    ps.setString(2, dv.getTenDichVu());
-                    ps.setBigDecimal(3, dv.getGiaDichVu());
-                    ps.setString(4, dv.getMoTa());
-                    if (ps.executeUpdate() != 1)
-                        throw new SQLException("Không thể thêm dịch vụ.");
+                if (ps.executeUpdate() != 1) {
+                    throw new SQLException("Không thể thêm dịch vụ.");
                 }
-
-                con.commit();
-                return ma;
-            } catch (SQLException | RuntimeException ex) {
-                try {
-
-                    con.rollback();
-                } catch (SQLException loiRollback) {
-                    ex.addSuppressed(loiRollback);
-                }
-                throw ex;
             }
+
+            return ma;
         }
     }
 
@@ -121,8 +111,8 @@ public class DichVuDAO {
     }
 
     public int[] demLienQuan(String ma) throws SQLException {
-
-        String sql = "SELECT (SELECT COUNT(*) FROM ChiTietLichHen WHERE maDichVu = ?), "
+        String sql = "SELECT "
+                + "(SELECT COUNT(*) FROM ChiTietLichHen WHERE maDichVu = ?), "
                 + "(SELECT COUNT(*) FROM ChiTietDichVu WHERE maDichVu = ?), "
                 + "(SELECT COUNT(*) FROM ChiTietHoaDon WHERE maDichVu = ?)";
 

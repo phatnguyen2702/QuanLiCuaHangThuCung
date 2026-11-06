@@ -1,11 +1,11 @@
 package control;
 
-import entity.ThanhToan;
+import entity.ChiTietHoaDon;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class PhienLamViecControl {
-    private static final List<ThanhToan> GIO_HANG = new ArrayList<>();
+    private static final List<ChiTietHoaDon> GIO_HANG = new ArrayList<>();
     public static String maNV;
     public static String hoTen;
     public static String vaiTro;
@@ -20,7 +20,7 @@ public final class PhienLamViecControl {
         vaiTro = role;
     }
 
-    public static List<ThanhToan> gioHang() {
+    public static List<ChiTietHoaDon> gioHang() {
         return GIO_HANG;
     }
 }

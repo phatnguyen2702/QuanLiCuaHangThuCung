@@ -6,7 +6,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +56,7 @@ public class ChiTietHoaDonUI extends JPanel {
 
     private HoaDon hoaDon;
     private List<ChiTietHoaDon> chiTiet = List.of();
-    private BigDecimal tongTien = BigDecimal.ZERO;
+    private double tongTien;
 
     public ChiTietHoaDonUI(Runnable quayLai) {
         this.quayLai = quayLai;
@@ -88,10 +87,10 @@ public class ChiTietHoaDonUI extends JPanel {
     public void hienThi(
             HoaDon hoaDon,
             List<ChiTietHoaDon> chiTiet,
-            BigDecimal tongTien) {
+            double tongTien) {
         this.hoaDon = hoaDon;
         this.chiTiet = List.copyOf(chiTiet);
-        this.tongTien = tongTien == null ? BigDecimal.ZERO : tongTien;
+        this.tongTien = tongTien;
 
         lblMaHoaDon.setText(hoaDon.getMaHoaDon());
         lblNgayLap.setText(formatDate(hoaDon.getNgayLap()));
@@ -198,17 +197,16 @@ public class ChiTietHoaDonUI extends JPanel {
         return footer;
     }
 
-    private BigDecimal tinhTongTienGiam() {
-        BigDecimal tongTruocGiam = BigDecimal.ZERO;
+    private double tinhTongTienGiam() {
+        double tongTruocGiam = 0;
         for (ChiTietHoaDon item : chiTiet) {
-            tongTruocGiam = tongTruocGiam.add(tinhThanhTienChuaGiam(item));
+            tongTruocGiam += tinhThanhTienChuaGiam(item);
         }
-        return tongTruocGiam.subtract(tongTien).max(BigDecimal.ZERO);
+        return Math.max(tongTruocGiam - tongTien, 0);
     }
 
-    private static BigDecimal tinhThanhTienChuaGiam(ChiTietHoaDon item) {
-        return BigDecimal.valueOf(item.getDonGia())
-                .multiply(BigDecimal.valueOf(item.getSoLuong()));
+    private static double tinhThanhTienChuaGiam(ChiTietHoaDon item) {
+        return item.getDonGia() * item.getSoLuong();
     }
 
     private String layTenThuCung(List<ChiTietHoaDon> chiTiet) {
@@ -305,12 +303,8 @@ public class ChiTietHoaDonUI extends JPanel {
         return dateTime == null ? "" : dateTime.format(DATE_TIME);
     }
 
-    private static String formatMoney(BigDecimal amount) {
-        return MONEY.format(amount == null ? BigDecimal.ZERO : amount);
-    }
-
     private static String formatMoney(double amount) {
-        return MONEY.format(BigDecimal.valueOf(amount));
+        return MONEY.format(amount);
     }
 
     private static class DetailTableModel extends AbstractTableModel {

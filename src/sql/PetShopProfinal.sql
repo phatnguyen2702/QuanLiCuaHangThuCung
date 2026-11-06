@@ -97,7 +97,14 @@ CREATE TABLE CaLam (
     maCa VARCHAR(10) NOT NULL PRIMARY KEY,
     tenCa NVARCHAR(50) NULL,
     gioBatDau TIME NULL,
-    gioKetThuc TIME NULL
+    gioKetThuc TIME NULL,
+    CONSTRAINT CK_CaLam_GioLamViec CHECK (
+        gioBatDau >= CAST('06:00' AS TIME)
+        AND gioBatDau < CAST('22:00' AS TIME)
+        AND gioKetThuc > CAST('06:00' AS TIME)
+        AND gioKetThuc <= CAST('22:00' AS TIME)
+        AND gioKetThuc > gioBatDau
+    )
 );
 CREATE TABLE LichPhanCa (
     maPhanCa VARCHAR(10) NOT NULL PRIMARY KEY,

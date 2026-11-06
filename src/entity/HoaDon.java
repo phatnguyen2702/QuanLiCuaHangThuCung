@@ -1,22 +1,21 @@
 package entity;
 
-import java.math.BigDecimal;
+import control.HoaDonControl;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import dao.HoaDonDAO;
-
-// Lớp dữ liệu biểu diễn các thuộc tính của hóa đơn, bao gồm cả thông tin hiển thị khi tra cứu.
 public class HoaDon {
+    private String maHoaDon;
+    private LocalDateTime ngayLap;
+    private PhuongThucThanhToan maPhuongThuc;
+    private KhachHang maKhachHang;
+    private NhanVien maNhanVien;
+    private Voucher maVoucher;
 
-    private final String maHoaDon;
-    private final LocalDateTime ngayLap;
-    private final String maPhuongThuc;
-    private final String maKhachHang;
-    private final String tenKhachHang;
-    private final String soDienThoai;
-    private final String tenPhuongThuc;
+    public HoaDon() {
+    }
+
     public HoaDon(
             String maHoaDon,
             LocalDateTime ngayLap,
@@ -35,15 +34,37 @@ public class HoaDon {
             String tenPhuongThuc) {
         this.maHoaDon = maHoaDon;
         this.ngayLap = ngayLap;
+        if (maPhuongThuc != null) {
+            this.maPhuongThuc = new PhuongThucThanhToan(
+                    maPhuongThuc, tenPhuongThuc, true, null);
+        }
+        if (maKhachHang != null) {
+            this.maKhachHang = new KhachHang(
+                    maKhachHang, tenKhachHang, soDienThoai, null, null, 0);
+        }
+    }
+
+    public HoaDon(
+            String maHoaDon,
+            LocalDateTime ngayLap,
+            PhuongThucThanhToan maPhuongThuc,
+            KhachHang maKhachHang,
+            NhanVien maNhanVien,
+            Voucher maVoucher) {
+        this.maHoaDon = maHoaDon;
+        this.ngayLap = ngayLap;
         this.maPhuongThuc = maPhuongThuc;
         this.maKhachHang = maKhachHang;
-        this.tenKhachHang = tenKhachHang;
-        this.soDienThoai = soDienThoai;
-        this.tenPhuongThuc = tenPhuongThuc;
+        this.maNhanVien = maNhanVien;
+        this.maVoucher = maVoucher;
     }
 
     public String getMaHoaDon() {
         return maHoaDon;
+    }
+
+    public void setMaHoaDon(String maHoaDon) {
+        this.maHoaDon = maHoaDon;
     }
 
     public LocalDateTime getNgayLap() {
@@ -51,26 +72,50 @@ public class HoaDon {
     }
 
     public String getMaPhuongThuc() {
+        return maPhuongThuc == null ? null : maPhuongThuc.getMaPhuongThuc();
+    }
+
+    public PhuongThucThanhToan getPhuongThucThanhToan() {
         return maPhuongThuc;
     }
 
     public String getMaKhachHang() {
+        return maKhachHang == null ? null : maKhachHang.getMaKhachHang();
+    }
+
+    public KhachHang getKhachHang() {
         return maKhachHang;
     }
 
+    public String getMaNhanVien() {
+        return maNhanVien == null ? null : maNhanVien.getMaNhanVien();
+    }
+
+    public NhanVien getNhanVien() {
+        return maNhanVien;
+    }
+
+    public String getMaVoucher() {
+        return maVoucher == null ? null : maVoucher.getMaVoucher();
+    }
+
+    public Voucher getVoucher() {
+        return maVoucher;
+    }
+
     public String getTenKhachHang() {
-        return tenKhachHang;
+        return maKhachHang == null ? null : maKhachHang.getHoTen();
     }
 
     public String getSoDienThoai() {
-        return soDienThoai;
+        return maKhachHang == null ? null : maKhachHang.getSoDienThoai();
     }
 
     public String getTenPhuongThuc() {
-        return tenPhuongThuc;
+        return maPhuongThuc == null ? null : maPhuongThuc.getTenPhuongThuc();
     }
 
-    public BigDecimal getTongTien() throws SQLException {
+    public double getTongTien() throws SQLException {
         return tinhTongTien();
     }
 
@@ -78,11 +123,11 @@ public class HoaDon {
         return chiTiet();
     }
 
-    public BigDecimal tinhTongTien() throws SQLException {
-        return new HoaDonDAO().layTongTienHoaDon(maHoaDon);
+    public double tinhTongTien() throws SQLException {
+        return new HoaDonControl().layTongTienHoaDon(maHoaDon);
     }
 
     public List<ChiTietHoaDon> chiTiet() throws SQLException {
-        return new HoaDonDAO().layDanhSachChiTietHoaDon(maHoaDon);
+        return new HoaDonControl().layDanhSachChiTietHoaDon(maHoaDon);
     }
 }

@@ -12,7 +12,6 @@ import java.net.URL;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 public class GoiYThucAnUI extends JFrame {
@@ -121,25 +120,25 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
         JLabel lblDescription = new JLabel(details);
         lblDescription.setFont(UIStyle.font(Font.PLAIN, 13));
         pnlCard.add(lblDescription, BorderLayout.CENTER);
-        entity.ThanhToan daThem = timSanPhamTrongGioGoiY(product.getMaSanPham());
+        entity.ChiTietHoaDon daThem = timSanPhamTrongGioGoiY(product.getMaSanPham());
         JButton btnAdd = UIStyle.nutXanh(daThem == null ? "Thêm vào giỏ hàng"
                 : "Đã thêm · SL " + daThem.getSoLuong() + " · thêm tiếp");
         btnAdd.addActionListener(e -> themSanPhamGoiYVaoGio(product));
         pnlCard.add(btnAdd, BorderLayout.SOUTH);
         return pnlCard;
     }
-    private entity.ThanhToan timSanPhamTrongGioGoiY(String maSanPham) {
-        for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
+    private entity.ChiTietHoaDon timSanPhamTrongGioGoiY(String maSanPham) {
+        for (entity.ChiTietHoaDon item : control.PhienLamViecControl.gioHang()) {
             if (maSanPham.equals(item.getMaSanPham()))
                 return item;
         }
         return null;
     }
     private int tinhTongSoLuongTrongGio() {
-        return control.PhienLamViecControl.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
+        return control.PhienLamViecControl.gioHang().stream().mapToInt(entity.ChiTietHoaDon::getSoLuong).sum();
     }
     private void themSanPhamGoiYVaoGio(SanPham product) {
-        entity.ThanhToan item = timSanPhamTrongGioGoiY(product.getMaSanPham());
+        entity.ChiTietHoaDon item = timSanPhamTrongGioGoiY(product.getMaSanPham());
         if (item != null) {
             if (item.getSoLuong() >= product.getTonKho()) {
                 JOptionPane.showMessageDialog(this, "Số lượng trong giỏ đã bằng tồn kho hiện có.",
@@ -150,8 +149,8 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
         } else {
             if (product.getTonKho() < 1)
                 return;
-            control.PhienLamViecControl.gioHang().add(entity.ThanhToan.sanPham(
-                    product.getMaSanPham(), product.getTenSanPham(), BigDecimal.valueOf(product.getGiaBan())));
+            control.PhienLamViecControl.gioHang().add(entity.ChiTietHoaDon.sanPham(
+                    product.getMaSanPham(), product.getTenSanPham(), product.getGiaBan()));
         }
         napLai();
     }
@@ -227,7 +226,7 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
                     return;
                 }
                 String code = String.valueOf(getValueAt(row, 0));
-                for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
+                for (entity.ChiTietHoaDon item : control.PhienLamViecControl.gioHang()) {
                     if (code.equals(item.getMaSanPham())) {
                         final int tonKho;
                         try {
@@ -258,7 +257,7 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
                 fireTableCellUpdated(row, column);
             }
         };
-        for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
+        for (entity.ChiTietHoaDon item : control.PhienLamViecControl.gioHang()) {
             model.addRow(new Object[] { item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
                     String.format("%,.0f đ", item.getDonGia()), String.format("%,.0f đ", item.getThanhTien()) });
         }
