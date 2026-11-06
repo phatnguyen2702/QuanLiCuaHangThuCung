@@ -38,7 +38,7 @@ public final class TrangChuControl {
     }
 
     public ThongKeHoaDon thongKeHoaDon() throws SQLException {
-        HoaDonDAO.ThongKe kq = new HoaDonDAO().layThongKe();
+        HoaDonDAO.ThongKe kq = new HoaDonControl().layThongKe();
         return new ThongKeHoaDon(kq.getDoanhThuHomNay(), kq.getHoaDonHomNay());
     }
 
