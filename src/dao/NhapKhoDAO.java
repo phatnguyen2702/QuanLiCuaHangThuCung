@@ -1,93 +1,32 @@
 package dao;
-
-import control.PhanQuyenControl;
-
 import ConnectDB.connectDB;
+import control.PhanQuyenControl;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
 import entity.PhieuNhapKho;
 import entity.SanPham;
-
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-
-/**
- * DAO cua man hinh "Nhap kho": phieu nhap (luu, nhap, hoan tat, xoa)
- * + nha cung cap + san pham theo nha cung cap.
- */
+import java.util.Map;
 public class NhapKhoDAO {
-
-    // Bổ sung cột hạn sử dụng cho chi tiết nhập nếu cơ sở dữ liệu chưa có.
-    private void damBaoCotHanSuDung() throws SQLException {
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement()) {
-            st.execute("IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'hanSuDung') IS NULL " +
-                    "ALTER TABLE dbo.ChiTietPhieuNhap ADD hanSuDung DATE NULL");
-        }
+    private record TongKetNhap(int soMatHang, double tongTien) { }
+    public String taoMaPhieuNhapMoi() throws SQLException {
+        return taoMaMoi("PhieuNhapKho", "maPhieuNhap", "PN");
     }
-
-    // Lấy mã mới để hiển thị khi lập bản ghi.
-    // Kết quả: chuỗi kết quả.
-    public String taoMaMoi() throws SQLException {
-        return taoMa("PhieuNhapKho", "maPhieuNhap", "PN", 3);
-    }
-
-    // Luu phieu + chi tiet trong 1 giao dich: loi o dau thi huy het
-    // Lưu dữ liệu nhập kho trong cơ sở dữ liệu.
-    // Tham số phieu: phiếu.
-    // Tham số chiTiet: chi tiết.
-    public void luu(PhieuNhapKho phieu,
-            List<ChiTietPhieuNhap> chiTiet) throws SQLException {
+    public void luuPhieuNhap(PhieuNhapKho phieu, List<ChiTietPhieuNhap> chiTiet) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
-
-        damBaoCotHanSuDung();
-
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String sqlPhieu = """
-                INSERT INTO PhieuNhapKho
-                (maPhieuNhap, ngayNhap, trangThai, maNhanVien, maNhaCungCap)
-                VALUES (?, ?, ?, ?, ?)
-                """;
-
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String sqlChiTiet = """
-                INSERT INTO ChiTietPhieuNhap
-                (maPhieuNhap, maSanPham, soLuongNhap, donGiaNhap, trangThai, hanSuDung)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """;
-
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-            // nhau.
             con.setAutoCommit(false);
-
             try {
-                int daCapNhat;
-                try (PreparedStatement ps = con.prepareStatement(
-                        "UPDATE PhieuNhapKho SET ngayNhap=?, trangThai=?, maNhanVien=?, maNhaCungCap=? WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0")) {
-                    ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayNhap()));
-                    ps.setBoolean(2, phieu.isTrangThai());
-                    ps.setString(3, phieu.getMaNhanVien());
-                    ps.setString(4, phieu.getMaNhaCungCap());
-                    ps.setString(5, phieu.getMaPhieuNhap());
-                    daCapNhat = ps.executeUpdate();
-                }
-                if (daCapNhat > 0) {
-                    try (PreparedStatement ps = con
-                            .prepareStatement("DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap=?")) {
-                        ps.setString(1, phieu.getMaPhieuNhap());
-                        ps.executeUpdate();
-                    }
-                } else {
-                    try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
+                if (!capNhatPhieuNhapNhap(con, phieu)) {
+                    try (PreparedStatement ps = con.prepareStatement("""
+                            INSERT INTO PhieuNhapKho(maPhieuNhap,ngayNhap,trangThai,maNhanVien,maNhaCungCap)
+                            VALUES(?,?,?,?,?)
+                            """)) {
                         ps.setString(1, phieu.getMaPhieuNhap());
                         ps.setTimestamp(2, Timestamp.valueOf(phieu.getNgayNhap()));
                         ps.setBoolean(3, phieu.isTrangThai());
@@ -96,500 +35,257 @@ public class NhapKhoDAO {
                         ps.executeUpdate();
                     }
                 }
-
-                try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
-                    for (ChiTietPhieuNhap ct : chiTiet) {
-                        ps.setString(1, phieu.getMaPhieuNhap());
-                        ps.setString(2, ct.getMaSanPham());
-                        ps.setInt(3, ct.getSoLuongNhap());
-                        ps.setDouble(4, ct.getDonGiaNhap());
-                        ps.setBoolean(5, phieu.isTrangThai());
-                        if (ct.getHanSuDung() == null)
-                            ps.setNull(6, Types.DATE);
-                        else
-                            ps.setDate(6, Date.valueOf(ct.getHanSuDung()));
-                        ps.addBatch();
-                    }
-                    ps.executeBatch();
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap=?")) {
+                    ps.setString(1, phieu.getMaPhieuNhap());
+                    ps.executeUpdate();
                 }
-
-                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
+                themChiTietPhieuNhap(con, phieu, chiTiet);
                 con.commit();
-
-            } catch (SQLException e) {
-                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
-                con.rollback();
-                throw e;
+            } catch (SQLException | RuntimeException ex) {
+                rollback(con, ex);
+                throw ex;
             }
         }
     }
-
-    // Lấy chi tiết.
-    // Tham số maPhieu: mã phiếu.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<ChiTietPhieuNhap>.
-    public ArrayList<ChiTietPhieuNhap> layChiTiet(String maPhieu) throws SQLException {
-        damBaoCotHanSuDung();
-        // ds: Danh sách chứa các phần tử kiểu ChiTietPhieuNhap.
-        ArrayList<ChiTietPhieuNhap> ds = new ArrayList<>();
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham WHERE ct.maPhieuNhap=? ORDER BY ct.maSanPham";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection c = connectDB.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, maPhieu);
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-            try (ResultSet r = p.executeQuery()) {
-                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
-                while (r.next()) {
-                    ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
-                    ct.setMaPhieuNhap(maPhieu);
-                    ct.setMaSanPham(r.getString(1));
-                    ct.setTenSanPham(r.getString(2));
-                    ct.setSoLuongNhap(r.getInt(3));
-                    ct.setDonGiaNhap(r.getDouble(4));
-                    // d: Lưu d dưới dạng dữ liệu thời gian.
-                    Date d = r.getDate(5);
-                    ct.setHanSuDung(d == null ? null : d.toLocalDate());
-                    ds.add(ct);
-                }
+    private boolean capNhatPhieuNhapNhap(Connection con, PhieuNhapKho phieu) throws SQLException {
+        String sql = "UPDATE PhieuNhapKho SET ngayNhap=?,trangThai=?,maNhanVien=?,maNhaCungCap=? "
+                + "WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setTimestamp(1, Timestamp.valueOf(phieu.getNgayNhap()));
+            ps.setBoolean(2, phieu.isTrangThai());
+            ps.setString(3, phieu.getMaNhanVien());
+            ps.setString(4, phieu.getMaNhaCungCap());
+            ps.setString(5, phieu.getMaPhieuNhap());
+            return ps.executeUpdate() == 1;
+        }
+    }
+    private void themChiTietPhieuNhap(Connection con, PhieuNhapKho phieu, List<ChiTietPhieuNhap> chiTiet) throws SQLException {
+        String sql = "INSERT INTO ChiTietPhieuNhap(maPhieuNhap,maSanPham,soLuongNhap,donGiaNhap,trangThai,hanSuDung) "
+                + "VALUES(?,?,?,?,?,?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (ChiTietPhieuNhap dong : chiTiet) {
+                ps.setString(1, phieu.getMaPhieuNhap());
+                ps.setString(2, dong.getMaSanPham());
+                ps.setInt(3, dong.getSoLuongNhap());
+                ps.setDouble(4, dong.getDonGiaNhap());
+                ps.setBoolean(5, phieu.isTrangThai());
+                if (dong.getHanSuDung() == null) ps.setNull(6, Types.DATE);
+                else ps.setDate(6, Date.valueOf(dong.getHanSuDung()));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+    public ArrayList<ChiTietPhieuNhap> layChiTietPhieuNhap(String maPhieu) throws SQLException {
+        String sql = "SELECT ct.maSanPham,sp.tenSanPham,ct.soLuongNhap,ct.donGiaNhap,ct.hanSuDung "
+                + "FROM ChiTietPhieuNhap ct JOIN SanPham sp ON sp.maSanPham=ct.maSanPham "
+                + "WHERE ct.maPhieuNhap=? ORDER BY ct.maSanPham";
+        ArrayList<ChiTietPhieuNhap> rows = new ArrayList<>();
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maPhieu);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) rows.add(docChiTietPhieuNhap(rs, maPhieu));
             }
         }
-        return ds;
+        return rows;
     }
-
-    /**
-     * Du lieu in chung tu phieu nhap. Tat ca thong tin duoc lay tu SQL Server,
-     * khong doc tu bang dang nhap tren giao dien.
-     */
     public static final class BanInPhieuNhap {
-        // phieu: Đối tượng phiếu có kiểu PhieuNhapKho.
         private final PhieuNhapKho phieu;
-        // tenNhanVien: Lưu tên nhân viên.
         private final String tenNhanVien;
-        // soDienThoaiNhaCungCap: Lưu số điện thoại nhà cung cấp.
         private final String soDienThoaiNhaCungCap;
-        // diaChiNhaCungCap: Lưu địa chỉ nhà cung cấp.
         private final String diaChiNhaCungCap;
-        // chiTiet: Lưu chi tiết; phần tử có kiểu ChiTietPhieuNhap.
-        private final ArrayList<ChiTietPhieuNhap> chiTiet;
-
-        // Khởi tạo đối tượng từ các giá trị được truyền vào.
-        // Tham số phieu: phiếu.
-        // Tham số tenNhanVien: tên nhân viên.
-        // Tham số soDienThoaiNhaCungCap: số điện thoại nhà cung cấp.
-        // Tham số diaChiNhaCungCap: địa chỉ nhà cung cấp.
-        // Tham số chiTiet: chi tiết.
-        public BanInPhieuNhap(PhieuNhapKho phieu, String tenNhanVien,
-                String soDienThoaiNhaCungCap, String diaChiNhaCungCap,
-                ArrayList<ChiTietPhieuNhap> chiTiet) {
+        private final List<ChiTietPhieuNhap> chiTiet;
+        public BanInPhieuNhap(PhieuNhapKho phieu, String tenNhanVien, String soDienThoaiNhaCungCap,
+                String diaChiNhaCungCap, List<ChiTietPhieuNhap> chiTiet) {
             this.phieu = phieu;
             this.tenNhanVien = tenNhanVien;
             this.soDienThoaiNhaCungCap = soDienThoaiNhaCungCap;
             this.diaChiNhaCungCap = diaChiNhaCungCap;
-            this.chiTiet = chiTiet;
+            this.chiTiet = List.copyOf(chiTiet);
         }
-
-        // Trả về phiếu của đối tượng.
-        public PhieuNhapKho getPhieu() {
-            return phieu;
-        }
-
-        // Trả về tên nhân viên của đối tượng.
-        public String getTenNhanVien() {
-            return tenNhanVien;
-        }
-
-        // Trả về số điện thoại nhà cung cấp của đối tượng.
-        public String getSoDienThoaiNhaCungCap() {
-            return soDienThoaiNhaCungCap;
-        }
-
-        // Trả về địa chỉ nhà cung cấp của đối tượng.
-        public String getDiaChiNhaCungCap() {
-            return diaChiNhaCungCap;
-        }
-
-        // Lấy chi tiết.
-        // Kết quả: đối tượng/giá trị kiểu List<ChiTietPhieuNhap>.
-        public List<ChiTietPhieuNhap> getChiTiet() {
-            return java.util.Collections.unmodifiableList(chiTiet);
-        }
-
-        // Lấy tổng tiền.
-        // Kết quả: giá trị số thực.
-        public double getTongTien() {
-            return chiTiet.stream().mapToDouble(ChiTietPhieuNhap::getThanhTien).sum();
-        }
-
-        // Lấy tổng số lượng.
-        // Kết quả: giá trị số nguyên.
-        public int getTongSoLuong() {
-            return chiTiet.stream().mapToInt(ChiTietPhieuNhap::getSoLuongNhap).sum();
-        }
+        public PhieuNhapKho getPhieu() { return phieu; }
+        public String getTenNhanVien() { return tenNhanVien; }
+        public String getSoDienThoaiNhaCungCap() { return soDienThoaiNhaCungCap; }
+        public String getDiaChiNhaCungCap() { return diaChiNhaCungCap; }
+        public List<ChiTietPhieuNhap> getChiTiet() { return Collections.unmodifiableList(chiTiet); }
+        public double getTongTien() { return chiTiet.stream().mapToDouble(ChiTietPhieuNhap::getThanhTien).sum(); }
+        public int getTongSoLuong() { return chiTiet.stream().mapToInt(ChiTietPhieuNhap::getSoLuongNhap).sum(); }
     }
-
-    /**
-     * Tai phieu nhap da LUU theo ma: ke ca phieu nhap va phieu da hoan tat.
-     * Vi du chi tiet va PDF deu dung cung bo du lieu tu database.
-     */
-    public BanInPhieuNhap layBanInPhieuNhap(String maPhieu) throws SQLException {
+    public BanInPhieuNhap layThongTinInPhieuNhap(String maPhieu) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TRA_CUU_NHAP_KHO);
-        if (maPhieu == null || maPhieu.isBlank())
-            throw new IllegalArgumentException("Vui lòng chọn mã phiếu nhập hợp lệ.");
-        damBaoCotHanSuDung();
-
-        // sqlPhieu: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String sqlPhieu = """
-                SELECT pn.maPhieuNhap, pn.ngayNhap, pn.trangThai, pn.maNhanVien,
-                       nv.hoTen AS tenNhanVien, pn.maNhaCungCap,
-                       n.tenNhaCungCap, n.soDienThoai AS sdtNhaCungCap,
-                       n.diaChi AS diaChiNhaCungCap
-                FROM PhieuNhapKho pn
-                LEFT JOIN NhanVien nv ON nv.maNhanVien = pn.maNhanVien
-                LEFT JOIN Nhacungcap n ON n.maNhaCungCap = pn.maNhaCungCap
-                WHERE pn.maPhieuNhap = ?
-                """;
-        // sqlChiTiet: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí
-        // nhận tham số nếu có.
-        String sqlChiTiet = """
-                SELECT ct.maSanPham, sp.tenSanPham, ct.soLuongNhap,
-                       ct.donGiaNhap, ct.hanSuDung
-                FROM ChiTietPhieuNhap ct
-                LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham
-                WHERE ct.maPhieuNhap = ?
-                ORDER BY ct.maSanPham
-                """;
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection con = connectDB.getConnection()) {
-            PhieuNhapKho phieu = null;
-            String tenNV = null, sdtNcc = null, diaChiNcc = null;
-            try (PreparedStatement ps = con.prepareStatement(sqlPhieu)) {
-                ps.setString(1, maPhieu);
-                // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        phieu = new PhieuNhapKho();
-                        phieu.setMaPhieuNhap(rs.getString("maPhieuNhap"));
-                        // time: Lưu giờ dưới dạng dữ liệu thời gian.
-                        Timestamp time = rs.getTimestamp("ngayNhap");
-                        phieu.setNgayNhap(time == null ? null : time.toLocalDateTime());
-                        phieu.setTrangThai(rs.getBoolean("trangThai"));
-                        phieu.setMaNhanVien(rs.getString("maNhanVien"));
-                        phieu.setMaNhaCungCap(rs.getString("maNhaCungCap"));
-                        phieu.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
-                        tenNV = rs.getString("tenNhanVien");
-                        sdtNcc = rs.getString("sdtNhaCungCap");
-                        diaChiNcc = rs.getString("diaChiNhaCungCap");
-                    }
-                }
-            }
-            if (phieu == null)
-                throw new SQLException("Không tìm thấy phiếu nhập " + maPhieu + " trong SQL Server.");
-
-            // danhSach: Danh sách chứa các phần tử kiểu ChiTietPhieuNhap.
-            ArrayList<ChiTietPhieuNhap> danhSach = new ArrayList<>();
-            try (PreparedStatement ps = con.prepareStatement(sqlChiTiet)) {
-                ps.setString(1, maPhieu);
-                // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-                try (ResultSet rs = ps.executeQuery()) {
-                    // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
-                    while (rs.next()) {
-                        ChiTietPhieuNhap ct = new ChiTietPhieuNhap();
-                        ct.setMaPhieuNhap(maPhieu);
-                        ct.setMaSanPham(rs.getString("maSanPham"));
-                        ct.setTenSanPham(rs.getString("tenSanPham"));
-                        ct.setSoLuongNhap(rs.getInt("soLuongNhap"));
-                        ct.setDonGiaNhap(rs.getDouble("donGiaNhap"));
-                        // hsd: Lưu hạn sử dụng dưới dạng dữ liệu thời gian.
-                        Date hsd = rs.getDate("hanSuDung");
-                        ct.setHanSuDung(hsd == null ? null : hsd.toLocalDate());
-                        danhSach.add(ct);
-                    }
-                }
-            }
-            return new BanInPhieuNhap(phieu, tenNV, sdtNcc, diaChiNcc, danhSach);
-        }
-    }
-
-    // =========================================================
-    // PHIEU NHAP NHAP (trangThai = 0)
-    // =========================================================
-
-    // Lấy danh sách phiếu nhập kho còn ở trạng thái nháp.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<PhieuNhapKho>.
-    public ArrayList<PhieuNhapKho> dsPhieuNhap() throws SQLException {
-
-        // list: Danh sách chứa các phần tử kiểu PhieuNhapKho.
-        ArrayList<PhieuNhapKho> list = new ArrayList<>();
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
         String sql = """
-                SELECT pn.maPhieuNhap, pn.ngayNhap, pn.maNhanVien,
-                       pn.maNhaCungCap, ncc.tenNhaCungCap,
-                       COUNT(ct.maSanPham) AS soMatHang,
-                       ISNULL(SUM(ct.soLuongNhap * ct.donGiaNhap), 0) AS tongTien
+                SELECT pn.maPhieuNhap,pn.ngayNhap,pn.trangThai,pn.maNhanVien,
+                       nv.hoTen AS tenNhanVien,pn.maNhaCungCap,n.tenNhaCungCap,
+                       n.soDienThoai AS sdtNhaCungCap,n.diaChi AS diaChiNhaCungCap
                 FROM PhieuNhapKho pn
-                JOIN Nhacungcap ncc ON ncc.maNhaCungCap = pn.maNhaCungCap
-                LEFT JOIN ChiTietPhieuNhap ct ON ct.maPhieuNhap = pn.maPhieuNhap
-                WHERE ISNULL(pn.trangThai, 1) = 0
-                GROUP BY pn.maPhieuNhap, pn.ngayNhap, pn.maNhanVien,
-                         pn.maNhaCungCap, ncc.tenNhaCungCap
-                ORDER BY pn.maPhieuNhap
+                LEFT JOIN NhanVien nv ON nv.maNhanVien=pn.maNhanVien
+                LEFT JOIN Nhacungcap n ON n.maNhaCungCap=pn.maNhaCungCap
+                WHERE pn.maPhieuNhap=?
                 """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
-            while (rs.next()) {
-                PhieuNhapKho p = new PhieuNhapKho();
-                p.setMaPhieuNhap(rs.getString("maPhieuNhap"));
-                // t: Lưu bảng/thành phần được xử lý dưới dạng dữ liệu thời gian.
-                Timestamp t = rs.getTimestamp("ngayNhap");
-                p.setNgayNhap(t == null ? null : t.toLocalDateTime());
-                p.setMaNhanVien(rs.getString("maNhanVien"));
-                p.setMaNhaCungCap(rs.getString("maNhaCungCap"));
-                p.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
-                p.setSoMatHang(rs.getInt("soMatHang"));
-                p.setTongTien(rs.getDouble("tongTien"));
-                list.add(p);
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maPhieu);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new SQLException("Không tìm thấy phiếu nhập " + maPhieu + ".");
+                PhieuNhapKho phieu = docPhieuNhap(rs);
+                return new BanInPhieuNhap(phieu, rs.getString("tenNhanVien"),
+                        rs.getString("sdtNhaCungCap"), rs.getString("diaChiNhaCungCap"),
+                        layChiTietPhieuNhap(maPhieu));
             }
         }
-
-        return list;
     }
-
-    /** Hoan tat phieu nhap: phieu + moi dong chi tiet chuyen sang trangThai 1. */
+    public ArrayList<PhieuNhapKho> layDanhSachPhieuNhap() throws SQLException {
+        String sql = "SELECT pn.maPhieuNhap,pn.ngayNhap,pn.trangThai,pn.maNhanVien,"
+                + "pn.maNhaCungCap,n.tenNhaCungCap FROM PhieuNhapKho pn "
+                + "JOIN NhaCungCap n ON n.maNhaCungCap=pn.maNhaCungCap "
+                + "WHERE ISNULL(pn.trangThai,1)=0 ORDER BY pn.maPhieuNhap";
+        Map<String, TongKetNhap> tongKet = layTongKetPhieuNhap();
+        ArrayList<PhieuNhapKho> rows = new ArrayList<>();
+        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                PhieuNhapKho phieu = docPhieuNhap(rs);
+                phieu.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
+                TongKetNhap summary = tongKet.getOrDefault(phieu.getMaPhieuNhap(), new TongKetNhap(0, 0));
+                phieu.setSoMatHang(summary.soMatHang());
+                phieu.setTongTien(summary.tongTien());
+                rows.add(phieu);
+            }
+        }
+        return rows;
+    }
+    private Map<String, TongKetNhap> layTongKetPhieuNhap() throws SQLException {
+        String sql = "SELECT maPhieuNhap,COUNT(*) AS soMatHang,"
+                + "SUM(soLuongNhap*donGiaNhap) AS tongTien FROM ChiTietPhieuNhap GROUP BY maPhieuNhap";
+        Map<String, TongKetNhap> tongKet = new HashMap<>();
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) tongKet.put(rs.getString("maPhieuNhap"),
+                    new TongKetNhap(rs.getInt("soMatHang"), rs.getDouble("tongTien")));
+        }
+        return tongKet;
+    }
     public void hoanTatPhieuNhap(String maPhieu) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
-
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
         try (Connection con = connectDB.getConnection()) {
-
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-            // nhau.
             con.setAutoCommit(false);
-
             try {
-                try (PreparedStatement ps = con.prepareStatement("""
-                        UPDATE PhieuNhapKho SET trangThai = 1, ngayNhap = ?
-                        WHERE maPhieuNhap = ? AND ISNULL(trangThai, 1) = 0
-                        """)) {
+                String sql = "UPDATE PhieuNhapKho SET trangThai=1,ngayNhap=? WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+                    ps.setString(2, maPhieu);
+                    if (ps.executeUpdate() != 1) throw new SQLException("Phiếu nhập không còn ở trạng thái nháp.");
+                }
+                try (PreparedStatement ps = con.prepareStatement("UPDATE ChiTietPhieuNhap SET trangThai=1 WHERE maPhieuNhap=?")) {
+                    ps.setString(1, maPhieu);
+                    ps.executeUpdate();
+                }
+                con.commit();
+            } catch (SQLException | RuntimeException ex) {
+                rollback(con, ex);
+                throw ex;
+            }
+        }
+    }
+    public void xoaPhieuNhap(String maPhieu) throws SQLException {
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
+        try (Connection con = connectDB.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap=? AND EXISTS "
+                        + "(SELECT 1 FROM PhieuNhapKho WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0)")) {
+                    ps.setString(1, maPhieu);
                     ps.setString(2, maPhieu);
                     ps.executeUpdate();
                 }
-
-                try (PreparedStatement ps = con.prepareStatement(
-                        "UPDATE ChiTietPhieuNhap SET trangThai = 1 WHERE maPhieuNhap = ?")) {
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM PhieuNhapKho WHERE maPhieuNhap=? AND ISNULL(trangThai,1)=0")) {
                     ps.setString(1, maPhieu);
-                    ps.executeUpdate();
+                    if (ps.executeUpdate() != 1) throw new SQLException("Chỉ có thể xóa phiếu nhập nháp.");
                 }
-
-                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
                 con.commit();
-
-            } catch (SQLException e) {
-                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
-                con.rollback();
-                throw e;
+            } catch (SQLException | RuntimeException ex) {
+                rollback(con, ex);
+                throw ex;
             }
         }
     }
-
-    /** Xoa phieu nhap (chi phieu con la nhap, khong dung toi ton kho). */
-    public void xoaPhieuNhap(String maPhieu) throws SQLException {
-        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
-
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection con = connectDB.getConnection()) {
-
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-            // nhau.
-            con.setAutoCommit(false);
-
-            try {
-                try (PreparedStatement ps = con.prepareStatement("""
-                        DELETE FROM ChiTietPhieuNhap WHERE maPhieuNhap = ?
-                          AND maPhieuNhap IN (SELECT maPhieuNhap FROM PhieuNhapKho
-                                              WHERE ISNULL(trangThai, 1) = 0)
-                        """)) {
-                    ps.setString(1, maPhieu);
-                    ps.executeUpdate();
-                }
-
-                try (PreparedStatement ps = con.prepareStatement(
-                        "DELETE FROM PhieuNhapKho WHERE maPhieuNhap = ? AND ISNULL(trangThai, 1) = 0")) {
-                    ps.setString(1, maPhieu);
-                    ps.executeUpdate();
-                }
-
-                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
-                con.commit();
-
-            } catch (SQLException e) {
-                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
-                con.rollback();
-                throw e;
-            }
-        }
-    }
-
-    // =========================================================
-    // NHA CUNG CAP
-    // =========================================================
-
-    // Lấy danh sách nhà cung cấp.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<NhaCungCap>.
     public ArrayList<NhaCungCap> layDanhSachNhaCungCap() throws SQLException {
-
-        // list: Danh sách chứa các phần tử kiểu NhaCungCap.
-        ArrayList<NhaCungCap> list = new ArrayList<>();
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                SELECT maNhaCungCap, tenNhaCungCap,
-                       soDienThoai, email, diaChi
-                FROM Nhacungcap
-                ORDER BY maNhaCungCap
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+        String sql = "SELECT maNhaCungCap,tenNhaCungCap,soDienThoai,email,diaChi FROM Nhacungcap ORDER BY maNhaCungCap";
+        ArrayList<NhaCungCap> rows = new ArrayList<>();
+        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                NhaCungCap n = new NhaCungCap();
-                n.setMaNhaCungCap(rs.getString("maNhaCungCap"));
-                n.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
-                n.setSoDienThoai(rs.getString("soDienThoai"));
-                n.setEmail(rs.getString("email"));
-                n.setDiaChi(rs.getString("diaChi"));
-                list.add(n);
+                NhaCungCap nhaCungCap = new NhaCungCap();
+                nhaCungCap.setMaNhaCungCap(rs.getString("maNhaCungCap"));
+                nhaCungCap.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
+                nhaCungCap.setSoDienThoai(rs.getString("soDienThoai"));
+                nhaCungCap.setEmail(rs.getString("email"));
+                nhaCungCap.setDiaChi(rs.getString("diaChi"));
+                rows.add(nhaCungCap);
             }
         }
-
-        return list;
+        return rows;
     }
-
-    // Tạo mã nhà cung cấp.
-    // Kết quả: chuỗi kết quả.
-    public String taoMaNhaCungCap() throws SQLException {
-        return taoMa("Nhacungcap", "maNhaCungCap", "NCC", 3);
+    public String taoMaNhaCungCapMoi() throws SQLException {
+        return taoMaMoi("Nhacungcap", "maNhaCungCap", "NCC");
     }
-
-    // Thêm nhà cung cấp.
-    // Tham số n: nhà cung cấp cần xử lý.
-    // Kết quả: true/false theo điều kiện xử lý.
-    public boolean themNhaCungCap(NhaCungCap n) throws SQLException {
+    public boolean themNhaCungCap(NhaCungCap nhaCungCap) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.NHAP_KHO);
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                INSERT INTO Nhacungcap
-                (maNhaCungCap, tenNhaCungCap, soDienThoai, email, diaChi)
-                VALUES (?, ?, ?, ?, ?)
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, n.getMaNhaCungCap());
-            ps.setString(2, n.getTenNhaCungCap());
-            ps.setString(3, n.getSoDienThoai());
-            ps.setString(4, n.getEmail());
-            ps.setString(5, n.getDiaChi());
-
-            return ps.executeUpdate() > 0;
+        String sql = "INSERT INTO Nhacungcap(maNhaCungCap,tenNhaCungCap,soDienThoai,email,diaChi) VALUES(?,?,?,?,?)";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nhaCungCap.getMaNhaCungCap());
+            ps.setString(2, nhaCungCap.getTenNhaCungCap());
+            ps.setString(3, nhaCungCap.getSoDienThoai());
+            ps.setString(4, nhaCungCap.getEmail());
+            ps.setString(5, nhaCungCap.getDiaChi());
+            return ps.executeUpdate() == 1;
         }
     }
-
-    // =========================================================
-    // SAN PHAM THEO NHA CUNG CAP (chon mat hang cho phieu nhap)
-    // =========================================================
-
-    // Tìm sản phẩm theo nhà cung cấp.
-    // Tham số maNhaCungCap: mã nhà cung cấp.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<SanPham>.
     public ArrayList<SanPham> timSanPhamTheoNhaCungCap(String maNhaCungCap) throws SQLException {
-
-        // list: Danh sách chứa các phần tử kiểu SanPham.
-        ArrayList<SanPham> list = new ArrayList<>();
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                SELECT maSanPham, tenSanPham, giaNhap, giaBan,
-                       maDanhMuc, maNhaCungCap
-                FROM SanPham
-                WHERE maNhaCungCap = ?
-                ORDER BY maSanPham
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
+        String sql = "SELECT maSanPham,tenSanPham,giaNhap,giaBan,maDanhMuc,maNhaCungCap FROM SanPham "
+                + "WHERE maNhaCungCap=? ORDER BY maSanPham";
+        ArrayList<SanPham> rows = new ArrayList<>();
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maNhaCungCap);
-
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
             try (ResultSet rs = ps.executeQuery()) {
-                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
-                while (rs.next()) {
-                    list.add(new SanPham(rs.getString("maSanPham"),
-                            rs.getString("tenSanPham"),
-                            rs.getDouble("giaNhap"), rs.getDouble("giaBan"),
-                            rs.getString("maDanhMuc"),
-                            rs.getString("maNhaCungCap")));
-                }
+                while (rs.next()) rows.add(new SanPham(rs.getString("maSanPham"), rs.getString("tenSanPham"),
+                        rs.getDouble("giaNhap"), rs.getDouble("giaBan"), rs.getString("maDanhMuc"), rs.getString("maNhaCungCap")));
             }
         }
-
-        return list;
+        return rows;
     }
-
-    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co
-    // roi cong 1
-    // Tạo mã mới từ bảng, cột, tiền tố và số chữ số được yêu cầu.
-    // Tham số bang: bảng dữ liệu.
-    // Tham số cot: cột.
-    // Tham số tienTo: tiền tố mã.
-    // Tham số soChuSo: số chữ số của mã.
-    // Kết quả: chuỗi kết quả.
-    private static String taoMa(String bang, String cot,
-            String tienTo, int soChuSo) throws SQLException {
-
+    private ChiTietPhieuNhap docChiTietPhieuNhap(ResultSet rs, String maPhieu) throws SQLException {
+        ChiTietPhieuNhap dong = new ChiTietPhieuNhap();
+        dong.setMaPhieuNhap(maPhieu);
+        dong.setMaSanPham(rs.getString("maSanPham"));
+        dong.setTenSanPham(rs.getString("tenSanPham"));
+        dong.setSoLuongNhap(rs.getInt("soLuongNhap"));
+        dong.setDonGiaNhap(rs.getDouble("donGiaNhap"));
+        Date han = rs.getDate("hanSuDung");
+        dong.setHanSuDung(han == null ? null : han.toLocalDate());
+        return dong;
+    }
+    private PhieuNhapKho docPhieuNhap(ResultSet rs) throws SQLException {
+        PhieuNhapKho phieu = new PhieuNhapKho();
+        phieu.setMaPhieuNhap(rs.getString("maPhieuNhap"));
+        Timestamp ngay = rs.getTimestamp("ngayNhap");
+        phieu.setNgayNhap(ngay == null ? null : ngay.toLocalDateTime());
+        phieu.setTrangThai(rs.getBoolean("trangThai"));
+        phieu.setMaNhanVien(rs.getString("maNhanVien"));
+        phieu.setMaNhaCungCap(rs.getString("maNhaCungCap"));
+        return phieu;
+    }
+    private String taoMaMoi(String bang, String cot, String tienTo) throws SQLException {
+        String sql = "SELECT " + cot + " FROM " + bang;
         int max = 0;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(
-                        "SELECT " + cot + " FROM " + bang);
-                ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                // ma: Lưu mã.
                 String ma = rs.getString(1);
-
-                if (ma != null && ma.startsWith(tienTo)) {
-                    String so = ma.substring(tienTo.length());
-
-                    if (so.matches("\\d{1,9}")) {
-                        max = Math.max(max, Integer.parseInt(so));
-                    }
-                }
+                if (ma != null && ma.matches(tienTo + "\\d+"))
+                    max = Math.max(max, Integer.parseInt(ma.substring(tienTo.length())));
             }
         }
-
-        return tienTo + String.format("%0" + soChuSo + "d", max + 1);
+        return tienTo + String.format("%03d", max + 1);
+    }
+    private void rollback(Connection con, Exception ex) {
+        try { con.rollback(); }
+        catch (SQLException rollbackError) { ex.addSuppressed(rollbackError); }
     }
 }

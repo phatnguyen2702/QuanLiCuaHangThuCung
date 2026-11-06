@@ -297,6 +297,8 @@ CREATE TABLE ChiTietPhieuNhap (
 CREATE TABLE PhieuKiemKe (
     maPhieuKiemKe VARCHAR(10) NOT NULL PRIMARY KEY,
     ngayKiemKe DATETIME2 NULL,
+    ngayBatDau DATETIME2 NULL,
+    ngayChot DATETIME2 NULL,
     trangThai BIT NULL DEFAULT 1,
     maNhanVien VARCHAR(10) NOT NULL,
 
