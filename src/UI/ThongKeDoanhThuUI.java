@@ -1,6 +1,6 @@
 package UI;
 
-import dao.ThongKeDoanhThuDAO;
+import control.ThongKeDoanhThuControl;
 import dao.ThongKeDoanhThuDAO.BaoCao;
 import dao.ThongKeDoanhThuDAO.CheDo;
 import dao.ThongKeDoanhThuDAO.DongBieuDo;
@@ -20,8 +20,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,7 +68,7 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
     private static final DateTimeFormatter MONTH_FORMAT = DateTimeFormatter.ofPattern("MM/yyyy");
 
     // dao: Đối tượng truy cập dữ liệu thống kê doanh thu.
-    private final ThongKeDoanhThuDAO dao = new ThongKeDoanhThuDAO();
+    private final ThongKeDoanhThuControl thongKeControl = new ThongKeDoanhThuControl();
     // pnlNoiDung: Phần giao diện được TrangChu nhúng vào CardLayout.
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout(0, 12));
     // cmbCheDo: Hộp lựa chọn chế độ thống kê.
@@ -337,7 +335,7 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         // Cập nhật nội dung chữ hiển thị trong control bằng setText().
         lblTrangThai.setText("Đang tải số liệu...");
         try {
-            baoCao = dao.layBaoCao(cheDo, ngayThamChieu);
+            baoCao = thongKeControl.layBaoCao(cheDo, ngayThamChieu);
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
             lblTongDoanhThu.setText(dinhDangTien(baoCao.getTongDoanhThu()) + " ₫");
             // Cập nhật nội dung chữ hiển thị trong control bằng setText().
@@ -426,19 +424,18 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
     // Định dạng số tiền thành chuỗi hiển thị.
     // Tham số amount: số tiền.
     // Kết quả: chuỗi kết quả.
-    private String dinhDangTien(BigDecimal amount) {
+    private String dinhDangTien(double amount) {
         return MONEY.format(amount);
     }
 
     // Tính tỷ trong.
     // Tham số doanhThu: doanh thu.
-    // Kết quả: đối tượng/giá trị kiểu BigDecimal.
-    private BigDecimal tinhTyTrong(BigDecimal doanhThu) {
-        if (baoCao == null || baoCao.getTongDoanhThu().signum() == 0) {
-            return BigDecimal.ZERO;
+    // Kết quả: tỷ lệ dạng double.
+    private double tinhTyTrong(double doanhThu) {
+        if (baoCao == null || baoCao.getTongDoanhThu() == 0) {
+            return 0;
         }
-        return doanhThu.multiply(BigDecimal.valueOf(100))
-                .divide(baoCao.getTongDoanhThu(), 1, RoundingMode.HALF_UP);
+        return Math.round(doanhThu * 1000 / baoCao.getTongDoanhThu()) / 10.0;
     }
 
     // Xuất PDF.
@@ -593,7 +590,8 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
             g.drawString(catChuoi(dong.getTenMatHang(), 55), 90, rowY + 16);
             g.drawString(Integer.toString(dong.getSoLuong()), 492, rowY + 16);
             g.drawString(dinhDangTien(dong.getDoanhThu()), 585, rowY + 16);
-            g.drawString(tinhTyTrong(dong.getDoanhThu()).toPlainString(), 720, rowY + 16);
+            g.drawString(String.format(Locale.ROOT, "%.1f", tinhTyTrong(dong.getDoanhThu())),
+                    720, rowY + 16);
         }
         g.setColor(MUTED);
         g.setFont(new Font("Segoe UI", Font.PLAIN, 9));
@@ -619,12 +617,12 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
             return;
         }
         // max: Giá trị tối đa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
-        BigDecimal max = BigDecimal.ZERO;
+        double max = 0;
         for (DongBieuDo row : baoCao.getBieuDo()) {
-            max = max.max(row.getDoanhThu());
+            max = Math.max(max, row.getDoanhThu());
         }
-        if (max.signum() == 0) {
-            max = BigDecimal.ONE;
+        if (max == 0) {
+            max = 1;
         }
         int plotX = x + 46;
         int plotY = y + 30;
@@ -641,8 +639,7 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         int barWidth = Math.max(2, (plotWidth - gap * (points.size() - 1)) / points.size());
         for (int i = 0; i < points.size(); i++) {
             DongBieuDo point = points.get(i);
-            int barHeight = point.getDoanhThu().multiply(BigDecimal.valueOf(plotHeight))
-                    .divide(max, 0, RoundingMode.HALF_UP).intValue();
+            int barHeight = (int) Math.round(point.getDoanhThu() / max * plotHeight);
             int barX = plotX + i * (barWidth + gap);
             g.setColor(BLUE);
             g.fillRect(barX, plotY + plotHeight - barHeight, barWidth, barHeight);
@@ -777,12 +774,12 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                 int chartWidth = Math.max(1, getWidth() - left - right);
                 int chartHeight = Math.max(1, getHeight() - top - bottom);
                 // max: Giá trị tối đa dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
-                BigDecimal max = BigDecimal.ZERO;
+                double max = 0;
                 for (DongBieuDo row : data.getBieuDo()) {
-                    max = max.max(row.getDoanhThu());
+                    max = Math.max(max, row.getDoanhThu());
                 }
-                if (max.signum() == 0) {
-                    max = BigDecimal.ONE;
+                if (max == 0) {
+                    max = 1;
                 }
 
                 g.setFont(new Font("Segoe UI", Font.PLAIN, 10));
@@ -790,8 +787,7 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                     // y: Lưu tọa độ dọc.
                     int y = top + chartHeight - chartHeight * line / 4;
                     // value: Giá trị giá trị dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
-                    BigDecimal value = max.multiply(BigDecimal.valueOf(line))
-                            .divide(BigDecimal.valueOf(4), 0, RoundingMode.HALF_UP);
+                    double value = Math.round(max * line / 4);
                     g.setColor(new Color(226, 230, 235));
                     g.drawLine(left, y, left + chartWidth, y);
                     g.setColor(MUTED);
@@ -803,8 +799,7 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                 int barWidth = Math.max(2, (chartWidth - gap * (count - 1)) / count);
                 for (int i = 0; i < count; i++) {
                     DongBieuDo row = data.getBieuDo().get(i);
-                    int barHeight = row.getDoanhThu().multiply(BigDecimal.valueOf(chartHeight))
-                            .divide(max, 0, RoundingMode.HALF_UP).intValue();
+                    int barHeight = (int) Math.round(row.getDoanhThu() / max * chartHeight);
                     // x: Lưu tọa độ ngang.
                     int x = left + i * (barWidth + gap);
                     // y: Lưu tọa độ dọc.
@@ -910,7 +905,7 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                 case 3:
                     return dinhDangTien(row.getDoanhThu()) + " ₫";
                 case 4:
-                    return tinhTyTrong(row.getDoanhThu()).toPlainString();
+                    return String.format(Locale.ROOT, "%.1f", tinhTyTrong(row.getDoanhThu()));
                 default:
                     throw new IndexOutOfBoundsException("Cột không hợp lệ: " + columnIndex);
             }

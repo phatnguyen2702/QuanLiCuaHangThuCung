@@ -183,7 +183,7 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
         lblDescription.setFont(UIStyle.font(Font.PLAIN, 13));
         pnlCard.add(lblDescription, BorderLayout.CENTER);
 
-        entity.ThanhToan daThem = timTrongGio(product.getMaSanPham());
+        entity.ChiTietHoaDon daThem = timTrongGio(product.getMaSanPham());
         // btnAdd: NÃºt thao tÃ¡c thÃªm.
         JButton btnAdd = UIStyle.nutXanh(daThem == null ? "ThÃªm vÃ o giá» hÃ ng"
                 : "ÄÃ£ thÃªm Â· SL " + daThem.getSoLuong() + " Â· thÃªm tiáº¿p");
@@ -195,9 +195,9 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
 
     // TÃ¬m trong giá».
     // Tham sá»‘ maSanPham: mÃ£ sáº£n pháº©m.
-    // Káº¿t quáº£: Ä‘á»‘i tÆ°á»£ng/giÃ¡ trá»‹ kiá»ƒu entity.ThanhToan.
-    private entity.ThanhToan timTrongGio(String maSanPham) {
-        for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
+    // Kết quả: mặt hàng trong giỏ có mã sản phẩm khớp.
+    private entity.ChiTietHoaDon timTrongGio(String maSanPham) {
+        for (entity.ChiTietHoaDon item : control.PhienLamViecControl.gioHang()) {
             if (maSanPham.equals(item.getMaSanPham()))
                 return item;
         }
@@ -207,13 +207,13 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
     // Cá»™ng sá»‘ lÆ°á»£ng cÃ¡c máº·t hÃ ng trong giá».
     // Káº¿t quáº£: giÃ¡ trá»‹ sá»‘ nguyÃªn.
     private int tongSoLuongTrongGio() {
-        return control.PhienLamViecControl.gioHang().stream().mapToInt(entity.ThanhToan::getSoLuong).sum();
+        return control.PhienLamViecControl.gioHang().stream().mapToInt(entity.ChiTietHoaDon::getSoLuong).sum();
     }
 
     // ThÃªm vÃ o giá».
     // Tham sá»‘ product: sáº£n pháº©m.
     private void themVaoGio(SanPham product) {
-        entity.ThanhToan item = timTrongGio(product.getMaSanPham());
+        entity.ChiTietHoaDon item = timTrongGio(product.getMaSanPham());
         if (item != null) {
             if (item.getSoLuong() >= product.getTonKho()) {
                 JOptionPane.showMessageDialog(this, "Sá»‘ lÆ°á»£ng trong giá» Ä‘Ã£ báº±ng tá»“n kho hiá»‡n cÃ³.",
@@ -224,8 +224,8 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
         } else {
             if (product.getTonKho() < 1)
                 return;
-            control.PhienLamViecControl.gioHang().add(entity.ThanhToan.sanPham(
-                    product.getMaSanPham(), product.getTenSanPham(), BigDecimal.valueOf(product.getGiaBan())));
+            control.PhienLamViecControl.gioHang().add(entity.ChiTietHoaDon.sanPham(
+                    product.getMaSanPham(), product.getTenSanPham(), product.getGiaBan()));
         }
         napLai();
     }
@@ -339,7 +339,7 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
                 }
 
                 String code = String.valueOf(getValueAt(row, 0));
-                for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
+                for (entity.ChiTietHoaDon item : control.PhienLamViecControl.gioHang()) {
                     if (code.equals(item.getMaSanPham())) {
                         final int tonKho;
                         try {
@@ -371,9 +371,10 @@ public class GoiYThucAnUI extends JFrame implements ActionListener {
                 fireTableCellUpdated(row, column);
             }
         };
-        for (entity.ThanhToan item : control.PhienLamViecControl.gioHang()) {
+        for (entity.ChiTietHoaDon item : control.PhienLamViecControl.gioHang()) {
             model.addRow(new Object[] { item.getMaHang(), item.getTenMatHang(), item.getSoLuong(),
-                    String.format("%,.0f Ä‘", item.getDonGia()), String.format("%,.0f Ä‘", item.getThanhTien()) });
+                    String.format("%,.0f Ä‘", item.getDonGia()),
+                    String.format("%,.0f Ä‘", item.getThanhTien()) });
         }
         // tblDuLieu: Báº£ng hiá»ƒn thá»‹ cÃ¡c dÃ²ng do mÃ´ hÃ¬nh dá»¯ liá»‡u cung cáº¥p.
         JTable tblDuLieu = new JTable(model);

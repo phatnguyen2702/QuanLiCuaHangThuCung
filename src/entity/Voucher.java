@@ -1,5 +1,6 @@
 package entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // Lớp dữ liệu biểu diễn voucher, gồm thuộc tính và các phương thức truy cập.
@@ -50,6 +51,17 @@ public class Voucher {
                 this.ngayBatDau = ngayBatDau;
                 this.ngayKetThuc = ngayKetThuc;
                 this.soLuongToiDa = soLuongToiDa;
+        }
+
+        public Voucher(
+                        String maVoucher,
+                        String tenVoucher,
+                        BigDecimal phanTramGiam,
+                        String dieuKien) {
+                this.maVoucher = maVoucher;
+                this.tenVoucher = tenVoucher;
+                this.phanTramGiam = phanTramGiam == null ? 0 : phanTramGiam.doubleValue();
+                this.dieuKien = dieuKien;
         }
 
         // Trang thai hien thi: Dang chay / Sap chay / Het han / Het luot / Da huy
