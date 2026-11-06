@@ -1,265 +1,93 @@
 package dao;
-
 import ConnectDB.connectDB;
+import control.PhanQuyenControl;
 import entity.DanhMuc;
 import entity.SanPham;
-
 import java.sql.*;
 import java.util.ArrayList;
-
-/**
- * DAO cua man hinh "Danh muc": tìm kiếm và lưu danh mục sản phẩm.
- */
+import java.util.Map;
 public class DanhMucDAO {
-
-    // Lay danh muc kem so san pham, loc theo ma hoac ten
-    // Tìm kiểm.
-    // Tham số tuKhoa: từ khóa tìm kiếm.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<DanhMuc>.
-    public ArrayList<DanhMuc> timKiem(String tuKhoa) throws SQLException {
-        SanPhamDAO.damBaoCotKinhDoanh();
-
-        // list: Danh sách chứa các phần tử kiểu DanhMuc.
-        ArrayList<DanhMuc> list = new ArrayList<>();
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                SELECT dm.maDanhMuc,
-                       dm.tenDanhMuc,
-                       dm.moTa,
-                       COUNT(t.maSanPham) AS soSanPham,
-                       ISNULL(SUM(t.ton), 0) AS tongTon
-                FROM DanhMuc dm
-                LEFT JOIN (
-                    SELECT sp.maSanPham, sp.maDanhMuc,
-                """ + SanPhamDAO.BIEU_THUC_TON + """
-                           AS ton
-                    FROM SanPham sp
-                ) t ON t.maDanhMuc = dm.maDanhMuc
-                WHERE dm.maDanhMuc LIKE ?
-                   OR dm.tenDanhMuc LIKE ?
-                GROUP BY dm.maDanhMuc, dm.tenDanhMuc, dm.moTa
-                ORDER BY dm.maDanhMuc
-                """;
-
-        String kw = "%" + (tuKhoa == null ? "" : tuKhoa.trim()) + "%";
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, kw);
-            ps.setString(2, kw);
-
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+    public ArrayList<DanhMuc> timKiemDanhMuc(String tuKhoa) throws SQLException {
+        String sql = "SELECT maDanhMuc,tenDanhMuc,moTa FROM DanhMuc "
+                + "WHERE maDanhMuc LIKE ? OR tenDanhMuc LIKE ? ORDER BY maDanhMuc";
+        String keyword = "%" + (tuKhoa == null ? "" : tuKhoa.trim()) + "%";
+        ArrayList<DanhMuc> danhMucs = new ArrayList<>();
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, keyword);
+            ps.setString(2, keyword);
             try (ResultSet rs = ps.executeQuery()) {
-                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (rs.next()) {
-                    DanhMuc dm = new DanhMuc();
-                    dm.setMaDanhMuc(rs.getString("maDanhMuc"));
-                    dm.setTenDanhMuc(rs.getString("tenDanhMuc"));
-                    dm.setMoTa(rs.getString("moTa"));
-                    dm.setSoSanPham(rs.getInt("soSanPham"));
-                    dm.setTongTon(rs.getInt("tongTon"));
-                    list.add(dm);
+                    DanhMuc danhMuc = docDanhMuc(rs);
+                    danhMucs.add(danhMuc);
                 }
             }
         }
-
-        return list;
+        Map<String, Integer> soSanPhamTheoDanhMuc = laySoSanPhamTheoDanhMuc();
+        Map<String, Integer> tonTheoDanhMuc = new SanPhamDAO().layTongTonKhoTheoDanhMuc();
+        for (DanhMuc danhMuc : danhMucs) {
+            danhMuc.setSoSanPham(soSanPhamTheoDanhMuc.getOrDefault(danhMuc.getMaDanhMuc(), 0));
+            danhMuc.setTongTon(tonTheoDanhMuc.getOrDefault(danhMuc.getMaDanhMuc(), 0));
+        }
+        return danhMucs;
     }
-
-    // Lấy toàn bộ danh sách bản ghi từ cơ sở dữ liệu.
-    // Kết quả: đối tượng/giá trị kiểu ArrayList<DanhMuc>.
-    public ArrayList<DanhMuc> getAll() throws SQLException {
-        return timKiem("");
+    public ArrayList<DanhMuc> layTatCaDanhMuc() throws SQLException {
+        return timKiemDanhMuc("");
     }
-
-    // Đếm toàn bộ dữ liệu.
-    // Kết quả: giá trị số nguyên.
-    public int demTatCa() throws SQLException {
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = "SELECT COUNT(*) FROM DanhMuc";
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
+    public int demTatCaDanhMuc() throws SQLException {
+        try (Connection con = connectDB.getConnection();
+                PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM DanhMuc");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
         }
     }
-
-    // Lấy mã mới để hiển thị khi lập bản ghi.
-    // Kết quả: chuỗi kết quả.
-    public String taoMaMoi() throws SQLException {
-        return taoMa("DanhMuc", "maDanhMuc", "DM", 3);
+    public String taoMaDanhMucMoi() throws SQLException {
+        return taoMaMoi("DanhMuc", "maDanhMuc", "DM");
     }
-
-    // Thêm dữ liệu danh mục trong cơ sở dữ liệu.
-    // Tham số dm: danh mục cần xử lý.
-    // Kết quả: true/false theo điều kiện xử lý.
-    public boolean them(DanhMuc dm) throws SQLException {
-        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                INSERT INTO DanhMuc (maDanhMuc, tenDanhMuc, moTa)
-                VALUES (?, ?, ?)
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, dm.getMaDanhMuc());
-            ps.setString(2, dm.getTenDanhMuc());
-            ps.setString(3, dm.getMoTa());
-
-            return ps.executeUpdate() > 0;
+    public boolean themDanhMuc(DanhMuc danhMuc) throws SQLException {
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
+        String sql = "INSERT INTO DanhMuc(maDanhMuc,tenDanhMuc,moTa) VALUES(?,?,?)";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, danhMuc.getMaDanhMuc());
+            ps.setString(2, danhMuc.getTenDanhMuc());
+            ps.setString(3, danhMuc.getMoTa());
+            return ps.executeUpdate() == 1;
         }
     }
-
-    // Cập nhật dữ liệu danh mục trong cơ sở dữ liệu.
-    // Tham số dm: danh mục cần xử lý.
-    // Kết quả: true/false theo điều kiện xử lý.
-    public boolean sua(DanhMuc dm) throws SQLException {
-        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                UPDATE DanhMuc
-                SET tenDanhMuc = ?,
-                    moTa = ?
-                WHERE maDanhMuc = ?
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, dm.getTenDanhMuc());
-            ps.setString(2, dm.getMoTa());
-            ps.setString(3, dm.getMaDanhMuc());
-
-            return ps.executeUpdate() > 0;
+    public boolean capNhatDanhMuc(DanhMuc danhMuc) throws SQLException {
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
+        String sql = "UPDATE DanhMuc SET tenDanhMuc=?,moTa=? WHERE maDanhMuc=?";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, danhMuc.getTenDanhMuc());
+            ps.setString(2, danhMuc.getMoTa());
+            ps.setString(3, danhMuc.getMaDanhMuc());
+            return ps.executeUpdate() == 1;
         }
     }
-
-    /**
-     * Du lieu se bi xoa kem khi xoa 1 danh muc:
-     * {so san pham, dong hoa don, dong phieu nhap, dong kiem ke}.
-     */
-    public int[] demLienQuan(String maDanhMuc) throws SQLException {
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                SELECT (SELECT COUNT(*) FROM SanPham
-                         WHERE maDanhMuc = ?),
-                       (SELECT COUNT(*) FROM ChiTietHoaDon x
-                         JOIN SanPham sp ON sp.maSanPham = x.maSanPham
-                         WHERE sp.maDanhMuc = ?),
-                       (SELECT COUNT(*) FROM ChiTietPhieuNhap x
-                         JOIN SanPham sp ON sp.maSanPham = x.maSanPham
-                         WHERE sp.maDanhMuc = ?),
-                       (SELECT COUNT(*) FROM ChiTietPhieuKiemKe x
-                         JOIN SanPham sp ON sp.maSanPham = x.maSanPham
-                         WHERE sp.maDanhMuc = ?)
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            for (int i = 1; i <= 4; i++) {
-                ps.setString(i, maDanhMuc);
-            }
-
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return new int[] { rs.getInt(1), rs.getInt(2),
-                        rs.getInt(3), rs.getInt(4) };
-            }
-        }
+    public int[] demSanPhamTrongDanhMuc(String maDanhMuc) throws SQLException {
+        return new int[] {
+                demSoDongDanhMuc("SELECT COUNT(*) FROM SanPham WHERE maDanhMuc=?", maDanhMuc),
+                demSoDongDanhMuc("SELECT COUNT(*) FROM ChiTietHoaDon h JOIN SanPham s ON s.maSanPham=h.maSanPham WHERE s.maDanhMuc=?", maDanhMuc),
+                demSoDongDanhMuc("SELECT COUNT(*) FROM ChiTietPhieuNhap n JOIN SanPham s ON s.maSanPham=n.maSanPham WHERE s.maDanhMuc=?", maDanhMuc),
+                demSoDongDanhMuc("SELECT COUNT(*) FROM ChiTietPhieuKiemKe k JOIN SanPham s ON s.maSanPham=k.maSanPham WHERE s.maDanhMuc=?", maDanhMuc)
+        };
     }
-
-    /** Chỉ xóa danh mục rỗng để không làm mất sản phẩm và lịch sử giao dịch. */
-    public boolean xoa(String maDanhMuc) throws SQLException {
-        control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
-        try (Connection con = connectDB.getConnection()) {
-            // Bắt đầu giao dịch thủ công để các thay đổi được xác nhận hoặc hoàn tác cùng
-            // nhau.
-            con.setAutoCommit(false);
-            try {
-                try (PreparedStatement check = con.prepareStatement(
-                        "SELECT COUNT(*) FROM SanPham WHERE maDanhMuc=?")) {
-                    check.setString(1, maDanhMuc);
-                    // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
-                    try (ResultSet rs = check.executeQuery()) {
-                        if (rs.next() && rs.getInt(1) > 0) {
-                            throw new SQLException(
-                                    "Không thể xóa danh mục đang có sản phẩm. Hãy chuyển hoặc xóa sản phẩm trước.");
-                        }
-                    }
-                }
-                boolean ok;
-                try (PreparedStatement ps = con.prepareStatement(
-                        "DELETE FROM DanhMuc WHERE maDanhMuc = ?")) {
-                    ps.setString(1, maDanhMuc);
-                    ok = ps.executeUpdate() > 0;
-                }
-
-                // Xác nhận các thay đổi của giao dịch vào cơ sở dữ liệu.
-                con.commit();
-                return ok;
-
-            } catch (SQLException e) {
-                // Hoàn tác các thay đổi chưa được xác nhận của giao dịch.
-                con.rollback();
-                throw e;
-            }
-        }
-    }
-
-    // =========================================================
-    // SAN PHAM CUA DANH MUC + NHAP BO SUNG (dung trong form Sua danh muc)
-    // =========================================================
-
-    /** San pham thuoc 1 danh muc, kem ton kho hien tai. */
-    public ArrayList<SanPham> timSanPhamTheoDanhMuc(String maDanhMuc) throws SQLException {
-        SanPhamDAO.damBaoCotKinhDoanh();
-
-        // list: Danh sách chứa các phần tử kiểu SanPham.
-        ArrayList<SanPham> list = new ArrayList<>();
-
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
-        String sql = """
-                SELECT sp.maSanPham,
-                       sp.tenSanPham,
-                       sp.giaNhap,
-                       sp.giaBan,
-                       sp.maDanhMuc,
-                       sp.maNhaCungCap,
-                """ + SanPhamDAO.BIEU_THUC_TON + """
-                       AS tonKho
-                FROM SanPham sp
-                WHERE sp.maDanhMuc = ?
-                ORDER BY sp.maSanPham
-                """;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql)) {
+    public boolean xoaDanhMuc(String maDanhMuc) throws SQLException {
+        PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.DANH_MUC_SAN_PHAM);
+        String sql = "DELETE FROM DanhMuc WHERE maDanhMuc=? AND NOT EXISTS "
+                + "(SELECT 1 FROM SanPham WHERE maDanhMuc=?)";
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maDanhMuc);
-
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+            ps.setString(2, maDanhMuc);
+            return ps.executeUpdate() == 1;
+        }
+    }
+    public ArrayList<SanPham> laySanPhamTheoDanhMuc(String maDanhMuc) throws SQLException {
+        String sql = "SELECT sp.maSanPham,sp.tenSanPham,sp.giaNhap,sp.giaBan,sp.maDanhMuc,sp.maNhaCungCap "
+                + "FROM SanPham sp WHERE sp.maDanhMuc=? ORDER BY sp.maSanPham";
+        ArrayList<SanPham> sanPhams = new ArrayList<>();
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maDanhMuc);
             try (ResultSet rs = ps.executeQuery()) {
-                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
                 while (rs.next()) {
                     SanPham sp = new SanPham();
                     sp.setMaSanPham(rs.getString("maSanPham"));
@@ -268,48 +96,46 @@ public class DanhMucDAO {
                     sp.setGiaBan(rs.getDouble("giaBan"));
                     sp.setMaDanhMuc(rs.getString("maDanhMuc"));
                     sp.setMaNhaCungCap(rs.getString("maNhaCungCap"));
-                    sp.setTonKho(rs.getInt("tonKho"));
-                    list.add(sp);
+                    sanPhams.add(sp);
                 }
             }
         }
-
-        return list;
+        var tonKho = new SanPhamDAO().layTonKhoTatCaSanPham();
+        for (SanPham sp : sanPhams) sp.setTonKho(tonKho.getOrDefault(sp.getMaSanPham(), 0));
+        return sanPhams;
     }
-
-    // Sinh ma tu dong dang TIENTO + so (DM005, SP009...): lay so lon nhat dang co
-    // roi cong 1
-    // Tạo mã mới từ bảng, cột, tiền tố và số chữ số được yêu cầu.
-    // Tham số bang: bảng dữ liệu.
-    // Tham số cot: cột.
-    // Tham số tienTo: tiền tố mã.
-    // Tham số soChuSo: số chữ số của mã.
-    // Kết quả: chuỗi kết quả.
-    private static String taoMa(String bang, String cot,
-            String tienTo, int soChuSo) throws SQLException {
-
-        int max = 0;
-
-        try (
-                Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(
-                        "SELECT " + cot + " FROM " + bang);
+    private DanhMuc docDanhMuc(ResultSet rs) throws SQLException {
+        DanhMuc danhMuc = new DanhMuc();
+        danhMuc.setMaDanhMuc(rs.getString("maDanhMuc"));
+        danhMuc.setTenDanhMuc(rs.getString("tenDanhMuc"));
+        danhMuc.setMoTa(rs.getString("moTa"));
+        return danhMuc;
+    }
+    private Map<String, Integer> laySoSanPhamTheoDanhMuc() throws SQLException {
+        String sql = "SELECT maDanhMuc,COUNT(*) AS soSanPham FROM SanPham GROUP BY maDanhMuc";
+        Map<String, Integer> soSanPham = new java.util.HashMap<>();
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
-            // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+            while (rs.next()) soSanPham.put(rs.getString("maDanhMuc"), rs.getInt("soSanPham"));
+        }
+        return soSanPham;
+    }
+    private int demSoDongDanhMuc(String sql, String maDanhMuc) throws SQLException {
+        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, maDanhMuc);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? rs.getInt(1) : 0; }
+        }
+    }
+    private String taoMaMoi(String bang, String cot, String tienTo) throws SQLException {
+        String sql = "SELECT " + cot + " FROM " + bang;
+        int max = 0;
+        try (Connection con = connectDB.getConnection(); Statement st = con.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                // ma: Lưu mã.
                 String ma = rs.getString(1);
-
-                if (ma != null && ma.startsWith(tienTo)) {
-                    String so = ma.substring(tienTo.length());
-
-                    if (so.matches("\\d{1,9}")) {
-                        max = Math.max(max, Integer.parseInt(so));
-                    }
-                }
+                if (ma != null && ma.matches(tienTo + "\\d+"))
+                    max = Math.max(max, Integer.parseInt(ma.substring(tienTo.length())));
             }
         }
-
-        return tienTo + String.format("%0" + soChuSo + "d", max + 1);
+        return tienTo + String.format("%03d", max + 1);
     }
 }

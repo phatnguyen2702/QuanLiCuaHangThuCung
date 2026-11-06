@@ -88,25 +88,23 @@ public class ThanhToanDao {
         return ds;
     }
 
+    // Tìm mặt hàng.
+    // Tham số tuKhoa: từ khóa tìm kiếm.
+    // Kết quả: đối tượng/giá trị kiểu List<ThanhToan>.
     public List<ChiTietHoaDon> timMatHang(String tuKhoa) throws SQLException {
-        SanPhamDAO.damBaoCotKinhDoanh();
-        String sql = """
-                SELECT TOP 30 maSanPham AS maHang, tenSanPham AS tenHang, giaBan AS donGia
-                FROM SanPham sp
-                WHERE (sp.maSanPham = ? OR sp.tenSanPham LIKE ?)
-                  AND (%s) > 0
-                  AND EXISTS (
-                      SELECT 1
-                      FROM ChiTietPhieuNhap ct
-                      JOIN PhieuNhapKho pn ON pn.maPhieuNhap = ct.maPhieuNhap
-                      WHERE ct.maSanPham = sp.maSanPham
-                        AND pn.trangThai = 1
-                        AND ISNULL(ct.trangThai, 1) = 1
-                        AND ISNULL(ct.ngungKinhDoanh, 0) = 0
-                        AND (ct.hanSuDung IS NULL OR ct.hanSuDung >= CAST(GETDATE() AS date))
-                  )
-                """.formatted(SanPhamDAO.BIEU_THUC_TON);
+        String sql = "SELECT maSanPham AS maHang,tenSanPham AS tenHang,"
+                + "giaBan AS donGia FROM SanPham sp "
+                + "WHERE (sp.maSanPham = ? OR sp.tenSanPham LIKE ?) "
+                + "AND EXISTS (SELECT 1 FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn "
+                + "ON pn.maPhieuNhap=ct.maPhieuNhap WHERE ct.maSanPham=sp.maSanPham "
+                + "AND pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 "
+                + "AND ISNULL(ct.ngungKinhDoanh,0)=0 "
+                + "AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date)))";
+        // matHangs: Lưu các mặt hàng; phần tử có kiểu ThanhToan.
         List<ChiTietHoaDon> matHangs = new ArrayList<>();
+        SanPhamDAO sanPhamDAO = new SanPhamDAO();
+        Map<String, Integer> tonKho = sanPhamDAO.layTonKhoTatCaSanPham();
+        Map<String, Integer> tonBanDuoc = sanPhamDAO.layTonBanDuocTatCaSanPham();
 
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -115,13 +113,18 @@ public class ThanhToanDao {
             ps.setString(2, "%" + keyword + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    String maSanPham = rs.getString("maHang");
+                    if (tonKho.getOrDefault(maSanPham, 0) <= 0 || tonBanDuoc.getOrDefault(maSanPham, 0) <= 0)
+                        continue;
+                    // donGia: Giá trị đơn giá dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
                     BigDecimal donGia = rs.getBigDecimal("donGia");
                     if (donGia == null || donGia.signum() < 0) {
                         throw new SQLException("Mặt hàng " + rs.getString("maHang")
                                 + " có đơn giá không hợp lệ.");
                     }
                     matHangs.add(ChiTietHoaDon.sanPham(
-                            rs.getString("maHang"), rs.getString("tenHang"), donGia.doubleValue()));
+                            maSanPham, rs.getString("tenHang"), donGia.doubleValue()));
+                    if (matHangs.size() == 30) break;
                 }
             }
         }
@@ -282,7 +285,6 @@ public class ThanhToanDao {
     public String taoMaHoaDon(String maKhachHang, LocalDateTime ngayLap)
             throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.THANH_TOAN);
-        SanPhamDAO.damBaoCotKinhDoanh();
         if (maKhachHang == null || ngayLap == null) {
             throw new IllegalArgumentException("Thiếu mã khách hàng hoặc ngày lập hóa đơn.");
         }
@@ -366,21 +368,23 @@ public class ThanhToanDao {
                         soLuongCan.merge(item.getMaSanPham(), item.getSoLuong(), Integer::sum);
                     }
                 }
-                String sqlTon = """
-                        SELECT %s AS tonKho
-                        FROM SanPham sp WITH (UPDLOCK, HOLDLOCK)
-                        WHERE sp.maSanPham = ?
-                        """.formatted(SanPhamDAO.BIEU_THUC_TON);
-                try (PreparedStatement psTon = con.prepareStatement(sqlTon)) {
-                    for (var entry : soLuongCan.entrySet()) {
-                        psTon.setString(1, entry.getKey());
-                        try (ResultSet rs = psTon.executeQuery()) {
-                            if (!rs.next() || rs.getInt("tonKho") < entry.getValue()) {
-                                throw new SQLException("Sản phẩm " + entry.getKey()
-                                        + " không đủ tồn kho. Vui lòng tải lại giỏ hàng.");
-                            }
+                SanPhamDAO sanPhamDAO = new SanPhamDAO();
+                try (PreparedStatement khoaSanPham = con.prepareStatement(
+                        "SELECT maSanPham FROM SanPham WITH (UPDLOCK,HOLDLOCK) WHERE maSanPham=?")) {
+                    for (String maSanPham : soLuongCan.keySet()) {
+                        khoaSanPham.setString(1, maSanPham);
+                        try (ResultSet rs = khoaSanPham.executeQuery()) {
+                            if (!rs.next()) throw new SQLException("Không tìm thấy sản phẩm " + maSanPham + ".");
                         }
                     }
+                }
+                Map<String, Integer> tonKho = sanPhamDAO.layTonKhoTatCaSanPham(con);
+                Map<String, Integer> tonBanDuoc = sanPhamDAO.layTonBanDuocTatCaSanPham(con);
+                for (var entry : soLuongCan.entrySet()) {
+                    if (tonKho.getOrDefault(entry.getKey(), 0) < entry.getValue())
+                        throw new SQLException("Sản phẩm " + entry.getKey() + " không đủ tồn kho. Vui lòng tải lại giỏ hàng.");
+                    if (tonBanDuoc.getOrDefault(entry.getKey(), 0) < entry.getValue())
+                        throw new SQLException("Sản phẩm " + entry.getKey() + " không đủ số lượng còn hạn và đang kinh doanh.");
                 }
 
                 try (PreparedStatement ps = con.prepareStatement(insertHoaDon)) {
