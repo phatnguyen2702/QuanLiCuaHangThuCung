@@ -28,62 +28,62 @@ import java.util.List;
 import java.util.Locale;
 import java.util.zip.DeflaterOutputStream;
 
-/**
- * Xuat chung tu nhap kho A4 nhieu trang, co dau/chu ky de trong.
- * Dung java.awt ve tieng Viet roi nhung anh vao PDF. Khong can them JAR.
- * Du lieu phai duoc tai tu SQL Server qua NhapKhoDAO.layBanInPhieuNhap().
- */
+
+
+
+
+
 public final class PhieuNhapPdfExporter {
-    // Ẩn hàm khởi tạo vì lớp chỉ cung cấp các hàm tiện ích dùng chung.
+
     private PhieuNhapPdfExporter() {
     }
 
-    // W: Lưu w.
-    // H: Lưu h.
-    // SCALE: Lưu tỷ lệ.
+
+
+
     private static final int W = 595, H = 842, SCALE = 2;
-    // LEFT: Lưu trái.
-    // RIGHT: Lưu phải.
+
+
     private static final int LEFT = 37, RIGHT = 558;
-    // COLUMNS: Mảng lưu các cột.
-    private static final int[] COLUMNS = { 29, 53, 158, 43, 74, 94, 70 }; // 521 pt
-    // LINE_H: Lưu h.
+
+    private static final int[] COLUMNS = { 29, 53, 158, 43, 74, 94, 70 };
+
     private static final int LINE_H = 31;
-    // NAVY: Màu dùng cho giao diện: xanh đậm.
+
     private static final Color NAVY = new Color(18, 48, 82);
-    // BORDER: Màu dùng cho giao diện: viền.
+
     private static final Color BORDER = new Color(204, 215, 225);
-    // MUTED: Màu dùng cho giao diện: màu chữ phụ.
+
     private static final Color MUTED = new Color(97, 108, 122);
-    // PALE: Màu dùng cho giao diện: màu nhạt.
+
     private static final Color PALE = new Color(244, 248, 252);
-    // GREEN: Màu dùng cho giao diện: xanh lá.
+
     private static final Color GREEN = new Color(22, 124, 73);
-    // ORANGE: Màu dùng cho giao diện: cam.
+
     private static final Color ORANGE = new Color(159, 84, 23);
-    // DATE_TIME: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy HH:mm để chuyển giữa dữ
-    // liệu thời gian và chuỗi.
+
+
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-    // DATE: Bộ định dạng ngày/giờ theo mẫu dd/MM/yyyy để chuyển giữa dữ liệu thời
-    // gian và chuỗi.
+
+
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    /** Hien hop thoai Save As, chi ghi de tep da ton tai neu nguoi dung dong y. */
+
     public static void xuat(Component cha, NhapKhoDAO.BanInPhieuNhap phieu) {
         if (phieu == null || phieu.getPhieu() == null) {
             JOptionPane.showMessageDialog(cha, "Không tìm thấy dữ liệu phiếu nhập đã lưu.");
             return;
         }
-        // ma: Lưu mã.
+
         String ma = phieu.getPhieu().getMaPhieuNhap();
-        // fchChonTep: Hộp chọn tệp bộ chọn.
+
         JFileChooser fchChonTep = new JFileChooser();
         fchChonTep.setDialogTitle("Xuất phiếu nhập " + ma + " ra PDF");
         fchChonTep.setFileFilter(new FileNameExtensionFilter("Tệp PDF (*.pdf)", "pdf"));
         fchChonTep.setSelectedFile(new File("Phieu_nhap_" + ma.replaceAll("[^a-zA-Z0-9_-]", "_") + ".pdf"));
         if (fchChonTep.showSaveDialog(cha) != JFileChooser.APPROVE_OPTION)
             return;
-        // file: Đường dẫn tệp dùng cho tệp.
+
         File file = fchChonTep.getSelectedFile();
         if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".pdf"))
             file = new File(file.getParentFile(), file.getName() + ".pdf");
@@ -101,22 +101,22 @@ public final class PhieuNhapPdfExporter {
         }
     }
 
-    /** Exposed for headless format tests. */
+
     public static byte[] taoPdf(NhapKhoDAO.BanInPhieuNhap data) throws IOException {
         if (data == null || data.getPhieu() == null)
             throw new IllegalArgumentException("Thiếu dữ liệu phiếu nhập.");
-        // items: Danh sách chứa các phần tử kiểu ChiTietPhieuNhap.
+
         List<ChiTietPhieuNhap> items = data.getChiTiet();
-        // slices: Lưu các phần; phần tử có kiểu int[].
+
         List<int[]> slices = new ArrayList<>();
         int offset = 0;
-        // Page 1: header is taller; reserve space on the final page for signatures.
+
         while (offset < items.size() || slices.isEmpty()) {
             boolean first = slices.isEmpty();
             int remaining = items.size() - offset;
             int normalCap = first ? 13 : 18;
             int lastCap = first ? 8 : 13;
-            // count: Lưu số phần tử.
+
             int count = remaining <= lastCap ? Math.max(remaining, 0)
                     : remaining <= normalCap ? lastCap : normalCap;
             slices.add(new int[] { offset, offset + count });
@@ -124,28 +124,28 @@ public final class PhieuNhapPdfExporter {
             if (slices.size() > 10000)
                 throw new IOException("Phiếu nhập quá dài.");
         }
-        // pages: Lưu các trang; phần tử có kiểu BufferedImage.
+
         List<BufferedImage> pages = new ArrayList<>();
         for (int i = 0; i < slices.size(); i++) {
-            // seg: Mảng lưu đoạn.
+
             int[] seg = slices.get(i);
             pages.add(veTrang(data, seg[0], seg[1], i, slices.size()));
         }
         return dongGoiPdf(pages);
     }
 
-    // Vẽ trạng.
-    // Tham số data: dữ liệu.
-    // Tham số from: chỉ số bắt đầu.
-    // Tham số to: chỉ số kết thúc.
-    // Tham số pageNo: trang số.
-    // Tham số totalPage: tổng trang.
-    // Kết quả: đối tượng/giá trị kiểu BufferedImage.
+
+
+
+
+
+
+
     private static BufferedImage veTrang(NhapKhoDAO.BanInPhieuNhap data,
             int from, int to, int pageNo, int totalPage) {
-        // img: Ảnh trong bộ nhớ dùng cho hình ảnh.
+
         BufferedImage img = new BufferedImage(W * SCALE, H * SCALE, BufferedImage.TYPE_INT_RGB);
-        // g: Ngữ cảnh vẽ dùng để thiết lập màu, phông và vẽ nội dung.
+
         Graphics2D g = img.createGraphics();
         try {
             g.setColor(Color.WHITE);
@@ -192,13 +192,13 @@ public final class PhieuNhapPdfExporter {
         return img;
     }
 
-    // Vẽ một dòng gồm các nhãn và giá trị thông tin trên bản in.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số l1: nhãn bên trái.
-    // Tham số v1: giá trị bên trái.
-    // Tham số y: tọa độ dọc.
-    // Tham số l2: nhãn bên phải.
-    // Tham số v2: giá trị bên phải.
+
+
+
+
+
+
+
     private static void dongThongTin(Graphics2D g, String l1, String v1, int y, String l2, String v2) {
         chu(g, l1, LEFT, y, 9, true, MUTED);
         veFit(g, v1, LEFT + 95, y, 160, 9, false, NAVY);
@@ -206,16 +206,16 @@ public final class PhieuNhapPdfExporter {
         veFit(g, v2, 408, y, 148, 9, false, NAVY);
     }
 
-    // Vẽ bảng dữ liệu.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số items: các dòng dữ liệu.
-    // Tham số from: chỉ số bắt đầu.
-    // Tham số to: chỉ số kết thúc.
-    // Tham số y: tọa độ dọc.
+
+
+
+
+
+
     private static void veBang(Graphics2D g, List<ChiTietPhieuNhap> items, int from, int to, int y) {
-        // row: Lưu chỉ số dòng.
+
         int hHead = 29, row = LINE_H;
-        // labels: Mảng lưu các nhãn.
+
         String[] labels = { "STT", "Mã SP", "Tên sản phẩm", "SL", "Đơn giá", "Thành tiền", "Hạn SD" };
         g.setColor(NAVY);
         g.fillRect(LEFT, y, RIGHT - LEFT, hHead);
@@ -235,7 +235,7 @@ public final class PhieuNhapPdfExporter {
             g.setColor(BORDER);
             g.setStroke(new BasicStroke(.55f));
             g.drawLine(LEFT, yy + row, RIGHT, yy + row);
-            // x: Lưu tọa độ ngang.
+
             int x = LEFT;
             canGiua(g, String.valueOf(idx + 1), x, yy + 19, COLUMNS[0], 9, false, NAVY);
             x += COLUMNS[0];
@@ -257,14 +257,14 @@ public final class PhieuNhapPdfExporter {
         g.drawRect(LEFT, y, RIGHT - LEFT, hHead + (to - from) * row);
     }
 
-    // Vẽ tên sản phẩm.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số s: chuỗi đầu vào.
-    // Tham số x: tọa độ ngang.
-    // Tham số y: tọa độ dọc.
-    // Tham số maxW: chiều rộng tối đa.
+
+
+
+
+
+
     private static void veTenSanPham(Graphics2D g, String s, int x, int y, int maxW) {
-        // f: Phông chữ dùng cho f.
+
         Font f = font(8.5f, false);
         g.setFont(f);
         FontMetrics metrics = g.getFontMetrics();
@@ -283,10 +283,10 @@ public final class PhieuNhapPdfExporter {
         veFit(g, s, x, y + 7, maxW, 8.5f, false, NAVY);
     }
 
-    // Vẽ tổng và chữ kỳ.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số data: dữ liệu.
-    // Tham số y: tọa độ dọc.
+
+
+
+
     private static void veTongVaChuKy(Graphics2D g, NhapKhoDAO.BanInPhieuNhap data, int y) {
         gach(g, LEFT, y - 13, RIGHT, y - 13, NAVY);
         chu(g, "Tổng số mặt hàng: " + data.getChiTiet().size(), LEFT, y + 3, 10, true, NAVY);
@@ -304,44 +304,44 @@ public final class PhieuNhapPdfExporter {
         veFit(g, giaTri(data.getTenNhanVien()), LEFT + 318, sigY + 71, 150, 9, false, NAVY);
     }
 
-    // Thay chuỗi trống hoặc null bằng ký hiệu hiển thị trên bản in.
-    // Tham số s: chuỗi đầu vào.
-    // Kết quả: chuỗi kết quả.
+
+
+
     private static String giaTri(String s) {
         return s == null || s.isBlank() ? "—" : s.trim();
     }
 
-    // Tạo phông chữ với kiểu và kích thước được chỉ định.
-    // Tham số size: kích thước.
-    // Tham số bold: có in đậm.
-    // Kết quả: đối tượng/giá trị kiểu Font.
+
+
+
+
     private static Font font(float size, boolean bold) {
         return new Font("Segoe UI", bold ? Font.BOLD : Font.PLAIN, Math.max(1, Math.round(size)));
     }
 
-    // Vẽ chuỗi chữ theo vị trí, kích thước và màu được chỉ định.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số s: chuỗi đầu vào.
-    // Tham số x: tọa độ ngang.
-    // Tham số y: tọa độ dọc.
-    // Tham số sz: kích thước.
-    // Tham số bold: có in đậm.
-    // Tham số c: cột/thành phần được xử lý.
+
+
+
+
+
+
+
+
     private static void chu(Graphics2D g, String s, int x, int y, float sz, boolean bold, Color c) {
         g.setFont(font(sz, bold));
         g.setColor(c);
         g.drawString(s, x, y);
     }
 
-    // Vẽ vừa khung.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số s: chuỗi đầu vào.
-    // Tham số x: tọa độ ngang.
-    // Tham số y: tọa độ dọc.
-    // Tham số maxW: chiều rộng tối đa.
-    // Tham số sz: kích thước.
-    // Tham số bold: có in đậm.
-    // Tham số c: cột/thành phần được xử lý.
+
+
+
+
+
+
+
+
+
     private static void veFit(Graphics2D g, String s, int x, int y, int maxW, float sz, boolean bold, Color c) {
         g.setFont(font(sz, bold));
         FontMetrics m = g.getFontMetrics();
@@ -354,15 +354,15 @@ public final class PhieuNhapPdfExporter {
         chu(g, s, x, y, sz, bold, c);
     }
 
-    // Căn giữa dữ liệu của màn hình.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số s: chuỗi đầu vào.
-    // Tham số x: tọa độ ngang.
-    // Tham số y: tọa độ dọc.
-    // Tham số w: chiều rộng.
-    // Tham số sz: kích thước.
-    // Tham số bold: có in đậm.
-    // Tham số c: cột/thành phần được xử lý.
+
+
+
+
+
+
+
+
+
     private static void canGiua(Graphics2D g, String s, int x, int y, int w, float sz,
             boolean bold, Color c) {
         g.setFont(font(sz, bold));
@@ -374,47 +374,47 @@ public final class PhieuNhapPdfExporter {
         chu(g, s, x + (w - tw) / 2, y, sz, bold, c);
     }
 
-    // Căn lề phải dữ liệu của màn hình.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số s: chuỗi đầu vào.
-    // Tham số xRight: tọa độ mép phải.
-    // Tham số y: tọa độ dọc.
-    // Tham số sz: kích thước.
-    // Tham số bold: có in đậm.
-    // Tham số c: cột/thành phần được xử lý.
+
+
+
+
+
+
+
+
     private static void canLePhai(Graphics2D g, String s, int xRight, int y, float sz,
             boolean bold, Color c) {
         g.setFont(font(sz, bold));
         chu(g, s, xRight - g.getFontMetrics().stringWidth(s), y, sz, bold, c);
     }
 
-    // Vẽ đường kẻ theo tọa độ và màu đã chọn.
-    // Tham số g: ngữ cảnh vẽ.
-    // Tham số x1: x 1.
-    // Tham số y1: y 1.
-    // Tham số x2: x 2.
-    // Tham số y2: y 2.
-    // Tham số color: màu sắc.
+
+
+
+
+
+
+
     private static void gach(Graphics2D g, int x1, int y1, int x2, int y2, Color color) {
         g.setColor(color);
         g.setStroke(new BasicStroke(1f));
         g.drawLine(x1, y1, x2, y2);
     }
 
-    // Định dạng số tiền thành chuỗi để hiển thị.
-    // Tham số value: giá trị.
-    // Kết quả: chuỗi kết quả.
+
+
+
     private static String tien(double value) {
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.forLanguageTag("vi-VN"));
         return new DecimalFormat("#,##0", symbols).format(value);
     }
 
-    /** PDF 1.4 with one lossless deflate RGB image per A4 page. */
+
     private static byte[] dongGoiPdf(List<BufferedImage> pages) throws IOException {
-        // objects: Lưu các đối tượng; phần tử có kiểu byte[].
+
         List<byte[]> objects = new ArrayList<>();
         objects.add(bytes("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"));
-        // kids: Bộ đệm ghép các đoạn chuỗi để tạo các trang con.
+
         StringBuilder kids = new StringBuilder();
         for (int i = 0; i < pages.size(); i++)
             kids.append(3 + 3 * i).append(" 0 R ");
@@ -422,24 +422,24 @@ public final class PhieuNhapPdfExporter {
                 + pages.size() + " >>\nendobj\n"));
         for (int i = 0; i < pages.size(); i++) {
             int pageObj = 3 + 3 * i, contentsObj = pageObj + 1, imageObj = pageObj + 2;
-            // img: Ảnh trong bộ nhớ dùng cho hình ảnh.
+
             BufferedImage img = pages.get(i);
             objects.add(bytes(pageObj + " 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
                     + W + " " + H + "] /Resources << /XObject << /Im0 " + imageObj
                     + " 0 R >> >> /Contents " + contentsObj + " 0 R >>\nendobj\n"));
-            // content: Lưu nội dung.
+
             String content = "q\n" + W + " 0 0 " + H + " 0 0 cm\n/Im0 Do\nQ\n";
             objects.add(stream(contentsObj, "", bytes(content)));
-            // pixelBytes: Mảng lưu điểm ảnh các byte.
+
             byte[] pixelBytes = nenRGB(img);
             objects.add(stream(imageObj, "/Type /XObject /Subtype /Image /Width " + img.getWidth()
                     + " /Height " + img.getHeight()
                     + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode", pixelBytes));
         }
-        // pdf: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
+
         ByteArrayOutputStream pdf = new ByteArrayOutputStream();
         pdf.write(bytes("%PDF-1.4\n"));
-        // offsets: Lưu các vị trí byte; phần tử có kiểu Integer.
+
         List<Integer> offsets = new ArrayList<>();
         offsets.add(0);
         for (byte[] obj : objects) {
@@ -455,18 +455,18 @@ public final class PhieuNhapPdfExporter {
         return pdf.toByteArray();
     }
 
-    // Nén dữ liệu màu RGB của ảnh để nhúng vào PDF.
-    // Tham số img: hình ảnh.
-    // Kết quả: đối tượng/giá trị kiểu byte[].
+
+
+
     private static byte[] nenRGB(BufferedImage img) throws IOException {
-        // sink: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
+
         ByteArrayOutputStream sink = new ByteArrayOutputStream();
         try (DeflaterOutputStream out = new DeflaterOutputStream(sink)) {
-            // w: Lưu chiều rộng.
+
             int w = img.getWidth();
-            // px: Mảng lưu pixel.
+
             int[] px = new int[w];
-            // row: Mảng lưu chỉ số dòng.
+
             byte[] row = new byte[w * 3];
             for (int y = 0; y < img.getHeight(); y++) {
                 img.getRGB(0, y, w, 1, px, 0, w);
@@ -481,13 +481,13 @@ public final class PhieuNhapPdfExporter {
         return sink.toByteArray();
     }
 
-    // Tạo đối tượng stream trong cấu trúc tệp PDF.
-    // Tham số index: chỉ số phần tử.
-    // Tham số opts: tùy chọn.
-    // Tham số content: nội dung.
-    // Kết quả: đối tượng/giá trị kiểu byte[].
+
+
+
+
+
     private static byte[] stream(int index, String opts, byte[] content) throws IOException {
-        // b: Luồng ghi dữ liệu dùng khi tạo hoặc đóng gói tệp xuất.
+
         ByteArrayOutputStream b = new ByteArrayOutputStream();
         b.write(bytes(index + " 0 obj\n<< " + opts + " /Length " + content.length + " >>\nstream\n"));
         b.write(content);
@@ -495,9 +495,9 @@ public final class PhieuNhapPdfExporter {
         return b.toByteArray();
     }
 
-    // Chuyển chuỗi nội dung PDF thành mảng byte.
-    // Tham số text: nội dung chữ.
-    // Kết quả: đối tượng/giá trị kiểu byte[].
+
+
+
     private static byte[] bytes(String text) {
         return text.getBytes(StandardCharsets.ISO_8859_1);
     }

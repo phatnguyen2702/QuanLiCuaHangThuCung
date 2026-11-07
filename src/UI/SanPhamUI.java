@@ -15,27 +15,43 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 public class SanPhamUI extends JFrame {
-private final DefaultTableModel model = new DefaultTableModel(
-            new String[] { "Ảnh", "Mã SP", "Tên sản phẩm", "Danh mục",
-                    "Nhà cung cấp", "Đợt nhập", "Ngày nhập", "Hạn sử dụng", "Trạng thái",
-                    "Giá nhập", "Giá bán", "Tồn" },
-            0) {
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return col == 5;
-        }
-    };
-    private final JTable tblDuLieu2 = new JTable(model);
+private static final String TONG_CAC_DOT = "Tổng các đợt nhập";
+    private static final DateTimeFormatter DD_MM_YYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private final DefaultTableModel model = taoModel(5, "Ảnh", "Mã SP", "Tên sản phẩm", "Danh mục",
+            "Nhà cung cấp", "Đợt nhập", "Ngày nhập", "Hạn sử dụng", "Trạng thái", "Giá nhập", "Giá bán", "Tồn");
+    private final JTable tblSanPham = new JTable(model);
     private final JTextField txtTim = UIStyle.o(16);
     private final JComboBox<Muc> cmbDanhMuc = new JComboBox<>();
-    private final java.util.Map<String, String> maDotTheoTen = new java.util.LinkedHashMap<>();
-    private final JLabel lblSoLuong2 = new JLabel("0 sản phẩm");
+    private final Map<String, String> maDotTheoTen = new LinkedHashMap<>();
+    private final JLabel lblSoLuong = new JLabel("0 sản phẩm");
     private ArrayList<SanPham> dsHienTai = new ArrayList<>();
     private ArrayList<SanPham> dsTongHop = new ArrayList<>();
     private boolean dangNapCombo = false;
+    private static DefaultTableModel taoModel(int cotSua, String... tenCot) {
+        return new DefaultTableModel(tenCot, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return column == cotSua; }
+        };
+    }
+    private static String ngay(LocalDate value) { return value == null ? "" : value.format(DD_MM_YYYY); }
+    private static String trangThaiLo(SanPham sp) {
+        if (sp.getHanSuDung() != null && sp.getHanSuDung().isBefore(LocalDate.now())) return "Hết hạn";
+        return sp.isNgungKinhDoanh() ? "Ngừng kinh doanh" : "Đang kinh doanh";
+    }
+    private static void trongSuot(JComponent... thanhPhan) {
+        for (JComponent item : thanhPhan) item.setOpaque(false);
+    }
+    private static void themHang(JPanel form, String nhan, JComponent giaTri) {
+        form.add(new JLabel(nhan));
+        form.add(giaTri);
+    }
     private static class ImageRenderer extends JLabel implements javax.swing.table.TableCellRenderer {
         ImageRenderer() {
             setHorizontalAlignment(SwingConstants.CENTER);
@@ -83,14 +99,14 @@ private final DefaultTableModel model = new DefaultTableModel(
         napLai();
     }
     private JPanel taoPhanDau() {
-        JLabel lblTieuDe2 = new JLabel("Quản lý sản phẩm");
-        lblTieuDe2.setFont(UIStyle.font(Font.BOLD, 26));
+        JLabel lblTieuDe = new JLabel("Quản lý sản phẩm");
+        lblTieuDe.setFont(UIStyle.font(Font.BOLD, 26));
         JButton btnThem = UIStyle.nutXanh("+ Thêm sản phẩm");
-        btnThem.addActionListener(e -> themSanPham());
+        btnThem.addActionListener(e -> moFormSanPham(null));
         JPanel pnlHang = new JPanel(new BorderLayout());
-        pnlHang.setOpaque(false);
+        trongSuot(pnlHang);
         pnlHang.setBorder(new EmptyBorder(0, 0, 15, 0));
-        pnlHang.add(lblTieuDe2, BorderLayout.WEST);
+        pnlHang.add(lblTieuDe, BorderLayout.WEST);
         pnlHang.add(btnThem, BorderLayout.EAST);
         return pnlHang;
     }
@@ -116,7 +132,7 @@ private final DefaultTableModel model = new DefaultTableModel(
         btnXuLyHang.addActionListener(e -> xuLyLoSanPham());
         btnLichSuXuLy.addActionListener(e -> hienLichSuXuLySanPham());
         JPanel pnlThanhCongCu = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        pnlThanhCongCu.setOpaque(false);
+        trongSuot(pnlThanhCongCu);
         pnlThanhCongCu.add(UIStyle.nhan("Mã / tên:"));
         pnlThanhCongCu.add(txtTim);
         pnlThanhCongCu.add(cmbDanhMuc);
@@ -125,33 +141,33 @@ private final DefaultTableModel model = new DefaultTableModel(
         pnlThanhCongCu.add(btnXoa);
         pnlThanhCongCu.add(btnXuLyHang);
         pnlThanhCongCu.add(btnLichSuXuLy);
-        lblSoLuong2.setFont(UIStyle.font(Font.BOLD, 13));
-        lblSoLuong2.setBorder(new EmptyBorder(0, 2, 0, 0));
+        lblSoLuong.setFont(UIStyle.font(Font.BOLD, 13));
+        lblSoLuong.setBorder(new EmptyBorder(0, 2, 0, 0));
         JPanel pnlPhanTren = new JPanel();
-        pnlPhanTren.setOpaque(false);
+        trongSuot(pnlPhanTren);
         pnlPhanTren.setLayout(new BoxLayout(pnlPhanTren, BoxLayout.Y_AXIS));
         pnlThanhCongCu.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lblSoLuong2.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblSoLuong.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnlPhanTren.add(pnlThanhCongCu);
         pnlPhanTren.add(Box.createVerticalStrut(8));
-        pnlPhanTren.add(lblSoLuong2);
-        UIStyle.taoBang(tblDuLieu2, 9, 10, 11);
-        tblDuLieu2.setRowHeight(84);
-        tblDuLieu2.getColumnModel().getColumn(0).setPreferredWidth(96);
-        tblDuLieu2.getColumnModel().getColumn(0).setMaxWidth(110);
-        tblDuLieu2.getColumnModel().getColumn(0).setCellRenderer(new ImageRenderer());
-        tblDuLieu2.getColumnModel().getColumn(5).setCellEditor(taoBoChonDotNhap());
-        tblDuLieu2.addMouseListener(new MouseAdapter() {
+        pnlPhanTren.add(lblSoLuong);
+        UIStyle.taoBang(tblSanPham, 9, 10, 11);
+        tblSanPham.setRowHeight(84);
+        tblSanPham.getColumnModel().getColumn(0).setPreferredWidth(96);
+        tblSanPham.getColumnModel().getColumn(0).setMaxWidth(110);
+        tblSanPham.getColumnModel().getColumn(0).setCellRenderer(new ImageRenderer());
+        tblSanPham.getColumnModel().getColumn(5).setCellEditor(taoBoChonDotNhap());
+        tblSanPham.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && tblDuLieu2.getSelectedRow() >= 0
-                        && tblDuLieu2.columnAtPoint(e.getPoint()) != 5) {
+                if (e.getClickCount() == 2 && tblSanPham.getSelectedRow() >= 0
+                        && tblSanPham.columnAtPoint(e.getPoint()) != 5) {
                     suaSanPham();
                 }
             }
         });
         pnlThe.add(pnlPhanTren, BorderLayout.NORTH);
-        pnlThe.add(UIStyle.cuon(tblDuLieu2), BorderLayout.CENTER);
+        pnlThe.add(UIStyle.cuon(tblSanPham), BorderLayout.CENTER);
         return pnlThe;
     }
     public void napLai() {
@@ -160,8 +176,8 @@ private final DefaultTableModel model = new DefaultTableModel(
     }
     private void napDuLieuComboSanPham() {
         try {
-            Muc laySanPhamDangChon = (Muc) cmbDanhMuc.getSelectedItem();
-            String maDangChon = laySanPhamDangChon == null ? null : laySanPhamDangChon.ma;
+            Muc dangChon = (Muc) cmbDanhMuc.getSelectedItem();
+            String maDangChon = dangChon == null ? null : dangChon.ma;
             dangNapCombo = true;
             cmbDanhMuc.removeAllItems();
             cmbDanhMuc.addItem(new Muc(null, "Tất cả danh mục"));
@@ -175,8 +191,7 @@ private final DefaultTableModel model = new DefaultTableModel(
             }
             maDotTheoTen.clear();
             for (dao.SanPhamDAO.DotNhap dot : SanPhamControl.layDanhSachDotNhapSanPham()) {
-                String ten = dot.toString();
-                maDotTheoTen.put(ten, dot.getMaPhieuNhap());
+                maDotTheoTen.put(dot.toString(), dot.getMaPhieuNhap());
             }
         } catch (Exception ex) {
             UIStyle.loi(this, ex);
@@ -193,20 +208,20 @@ private final DefaultTableModel model = new DefaultTableModel(
                     int row, int column) {
                 int modelRow = table.convertRowIndexToModel(row);
                 combo.removeAllItems();
-                combo.addItem("Tổng các đợt nhập");
+                combo.addItem(TONG_CAC_DOT);
                 try {
                     for (dao.SanPhamDAO.DotNhap dot : SanPhamControl.layDanhSachDotNhapSanPham(dsTongHop.get(modelRow).getMaSanPham()))
                         combo.addItem(dot.toString());
                 } catch (Exception ex) {
                     UIStyle.loi(SanPhamUI.this, ex);
                 }
-                combo.setSelectedItem(value == null ? "Tổng các đợt nhập" : value.toString());
+                combo.setSelectedItem(value == null ? TONG_CAC_DOT : value.toString());
                 return super.getTableCellEditorComponent(table, value, selected, row, column);
             }
             @Override
             public boolean stopCellEditing() {
-                int row = tblDuLieu2.getEditingRow();
-                int modelRow = row < 0 ? -1 : tblDuLieu2.convertRowIndexToModel(row);
+                int row = tblSanPham.getEditingRow();
+                int modelRow = row < 0 ? -1 : tblSanPham.convertRowIndexToModel(row);
                 String tenDot = (String) combo.getSelectedItem();
                 if (modelRow >= 0 && !hienThiDotNhap(modelRow, tenDot))
                     return false;
@@ -217,9 +232,8 @@ private final DefaultTableModel model = new DefaultTableModel(
     private boolean hienThiDotNhap(int row, String tenDot) {
         String maSanPham = dsTongHop.get(row).getMaSanPham();
         SanPham sp;
-        if (tenDot == null || tenDot.equals("Tổng các đợt nhập")) {
+        if (tenDot == null || tenDot.equals(TONG_CAC_DOT)) {
             sp = dsTongHop.get(row);
-            dsHienTai.set(row, sp);
         } else {
             String maDot = maDotTheoTen.get(tenDot);
             if (maDot == null)
@@ -234,17 +248,13 @@ private final DefaultTableModel model = new DefaultTableModel(
                 UIStyle.canhBao(this, "Lô này đã hết tồn hoặc không còn đủ điều kiện kinh doanh.");
                 return false;
             }
-            dsHienTai.set(row, sp);
         }
+        dsHienTai.set(row, sp);
         boolean tongHop = sp.getMaPhieuNhap() == null;
-        model.setValueAt(tenDot == null ? "Tổng các đợt nhập" : tenDot, row, 5);
-        model.setValueAt(tongHop || sp.getNgayNhap() == null ? "" : sp.getNgayNhap().format(
-                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), row, 6);
-        model.setValueAt(tongHop || sp.getHanSuDung() == null ? "" : sp.getHanSuDung().format(
-                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), row, 7);
-        String trangThai = tongHop ? "" : (sp.getHanSuDung() != null
-                && sp.getHanSuDung().isBefore(java.time.LocalDate.now()) ? "Hết hạn"
-                        : sp.isNgungKinhDoanh() ? "Ngừng kinh doanh" : "Đang kinh doanh");
+        model.setValueAt(tenDot == null ? TONG_CAC_DOT : tenDot, row, 5);
+        model.setValueAt(tongHop ? "" : ngay(sp.getNgayNhap()), row, 6);
+        model.setValueAt(tongHop ? "" : ngay(sp.getHanSuDung()), row, 7);
+        String trangThai = tongHop ? "" : trangThaiLo(sp);
         model.setValueAt(trangThai, row, 8);
         model.setValueAt(tongHop ? "" : UIStyle.tien(sp.getGiaNhap()), row, 9);
         model.setValueAt(tongHop ? "" : UIStyle.tien(sp.getGiaBan()), row, 10);
@@ -265,38 +275,35 @@ private final DefaultTableModel model = new DefaultTableModel(
                         sp.getTenSanPham(),
                         sp.getTenDanhMuc(),
                         sp.getTenNhaCungCap(),
-                        "Tổng các đợt nhập", "", "", "",
+                        TONG_CAC_DOT, "", "", "",
                         "", "",
                         sp.getTonKho()
                 });
             }
-            lblSoLuong2.setText(dsHienTai.size() + " sản phẩm");
+            lblSoLuong.setText(dsHienTai.size() + " sản phẩm");
         } catch (Exception ex) {
             UIStyle.loi(this, ex);
         }
     }
     private SanPham laySanPhamDangChon() {
-        int row = tblDuLieu2.getSelectedRow();
+        int row = tblSanPham.getSelectedRow();
         if (row < 0) {
             UIStyle.canhBao(this, "Vui lòng chọn một sản phẩm trong bảng.");
             return null;
         }
-        return dsHienTai.get(tblDuLieu2.convertRowIndexToModel(row));
-    }
-    private void themSanPham() {
-        moFormSanPham(null);
+        return dsHienTai.get(tblSanPham.convertRowIndexToModel(row));
     }
     private void suaSanPham() {
         SanPham sp = laySanPhamDangChon();
         if (sp != null) {
             if (sp.getMaPhieuNhap() != null) {
                 try {
-                    SanPham hoSo = SanPhamControl.timKiemSanPham(sp.getMaSanPham(), null, null).stream()
-                            .filter(x -> x.getMaSanPham().equals(sp.getMaSanPham())).findFirst().orElse(null);
-                    if (hoSo != null) {
-                        sp.setGiaNhap(hoSo.getGiaNhap());
-                        sp.setTonKho(hoSo.getTonKho());
-                    }
+                    SanPhamControl.timKiemSanPham(sp.getMaSanPham(), null, null).stream()
+                            .filter(hoSo -> hoSo.getMaSanPham().equals(sp.getMaSanPham()))
+                            .findFirst().ifPresent(hoSo -> {
+                                sp.setGiaNhap(hoSo.getGiaNhap());
+                                sp.setTonKho(hoSo.getTonKho());
+                            });
                 } catch (Exception ex) {
                     UIStyle.loi(this, ex);
                     return;
@@ -368,18 +375,12 @@ private final DefaultTableModel model = new DefaultTableModel(
                 "Hết hạn", "Hư hỏng", "Lỗi sản phẩm", "Trả nhà cung cấp", "Khác"
         });
         JTextField ghiChu = new JTextField(22);
-        form.add(new JLabel("Sản phẩm"));
-        form.add(new JLabel(sp.getMaSanPham() + " - " + sp.getTenSanPham()));
-        form.add(new JLabel("Đợt nhập"));
-        form.add(new JLabel(sp.getMaPhieuNhap()));
-        form.add(new JLabel("Tồn hiện tại"));
-        form.add(new JLabel(String.valueOf(sp.getTonKho())));
-        form.add(new JLabel("Số lượng xử lý"));
-        form.add(soLuong);
-        form.add(new JLabel("Lý do"));
-        form.add(lyDo);
-        form.add(new JLabel("Ghi chú"));
-        form.add(ghiChu);
+        themHang(form, "Sản phẩm", new JLabel(sp.getMaSanPham() + " - " + sp.getTenSanPham()));
+        themHang(form, "Đợt nhập", new JLabel(sp.getMaPhieuNhap()));
+        themHang(form, "Tồn hiện tại", new JLabel(String.valueOf(sp.getTonKho())));
+        themHang(form, "Số lượng xử lý", soLuong);
+        themHang(form, "Lý do", lyDo);
+        themHang(form, "Ghi chú", ghiChu);
         if (JOptionPane.showConfirmDialog(this, form, "Xử lý hàng lỗi / hết hạn",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION)
             return;
@@ -406,12 +407,7 @@ private final DefaultTableModel model = new DefaultTableModel(
     private void hienLichSuXuLySanPham() {
         String[] cot = { "Mã xử lý", "Ngày xử lý", "Mã SP", "Tên sản phẩm",
                 "Đợt nhập", "Số lượng", "Lý do", "Ghi chú", "Người xử lý" };
-        DefaultTableModel lichSuModel = new DefaultTableModel(cot, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        DefaultTableModel lichSuModel = taoModel(-1, cot);
         try {
             for (Object[] dong : SanPhamControl.layLichSuXuLySanPham()) {
                 lichSuModel.addRow(dong);
@@ -443,7 +439,7 @@ private final DefaultTableModel model = new DefaultTableModel(
         JButton dong = UIStyle.nutPhu("Đóng");
         dong.addActionListener(e -> dialog.dispose());
         JPanel chan = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        chan.setOpaque(false);
+        trongSuot(chan);
         chan.add(dong);
         noiDung.add(chan, BorderLayout.SOUTH);
         dialog.add(noiDung, BorderLayout.CENTER);
@@ -491,78 +487,47 @@ private final DefaultTableModel model = new DefaultTableModel(
             for (NhaCungCap n : dsNhaCungCap) {
                 cmbNhaCungCap.addItem(n);
             }
-            cmbDanhMuc.setFont(UIStyle.font(Font.PLAIN, 13));
-            cmbNhaCungCap.setFont(UIStyle.font(Font.PLAIN, 13));
-            cmbNhomTuoi.setFont(UIStyle.font(Font.PLAIN, 13));
-            cmbKichThuoc.setFont(UIStyle.font(Font.PLAIN, 13));
-            JPanel pnlForm2 = new JPanel(new GridBagLayout());
-            pnlForm2.setBorder(new EmptyBorder(20, 25, 10, 25));
-            UIStyle.hang(pnlForm2, 0, "Mã sản phẩm", txtMa, false);
-            UIStyle.hang(pnlForm2, 1, "Tên sản phẩm", txtTen, false);
-            UIStyle.hang(pnlForm2, 2, "Giá nhập", txtGiaNhap, false);
-            UIStyle.hang(pnlForm2, 3, "Giá bán", txtGiaBan, false);
-            UIStyle.hang(pnlForm2, 4, "Danh mục", cmbDanhMuc, false);
-            UIStyle.hang(pnlForm2, 5, "Nhà cung cấp", cmbNhaCungCap, false);
-            UIStyle.hang(pnlForm2, 6, "Độ tuổi phù hợp", cmbNhomTuoi, false);
-            UIStyle.hang(pnlForm2, 7, "Kích thước phù hợp", cmbKichThuoc, false);
+            for (JComboBox<?> combo : List.of(cmbDanhMuc, cmbNhaCungCap, cmbNhomTuoi, cmbKichThuoc))
+                combo.setFont(UIStyle.font(Font.PLAIN, 13));
+            JPanel pnlForm = new JPanel(new GridBagLayout());
+            pnlForm.setBorder(new EmptyBorder(20, 25, 10, 25));
+            UIStyle.hang(pnlForm, 0, "Mã sản phẩm", txtMa, false);
+            UIStyle.hang(pnlForm, 1, "Tên sản phẩm", txtTen, false);
+            UIStyle.hang(pnlForm, 2, "Giá nhập", txtGiaNhap, false);
+            UIStyle.hang(pnlForm, 3, "Giá bán", txtGiaBan, false);
+            UIStyle.hang(pnlForm, 4, "Danh mục", cmbDanhMuc, false);
+            UIStyle.hang(pnlForm, 5, "Nhà cung cấp", cmbNhaCungCap, false);
+            UIStyle.hang(pnlForm, 6, "Độ tuổi phù hợp", cmbNhomTuoi, false);
+            UIStyle.hang(pnlForm, 7, "Kích thước phù hợp", cmbKichThuoc, false);
             JButton btnChonAnh = UIStyle.nutPhu("Chọn ảnh...");
             JPanel pnlAnh = new JPanel(new BorderLayout(8, 0));
-            pnlAnh.setOpaque(false);
+            trongSuot(pnlAnh);
             lblAnh.setPreferredSize(new Dimension(120, 82));
             lblAnh.setBorder(BorderFactory.createLineBorder(new Color(210, 220, 230)));
             pnlAnh.add(lblAnh, BorderLayout.WEST);
             pnlAnh.add(btnChonAnh, BorderLayout.CENTER);
-            UIStyle.hang(pnlForm2, 8, "Ảnh sản phẩm", pnlAnh, false);
+            UIStyle.hang(pnlForm, 8, "Ảnh sản phẩm", pnlAnh, false);
             btnChonAnh.addActionListener(e -> chonAnhSanPham());
-            int dongTiep = 9;
-            if (sp != null) {
-                txtHanSuDung.setEditable(false);
-                txtHanSuDung.setFocusable(false);
-                txtHanSuDung.setBackground(UIStyle.READONLY);
+            if (dangSua) {
+                txtMa.setText(sp.getMaSanPham());
+                txtTen.setText(sp.getTenSanPham());
+                txtGiaNhap.setText(String.valueOf((long) sp.getGiaNhap()));
+                txtGiaBan.setText(String.valueOf((long) sp.getGiaBan()));
+                chon(cmbDanhMuc, sp.getMaDanhMuc(), DanhMuc::getMaDanhMuc);
+                chon(cmbNhaCungCap, sp.getMaNhaCungCap(), NhaCungCap::getMaNhaCungCap);
                 txtHanSuDung.setToolTipText(
                         "Hạn sử dụng sớm nhất trong các phiếu nhập đã hoàn tất; "
                                 + "sản phẩm có thể có nhiều lô/HSD khác nhau. "
                                 + "Chỉnh hạn dùng tại nghiệp vụ nhập kho, không phải ở đây.");
-                UIStyle.hang(pnlForm2, dongTiep++, "Hạn sử dụng (sớm nhất)", txtHanSuDung, false);
-                UIStyle.hang(pnlForm2, dongTiep++, "Tồn hiện tại",
+                UIStyle.hang(pnlForm, 9, "Hạn sử dụng (sớm nhất)", txtHanSuDung, false);
+                UIStyle.hang(pnlForm, 10, "Tồn hiện tại",
                         UIStyle.oChiDoc(String.valueOf(sp.getTonKho())), false);
                 if (sp.getTonKho() > 0) {
                     txtGiaNhap.setEditable(false);
                     txtGiaNhap.setBackground(UIStyle.READONLY);
                     txtGiaNhap.setToolTipText("Chỉ được đổi giá nhập khi tồn kho bằng 0.");
                 }
-            }
-            if (dangSua) {
-                txtMa.setText(sp.getMaSanPham());
-                txtMa.setEditable(false);
-                txtMa.setBackground(UIStyle.READONLY);
-                txtTen.setText(sp.getTenSanPham());
-                hienThiAnhSanPham(sp.getMaSanPham());
-                txtGiaNhap.setText(String.valueOf((long) sp.getGiaNhap()));
-                txtGiaBan.setText(String.valueOf((long) sp.getGiaBan()));
-                chonDanhMuc(sp.getMaDanhMuc());
-                chonNhaCungCap(sp.getMaNhaCungCap());
-                try {
-                    java.time.LocalDate han = SanPhamControl.layHanSuDungSomNhatSanPham(sp.getMaSanPham());
-                    if (han == null) {
-                        txtHanSuDung.setText("Chưa có dữ liệu");
-                    } else {
-                        txtHanSuDung.setText(han.format(
-                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                    }
-                } catch (Exception ex) {
-                    txtHanSuDung.setText("Không tải được dữ liệu");
-                    UIStyle.loi(this, ex);
-                }
-                try {
-                    String[] thongTin = SanPhamControl.layThongTinGoiYThucAn(sp.getMaSanPham());
-                    if (thongTin != null) {
-                        chonGiaTri(cmbNhomTuoi, thongTin[1]);
-                        chonGiaTri(cmbKichThuoc, thongTin[2]);
-                    }
-                } catch (Exception ex) {
-                    UIStyle.loi(this, ex);
-                }
+                napDuLieuSua(sp);
             } else {
                 txtMa.setText(maMoi);
             }
@@ -573,15 +538,34 @@ private final DefaultTableModel model = new DefaultTableModel(
             JButton btnLuu = UIStyle.nutXanh("Lưu");
             btnHuy.addActionListener(e -> dispose());
             btnLuu.addActionListener(e -> luuSanPham());
-            JPanel pnlNut2 = UIStyle.hangNut(btnHuy, btnLuu);
-            pnlNut2.setBorder(new EmptyBorder(5, 25, 20, 25));
+            JPanel pnlNut = UIStyle.hangNut(btnHuy, btnLuu);
+            pnlNut.setBorder(new EmptyBorder(5, 25, 20, 25));
             setLayout(new BorderLayout());
-            add(pnlForm2, BorderLayout.CENTER);
-            add(pnlNut2, BorderLayout.SOUTH);
+            add(pnlForm, BorderLayout.CENTER);
+            add(pnlNut, BorderLayout.SOUTH);
             getRootPane().setDefaultButton(btnLuu);
             pack();
             setResizable(false);
             setLocationRelativeTo(winCha);
+        }
+        private void napDuLieuSua(SanPham sp) {
+            hienThiAnhSanPham(sp.getMaSanPham());
+            try {
+                LocalDate han = SanPhamControl.layHanSuDungSomNhatSanPham(sp.getMaSanPham());
+                txtHanSuDung.setText(han == null ? "Chưa có dữ liệu" : ngay(han));
+            } catch (Exception ex) {
+                txtHanSuDung.setText("Không tải được dữ liệu");
+                UIStyle.loi(this, ex);
+            }
+            try {
+                String[] thongTin = SanPhamControl.layThongTinGoiYThucAn(sp.getMaSanPham());
+                if (thongTin != null) {
+                    chon(cmbNhomTuoi, thongTin[1], Function.identity());
+                    chon(cmbKichThuoc, thongTin[2], Function.identity());
+                }
+            } catch (Exception ex) {
+                UIStyle.loi(this, ex);
+            }
         }
         private void chonAnhSanPham() {
             JFileChooser chooser = new JFileChooser();
@@ -620,28 +604,19 @@ private final DefaultTableModel model = new DefaultTableModel(
                     Files.deleteIfExists(new File(folder, code + other).toPath());
             }
         }
-        private void chonDanhMuc(String ma) {
-            for (int i = 0; i < cmbDanhMuc.getItemCount(); i++) {
-                if (cmbDanhMuc.getItemAt(i).getMaDanhMuc().equals(ma)) {
-                    cmbDanhMuc.setSelectedIndex(i);
+        private <T> void chon(JComboBox<T> combo, String giaTri, Function<T, String> layGiaTri) {
+            for (int i = 0; i < combo.getItemCount(); i++) {
+                if (giaTri.equals(layGiaTri.apply(combo.getItemAt(i)))) {
+                    combo.setSelectedIndex(i);
                     return;
                 }
             }
         }
-        private void chonNhaCungCap(String ma) {
-            for (int i = 0; i < cmbNhaCungCap.getItemCount(); i++) {
-                if (cmbNhaCungCap.getItemAt(i).getMaNhaCungCap().equals(ma)) {
-                    cmbNhaCungCap.setSelectedIndex(i);
-                    return;
-                }
-            }
-        }
-        private void chonGiaTri(JComboBox<String> cmbLuaChon, String giaTri) {
-            for (int i = 0; i < cmbLuaChon.getItemCount(); i++) {
-                if (cmbLuaChon.getItemAt(i).equals(giaTri)) {
-                    cmbLuaChon.setSelectedIndex(i);
-                    return;
-                }
+        private long docGia(JTextField truong, String tenGia) {
+            try {
+                return UIStyle.docTien(truong.getText());
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException(tenGia + " phải là số không âm (ví dụ 180000).");
             }
         }
         private void luuSanPham() {
@@ -651,10 +626,6 @@ private final DefaultTableModel model = new DefaultTableModel(
                 UIStyle.canhBao(this, "Vui lòng nhập tên sản phẩm.");
                 return;
             }
-            if (ma.length() > 10) {
-                UIStyle.canhBao(this, "Mã sản phẩm tối đa 10 ký tự.");
-                return;
-            }
             if (ten.length() > 50) {
                 UIStyle.canhBao(this, "Tên sản phẩm tối đa 50 ký tự.");
                 return;
@@ -662,15 +633,10 @@ private final DefaultTableModel model = new DefaultTableModel(
             long giaNhap;
             long giaBan;
             try {
-                giaNhap = UIStyle.docTien(txtGiaNhap.getText());
-            } catch (NumberFormatException e) {
-                UIStyle.canhBao(this, "Giá nhập phải là số không âm (ví dụ 180000).");
-                return;
-            }
-            try {
-                giaBan = UIStyle.docTien(txtGiaBan.getText());
-            } catch (NumberFormatException e) {
-                UIStyle.canhBao(this, "Giá bán phải là số không âm (ví dụ 250000).");
+                giaNhap = docGia(txtGiaNhap, "Giá nhập");
+                giaBan = docGia(txtGiaBan, "Giá bán");
+            } catch (IllegalArgumentException e) {
+                UIStyle.canhBao(this, e.getMessage());
                 return;
             }
             DanhMuc dm = (DanhMuc) cmbDanhMuc.getSelectedItem();

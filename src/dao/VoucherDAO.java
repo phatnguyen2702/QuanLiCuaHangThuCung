@@ -7,24 +7,24 @@ import entity.Voucher;
 import java.sql.*;
 import java.util.ArrayList;
 
-// Lớp truy cập cơ sở dữ liệu cho voucher.
+
 public class VoucherDAO {
 
-        // =========================================================
-        // LAY DANH SACH (loc theo ma / ten), kem so luot da dung
-        // =========================================================
 
-        // Lấy danh sách bản ghi theo điều kiện lọc được truyền vào.
-        // Tham số tuKhoa: từ khóa tìm kiếm.
-        // Kết quả: đối tượng/giá trị kiểu ArrayList<Voucher>.
+
+
+
+
+
+
         public ArrayList<Voucher> getAll(String tuKhoa) {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
-                // list: Danh sách chứa các phần tử kiểu Voucher.
+
                 ArrayList<Voucher> list = new ArrayList<>();
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
+
                 String sql = "SELECT v.maVoucher, v.tenVoucher, v.phanTramGiam, v.dieuKien, v.trangThai, "
                                 + "v.ngayBatDau, v.ngayKetThuc, v.soLuongToiDa, "
                                 + "(SELECT COUNT(*) FROM HoaDon h WHERE h.maVoucher = v.maVoucher) AS daDung "
@@ -41,20 +41,20 @@ public class VoucherDAO {
                         ps.setString(1, kw);
                         ps.setString(2, kw);
 
-                        // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
                         try (ResultSet rs = ps.executeQuery()) {
 
-                                // Duyệt từng dòng của kết quả truy vấn; next() trả về false khi hết dữ liệu.
+
                                 while (rs.next()) {
 
-                                        // bd: Lưu bắt đầu dưới dạng dữ liệu thời gian.
+
                                         Date bd = rs.getDate("ngayBatDau");
-                                        // kt: Lưu kết thúc dưới dạng dữ liệu thời gian.
+
                                         Date kt = rs.getDate("ngayKetThuc");
 
                                         int sl = rs.getInt("soLuongToiDa");
 
-                                        // soLuong: Lưu số lượng.
+
                                         Integer soLuong = rs.wasNull() ? null : sl;
 
                                         Voucher v = new Voucher(
@@ -81,20 +81,20 @@ public class VoucherDAO {
                 return list;
         }
 
-        // =========================================================
-        // THONG KE HOA DON CO VOUCHER:
-        // {luot dung trong thang, tong gia tri uu dai, % hoa don dung voucher}
-        // =========================================================
 
-        // Thống kê hóa đơn.
-        // Kết quả: đối tượng/giá trị kiểu double[].
+
+
+
+
+
+
         public double[] thongKeHoaDon() {
 
-                // kq: Mảng lưu kết quả.
+
                 double[] kq = new double[3];
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
+
                 String sql = "SELECT "
                                 + "(SELECT COUNT(*) FROM HoaDon WHERE maVoucher IS NOT NULL "
                                 + "   AND YEAR(ngayLap) = YEAR(GETDATE()) AND MONTH(ngayLap) = MONTH(GETDATE())), "
@@ -125,25 +125,25 @@ public class VoucherDAO {
                 return kq;
         }
 
-        // =========================================================
-        // THEM (ma tu sinh VC001, VC002...). Tra ve ma moi, null neu loi.
-        // =========================================================
 
-        // Thêm dữ liệu voucher trong cơ sở dữ liệu.
-        // Tham số v: giá trị đầu vào.
-        // Kết quả: chuỗi kết quả.
+
+
+
+
+
+
         public String them(Voucher v) {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+
+
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
-                        // ma: Lưu mã.
+
                         String ma = nextCode(con);
 
-                        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                        // tham số nếu có.
+
+
                         String sql = "INSERT INTO Vocher "
                                         + "(maVoucher, tenVoucher, phanTramGiam, dieuKien, trangThai, "
                                         + "ngayBatDau, ngayKetThuc, soLuongToiDa) "
@@ -168,18 +168,18 @@ public class VoucherDAO {
                 }
         }
 
-        // =========================================================
-        // SUA
-        // =========================================================
 
-        // Cập nhật dữ liệu voucher trong cơ sở dữ liệu.
-        // Tham số v: giá trị đầu vào.
-        // Kết quả: true/false theo điều kiện xử lý.
+
+
+
+
+
+
         public boolean sua(Voucher v) {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
+
                 String sql = "UPDATE Vocher SET tenVoucher = ?, phanTramGiam = ?, dieuKien = ?, "
                                 + "trangThai = ?, ngayBatDau = ?, ngayKetThuc = ?, soLuongToiDa = ? "
                                 + "WHERE maVoucher = ?";
@@ -202,19 +202,19 @@ public class VoucherDAO {
                 }
         }
 
-        // =========================================================
-        // HUY / KICH HOAT LAI
-        // =========================================================
 
-        // Đổi trạng thái.
-        // Tham số maVoucher: mã voucher.
-        // Tham số hoatDong: đang hoạt động.
-        // Kết quả: true/false theo điều kiện xử lý.
+
+
+
+
+
+
+
         public boolean doiTrangThai(String maVoucher, boolean hoatDong) {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
-                // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-                // tham số nếu có.
+
+
                 String sql = "UPDATE Vocher SET trangThai = ? WHERE maVoucher = ?";
 
                 try (
@@ -234,19 +234,19 @@ public class VoucherDAO {
                 }
         }
 
-        // =========================================================
-        // XOA: null neu xoa duoc, nguoc lai tra ve noi dung loi.
-        // Voucher da dung trong hoa don thi khong xoa (nen Huy).
-        // =========================================================
 
-        // Xử lý xóa dữ liệu voucher trong cơ sở dữ liệu.
-        // Tham số maVoucher: mã voucher.
-        // Kết quả: chuỗi kết quả.
+
+
+
+
+
+
+
         public String xoa(String maVoucher) {
                 PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
-                // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-                // lệnh.
+
+
                 try (Connection con = ConnectDB.connectDB.getConnection()) {
 
                         try (PreparedStatement ps = con.prepareStatement(
@@ -254,7 +254,7 @@ public class VoucherDAO {
 
                                 ps.setString(1, maVoucher);
 
-                                // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
                                 try (ResultSet rs = ps.executeQuery()) {
 
                                         if (rs.next() && rs.getInt(1) > 0) {
@@ -283,15 +283,15 @@ public class VoucherDAO {
                 }
         }
 
-        // =========================================================
-        // HAM PHU
-        // =========================================================
 
-        // gan 7 tham so: ten, %, dieu kien, trang thai, ngay bd, ngay kt, so luong
-        // Gán dữ liệu voucher vào các vị trí tham số của PreparedStatement.
-        // Tham số ps: câu lệnh SQL có tham số.
-        // Tham số v: giá trị đầu vào.
-        // Tham số batDau: bắt đầu.
+
+
+
+
+
+
+
+
         private static void gan(PreparedStatement ps, Voucher v, int batDau) throws SQLException {
 
                 int i = batDau;
@@ -320,9 +320,9 @@ public class VoucherDAO {
                 }
         }
 
-        // Tạo mã tiếp theo dựa trên mã hiện có trong cơ sở dữ liệu.
-        // Tham số con: kết nối cơ sở dữ liệu.
-        // Kết quả: chuỗi kết quả.
+
+
+
         private static String nextCode(Connection con) throws SQLException {
 
                 try (PreparedStatement ps = con.prepareStatement(

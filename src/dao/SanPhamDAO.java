@@ -72,7 +72,7 @@ public class SanPhamDAO {
             throws SQLException {
         StringBuilder sql = new StringBuilder(SELECT_SAN_PHAM).append(" WHERE (sp.maSanPham LIKE ? OR sp.tenSanPham LIKE ?)");
         List<String> thamSo = new ArrayList<>();
-        String tuKhoaLike = "%" + (tuKhoa == null ? "" : tuKhoa.trim()) + "%";
+        String tuKhoaLike = "%" + thoatKyTuLike(tuKhoa == null ? "" : tuKhoa.trim()) + "%";
         thamSo.add(tuKhoaLike);
         thamSo.add(tuKhoaLike);
         if (maDanhMuc != null && !maDanhMuc.isBlank()) {
@@ -86,7 +86,7 @@ public class SanPhamDAO {
         sql.append(" ORDER BY sp.maSanPham");
         try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
             for (int i = 0; i < thamSo.size(); i++) ps.setString(i + 1, thamSo.get(i));
-            try (ResultSet rs = ps.executeQuery()) { return docDanhSachSanPham(rs); }
+            try (ResultSet rs = ps.executeQuery()) { return docDanhSachSanPham(con, rs); }
         }
     }
     public ArrayList<SanPham> layTatCaSanPham() throws SQLException {
@@ -104,9 +104,8 @@ public class SanPhamDAO {
             if (nhomGoiY == null || !coNhomGoiYPhuHop(nhomGoiY, nhomTuoi, kichThuoc)) continue;
             SanPham sanPham = sanPhamCoTheBan.get(lo.getMaSanPham());
             if (sanPham == null) {
-                sanPham = lo;
-                sanPham.setTonKho(0);
-                sanPhamCoTheBan.put(sanPham.getMaSanPham(), sanPham);
+                sanPhamCoTheBan.put(lo.getMaSanPham(), lo);
+                continue;
             }
             sanPham.setTonKho(sanPham.getTonKho() + lo.getTonKho());
         }
@@ -129,6 +128,7 @@ public class SanPhamDAO {
         return nhomTheoSanPham;
     }
     private boolean coNhomGoiYPhuHop(List<NhomGoiY> nhomGoiY, String nhomTuoi, String kichThuoc) {
+        if (nhomTuoi == null || kichThuoc == null) return false;
         for (NhomGoiY nhom : nhomGoiY) {
             boolean dungTuoi = "Tất cả độ tuổi".equals(nhomTuoi)
                     || nhomTuoi.equals(nhom.nhomTuoi()) || "Mọi độ tuổi".equals(nhom.nhomTuoi());
@@ -148,15 +148,8 @@ public class SanPhamDAO {
     }
     public Map<String, Integer> layTonKhoTatCaSanPham(Connection con) throws SQLException {
         Map<String, Integer> tonKho = new HashMap<>();
-        congDon(tonKho, layTongTheoSanPham(con, "SELECT ct.maSanPham,SUM(CASE "
-                + "WHEN ct.soLuongNhap>ISNULL(ct.soLuongDaXuLy,0) THEN ct.soLuongNhap-ISNULL(ct.soLuongDaXuLy,0) "
-                + "ELSE 0 END) AS soLuong FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn "
-                + "ON pn.maPhieuNhap=ct.maPhieuNhap WHERE pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 GROUP BY ct.maSanPham"), 1);
-        congDon(tonKho, layTongTheoSanPham(con, "SELECT maSanPham,SUM(soLuong) AS soLuong FROM ChiTietHoaDon GROUP BY maSanPham"), -1);
-        congDon(tonKho, layTongTheoSanPham(con, "SELECT k.maSanPham,SUM(k.soLuongThucTe-k.soLuongHeThong) AS soLuong "
-                + "FROM ChiTietPhieuKiemKe k JOIN PhieuKiemKe p ON p.maPhieuKiemKe=k.maPhieuKiemKe "
-                + "WHERE p.trangThai=1 AND k.soLuongThucTe IS NOT NULL GROUP BY k.maSanPham"), 1);
-        congDon(tonKho, layTongTheoLo(con), 1);
+        for (SanPham lo : layDanhSachLoTon(con))
+            tonKho.merge(lo.getMaSanPham(), lo.getTonKho(), Integer::sum);
         return tonKho;
     }
     public Map<String, Integer> layTonBanDuocTatCaSanPham() throws SQLException {
@@ -202,9 +195,6 @@ public class SanPhamDAO {
         }
         return totals;
     }
-    private void congDon(Map<String, Integer> ketQua, Map<String, Integer> giaTri, int heSo) {
-        giaTri.forEach((ma, soLuong) -> ketQua.merge(ma, soLuong * heSo, Integer::sum));
-    }
     private Map<String, Integer> layTongTheoLo(Connection con) throws SQLException {
         String sql = "SELECT k.maSanPham,k.maPhieuNhap,SUM(k.soLuongThucTe-k.soLuongHeThong) AS soLuong "
                 + "FROM ChiTietPhieuKiemKeLo k JOIN PhieuKiemKe p ON p.maPhieuKiemKe=k.maPhieuKiemKe "
@@ -216,17 +206,10 @@ public class SanPhamDAO {
         return totals;
     }
     public LocalDate layHanSuDungSomNhatSanPham(String maSanPham) throws SQLException {
-        String sql = "SELECT MIN(ct.hanSuDung) FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn "
-                + "ON pn.maPhieuNhap=ct.maPhieuNhap WHERE ct.maSanPham=? AND pn.trangThai=1 "
-                + "AND ISNULL(ct.trangThai,1)=1 AND ct.hanSuDung IS NOT NULL";
-        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, maSanPham);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                Date date = rs.getDate(1);
-                return date == null ? null : date.toLocalDate();
-            }
-        }
+        return layDanhSachLoTon().stream()
+                .filter(lo -> maSanPham.equals(lo.getMaSanPham()) && lo.getTonKho() > 0)
+                .map(SanPham::getHanSuDung).filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo).orElse(null);
     }
     public ArrayList<DotNhap> layDanhSachDotNhapSanPham() throws SQLException {
         return layDanhSachDotNhapSanPham(null);
@@ -257,7 +240,7 @@ public class SanPhamDAO {
         ArrayList<SanPham> rows = new ArrayList<>();
         String keyword = tuKhoa == null ? "" : tuKhoa.trim().toLowerCase(java.util.Locale.ROOT);
         for (SanPham sp : layDanhSachLoTon()) {
-            if (!maPhieuNhap.equals(sp.getMaPhieuNhap()) || sp.getTonKho() < 0) continue;
+            if (!maPhieuNhap.equals(sp.getMaPhieuNhap()) || sp.getTonKho() <= 0) continue;
             if (maDanhMuc != null && !maDanhMuc.equals(sp.getMaDanhMuc())) continue;
             if (maSanPham != null && !maSanPham.equals(sp.getMaSanPham())) continue;
             if (!sp.getMaSanPham().toLowerCase(java.util.Locale.ROOT).contains(keyword)
@@ -340,6 +323,13 @@ public class SanPhamDAO {
         try (Connection con = connectDB.getConnection()) {
             con.setAutoCommit(false);
             try {
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT maSanPham FROM SanPham WITH (UPDLOCK,HOLDLOCK) WHERE maSanPham=?")) {
+                    ps.setString(1, maSanPham);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) throw new SQLException("Không tìm thấy sản phẩm cần xử lý.");
+                    }
+                }
                 String sqlKhoaLo = "SELECT maPhieuNhap FROM ChiTietPhieuNhap WITH (UPDLOCK,HOLDLOCK) "
                         + "WHERE maPhieuNhap=? AND maSanPham=?";
                 try (PreparedStatement ps = con.prepareStatement(sqlKhoaLo)) {
@@ -579,12 +569,16 @@ public class SanPhamDAO {
             ps.executeUpdate();
         }
     }
-    private ArrayList<SanPham> docDanhSachSanPham(ResultSet rs) throws SQLException {
+    private ArrayList<SanPham> docDanhSachSanPham(Connection con, ResultSet rs) throws SQLException {
         ArrayList<SanPham> rows = new ArrayList<>();
         while (rs.next()) rows.add(docSanPham(rs));
-        Map<String, Integer> tonKho = layTonKhoTatCaSanPham();
+        rs.close();
+        Map<String, Integer> tonKho = layTonKhoTatCaSanPham(con);
         for (SanPham sp : rows) sp.setTonKho(tonKho.getOrDefault(sp.getMaSanPham(), 0));
         return rows;
+    }
+    private String thoatKyTuLike(String value) {
+        return value.replace("[", "[[]").replace("%", "[%]").replace("_", "[_]");
     }
     private SanPham docSanPham(ResultSet rs) throws SQLException {
         SanPham sp = new SanPham();
@@ -612,8 +606,8 @@ public class SanPhamDAO {
         return tienTo + String.format("%03d", max + 1);
     }
     private String timLoaiThuCung(String tenVaDanhMuc) {
-        if (tenVaDanhMuc.contains("cho") || tenVaDanhMuc.contains("dog")) return "Chó";
         if (tenVaDanhMuc.contains("meo") || tenVaDanhMuc.contains("cat")) return "Mèo";
+        if (tenVaDanhMuc.contains("cho") || tenVaDanhMuc.contains("dog")) return "Chó";
         return null;
     }
     private String chuanHoa(String value) {
