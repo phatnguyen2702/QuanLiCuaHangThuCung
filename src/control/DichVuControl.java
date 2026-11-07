@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-/** Xác thực dữ liệu và điều phối CRUD dịch vụ. Không phụ thuộc Swing. */
 public final class DichVuControl {
     private final DichVuDAO dao = new DichVuDAO();
 
@@ -32,16 +31,14 @@ public final class DichVuControl {
         return dao.demLienQuan(ma);
     }
 
-    /** Trả thông báo nếu dịch vụ đã được sử dụng; null nếu có thể xóa. */
-
     public String lyDoKhongTheXoa(String ma) throws SQLException {
         int[] lienQuan = dao.demLienQuan(ma);
         if (lienQuan[0] + lienQuan[1] + lienQuan[2] == 0)
             return null;
         return "Không thể xóa " + ma + " vì đã được sử dụng trong:\n"
-                + "• Lịch hẹn Spa: " + lienQuan[0] + "\n"
-                + "• Phiếu dịch vụ: " + lienQuan[1] + "\n"
-                + "• Hóa đơn: " + lienQuan[2] + "\n"
+                + "Lịch hẹn Spa: " + lienQuan[0] + "\n"
+                + "Phiếu dịch vụ: " + lienQuan[1] + "\n"
+                + "Hóa đơn: " + lienQuan[2] + "\n"
                 + "Cần giữ dịch vụ để bảo toàn lịch sử. Bạn có thể sửa tên/giá/mô tả.";
     }
 

@@ -20,7 +20,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
-
 public final class MaTranPhanQuyenUI extends JPanel implements ActionListener, MouseListener {
 
     private final Runnable moQuanLyTaiKhoan;

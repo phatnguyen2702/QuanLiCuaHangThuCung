@@ -323,7 +323,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
     }
 
     private void moMaTranPhanQuyen() {
-        hienManHinh("phanquyen", "Ma trận phân quyền", btnHeThong,
+        hienManHinh("phanquyen", "Bảng phân quyền", btnHeThong,
                 () -> new MaTranPhanQuyenUI(this::moQuanLyTaiKhoan));
     }
 
@@ -507,7 +507,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
     private JPopupMenu taoMenuHeThong() {
         JPopupMenu pmnP = new JPopupMenu();
         themMuc(pmnP, "Quản lý tài khoản", btnHeThong, this::moQuanLyTaiKhoan);
-        themMuc(pmnP, "Ma trận phân quyền", btnHeThong, this::moMaTranPhanQuyen);
+        themMuc(pmnP, "Bảng phân quyền", btnHeThong, this::moMaTranPhanQuyen);
         themMuc(pmnP, "Quản lý ca làm", btnHeThong, this::moQuanLyCaLam);
         return pmnP;
     }

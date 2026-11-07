@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
-import java.sql.Types;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -90,10 +89,7 @@ public class LichPhanCaDAO {
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, pc.getMaPhanCa());
-            if (pc.getNgayLamViec() == null)
-                ps.setNull(2, Types.DATE);
-            else
-                ps.setDate(2, java.sql.Date.valueOf(pc.getNgayLamViec()));
+            ps.setDate(2, java.sql.Date.valueOf(pc.getNgayLamViec()));
             ps.setString(3, pc.getMaNhanVien());
             ps.setString(4, pc.getMaCa());
             return ps.executeUpdate() > 0;
@@ -255,9 +251,9 @@ public class LichPhanCaDAO {
 
     public boolean trungGio(String maNhanVien, String maCa, LocalDate ngay, String boQuaMaPhanCa)
             throws SQLException {
-        String sql =         "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc " +
-        "FROM LichPhanCa pc JOIN CaLam c ON c.maCa=pc.maCa " +
-        "WHERE pc.maNhanVien=? AND pc.ngayLamViec=?";
+        String sql = "SELECT pc.maPhanCa, pc.ngayLamViec, c.gioBatDau, c.gioKetThuc " +
+                "FROM LichPhanCa pc JOIN CaLam c ON c.maCa=pc.maCa " +
+                "WHERE pc.maNhanVien=? AND pc.ngayLamViec=?";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement psCa = con.prepareStatement(
                         "SELECT gioBatDau, gioKetThuc FROM CaLam WHERE maCa=?")) {
@@ -349,8 +345,8 @@ public class LichPhanCaDAO {
                 "WHERE pc.ngayLamViec BETWEEN ? AND ?";
         List<KhungCa> ds = new ArrayList<>();
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setDate(1, java.sql.Date.valueOf(dauTuan.minusDays(1)));
-            ps.setDate(2, java.sql.Date.valueOf(dauTuan.plusDays(7)));
+            ps.setDate(1, java.sql.Date.valueOf(dauTuan));
+            ps.setDate(2, java.sql.Date.valueOf(dauTuan.plusDays(6)));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next())
                     ds.add(new KhungCa(rs.getDate("ngayLamViec").toLocalDate(),
@@ -410,8 +406,6 @@ public class LichPhanCaDAO {
                         }
 
                         String maMoi = String.format(Locale.ROOT, "PC%03d", ++soLonNhat);
-                        if (maMoi.length() > 10)
-                            throw new SQLException("Đã vượt giới hạn mã phân ca (10 ký tự).");
                         ps.setString(1, maMoi);
                         ps.setDate(2, java.sql.Date.valueOf(ngayMoi));
                         ps.setString(3, pc.getMaNhanVien());
