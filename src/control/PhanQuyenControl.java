@@ -11,7 +11,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/** Quy tắc kiểm tra quyền được chuyển ra khỏi entity/UI. */
 public final class PhanQuyenControl {
     public enum VaiTro {
         QUAN_LY, THU_NGAN, NHAN_VIEN_KHO, NHAN_VIEN_SPA, KHONG_HOP_LE
@@ -28,9 +27,6 @@ public final class PhanQuyenControl {
     private PhanQuyenControl() {
     }
 
-    // Chuẩn hóa tên vai trò hoặc quyền để so sánh.
-    // Tham số s: chuỗi đầu vào.
-    // Kết quả: chuỗi kết quả.
     private static String chuan(String s) {
         if (s == null)
             return "";
@@ -39,9 +35,6 @@ public final class PhanQuyenControl {
                 .toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
     }
 
-    // Chuyển tên vai trò thành giá trị enum VaiTro.
-    // Tham số ten: tên.
-    // Kết quả: đối tượng/giá trị kiểu VaiTro.
     public static VaiTro vaiTro(String ten) {
         return switch (chuan(ten)) {
             case "quan ly" -> VaiTro.QUAN_LY;
@@ -52,16 +45,12 @@ public final class PhanQuyenControl {
         };
     }
 
-    // Kiểm tra phiên làm việc hiện tại có quyền được yêu cầu hay không.
-    // Tham số q: q.
-    // Kết quả: true/false theo điều kiện xử lý.
     public static boolean coQuyen(Quyen q) {
         if (q == null || PhienLamViecControl.maNV == null || PhienLamViecControl.maNV.isBlank())
             return false;
         return duocPhep(vaiTro(PhienLamViecControl.vaiTro), q);
     }
 
-    /** Dùng để trình bày ma trận quyền mà không phải thay đổi phiên đăng nhập. */
     public static boolean duocPhep(VaiTro r, Quyen q) {
         if (r == null || q == null)
             return false;
@@ -84,18 +73,12 @@ public final class PhanQuyenControl {
         };
     }
 
-    /** Chặn ở tầng xử lý dữ liệu (DAO); không chỉ ẩn nút trên giao diện. */
+    // Chặn ở tầng xử lý dữ liệu dao
     public static void yeuCau(Quyen q) {
         if (!coQuyen(q))
             throw new SecurityException(
                     "Tài khoản không có quyền thực hiện: " + q + ". Vui lòng liên hệ quản lý.");
-        // Xác minh lại quyền trong SQL mỗi khi ghi dữ liệu: tránh phiên cũ vẫn có quyền
-        // sau khi quản lý đổi vai trò hoặc xóa nhân viên.
-        // sql: Chuỗi SQL dùng để truy vấn hoặc cập nhật dữ liệu; dấu ? là vị trí nhận
-        // tham số nếu có.
         String sql = "SELECT vaiTro FROM NhanVien WHERE maNhanVien = ?";
-        // Mở kết nối trong try-with-resources để tự đóng tài nguyên khi kết thúc khối
-        // lệnh.
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, PhienLamViecControl.maNV);
@@ -111,10 +94,6 @@ public final class PhanQuyenControl {
         }
     }
 
-    // Kiểm tra quyền và thông báo trên giao diện khi không được phép.
-    // Tham số q: q.
-    // Tham số parent: thành phần cha.
-    // Kết quả: true/false theo điều kiện xử lý.
     public static boolean kiemTra(Quyen q, Component parent) {
         if (coQuyen(q))
             return true;
@@ -124,9 +103,6 @@ public final class PhanQuyenControl {
         return false;
     }
 
-    // Lấy tên mô tả của quyền để trình bày trên giao diện.
-    // Tham số q: q.
-    // Kết quả: chuỗi kết quả.
     public static String tenQuyen(Quyen q) {
         return switch (q) {
             case TAI_KHOAN -> "Quản lý tài khoản nhân viên";
@@ -153,9 +129,6 @@ public final class PhanQuyenControl {
         };
     }
 
-    // Ánh xạ mã màn hình sang quyền tương ứng.
-    // Tham số ma: mã.
-    // Kết quả: đối tượng/giá trị kiểu Quyen.
     public static Quyen tuMaManHinh(String ma) {
         if (ma == null)
             return null;
@@ -185,9 +158,6 @@ public final class PhanQuyenControl {
         };
     }
 
-    // Ánh xạ tên menu sang quyền tương ứng.
-    // Tham số ten: tên.
-    // Kết quả: đối tượng/giá trị kiểu Quyen.
     public static Quyen tuTenMenu(String ten) {
         if (ten == null)
             return null;

@@ -378,6 +378,59 @@ VALUES
 ('NV002', N'Nguyễn Minh Anh', '0901234567', 'minhanh@gmail.com', '123456', N'Nữ', N'Thu ngan'),
 ('NV003', N'Trần Quốc Bảo', '0912345678', 'quocbao@gmail.com', '123456', N'Nam', N'Nhan vien kho'),
 ('NV004', N'Lê Ngọc Mai', '0987654321', 'ngocmai@gmail.com', '123456', N'Nữ', N'Nhan vien Spa');
+
+UPDATE dbo.LichPhanCa SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+UPDATE dbo.LichHen SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+UPDATE dbo.ChiTietLichHen SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+UPDATE dbo.PhieuDichVu SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+UPDATE dbo.HoaDon SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+UPDATE dbo.PhieuNhapKho SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+UPDATE dbo.PhieuKiemKe SET maNhanVien =
+    CASE WHEN maNhanVien IN ('NV006','NV007','NV008','NV009') THEN 'NV002'
+         WHEN maNhanVien IN ('NV010','NV011','NV012') THEN 'NV003'
+         WHEN maNhanVien IN ('NV013','NV014','NV015','NV016') THEN 'NV004'
+         ELSE maNhanVien END
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
+DELETE FROM dbo.NhanVien
+WHERE maNhanVien NOT IN ('NV001','NV002','NV003','NV004');
+
 INSERT INTO DanhMuc
 (maDanhMuc, tenDanhMuc, moTa)
 VALUES
@@ -718,44 +771,6 @@ BEGIN TRY
     ) AS v([maNhaCungCap], [tenNhaCungCap], [soDienThoai], [email], [diaChi])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.Nhacungcap AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maNhaCungCap] = v.[maNhaCungCap]);
 
-    -- NhanVien : 12 ban ghi
-    IF EXISTS (SELECT 1 FROM dbo.NhanVien AS d
-        INNER JOIN (VALUES
-            ('NV005', N'Nguyễn Hà Vy'),
-            ('NV006', N'Phạm Gia Hân'),
-            ('NV007', N'Bùi Tuấn Kiệt'),
-            ('NV008', N'Hoàng Minh Tâm'),
-            ('NV009', N'Đinh Thu Trang'),
-            ('NV010', N'Đỗ Quốc Việt'),
-            ('NV011', N'Trương Anh Khoa'),
-            ('NV012', N'Võ Thanh Hà'),
-            ('NV013', N'Lâm Bảo Trân'),
-            ('NV014', N'Nguyễn Anh Thư'),
-            ('NV015', N'Trần Gia Phúc'),
-            ('NV016', N'Huỳnh Ngọc Bích')
-        ) AS v([maNhanVien], [hoTen])
-        ON d.[maNhanVien] = v.[maNhanVien]
-        WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[hoTen]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[hoTen]), N'')))
-        THROW 51044, N'Ma du lieu mau o bang NhanVien da duoc dung cho thong tin khac. Khong chen de tranh sai lien ket.', 1;
-
-    INSERT INTO dbo.NhanVien ([maNhanVien], [hoTen], [soDienThoai], [email], [matKhau], [gioiTinh], [vaiTro])
-    SELECT v.[maNhanVien], v.[hoTen], v.[soDienThoai], v.[email], v.[matKhau], v.[gioiTinh], v.[vaiTro]
-    FROM (VALUES
-        ('NV005', N'Nguyễn Hà Vy', '0971000005', 'nv005@example.com', N'Demo@2026', N'Nam', N'Quan ly'),
-        ('NV006', N'Phạm Gia Hân', '0971000006', 'nv006@example.com', N'Demo@2026', N'Nữ', N'Thu ngan'),
-        ('NV007', N'Bùi Tuấn Kiệt', '0971000007', 'nv007@example.com', N'Demo@2026', N'Nam', N'Thu ngan'),
-        ('NV008', N'Hoàng Minh Tâm', '0971000008', 'nv008@example.com', N'Demo@2026', N'Nữ', N'Thu ngan'),
-        ('NV009', N'Đinh Thu Trang', '0971000009', 'nv009@example.com', N'Demo@2026', N'Nam', N'Thu ngan'),
-        ('NV010', N'Đỗ Quốc Việt', '0971000010', 'nv010@example.com', N'Demo@2026', N'Nữ', N'Nhan vien kho'),
-        ('NV011', N'Trương Anh Khoa', '0971000011', 'nv011@example.com', N'Demo@2026', N'Nam', N'Nhan vien kho'),
-        ('NV012', N'Võ Thanh Hà', '0971000012', 'nv012@example.com', N'Demo@2026', N'Nữ', N'Nhan vien kho'),
-        ('NV013', N'Lâm Bảo Trân', '0971000013', 'nv013@example.com', N'Demo@2026', N'Nam', N'Nhan vien Spa'),
-        ('NV014', N'Nguyễn Anh Thư', '0971000014', 'nv014@example.com', N'Demo@2026', N'Nữ', N'Nhan vien Spa'),
-        ('NV015', N'Trần Gia Phúc', '0971000015', 'nv015@example.com', N'Demo@2026', N'Nam', N'Nhan vien Spa'),
-        ('NV016', N'Huỳnh Ngọc Bích', '0971000016', 'nv016@example.com', N'Demo@2026', N'Nữ', N'Nhan vien Spa')
-    ) AS v([maNhanVien], [hoTen], [soDienThoai], [email], [matKhau], [gioiTinh], [vaiTro])
-    WHERE NOT EXISTS (SELECT 1 FROM dbo.NhanVien AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maNhanVien] = v.[maNhanVien]);
-
     -- KhachHang : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.KhachHang AS d
         INNER JOIN (VALUES
@@ -1025,18 +1040,18 @@ BEGIN TRY
     -- LichPhanCa : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.LichPhanCa AS d
         INNER JOIN (VALUES
-            ('PC005', 'NV013', 'CA003'),
-            ('PC006', 'NV014', 'CA004'),
-            ('PC007', 'NV015', 'CA005'),
-            ('PC008', 'NV016', 'CA003'),
-            ('PC009', 'NV013', 'CA004'),
-            ('PC010', 'NV014', 'CA005'),
-            ('PC011', 'NV015', 'CA003'),
-            ('PC012', 'NV016', 'CA004'),
-            ('PC013', 'NV013', 'CA005'),
-            ('PC014', 'NV014', 'CA003'),
-            ('PC015', 'NV015', 'CA004'),
-            ('PC016', 'NV016', 'CA005')
+            ('PC005', 'NV004', 'CA003'),
+            ('PC006', 'NV004', 'CA004'),
+            ('PC007', 'NV004', 'CA005'),
+            ('PC008', 'NV004', 'CA003'),
+            ('PC009', 'NV004', 'CA004'),
+            ('PC010', 'NV004', 'CA005'),
+            ('PC011', 'NV004', 'CA003'),
+            ('PC012', 'NV004', 'CA004'),
+            ('PC013', 'NV004', 'CA005'),
+            ('PC014', 'NV004', 'CA003'),
+            ('PC015', 'NV004', 'CA004'),
+            ('PC016', 'NV004', 'CA005')
         ) AS v([maPhanCa], [maNhanVien], [maCa])
         ON d.[maPhanCa] = v.[maPhanCa]
         WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maCa]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maCa]), N'')))
@@ -1045,18 +1060,18 @@ BEGIN TRY
     INSERT INTO dbo.LichPhanCa ([maPhanCa], [ngayLamViec], [maNhanVien], [maCa])
     SELECT v.[maPhanCa], v.[ngayLamViec], v.[maNhanVien], v.[maCa]
     FROM (VALUES
-        ('PC005', DATEADD(DAY, 2, CAST(GETDATE() AS date)), 'NV013', 'CA003'),
-        ('PC006', DATEADD(DAY, 3, CAST(GETDATE() AS date)), 'NV014', 'CA004'),
-        ('PC007', DATEADD(DAY, 4, CAST(GETDATE() AS date)), 'NV015', 'CA005'),
-        ('PC008', DATEADD(DAY, 5, CAST(GETDATE() AS date)), 'NV016', 'CA003'),
-        ('PC009', DATEADD(DAY, 6, CAST(GETDATE() AS date)), 'NV013', 'CA004'),
-        ('PC010', DATEADD(DAY, 7, CAST(GETDATE() AS date)), 'NV014', 'CA005'),
-        ('PC011', DATEADD(DAY, 8, CAST(GETDATE() AS date)), 'NV015', 'CA003'),
-        ('PC012', DATEADD(DAY, 9, CAST(GETDATE() AS date)), 'NV016', 'CA004'),
-        ('PC013', DATEADD(DAY, 10, CAST(GETDATE() AS date)), 'NV013', 'CA005'),
-        ('PC014', DATEADD(DAY, 11, CAST(GETDATE() AS date)), 'NV014', 'CA003'),
-        ('PC015', DATEADD(DAY, 12, CAST(GETDATE() AS date)), 'NV015', 'CA004'),
-        ('PC016', DATEADD(DAY, 13, CAST(GETDATE() AS date)), 'NV016', 'CA005')
+        ('PC005', DATEADD(DAY, 2, CAST(GETDATE() AS date)), 'NV004', 'CA003'),
+        ('PC006', DATEADD(DAY, 3, CAST(GETDATE() AS date)), 'NV004', 'CA004'),
+        ('PC007', DATEADD(DAY, 4, CAST(GETDATE() AS date)), 'NV004', 'CA005'),
+        ('PC008', DATEADD(DAY, 5, CAST(GETDATE() AS date)), 'NV004', 'CA003'),
+        ('PC009', DATEADD(DAY, 6, CAST(GETDATE() AS date)), 'NV004', 'CA004'),
+        ('PC010', DATEADD(DAY, 7, CAST(GETDATE() AS date)), 'NV004', 'CA005'),
+        ('PC011', DATEADD(DAY, 8, CAST(GETDATE() AS date)), 'NV004', 'CA003'),
+        ('PC012', DATEADD(DAY, 9, CAST(GETDATE() AS date)), 'NV004', 'CA004'),
+        ('PC013', DATEADD(DAY, 10, CAST(GETDATE() AS date)), 'NV004', 'CA005'),
+        ('PC014', DATEADD(DAY, 11, CAST(GETDATE() AS date)), 'NV004', 'CA003'),
+        ('PC015', DATEADD(DAY, 12, CAST(GETDATE() AS date)), 'NV004', 'CA004'),
+        ('PC016', DATEADD(DAY, 13, CAST(GETDATE() AS date)), 'NV004', 'CA005')
     ) AS v([maPhanCa], [ngayLamViec], [maNhanVien], [maCa])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.LichPhanCa AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhanCa] = v.[maPhanCa]);
 
@@ -1066,18 +1081,18 @@ BEGIN TRY
     -- PhieuDichVu : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.PhieuDichVu AS d
         INNER JOIN (VALUES
-            ('PDV004', 'NV013', 'KH006', 'TC006'),
-            ('PDV005', 'NV014', 'KH007', 'TC007'),
-            ('PDV006', 'NV015', 'KH008', 'TC008'),
-            ('PDV007', 'NV016', 'KH009', 'TC009'),
-            ('PDV008', 'NV013', 'KH010', 'TC010'),
-            ('PDV009', 'NV014', 'KH011', 'TC011'),
-            ('PDV010', 'NV015', 'KH012', 'TC012'),
-            ('PDV011', 'NV016', 'KH013', 'TC013'),
-            ('PDV012', 'NV013', 'KH014', 'TC014'),
-            ('PDV013', 'NV014', 'KH015', 'TC015'),
-            ('PDV014', 'NV015', 'KH016', 'TC016'),
-            ('PDV015', 'NV016', 'KH017', 'TC017')
+            ('PDV004', 'NV004', 'KH006', 'TC006'),
+            ('PDV005', 'NV004', 'KH007', 'TC007'),
+            ('PDV006', 'NV004', 'KH008', 'TC008'),
+            ('PDV007', 'NV004', 'KH009', 'TC009'),
+            ('PDV008', 'NV004', 'KH010', 'TC010'),
+            ('PDV009', 'NV004', 'KH011', 'TC011'),
+            ('PDV010', 'NV004', 'KH012', 'TC012'),
+            ('PDV011', 'NV004', 'KH013', 'TC013'),
+            ('PDV012', 'NV004', 'KH014', 'TC014'),
+            ('PDV013', 'NV004', 'KH015', 'TC015'),
+            ('PDV014', 'NV004', 'KH016', 'TC016'),
+            ('PDV015', 'NV004', 'KH017', 'TC017')
         ) AS v([maPhieuDichVu], [maNhanVien], [maKhachHang], [maThuCung])
         ON d.[maPhieuDichVu] = v.[maPhieuDichVu]
         WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maKhachHang]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maKhachHang]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maThuCung]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maThuCung]), N'')))
@@ -1086,18 +1101,18 @@ BEGIN TRY
     INSERT INTO dbo.PhieuDichVu ([maPhieuDichVu], [trangThai], [maKhachHang], [maThuCung], [maNhanVien], [maLichHen])
     SELECT v.[maPhieuDichVu], v.[trangThai], v.[maKhachHang], v.[maThuCung], v.[maNhanVien], v.[maLichHen]
     FROM (VALUES
-        ('PDV004', 0, 'KH006', 'TC006', 'NV013', NULL),
-        ('PDV005', 0, 'KH007', 'TC007', 'NV014', NULL),
-        ('PDV006', 0, 'KH008', 'TC008', 'NV015', NULL),
-        ('PDV007', 0, 'KH009', 'TC009', 'NV016', NULL),
-        ('PDV008', 0, 'KH010', 'TC010', 'NV013', NULL),
-        ('PDV009', 0, 'KH011', 'TC011', 'NV014', NULL),
-        ('PDV010', 0, 'KH012', 'TC012', 'NV015', NULL),
-        ('PDV011', 0, 'KH013', 'TC013', 'NV016', NULL),
-        ('PDV012', 1, 'KH014', 'TC014', 'NV013', NULL),
-        ('PDV013', 1, 'KH015', 'TC015', 'NV014', NULL),
-        ('PDV014', 1, 'KH016', 'TC016', 'NV015', NULL),
-        ('PDV015', 1, 'KH017', 'TC017', 'NV016', NULL)
+        ('PDV004', 0, 'KH006', 'TC006', 'NV004', NULL),
+        ('PDV005', 0, 'KH007', 'TC007', 'NV004', NULL),
+        ('PDV006', 0, 'KH008', 'TC008', 'NV004', NULL),
+        ('PDV007', 0, 'KH009', 'TC009', 'NV004', NULL),
+        ('PDV008', 0, 'KH010', 'TC010', 'NV004', NULL),
+        ('PDV009', 0, 'KH011', 'TC011', 'NV004', NULL),
+        ('PDV010', 0, 'KH012', 'TC012', 'NV004', NULL),
+        ('PDV011', 0, 'KH013', 'TC013', 'NV004', NULL),
+        ('PDV012', 1, 'KH014', 'TC014', 'NV004', NULL),
+        ('PDV013', 1, 'KH015', 'TC015', 'NV004', NULL),
+        ('PDV014', 1, 'KH016', 'TC016', 'NV004', NULL),
+        ('PDV015', 1, 'KH017', 'TC017', 'NV004', NULL)
     ) AS v([maPhieuDichVu], [trangThai], [maKhachHang], [maThuCung], [maNhanVien], [maLichHen])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhieuDichVu AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuDichVu] = v.[maPhieuDichVu]);
 
@@ -1142,18 +1157,18 @@ BEGIN TRY
     -- HoaDon : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.HoaDon AS d
         INNER JOIN (VALUES
-            ('HD0061010260006', 'KH006', 'NV006'),
-            ('HD0071110260007', 'KH007', 'NV007'),
-            ('HD0081210260008', 'KH008', 'NV008'),
-            ('HD0091310260009', 'KH009', 'NV009'),
-            ('HD0101410260010', 'KH010', 'NV006'),
-            ('HD0111510260011', 'KH011', 'NV007'),
-            ('HD0121610260012', 'KH012', 'NV008'),
-            ('HD0131710260013', 'KH013', 'NV009'),
-            ('HD0141810260014', 'KH014', 'NV006'),
-            ('HD0151910260015', 'KH015', 'NV007'),
-            ('HD0162010260016', 'KH016', 'NV008'),
-            ('HD0172110260017', 'KH017', 'NV009')
+            ('HD0061010260006', 'KH006', 'NV002'),
+            ('HD0071110260007', 'KH007', 'NV002'),
+            ('HD0081210260008', 'KH008', 'NV002'),
+            ('HD0091310260009', 'KH009', 'NV002'),
+            ('HD0101410260010', 'KH010', 'NV002'),
+            ('HD0111510260011', 'KH011', 'NV002'),
+            ('HD0121610260012', 'KH012', 'NV002'),
+            ('HD0131710260013', 'KH013', 'NV002'),
+            ('HD0141810260014', 'KH014', 'NV002'),
+            ('HD0151910260015', 'KH015', 'NV002'),
+            ('HD0162010260016', 'KH016', 'NV002'),
+            ('HD0172110260017', 'KH017', 'NV002')
         ) AS v([maHoaDon], [maKhachHang], [maNhanVien])
         ON d.[maHoaDon] = v.[maHoaDon]
         WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maKhachHang]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maKhachHang]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')))
@@ -1162,18 +1177,18 @@ BEGIN TRY
     INSERT INTO dbo.HoaDon ([maHoaDon], [ngayLap], [maPhuongThuc], [maKhachHang], [maNhanVien], [maVoucher])
     SELECT v.[maHoaDon], v.[ngayLap], v.[maPhuongThuc], v.[maKhachHang], v.[maNhanVien], v.[maVoucher]
     FROM (VALUES
-        ('HD0061010260006', '2026-10-10 09:30:00', 'PT001', 'KH006', 'NV006', NULL),
-        ('HD0071110260007', '2026-10-11 10:30:00', 'PT002', 'KH007', 'NV007', NULL),
-        ('HD0081210260008', '2026-10-12 11:30:00', 'PT001', 'KH008', 'NV008', NULL),
-        ('HD0091310260009', '2026-10-13 12:30:00', 'PT002', 'KH009', 'NV009', NULL),
-        ('HD0101410260010', '2026-10-14 13:30:00', 'PT001', 'KH010', 'NV006', NULL),
-        ('HD0111510260011', '2026-10-15 14:30:00', 'PT002', 'KH011', 'NV007', NULL),
-        ('HD0121610260012', '2026-10-16 15:30:00', 'PT001', 'KH012', 'NV008', NULL),
-        ('HD0131710260013', '2026-10-17 16:30:00', 'PT002', 'KH013', 'NV009', NULL),
-        ('HD0141810260014', '2026-10-18 09:30:00', 'PT001', 'KH014', 'NV006', NULL),
-        ('HD0151910260015', '2026-10-19 10:30:00', 'PT002', 'KH015', 'NV007', NULL),
-        ('HD0162010260016', '2026-10-20 11:30:00', 'PT001', 'KH016', 'NV008', NULL),
-        ('HD0172110260017', '2026-10-21 12:30:00', 'PT002', 'KH017', 'NV009', NULL)
+        ('HD0061010260006', '2026-10-10 09:30:00', 'PT001', 'KH006', 'NV002', NULL),
+        ('HD0071110260007', '2026-10-11 10:30:00', 'PT002', 'KH007', 'NV002', NULL),
+        ('HD0081210260008', '2026-10-12 11:30:00', 'PT001', 'KH008', 'NV002', NULL),
+        ('HD0091310260009', '2026-10-13 12:30:00', 'PT002', 'KH009', 'NV002', NULL),
+        ('HD0101410260010', '2026-10-14 13:30:00', 'PT001', 'KH010', 'NV002', NULL),
+        ('HD0111510260011', '2026-10-15 14:30:00', 'PT002', 'KH011', 'NV002', NULL),
+        ('HD0121610260012', '2026-10-16 15:30:00', 'PT001', 'KH012', 'NV002', NULL),
+        ('HD0131710260013', '2026-10-17 16:30:00', 'PT002', 'KH013', 'NV002', NULL),
+        ('HD0141810260014', '2026-10-18 09:30:00', 'PT001', 'KH014', 'NV002', NULL),
+        ('HD0151910260015', '2026-10-19 10:30:00', 'PT002', 'KH015', 'NV002', NULL),
+        ('HD0162010260016', '2026-10-20 11:30:00', 'PT001', 'KH016', 'NV002', NULL),
+        ('HD0172110260017', '2026-10-21 12:30:00', 'PT002', 'KH017', 'NV002', NULL)
     ) AS v([maHoaDon], [ngayLap], [maPhuongThuc], [maKhachHang], [maNhanVien], [maVoucher])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.HoaDon AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maHoaDon] = v.[maHoaDon]);
 
@@ -1218,18 +1233,18 @@ BEGIN TRY
     -- PhieuNhapKho : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.PhieuNhapKho AS d
         INNER JOIN (VALUES
-            ('PN005', 'NCC004', 'NV010'),
-            ('PN006', 'NCC005', 'NV011'),
-            ('PN007', 'NCC006', 'NV012'),
-            ('PN008', 'NCC007', 'NV010'),
-            ('PN009', 'NCC008', 'NV011'),
-            ('PN010', 'NCC009', 'NV012'),
-            ('PN011', 'NCC010', 'NV010'),
-            ('PN012', 'NCC011', 'NV011'),
-            ('PN013', 'NCC012', 'NV012'),
-            ('PN014', 'NCC013', 'NV010'),
-            ('PN015', 'NCC014', 'NV011'),
-            ('PN016', 'NCC015', 'NV012')
+            ('PN005', 'NCC004', 'NV003'),
+            ('PN006', 'NCC005', 'NV003'),
+            ('PN007', 'NCC006', 'NV003'),
+            ('PN008', 'NCC007', 'NV003'),
+            ('PN009', 'NCC008', 'NV003'),
+            ('PN010', 'NCC009', 'NV003'),
+            ('PN011', 'NCC010', 'NV003'),
+            ('PN012', 'NCC011', 'NV003'),
+            ('PN013', 'NCC012', 'NV003'),
+            ('PN014', 'NCC013', 'NV003'),
+            ('PN015', 'NCC014', 'NV003'),
+            ('PN016', 'NCC015', 'NV003')
         ) AS v([maPhieuNhap], [maNhaCungCap], [maNhanVien])
         ON d.[maPhieuNhap] = v.[maPhieuNhap]
         WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhaCungCap]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhaCungCap]), N'')) OR (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')))
@@ -1238,18 +1253,18 @@ BEGIN TRY
     INSERT INTO dbo.PhieuNhapKho ([maPhieuNhap], [ngayNhap], [trangThai], [maNhanVien], [maNhaCungCap])
     SELECT v.[maPhieuNhap], v.[ngayNhap], v.[trangThai], v.[maNhanVien], v.[maNhaCungCap]
     FROM (VALUES
-        ('PN005', '2026-09-20 08:15:00', 1, 'NV010', 'NCC004'),
-        ('PN006', '2026-09-21 09:15:00', 1, 'NV011', 'NCC005'),
-        ('PN007', '2026-09-22 10:15:00', 1, 'NV012', 'NCC006'),
-        ('PN008', '2026-09-23 11:15:00', 1, 'NV010', 'NCC007'),
-        ('PN009', '2026-09-24 08:15:00', 1, 'NV011', 'NCC008'),
-        ('PN010', '2026-09-25 09:15:00', 1, 'NV012', 'NCC009'),
-        ('PN011', '2026-09-26 10:15:00', 1, 'NV010', 'NCC010'),
-        ('PN012', '2026-09-27 11:15:00', 1, 'NV011', 'NCC011'),
-        ('PN013', '2026-09-28 08:15:00', 1, 'NV012', 'NCC012'),
-        ('PN014', '2026-09-29 09:15:00', 1, 'NV010', 'NCC013'),
-        ('PN015', '2026-09-30 10:15:00', 1, 'NV011', 'NCC014'),
-        ('PN016', '2026-10-01 11:15:00', 1, 'NV012', 'NCC015')
+        ('PN005', '2026-09-20 08:15:00', 1, 'NV003', 'NCC004'),
+        ('PN006', '2026-09-21 09:15:00', 1, 'NV003', 'NCC005'),
+        ('PN007', '2026-09-22 10:15:00', 1, 'NV003', 'NCC006'),
+        ('PN008', '2026-09-23 11:15:00', 1, 'NV003', 'NCC007'),
+        ('PN009', '2026-09-24 08:15:00', 1, 'NV003', 'NCC008'),
+        ('PN010', '2026-09-25 09:15:00', 1, 'NV003', 'NCC009'),
+        ('PN011', '2026-09-26 10:15:00', 1, 'NV003', 'NCC010'),
+        ('PN012', '2026-09-27 11:15:00', 1, 'NV003', 'NCC011'),
+        ('PN013', '2026-09-28 08:15:00', 1, 'NV003', 'NCC012'),
+        ('PN014', '2026-09-29 09:15:00', 1, 'NV003', 'NCC013'),
+        ('PN015', '2026-09-30 10:15:00', 1, 'NV003', 'NCC014'),
+        ('PN016', '2026-10-01 11:15:00', 1, 'NV003', 'NCC015')
     ) AS v([maPhieuNhap], [ngayNhap], [trangThai], [maNhanVien], [maNhaCungCap])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhieuNhapKho AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuNhap] = v.[maPhieuNhap]);
 
@@ -1294,18 +1309,18 @@ BEGIN TRY
     -- PhieuKiemKe : 12 ban ghi
     IF EXISTS (SELECT 1 FROM dbo.PhieuKiemKe AS d
         INNER JOIN (VALUES
-            ('KK002', 'NV010'),
-            ('KK003', 'NV011'),
-            ('KK004', 'NV012'),
-            ('KK005', 'NV010'),
-            ('KK006', 'NV011'),
-            ('KK007', 'NV012'),
-            ('KK008', 'NV010'),
-            ('KK009', 'NV011'),
-            ('KK010', 'NV012'),
-            ('KK011', 'NV010'),
-            ('KK012', 'NV011'),
-            ('KK013', 'NV012')
+            ('KK002', 'NV003'),
+            ('KK003', 'NV003'),
+            ('KK004', 'NV003'),
+            ('KK005', 'NV003'),
+            ('KK006', 'NV003'),
+            ('KK007', 'NV003'),
+            ('KK008', 'NV003'),
+            ('KK009', 'NV003'),
+            ('KK010', 'NV003'),
+            ('KK011', 'NV003'),
+            ('KK012', 'NV003'),
+            ('KK013', 'NV003')
         ) AS v([maPhieuKiemKe], [maNhanVien])
         ON d.[maPhieuKiemKe] = v.[maPhieuKiemKe]
         WHERE (ISNULL(CONVERT(NVARCHAR(4000), d.[maNhanVien]), N'') <> ISNULL(CONVERT(NVARCHAR(4000), v.[maNhanVien]), N'')))
@@ -1314,18 +1329,18 @@ BEGIN TRY
     INSERT INTO dbo.PhieuKiemKe ([maPhieuKiemKe], [ngayKiemKe], [trangThai], [maNhanVien])
     SELECT v.[maPhieuKiemKe], v.[ngayKiemKe], v.[trangThai], v.[maNhanVien]
     FROM (VALUES
-        ('KK002', DATEADD(HOUR, -2, SYSDATETIME()), 1, 'NV010'),
-        ('KK003', DATEADD(HOUR, -4, SYSDATETIME()), 1, 'NV011'),
-        ('KK004', DATEADD(HOUR, -6, SYSDATETIME()), 1, 'NV012'),
-        ('KK005', DATEADD(HOUR, -8, SYSDATETIME()), 1, 'NV010'),
-        ('KK006', DATEADD(HOUR, -10, SYSDATETIME()), 1, 'NV011'),
-        ('KK007', DATEADD(HOUR, -12, SYSDATETIME()), 1, 'NV012'),
-        ('KK008', DATEADD(HOUR, -14, SYSDATETIME()), 1, 'NV010'),
-        ('KK009', DATEADD(HOUR, -16, SYSDATETIME()), 1, 'NV011'),
-        ('KK010', DATEADD(HOUR, -18, SYSDATETIME()), 1, 'NV012'),
-        ('KK011', DATEADD(HOUR, -20, SYSDATETIME()), 1, 'NV010'),
-        ('KK012', DATEADD(HOUR, -22, SYSDATETIME()), 1, 'NV011'),
-        ('KK013', DATEADD(HOUR, -24, SYSDATETIME()), 1, 'NV012')
+        ('KK002', DATEADD(HOUR, -2, SYSDATETIME()), 1, 'NV003'),
+        ('KK003', DATEADD(HOUR, -4, SYSDATETIME()), 1, 'NV003'),
+        ('KK004', DATEADD(HOUR, -6, SYSDATETIME()), 1, 'NV003'),
+        ('KK005', DATEADD(HOUR, -8, SYSDATETIME()), 1, 'NV003'),
+        ('KK006', DATEADD(HOUR, -10, SYSDATETIME()), 1, 'NV003'),
+        ('KK007', DATEADD(HOUR, -12, SYSDATETIME()), 1, 'NV003'),
+        ('KK008', DATEADD(HOUR, -14, SYSDATETIME()), 1, 'NV003'),
+        ('KK009', DATEADD(HOUR, -16, SYSDATETIME()), 1, 'NV003'),
+        ('KK010', DATEADD(HOUR, -18, SYSDATETIME()), 1, 'NV003'),
+        ('KK011', DATEADD(HOUR, -20, SYSDATETIME()), 1, 'NV003'),
+        ('KK012', DATEADD(HOUR, -22, SYSDATETIME()), 1, 'NV003'),
+        ('KK013', DATEADD(HOUR, -24, SYSDATETIME()), 1, 'NV003')
     ) AS v([maPhieuKiemKe], [ngayKiemKe], [trangThai], [maNhanVien])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhieuKiemKe AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuKiemKe] = v.[maPhieuKiemKe]);
 
