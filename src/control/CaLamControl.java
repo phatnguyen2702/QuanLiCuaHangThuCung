@@ -9,7 +9,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-/** Quy tắc nghiệp vụ của Ca làm. UI chỉ nhận dữ liệu, thông báo và vẽ bảng. */
+
 public final class CaLamControl {
     private final CaLamDAO dao = new CaLamDAO();
     private static final DateTimeFormatter GIO = DateTimeFormatter.ofPattern("HH:mm");
@@ -95,7 +95,7 @@ public final class CaLamControl {
         return s == null ? "" : s.toLowerCase(Locale.ROOT);
     }
 
-    // LocalTime hiển thị dưới dạng HH:mm trên JTable
+
     public static String dinhDangGio(LocalTime gio) {
         return gio == null ? "" : gio.format(GIO);
     }

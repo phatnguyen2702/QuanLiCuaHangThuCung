@@ -40,6 +40,8 @@ private final Runnable moTraCuu;
     private final List<ChiTietPhieuKiemKe> tatCa = new ArrayList<>();
     private final List<ChiTietPhieuKiemKe> dangHien = new ArrayList<>();
     private String maPhieu = "";
+    private boolean daTaoPhieuHienTai;
+    private boolean dangTiepTucPhieuNhap;
     public KiemKeUI() {
         this(() -> {
         });
@@ -128,7 +130,7 @@ private final Runnable moTraCuu;
         pnlThanhCongCu.add(btnTim);
         pnlThanhCongCu.add(btnNhap);
         UIStyle.taoBang(tblDuLieu2, 2, 3, 4);
-        tblDuLieu2.getColumnModel().getColumn(5).setCellRenderer(
+        tblDuLieu2.getColumnModel().getColumn(6).setCellRenderer(
                 new DefaultTableCellRenderer() {
                     @Override
                     public Component getTableCellRendererComponent(
@@ -166,7 +168,7 @@ private final Runnable moTraCuu;
         return pnlThe;
     }
     public void napLai() {
-        if (!coSanPhamDaKiem()) {
+        if (!daTaoPhieuHienTai) {
             taoPhieuKiemKeMoi();
         }
     }
@@ -181,6 +183,7 @@ private final Runnable moTraCuu;
     private void taoPhieuKiemKeMoi() {
         try {
             maPhieu = KiemKeControl.taoMaPhieuKiemKeMoi();
+            if (maPhieu == null || maPhieu.isBlank()) throw new IllegalStateException("Không tạo được mã phiếu kiểm kê.");
             lblTieuDe3.setText("Kiểm kê kho — " + maPhieu);
             ngayBatDau = LocalDateTime.now();
             capNhatThoiGianKiemKe();
@@ -195,6 +198,8 @@ private final Runnable moTraCuu;
                 ct.setSoLuongThucTe(null);
                 tatCa.add(ct);
             }
+            daTaoPhieuHienTai = true;
+            dangTiepTucPhieuNhap = false;
             txtTim.setText("");
             capNhatBangKiemKe();
         } catch (Exception ex) {
@@ -211,7 +216,7 @@ private final Runnable moTraCuu;
                 + "  |  Đã trôi qua: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
     }
     private void xacNhanTaoPhieuKiemKeMoi() {
-        if (coSanPhamDaKiem() && !UIStyle.xacNhan(this,
+        if ((coSanPhamDaKiem() || dangTiepTucPhieuNhap) && !UIStyle.xacNhan(this,
                 "Phiếu đang kiểm chưa chốt sẽ bị bỏ. Tạo phiếu mới?")) {
             return;
         }
@@ -296,26 +301,30 @@ private final Runnable moTraCuu;
         }
     }
     private void chotPhieuKiemKe() {
+        java.util.Map<String, Integer> tonMoi = new java.util.HashMap<>();
         try {
-            java.util.Map<String, Integer> tonMoi = new java.util.HashMap<>();
             for (SanPham sp : KiemKeControl.layDanhSachSanPhamKemTonKho())
                 tonMoi.put(taoKhoaLoSanPham(sp.getMaSanPham(), sp.getMaPhieuNhap()), sp.getTonKho());
-            boolean coLoKhongConTon = tatCa.removeIf(ct -> !tonMoi.containsKey(
-                    taoKhoaLoSanPham(ct.getMaSanPham(), ct.getMaPhieuNhap())));
-            if (coLoKhongConTon)
-                UIStyle.thongBao(this, "Các đợt đã hết tồn được loại khỏi phiếu kiểm kê.");
-            for (ChiTietPhieuKiemKe ct : tatCa) {
-                String khoa = taoKhoaLoSanPham(ct.getMaSanPham(), ct.getMaPhieuNhap());
-                if (ct.daKiem() && tonMoi.containsKey(khoa))
-                    ct.setSoLuongHeThong(tonMoi.get(khoa));
-            }
-            capNhatBangKiemKe();
         } catch (Exception ex) {
             UIStyle.loi(this, ex);
             return;
         }
-        List<ChiTietPhieuKiemKe> daKiem = new ArrayList<>();
+        List<ChiTietPhieuKiemKe> banSao = new ArrayList<>();
         for (ChiTietPhieuKiemKe ct : tatCa) {
+            ChiTietPhieuKiemKe dong = new ChiTietPhieuKiemKe();
+            dong.setMaPhieuKiemKe(ct.getMaPhieuKiemKe());
+            dong.setMaSanPham(ct.getMaSanPham());
+            dong.setTenSanPham(ct.getTenSanPham());
+            dong.setMaPhieuNhap(ct.getMaPhieuNhap());
+            dong.setNgayNhap(ct.getNgayNhap());
+            dong.setSoLuongHeThong(ct.daKiem() ? tonMoi.getOrDefault(
+                    taoKhoaLoSanPham(ct.getMaSanPham(), ct.getMaPhieuNhap()), 0) : ct.getSoLuongHeThong());
+            dong.setSoLuongThucTe(ct.getSoLuongThucTe());
+            dong.setTrangThai(ct.isTrangThai());
+            banSao.add(dong);
+        }
+        List<ChiTietPhieuKiemKe> daKiem = new ArrayList<>();
+        for (ChiTietPhieuKiemKe ct : banSao) {
             if (ct.daKiem()) {
                 ct.setTrangThai(ct.getChenhLech() == 0);
                 daKiem.add(ct);
@@ -325,7 +334,7 @@ private final Runnable moTraCuu;
             UIStyle.canhBao(this, "Chưa có sản phẩm nào được nhập số liệu kiểm.");
             return;
         }
-        int chua = tatCa.size() - daKiem.size();
+        int chua = banSao.size() - daKiem.size();
         String hoi = "Chốt phiếu " + maPhieu + " với " + daKiem.size()
                 + " mặt hàng đã kiểm?"
                 + (chua > 0 ? "\n" + chua
@@ -334,6 +343,11 @@ private final Runnable moTraCuu;
         if (!UIStyle.xacNhan(this, hoi)) {
             return;
         }
+        for (int i = 0; i < tatCa.size(); i++) {
+            ChiTietPhieuKiemKe goc = tatCa.get(i);
+            if (goc.daKiem()) goc.setSoLuongHeThong(banSao.get(i).getSoLuongHeThong());
+        }
+        capNhatBangKiemKe();
         LocalDateTime gioChot = LocalDateTime.now();
         PhieuKiemKe phieu = new PhieuKiemKe(
                 maPhieu,
@@ -443,6 +457,8 @@ private final Runnable moTraCuu;
                     return;
                 try {
                     maPhieu = p.getMaPhieuKiemKe();
+                    daTaoPhieuHienTai = true;
+                    dangTiepTucPhieuNhap = true;
                     lblTieuDe3.setText("Kiểm kê kho — " + maPhieu);
                     LocalDateTime bd = p.getNgayBatDau() == null ? LocalDateTime.now() : p.getNgayBatDau();
                     ngayBatDau = bd;

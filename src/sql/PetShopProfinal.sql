@@ -4,7 +4,7 @@ GO
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
--- Dung truoc khi tao bang neu DB khong con trong (bao ve du lieu co san).
+
 IF EXISTS (
     SELECT 1 FROM sys.tables t
     WHERE t.is_ms_shipped = 0 AND SCHEMA_NAME(t.schema_id) = N'dbo'
@@ -89,9 +89,9 @@ CREATE TABLE PhuongThucThanhToan (
     trangThai BIT NULL DEFAULT 1,
     ghiChu NVARCHAR(255) NULL
 );
-/* =======================================================
-   2. CA LAM
-======================================================= */
+
+
+
 
 CREATE TABLE CaLam (
     maCa VARCHAR(10) NOT NULL PRIMARY KEY,
@@ -118,14 +118,14 @@ CREATE TABLE LichPhanCa (
     CONSTRAINT FK_LichPhanCa_CaLam
         FOREIGN KEY (maCa) REFERENCES CaLam(maCa)
 );
-/* =======================================================
-   3. KHACH HANG KHONG DUNG THE THANH VIEN
-   - Khong tao bang TheThanhVien hay thong tin diem tich luy.
-======================================================= */
 
-/* =======================================================
-   4. LICH HEN / SPA
-======================================================= */
+
+
+
+
+
+
+
 
 CREATE TABLE LichHen (
     maLichHen VARCHAR(10) NOT NULL PRIMARY KEY,
@@ -202,9 +202,9 @@ CREATE TABLE ChiTietLichHen (
         FOREIGN KEY (maNhanVien)
         REFERENCES NhanVien(maNhanVien)
 );
-/* =======================================================
-   5. HOA DON
-======================================================= */
+
+
+
 
 CREATE TABLE HoaDon (
     maHoaDon VARCHAR(15) NOT NULL PRIMARY KEY,
@@ -233,11 +233,11 @@ CREATE TABLE BoDemHoaDon (
     CONSTRAINT CK_BoDemHoaDon_giaTri CHECK (giaTri BETWEEN 0 AND 9999)
 );
 INSERT INTO BoDemHoaDon (id, giaTri) VALUES (1, 0);
-/*
-   Trong mo hinh goc, 3 cot maThuCung/maDichVu/maSanPham
-   duoc danh dau NOT NULL. De giao dien ban hang co the tao
-   dong san pham HOAC dong dich vu, o day cho phep NULL.
-*/
+
+
+
+
+
 CREATE TABLE ChiTietHoaDon (
     maHoaDon VARCHAR(15) NOT NULL,
     maThuCung VARCHAR(10) NULL,
@@ -261,9 +261,9 @@ CREATE TABLE ChiTietHoaDon (
 );
 CREATE INDEX IX_ChiTietHoaDon_HoaDon
     ON ChiTietHoaDon(maHoaDon);
-/* =======================================================
-   6. NHAP KHO
-======================================================= */
+
+
+
 
 CREATE TABLE PhieuNhapKho (
     maPhieuNhap VARCHAR(10) NOT NULL PRIMARY KEY,
@@ -297,9 +297,9 @@ CREATE TABLE ChiTietPhieuNhap (
     CONSTRAINT FK_CTPN_SanPham
         FOREIGN KEY (maSanPham) REFERENCES SanPham(maSanPham)
 );
-/* =======================================================
-   7. KIEM KE
-======================================================= */
+
+
+
 
 CREATE TABLE PhieuKiemKe (
     maPhieuKiemKe VARCHAR(10) NOT NULL PRIMARY KEY,
@@ -352,9 +352,9 @@ CREATE TABLE ChiTietXuLyHang (
     CONSTRAINT FK_XuLyHang_DotNhap FOREIGN KEY (maPhieuNhap, maSanPham)
         REFERENCES ChiTietPhieuNhap(maPhieuNhap, maSanPham)
 );
-/* =======================================================
-   GOI Y THUC AN - TICH HOP MigrationGoiYThucAn.sql
-======================================================= */
+
+
+
 IF OBJECT_ID('dbo.GoiYThucAn', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.GoiYThucAn (
@@ -487,7 +487,7 @@ VALUES
 ('DV003', N'Vệ sinh tai', 60000, N'Vệ sinh tai cho chó mèo'),
 ('DV004', N'Cắt móng', 50000, N'Cắt móng và vệ sinh chân'),
 ('DV005', N'Combo Spa Premium', 350000, N'Tắm, sấy, cắt tỉa và vệ sinh');
--- VC002 chi duoc giu lai de bao toan hoa don mau cu, khong ap dung cho don moi.
+
 INSERT INTO Vocher
 (maVoucher, tenVoucher, phanTramGiam, dieuKien, trangThai,
  ngayBatDau, ngayKetThuc, soLuongToiDa)
@@ -614,7 +614,7 @@ VALUES
 ('KK001', 'SP005', 11, 10, 0),
 ('KK001', 'SP006', 17, 17, 1);
 
-/* Phan loai ro 5 san pham cho va 5 san pham meo cho man hinh goi y. */
+
 INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu)
 VALUES
 ('SP001', N'Chó', N'Mọi độ tuổi', N'Mọi kích thước', N'Thức ăn chó; xem hướng dẫn độ tuổi trên bao bì.'),
@@ -629,11 +629,11 @@ VALUES
 ('SP015', N'Mèo', N'Trưởng thành', N'Mọi kích thước', N'Royal Canin Indoor 27; sản phẩm mèo trưởng thành trong nhà.');
 
 
-/* =======================================================
-   BO SUNG MIGRATION GOI Y THUC AN - PHAN LOAI TU DONG
-   Chi them san pham thuc an CHUA NAM trong du lieu mau o tren.
-   Khong tao bang/chen lai 10 ban ghi duoc khai bao truoc do.
-======================================================= */
+
+
+
+
+
 INSERT INTO dbo.GoiYThucAn(maSanPham, loaiThuCung, nhomTuoi, kichThuoc, ghiChu)
 SELECT sp.maSanPham,
        CASE WHEN dm.tenDanhMuc LIKE N'%chó%' OR sp.tenSanPham LIKE N'%chó%' OR sp.tenSanPham LIKE N'%dog%' THEN N'Chó'
@@ -662,7 +662,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- KIEM TRA CAU TRUC VA SO BAN GHI
+
 SELECT c.name AS tenCot, ty.name AS kieuDuLieu, c.max_length AS soByte
 FROM sys.columns AS c
 JOIN sys.types AS ty ON c.user_type_id = ty.user_type_id
@@ -675,15 +675,15 @@ UNION ALL SELECT N'GoiYThucAn', COUNT(*) FROM dbo.GoiYThucAn;
 GO
 
 
--- ===============================================================
--- PET SHOP PRO - BO SUNG DU LIEU MAU CHO DATABASE HIEN CO
--- Duoc tao tu: QuanLiCuaHangThuCung(8).zip / PetShopPro_final.sql
--- Bo sung du lieu mau cho cac bang nghiep vu, NGOAI TRU LichHen va ChiTietLichHen; bang BoDemHoaDon giu 1 dong.
--- Idempotent: chay lai khong chen trung theo khoa mau.
--- KHONG DROP TABLE / KHONG DELETE / KHONG UPDATE du lieu nghiep vu cu.
--- TEST DATA ONLY: nhan vien moi co mat khau mau Demo@2026.
--- Khong them lich Spa mau tuong lai.
--- ===============================================================
+
+
+
+
+
+
+
+
+
 USE [00];
 GO
 SET NOCOUNT ON;
@@ -695,7 +695,7 @@ IF OBJECT_ID(N'dbo.NhanVien', 'U') IS NULL OR OBJECT_ID(N'dbo.GoiYThucAn', 'U') 
 BEGIN TRY
     BEGIN TRANSACTION;
 
-    -- DanhMuc : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.DanhMuc AS d
         INNER JOIN (VALUES
             (N'DM006', N'Thức ăn cho chó con'),
@@ -733,7 +733,7 @@ BEGIN TRY
     ) AS v([maDanhMuc], [tenDanhMuc], [moTa])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.DanhMuc AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maDanhMuc] = v.[maDanhMuc]);
 
-    -- Nhacungcap : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.Nhacungcap AS d
         INNER JOIN (VALUES
             ('NCC004', N'Hải Âu Pet Supply'),
@@ -771,7 +771,7 @@ BEGIN TRY
     ) AS v([maNhaCungCap], [tenNhaCungCap], [soDienThoai], [email], [diaChi])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.Nhacungcap AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maNhaCungCap] = v.[maNhaCungCap]);
 
-    -- KhachHang : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.KhachHang AS d
         INNER JOIN (VALUES
             ('KH006', N'Lê Thanh Bình'),
@@ -809,7 +809,7 @@ BEGIN TRY
     ) AS v([maKhachHang], [hoTen], [soDienThoai])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.KhachHang AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maKhachHang] = v.[maKhachHang]);
 
-    -- ThuCung : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.ThuCung AS d
         INNER JOIN (VALUES
             ('TC006', N'Mochi', 'KH006'),
@@ -847,7 +847,7 @@ BEGIN TRY
     ) AS v([maThuCung], [tenThuCung], [loai], [giong], [gioiTinh], [canNang], [maKhachHang], [trangThai])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.ThuCung AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maThuCung] = v.[maThuCung]);
 
-    -- DichVu : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.DichVu AS d
         INNER JOIN (VALUES
             ('DV006', N'Vắt tuyến hôi'),
@@ -885,7 +885,7 @@ BEGIN TRY
     ) AS v([maDichVu], [tenDichVu], [giaDichVu], [moTa])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.DichVu AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maDichVu] = v.[maDichVu]);
 
-    -- SanPham : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.SanPham AS d
         INNER JOIN (VALUES
             ('SP016', N'Thức ăn chó con vị gà 1kg'),
@@ -923,7 +923,7 @@ BEGIN TRY
     ) AS v([maSanPham], [tenSanPham], [giaNhap], [giaBan], [maDanhMuc], [maNhaCungCap])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.SanPham AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maSanPham] = v.[maSanPham]);
 
-    -- Vocher : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.Vocher AS d
         INNER JOIN (VALUES
             ('VC004', N'DEMO5_004'),
@@ -961,7 +961,7 @@ BEGIN TRY
     ) AS v([maVoucher], [tenVoucher], [phanTramGiam], [dieuKien], [trangThai], [ngayBatDau], [ngayKetThuc], [soLuongToiDa])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.Vocher AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maVoucher] = v.[maVoucher]);
 
-    -- PhuongThucThanhToan : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.PhuongThucThanhToan AS d
         INNER JOIN (VALUES
             ('PT004', N'Thẻ ghi nợ (chưa hỗ trợ)'),
@@ -999,7 +999,7 @@ BEGIN TRY
     ) AS v([maPhuongThuc], [tenPhuongThuc], [trangThai], [ghiChu])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhuongThucThanhToan AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhuongThuc] = v.[maPhuongThuc]);
 
-    -- CaLam : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.CaLam AS d
         INNER JOIN (VALUES
             ('CA003', N'Ca 08-12'),
@@ -1037,7 +1037,7 @@ BEGIN TRY
     ) AS v([maCa], [tenCa], [gioBatDau], [gioKetThuc])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.CaLam AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maCa] = v.[maCa]);
 
-    -- LichPhanCa : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.LichPhanCa AS d
         INNER JOIN (VALUES
             ('PC005', 'NV004', 'CA003'),
@@ -1075,10 +1075,10 @@ BEGIN TRY
     ) AS v([maPhanCa], [ngayLamViec], [maNhanVien], [maCa])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.LichPhanCa AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhanCa] = v.[maPhanCa]);
 
-    -- KHONG tao 12 lich Spa mau (LH005-LH016) va chi tiet lich hen mau.
-    -- Lich Hen thuc te duoc tao tu chuc nang Quan ly lich hen.
 
-    -- PhieuDichVu : 12 ban ghi
+
+
+
     IF EXISTS (SELECT 1 FROM dbo.PhieuDichVu AS d
         INNER JOIN (VALUES
             ('PDV004', 'NV004', 'KH006', 'TC006'),
@@ -1116,7 +1116,7 @@ BEGIN TRY
     ) AS v([maPhieuDichVu], [trangThai], [maKhachHang], [maThuCung], [maNhanVien], [maLichHen])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhieuDichVu AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuDichVu] = v.[maPhieuDichVu]);
 
-    -- ChiTietDichVu : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.ChiTietDichVu AS d
         INNER JOIN (VALUES
             ('PDV004', 'DV006', 1, 75000),
@@ -1154,7 +1154,7 @@ BEGIN TRY
     ) AS v([maPhieuDichVu], [maDichVu], [soLuong], [donGia], [ghiChu])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.ChiTietDichVu AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuDichVu] = v.[maPhieuDichVu] AND d.[maDichVu] = v.[maDichVu]);
 
-    -- HoaDon : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.HoaDon AS d
         INNER JOIN (VALUES
             ('HD0061010260006', 'KH006', 'NV002'),
@@ -1192,7 +1192,7 @@ BEGIN TRY
     ) AS v([maHoaDon], [ngayLap], [maPhuongThuc], [maKhachHang], [maNhanVien], [maVoucher])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.HoaDon AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maHoaDon] = v.[maHoaDon]);
 
-    -- ChiTietHoaDon : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.ChiTietHoaDon AS d
         INNER JOIN (VALUES
             ('HD0061010260006', 1, 119000),
@@ -1230,7 +1230,7 @@ BEGIN TRY
     ) AS v([maHoaDon], [maThuCung], [maDichVu], [maSanPham], [soLuong], [donGia], [phanTramGiam])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.ChiTietHoaDon AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maHoaDon] = v.[maHoaDon]);
 
-    -- PhieuNhapKho : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.PhieuNhapKho AS d
         INNER JOIN (VALUES
             ('PN005', 'NCC004', 'NV003'),
@@ -1268,7 +1268,7 @@ BEGIN TRY
     ) AS v([maPhieuNhap], [ngayNhap], [trangThai], [maNhanVien], [maNhaCungCap])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhieuNhapKho AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuNhap] = v.[maPhieuNhap]);
 
-    -- ChiTietPhieuNhap : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.ChiTietPhieuNhap AS d
         INNER JOIN (VALUES
             ('PN005', 'SP016', 36, 80000),
@@ -1306,7 +1306,7 @@ BEGIN TRY
     ) AS v([maPhieuNhap], [maSanPham], [soLuongNhap], [donGiaNhap], [trangThai], [hanSuDung])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.ChiTietPhieuNhap AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuNhap] = v.[maPhieuNhap] AND d.[maSanPham] = v.[maSanPham]);
 
-    -- PhieuKiemKe : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.PhieuKiemKe AS d
         INNER JOIN (VALUES
             ('KK002', 'NV003'),
@@ -1344,7 +1344,7 @@ BEGIN TRY
     ) AS v([maPhieuKiemKe], [ngayKiemKe], [trangThai], [maNhanVien])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.PhieuKiemKe AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuKiemKe] = v.[maPhieuKiemKe]);
 
-    -- ChiTietPhieuKiemKe : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.ChiTietPhieuKiemKe AS d
         INNER JOIN (VALUES
             ('KK002', 'SP016', 35, 35),
@@ -1382,7 +1382,7 @@ BEGIN TRY
     ) AS v([maPhieuKiemKe], [maSanPham], [soLuongHeThong], [soLuongThucTe], [trangThai])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.ChiTietPhieuKiemKe AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maPhieuKiemKe] = v.[maPhieuKiemKe] AND d.[maSanPham] = v.[maSanPham]);
 
-    -- GoiYThucAn : 12 ban ghi
+
     IF EXISTS (SELECT 1 FROM dbo.GoiYThucAn AS d
         INNER JOIN (VALUES
             ('SP016', N'Chó', N'Con non', N'Nhỏ', N'Dữ liệu gợi ý mẫu, cần đối chiếu nhãn sản phẩm'),
@@ -1420,7 +1420,7 @@ BEGIN TRY
     ) AS v([maSanPham], [loaiThuCung], [nhomTuoi], [kichThuoc], [ghiChu])
     WHERE NOT EXISTS (SELECT 1 FROM dbo.GoiYThucAn AS d WITH (UPDLOCK, HOLDLOCK) WHERE d.[maSanPham] = v.[maSanPham] AND d.[loaiThuCung] = v.[loaiThuCung] AND d.[nhomTuoi] = v.[nhomTuoi] AND d.[kichThuoc] = v.[kichThuoc]);
 
-    -- BoDemHoaDon la bang he thong SINGLETON, khong them dong.
+
     IF NOT EXISTS (SELECT 1 FROM dbo.BoDemHoaDon WHERE id = 1)
         THROW 51043, N'BoDemHoaDon thieu dong id=1; vui long khoi phuc bang dem.', 1;
     UPDATE dbo.BoDemHoaDon
@@ -1437,7 +1437,7 @@ BEGIN CATCH
 END CATCH;
 GO
 
--- KIEM TRA SO BAN GHI SAU KHI BO SUNG (bao gom du lieu cu neu DB da thay doi):
+
 SELECT N'DanhMuc' AS [Bang], COUNT_BIG(*) AS [SoDong] FROM dbo.DanhMuc
 UNION ALL SELECT N'Nhacungcap', COUNT_BIG(*) FROM dbo.Nhacungcap
 UNION ALL SELECT N'NhanVien', COUNT_BIG(*) FROM dbo.NhanVien

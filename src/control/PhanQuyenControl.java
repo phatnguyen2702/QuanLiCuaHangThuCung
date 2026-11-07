@@ -73,7 +73,7 @@ public final class PhanQuyenControl {
         };
     }
 
-    // Chặn ở tầng xử lý dữ liệu dao
+
     public static void yeuCau(Quyen q) {
         if (!coQuyen(q))
             throw new SecurityException(
@@ -82,7 +82,7 @@ public final class PhanQuyenControl {
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, PhienLamViecControl.maNV);
-            // Thực thi truy vấn và tự đóng tập kết quả sau khi đọc xong.
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(PhienLamViecControl.vaiTro)) {
                     throw new SecurityException("Vai trò đã thay đổi hoặc tài khoản không tồn tại. "
