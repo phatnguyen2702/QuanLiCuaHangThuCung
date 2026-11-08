@@ -1,18 +1,15 @@
 package control;
 
-import ConnectDB.connectDB;
 import dao.HoaDonDAO;
 import dao.LichHenDAO;
-
 import dao.NhanVienDAO;
+import dao.TrangChuDAO;
+import entity.ChiTietHoaDon;
 import entity.LichHen;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -21,13 +18,39 @@ import java.util.List;
 
 
 public final class TrangChuControl {
+    private final TrangChuDAO dao = new TrangChuDAO();
+    private static final List<ChiTietHoaDon> GIO_HANG = new ArrayList<>();
+
+    public static String maNV;
+    public static String hoTen;
+    public static String vaiTro;
+
+    public static void dat(String ma, String ten, String role) {
+        GIO_HANG.clear();
+        maNV = ma;
+        hoTen = ten;
+        vaiTro = role;
+    }
+
+    public static List<ChiTietHoaDon> gioHang() {
+        return GIO_HANG;
+    }
+
     public void kiemTraPhien(String maNV, String vaiTro) {
         if (maNV == null || maNV.isBlank()
                 || PhanQuyenControl.vaiTro(vaiTro) == PhanQuyenControl.VaiTro.KHONG_HOP_LE)
             throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
     }
 
-    public record ThongKeHoaDon(double doanhThuHomNay, int hoaDonHomNay) {
+    public static final class ThongKeHoaDon {
+        private final double doanhThuHomNay;
+        private final int hoaDonHomNay;
+
+        public ThongKeHoaDon(double doanhThuHomNay, int hoaDonHomNay) {
+            this.doanhThuHomNay = doanhThuHomNay;
+            this.hoaDonHomNay = hoaDonHomNay;
+        }
+
         public double getDoanhThuHomNay() {
             return doanhThuHomNay;
         }
@@ -43,25 +66,11 @@ public final class TrangChuControl {
     }
 
     public int demLichSpaHomNay() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM LichHen WHERE ngayGioHen >= ? AND ngayGioHen < ? "
-                + "AND ISNULL(trangThai, N'Xác nhận') <> N'Đã hủy'";
-        LocalDate homNay = LocalDate.now();
-        try (Connection con = connectDB.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setTimestamp(1, java.sql.Timestamp.valueOf(homNay.atStartOfDay()));
-            ps.setTimestamp(2, java.sql.Timestamp.valueOf(homNay.plusDays(1).atStartOfDay()));
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        }
+        return dao.demLichSpaHomNay();
     }
 
     public int demPhieuNhapHomNay() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM PhieuNhapKho WHERE CAST(ngayNhap AS DATE) = CAST(GETDATE() AS DATE)";
-        try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
-        }
+        return dao.demPhieuNhapHomNay();
     }
 
     public List<LichHen> lichSpaHomNay(LocalDateTime now) throws SQLException {

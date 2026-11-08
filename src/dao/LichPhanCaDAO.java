@@ -265,7 +265,6 @@ public class LichPhanCaDAO {
                 canKiemTra = new KhungCa(ngay, maNhanVien,
                         layGio(rsCa, "gioBatDau"), layGio(rsCa, "gioKetThuc"));
             }
-
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, maNhanVien);
                 ps.setDate(2, java.sql.Date.valueOf(ngay));

@@ -69,14 +69,7 @@ public class CaLamDAO {
 
     public String goiYMa() {
         try (Connection con = connectDB.getConnection()) {
-            String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maCa, 3, 3))), 0) "
-                    + "FROM dbo.CaLam WHERE maCa LIKE 'CA[0-9][0-9][0-9]'";
-            try (PreparedStatement ps = con.prepareStatement(sql);
-                    ResultSet rs = ps.executeQuery()) {
-                if (!rs.next())
-                    return "Tự động khi lưu";
-                return String.format(java.util.Locale.ROOT, "CA%03d", rs.getInt(1) + 1);
-            }
+            return taoMaMoi(con);
         } catch (SQLException ex) {
             return "Tự động khi lưu";
         }

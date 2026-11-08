@@ -46,9 +46,9 @@ public final class PhanQuyenControl {
     }
 
     public static boolean coQuyen(Quyen q) {
-        if (q == null || PhienLamViecControl.maNV == null || PhienLamViecControl.maNV.isBlank())
+        if (q == null || TrangChuControl.maNV == null || TrangChuControl.maNV.isBlank())
             return false;
-        return duocPhep(vaiTro(PhienLamViecControl.vaiTro), q);
+        return duocPhep(vaiTro(TrangChuControl.vaiTro), q);
     }
 
     public static boolean duocPhep(VaiTro r, Quyen q) {
@@ -81,10 +81,10 @@ public final class PhanQuyenControl {
         String sql = "SELECT vaiTro FROM NhanVien WHERE maNhanVien = ?";
         try (Connection conn = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, PhienLamViecControl.maNV);
+            ps.setString(1, TrangChuControl.maNV);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(PhienLamViecControl.vaiTro)) {
+                if (!rs.next() || vaiTro(rs.getString(1)) != vaiTro(TrangChuControl.vaiTro)) {
                     throw new SecurityException("Vai trò đã thay đổi hoặc tài khoản không tồn tại. "
                             + "Vui lòng đăng xuất và đăng nhập lại.");
                 }
@@ -164,6 +164,7 @@ public final class PhanQuyenControl {
         return switch (ten) {
             case "Quản lý tài khoản" -> Quyen.TAI_KHOAN;
             case "Ma trận phân quyền" -> Quyen.PHAN_QUYEN;
+            case "Bảng phân quyền" -> Quyen.PHAN_QUYEN;
             case "Quản lý ca làm" -> Quyen.CA_LAM;
             case "Phân ca nhân viên" -> Quyen.PHAN_CA;
             case "Danh mục sản phẩm" -> Quyen.DANH_MUC_SAN_PHAM;

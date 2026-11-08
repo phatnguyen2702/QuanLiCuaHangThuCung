@@ -22,7 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
 import java.util.List;
 
-public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListener {
+public class QuanLyPhanCaUI extends JFrame implements ActionListener, MouseListener {
 
         private static final Color NAVY = new Color(18, 48, 82);
 
@@ -50,8 +50,6 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
         private JTable tblPhanCa;
 
         private DefaultTableModel mdlPhanCa;
-
-        private JLabel lblTrangThai;
 
         private JButton btnSua;
 
@@ -115,10 +113,10 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         }
                 };
                 tblPhanCa = new JTable(mdlPhanCa);
+                tblPhanCa.addMouseListener(this);
                 tblPhanCa.setRowHeight(30);
                 tblPhanCa.setFont(fntNoiDung);
                 tblPhanCa.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                tblPhanCa.addMouseListener(this);
                 tblPhanCa.setAutoCreateRowSorter(true);
                 tblPhanCa.setSelectionBackground(new Color(207, 222, 235));
                 tblPhanCa.setFillsViewportHeight(true);
@@ -158,12 +156,17 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
                 btnChonNgay = taoNut("Lịch", NAVY);
 
-                btnChonNgay.addActionListener(this);
+                ganHanhDong(btnChonNgay, () -> {
+                        LocalDate ngay = LichChonNgay.chonNgay(this,
+                                        PhanCaControl.docNgay(txtLocNgay.getText()), false);
+                        if (ngay != null)
+                                txtLocNgay.setText(ngay.format(DINH_DANG_NGAY));
+                });
 
                 btnXoaLocNgay = taoNut("×", new Color(108, 117, 125));
                 btnXoaLocNgay.setToolTipText("Bỏ lọc theo ngày");
 
-                btnXoaLocNgay.addActionListener(this);
+                ganHanhDong(btnXoaLocNgay, () -> txtLocNgay.setText(""));
 
                 cmbLocNhanVien = new JComboBox<>();
                 cmbLocNhanVien.setPreferredSize(new Dimension(145, 30));
@@ -172,7 +175,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
                 btnLoc = taoNut("Lọc", GREEN);
 
-                btnLoc.addActionListener(this);
+                ganHanhDong(btnLoc, this::locDuLieu);
 
                 pnlPnl.add(new JLabel("Ngày làm việc"));
                 pnlPnl.add(txtLocNgay);
@@ -196,16 +199,16 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
                 btnXoa = taoNut("Xóa phân ca", RED);
 
-                btnXoa.addActionListener(this);
+                ganHanhDong(btnXoa, this::xoa);
 
                 btnExcel = taoNut("Xuất lịch phân ca", new Color(29, 133, 82));
 
-                btnExcel.addActionListener(this);
+                ganHanhDong(btnExcel, this::xuatExcel);
                 btnXemTuan = taoNut("Xem lịch tuần", NAVY);
-                btnXemTuan.addActionListener(this);
+                ganHanhDong(btnXemTuan, this::xemLichTheoTuan);
                 btnXemTuan.setToolTipText("Xem toàn bộ lịch nhân viên theo thứ Hai – Chủ nhật");
                 btnSaoChepTuan = taoNut("Sao chép tuần", new Color(80, 112, 156));
-                btnSaoChepTuan.addActionListener(this);
+                ganHanhDong(btnSaoChepTuan, this::hienThiSaoChepTuan);
                 btnSaoChepTuan.setToolTipText("Sao chép lịch từ một tuần sang tuần khác, không ghi đè");
                 pnlTrai.add(btnXoa);
                 pnlTrai.add(btnExcel);
@@ -215,7 +218,11 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
                 btnLamMoiDanhSach = taoNut("Làm mới", BLUE);
 
-                btnLamMoiDanhSach.addActionListener(this);
+                ganHanhDong(btnLamMoiDanhSach, () -> {
+                        taiDanhMuc();
+                        taiDuLieu();
+                        lamMoiForm();
+                });
                 pnlPnl.add(btnLamMoiDanhSach, BorderLayout.EAST);
                 return pnlPnl;
         }
@@ -262,14 +269,19 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 btnLich = taoNut("Chọn lịch", NAVY);
                 btnLich.setMargin(new Insets(2, 6, 2, 6));
 
-                btnLich.addActionListener(this);
+                ganHanhDong(btnLich, () -> {
+                        LocalDate ngay = LichChonNgay.chonNgay(this,
+                                        PhanCaControl.docNgay(txtNgayLamViec.getText()), true);
+                        if (ngay != null)
+                                txtNgayLamViec.setText(ngay.format(DINH_DANG_NGAY));
+                });
                 pnlChonNgay.add(txtNgayLamViec, BorderLayout.CENTER);
                 pnlChonNgay.add(btnLich, BorderLayout.EAST);
                 themTruong(pnlPnl, "Ngày làm việc (từ hôm nay)", pnlChonNgay);
 
                 cmbNhanVien = new JComboBox<>();
 
-                cmbNhanVien.addActionListener(this);
+                cmbNhanVien.addActionListener(e -> capNhatHoTen());
                 themTruong(pnlPnl, "Nhân viên", cmbNhanVien);
                 txtHoTen = new JTextField();
                 txtHoTen.setEditable(false);
@@ -282,15 +294,15 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
                 btnThem = taoNut("Thêm +", GREEN);
 
-                btnThem.addActionListener(this);
+                ganHanhDong(btnThem, this::them);
                 btnSua = taoNut("Sửa", NAVY);
                 btnSua.setEnabled(false);
 
-                btnSua.addActionListener(this);
+                ganHanhDong(btnSua, this::sua);
 
                 btnBoChon = taoNut("Bỏ chọn", new Color(108, 117, 125));
 
-                btnBoChon.addActionListener(this);
+                ganHanhDong(btnBoChon, this::lamMoiForm);
                 pnlNut.add(btnThem);
                 pnlNut.add(btnSua);
                 pnlNut.add(btnBoChon);
@@ -319,7 +331,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 btnLamMoiThongKe.setFocusable(false);
                 btnLamMoiThongKe.setToolTipText("Cập nhật thống kê phân ca hôm nay từ SQL Server");
                 btnLamMoiThongKe.setMargin(new Insets(1, 5, 1, 5));
-                btnLamMoiThongKe.addActionListener(this);
+                ganHanhDong(btnLamMoiThongKe, this::taiThongKeHomNay);
                 hangTieuDe.add(btnLamMoiThongKe, BorderLayout.EAST);
 
                 lblNgayThongKe = new JLabel();
@@ -428,9 +440,6 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         mdlPhanCa.addRow(new Object[] { pc.getMaPhanCa(), strNgay,
                                         pc.getMaNhanVien(), pc.getHoTen(), pc.getMaCa(), thongTinCa });
                 }
-                if (lblTrangThai != null)
-
-                        lblTrangThai.setText("Tổng: " + ds.size() + " phân ca");
         }
 
         private void hienThiForm() {
@@ -557,10 +566,6 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 lamMoiFormKhongXoaBoLoc();
         }
 
-        private LocalDate docNgay(String text) {
-                return PhanCaControl.docNgay(text);
-        }
-
         private void lamMoiFormKhongXoaBoLoc() {
                 maDangSua = null;
 
@@ -598,7 +603,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         return;
 
                 boolean theoTuan = kieu == 1;
-                LocalDate ngayDangLoc = docNgay(txtLocNgay.getText());
+                LocalDate ngayDangLoc = PhanCaControl.docNgay(txtLocNgay.getText());
                 LocalDate ngayChon;
 
                 if (!theoTuan && ngayDangLoc != null) {
@@ -614,10 +619,10 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                                 txtLocNgay.setText(ngayChon.format(DINH_DANG_NGAY));
                 }
 
-                LocalDate tuNgay = theoTuan ? dauTuan(ngayChon) : ngayChon;
+                LocalDate tuNgay = theoTuan ? PhanCaControl.dauTuan(ngayChon) : ngayChon;
                 LocalDate denNgay = theoTuan ? tuNgay.plusDays(6) : tuNgay;
                 String phamVi = theoTuan
-                                ? "tuần " + khoangTuan(tuNgay)
+                                ? "tuần " + PhanCaControl.khoangTuan(tuNgay)
                                 : "ngày " + tuNgay.format(DINH_DANG_NGAY);
 
                 String maNV = maDaChon(cmbLocNhanVien);
@@ -662,22 +667,14 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 }
         }
 
-        private LocalDate dauTuan(LocalDate ngay) {
-                return PhanCaControl.dauTuan(ngay);
-        }
-
-        private String khoangTuan(LocalDate thuHai) {
-                return PhanCaControl.khoangTuan(thuHai);
-        }
-
         private void xemLichTheoTuan() {
                 Window cha = SwingUtilities.getWindowAncestor(this);
                 JDialog dialog = new JDialog(cha, "Lịch phân ca theo tuần", Dialog.ModalityType.APPLICATION_MODAL);
                 dialog.setLayout(new BorderLayout(10, 10));
                 ((JPanel) dialog.getContentPane()).setBorder(new EmptyBorder(14, 14, 12, 14));
 
-                LocalDate daLoc = docNgay(txtLocNgay.getText());
-                LocalDate[] tuan = { dauTuan(daLoc == null ? LocalDate.now() : daLoc) };
+                LocalDate daLoc = PhanCaControl.docNgay(txtLocNgay.getText());
+                LocalDate[] tuan = { PhanCaControl.dauTuan(daLoc == null ? LocalDate.now() : daLoc) };
                 JLabel lblTuan = new JLabel();
                 lblTuan.setFont(new Font("Segoe UI", Font.BOLD, 16));
                 lblTuan.setForeground(NAVY);
@@ -745,7 +742,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 Runnable taiTuan = () -> {
                         try {
                                 LocalDate thuHai = tuan[0];
-                                lblTuan.setText("Tuần: " + khoangTuan(thuHai));
+                                lblTuan.setText("Tuần: " + PhanCaControl.khoangTuan(thuHai));
                                 String[] cot = new String[8];
                                 cot[0] = "Nhân viên";
                                 String[] thu = { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
@@ -779,13 +776,13 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                         taiTuan.run();
                 });
                 hienTai.addActionListener(e -> {
-                        tuan[0] = dauTuan(LocalDate.now());
+                        tuan[0] = PhanCaControl.dauTuan(LocalDate.now());
                         taiTuan.run();
                 });
                 chon.addActionListener(e -> {
                         LocalDate ngay = LichChonNgay.chonNgay(dialog, tuan[0], false);
                         if (ngay != null) {
-                                tuan[0] = dauTuan(ngay);
+                                tuan[0] = PhanCaControl.dauTuan(ngay);
                                 taiTuan.run();
                         }
                 });
@@ -802,10 +799,10 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 JDialog dialog = new JDialog(cha, "Sao chép lịch phân ca", Dialog.ModalityType.APPLICATION_MODAL);
                 dialog.setLayout(new BorderLayout(10, 10));
                 ((JPanel) dialog.getContentPane()).setBorder(new EmptyBorder(18, 18, 14, 18));
-                LocalDate[] nguon = { dauTuan(LocalDate.now()) };
+                LocalDate[] nguon = { PhanCaControl.dauTuan(LocalDate.now()) };
                 LocalDate[] dich = { nguon[0].plusWeeks(1) };
-                JTextField txtNguon = new JTextField(khoangTuan(nguon[0]), 22);
-                JTextField txtDich = new JTextField(khoangTuan(dich[0]), 22);
+                JTextField txtNguon = new JTextField(PhanCaControl.khoangTuan(nguon[0]), 22);
+                JTextField txtDich = new JTextField(PhanCaControl.khoangTuan(dich[0]), 22);
                 for (JTextField txt : new JTextField[] { txtNguon, txtDich }) {
                         txt.setEditable(false);
                         txt.setBackground(new Color(245, 247, 250));
@@ -816,15 +813,15 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 chonNguon.addActionListener(e -> {
                         LocalDate ngay = LichChonNgay.chonNgay(dialog, nguon[0], false);
                         if (ngay != null) {
-                                nguon[0] = dauTuan(ngay);
-                                txtNguon.setText(khoangTuan(nguon[0]));
+                                nguon[0] = PhanCaControl.dauTuan(ngay);
+                                txtNguon.setText(PhanCaControl.khoangTuan(nguon[0]));
                         }
                 });
                 chonDich.addActionListener(e -> {
                         LocalDate ngay = LichChonNgay.chonNgay(dialog, dich[0], false);
                         if (ngay != null) {
-                                dich[0] = dauTuan(ngay);
-                                txtDich.setText(khoangTuan(dich[0]));
+                                dich[0] = PhanCaControl.dauTuan(ngay);
+                                txtDich.setText(PhanCaControl.khoangTuan(dich[0]));
                         }
                 });
                 JPanel noidung = new JPanel(new GridBagLayout());
@@ -875,8 +872,8 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                                 return;
                         }
                         int xacNhan = JOptionPane.showConfirmDialog(dialog,
-                                        "Sao chép từ tuần " + khoangTuan(nguon[0]) + "\n"
-                                                        + "sang tuần " + khoangTuan(dich[0]) + "?\n\n"
+                                        "Sao chép từ tuần " + PhanCaControl.khoangTuan(nguon[0]) + "\n"
+                                                        + "sang tuần " + PhanCaControl.khoangTuan(dich[0]) + "?\n\n"
                                                         + "Các ca đã tồn tại hoặc trùng giờ sẽ được giữ nguyên và bỏ qua.\n"
                                                         + "Không tạo phân ca cho các ngày đã qua.",
                                         "Xác nhận sao chép", JOptionPane.YES_NO_OPTION,
@@ -944,6 +941,10 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
                 return btnBtn;
         }
 
+        private void ganHanhDong(AbstractButton nut, Runnable hanhDong) {
+                nut.addActionListener(e -> hanhDong.run());
+        }
+
         private void thongBao(String text) {
                 JOptionPane.showMessageDialog(this, text, "Pet Shop Pro", JOptionPane.INFORMATION_MESSAGE);
         }
@@ -960,47 +961,6 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
         @Override
         public void actionPerformed(ActionEvent e) {
-                Object nguon = e.getSource();
-                if (nguon == btnChonNgay) {
-
-                        LocalDate banDau = docNgay(txtLocNgay.getText());
-                        LocalDate chon = LichChonNgay.chonNgay(this, banDau, false);
-                        if (chon != null) {
-                                txtLocNgay.setText(chon.format(DINH_DANG_NGAY));
-                        }
-                } else if (nguon == btnXoaLocNgay) {
-                        txtLocNgay.setText("");
-                } else if (nguon == btnLoc) {
-                        locDuLieu();
-                } else if (nguon == btnXoa) {
-                        xoa();
-                } else if (nguon == btnExcel) {
-                        xuatExcel();
-                } else if (nguon == btnXemTuan) {
-                        xemLichTheoTuan();
-                } else if (nguon == btnSaoChepTuan) {
-                        hienThiSaoChepTuan();
-                } else if (nguon == btnLamMoiThongKe) {
-                        taiThongKeHomNay();
-                } else if (nguon == btnLamMoiDanhSach) {
-                        taiDanhMuc();
-                        taiDuLieu();
-                        lamMoiForm();
-                } else if (nguon == btnLich) {
-
-                        LocalDate chon = LichChonNgay.chonNgay(this, docNgay(txtNgayLamViec.getText()), true);
-                        if (chon != null) {
-                                txtNgayLamViec.setText(chon.format(DINH_DANG_NGAY));
-                        }
-                } else if (nguon == cmbNhanVien) {
-                        capNhatHoTen();
-                } else if (nguon == btnThem) {
-                        them();
-                } else if (nguon == btnSua) {
-                        sua();
-                } else if (nguon == btnBoChon) {
-                        lamMoiForm();
-                }
         }
 
         @Override
@@ -1009,6 +969,7 @@ public class QuanLyPhanCaUI extends JPanel implements ActionListener, MouseListe
 
         @Override
         public void mousePressed(MouseEvent e) {
+                hienThiForm();
         }
 
         @Override

@@ -1,5 +1,5 @@
 package UI;
-import control.PhienLamViecControl;
+import control.TrangChuControl;
 import UI.TrangChuUI.UIStyle;
 import control.KiemKeControl;
 import entity.ChiTietPhieuKiemKe;
@@ -353,7 +353,7 @@ private final Runnable moTraCuu;
                 maPhieu,
                 gioChot,
                 true,
-                PhienLamViecControl.maNV);
+                TrangChuControl.maNV);
         phieu.setNgayBatDau(ngayBatDau);
         phieu.setNgayChot(gioChot);
         try {
@@ -482,7 +482,7 @@ private final Runnable moTraCuu;
     }
     private void luuSoLieuKiemKe() {
         try {
-            PhieuKiemKe p = new PhieuKiemKe(maPhieu, ngayBatDau, false, PhienLamViecControl.maNV);
+            PhieuKiemKe p = new PhieuKiemKe(maPhieu, ngayBatDau, false, TrangChuControl.maNV);
             p.setNgayBatDau(ngayBatDau);
             if (!KiemKeControl.luuPhieuKiemKeNhap(p, tatCa)) throw new IllegalStateException("Không lưu được phiếu nháp kiểm kê.");
             UIStyle.thongBao(this, "Đã lưu nháp phiếu " + maPhieu + ".");

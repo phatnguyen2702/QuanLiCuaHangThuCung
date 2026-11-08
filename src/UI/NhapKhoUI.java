@@ -1,7 +1,7 @@
 package UI;
-import control.PhienLamViecControl;
 import UI.TrangChuUI.UIStyle;
 import control.NhapKhoControl;
+import control.TrangChuControl;
 import entity.ChiTietPhieuNhap;
 import entity.NhaCungCap;
 import entity.PhieuNhapKho;
@@ -22,7 +22,7 @@ private final Runnable moTraCuu;
     private static final DateTimeFormatter NGAY_THANG = DateTimeFormatter.ofPattern("dd/MM/uuuu");
     private final JTextField txtMaPhieu = UIStyle.oChiDoc("");
     private final JTextField txtNgayNhap = UIStyle.oChiDoc("");
-    private final JTextField txtNhanVien = UIStyle.oChiDoc(PhienLamViecControl.hoTen);
+    private final JTextField txtNhanVien = UIStyle.oChiDoc(TrangChuControl.hoTen);
     private final JComboBox<NhaCungCap> cmbNhaCungCap = new JComboBox<>();
     private final DefaultTableModel model = modelChiDoc("Mã SP", "Tên mặt hàng", "Số lượng",
             "Đơn giá nhập", "Hạn sử dụng", "Thành tiền");
@@ -204,7 +204,7 @@ private final Runnable moTraCuu;
         }
         ngayNhap = LocalDateTime.now();
         txtNgayNhap.setText(ngayNhap.format(NGAY_GIO));
-        txtNhanVien.setText(PhienLamViecControl.hoTen);
+        txtNhanVien.setText(TrangChuControl.hoTen);
         dong.clear();
         capNhatBangChiTietPhieuNhap();
     }
@@ -361,7 +361,7 @@ private final Runnable moTraCuu;
                 maPhieu,
                 ngayNhap,
                 hoanTatPhieuNhap,
-                PhienLamViecControl.maNV,
+                TrangChuControl.maNV,
                 ncc.getMaNhaCungCap());
         try {
             if (!NhapKhoControl.luuPhieuNhap(phieu, dong)) throw new IllegalStateException("Không lưu được phiếu nhập.");
