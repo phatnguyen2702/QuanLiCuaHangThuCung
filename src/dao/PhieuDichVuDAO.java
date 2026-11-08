@@ -81,7 +81,7 @@ public class PhieuDichVuDAO {
         return list;
     }
 
-    /** Kiểm tra thú cưng thuộc khách và phiếu liên kết đúng lịch đã chọn. */
+
     private void kiemTraLienKet(Connection con, PhieuDichVu p) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
                 "SELECT 1 FROM ThuCung WHERE maThuCung = ? AND maKhachHang = ?")) {
@@ -124,7 +124,7 @@ public class PhieuDichVuDAO {
         }
     }
 
-    /** Lưu chi tiết trên cùng transaction với phiếu. */
+
     private void chenDichVu(Connection con, String maPhieu, List<String[]> ds) throws SQLException {
         if (ds == null || ds.isEmpty())
             throw new SQLException("Phiếu phải có ít nhất một dịch vụ.");

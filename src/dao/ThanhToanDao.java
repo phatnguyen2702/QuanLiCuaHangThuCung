@@ -88,9 +88,9 @@ public class ThanhToanDao {
         return ds;
     }
 
-    // Tìm mặt hàng.
-    // Tham số tuKhoa: từ khóa tìm kiếm.
-    // Kết quả: đối tượng/giá trị kiểu List<ThanhToan>.
+
+
+
     public List<ChiTietHoaDon> timMatHang(String tuKhoa) throws SQLException {
         String sql = "SELECT maSanPham AS maHang,tenSanPham AS tenHang,"
                 + "giaBan AS donGia FROM SanPham sp "
@@ -100,7 +100,7 @@ public class ThanhToanDao {
                 + "AND pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 "
                 + "AND ISNULL(ct.ngungKinhDoanh,0)=0 "
                 + "AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date)))";
-        // matHangs: Lưu các mặt hàng; phần tử có kiểu ThanhToan.
+
         List<ChiTietHoaDon> matHangs = new ArrayList<>();
         SanPhamDAO sanPhamDAO = new SanPhamDAO();
         Map<String, Integer> tonKho = sanPhamDAO.layTonKhoTatCaSanPham();
@@ -116,7 +116,7 @@ public class ThanhToanDao {
                     String maSanPham = rs.getString("maHang");
                     if (tonKho.getOrDefault(maSanPham, 0) <= 0 || tonBanDuoc.getOrDefault(maSanPham, 0) <= 0)
                         continue;
-                    // donGia: Giá trị đơn giá dùng số thập phân chính xác để tính toán tiền/tỷ lệ.
+
                     BigDecimal donGia = rs.getBigDecimal("donGia");
                     if (donGia == null || donGia.signum() < 0) {
                         throw new SQLException("Mặt hàng " + rs.getString("maHang")

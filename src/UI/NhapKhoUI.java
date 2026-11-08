@@ -13,31 +13,35 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 public class NhapKhoUI extends JFrame {
 private final Runnable moTraCuu;
-    private static final DateTimeFormatter DINH_DANG_NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter NGAY_GIO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter NGAY_THANG = DateTimeFormatter.ofPattern("dd/MM/uuuu");
     private final JTextField txtMaPhieu = UIStyle.oChiDoc("");
     private final JTextField txtNgayNhap = UIStyle.oChiDoc("");
     private final JTextField txtNhanVien = UIStyle.oChiDoc(PhienLamViecControl.hoTen);
     private final JComboBox<NhaCungCap> cmbNhaCungCap = new JComboBox<>();
-    private final DefaultTableModel model = new DefaultTableModel(
-            new String[] { "Mã SP", "Tên mặt hàng", "Số lượng",
-                    "Đơn giá nhập", "Hạn sử dụng", "Thành tiền" },
-            0) {
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return false;
-        }
-    };
-    private final JTable tblDuLieu2 = new JTable(model);
+    private final DefaultTableModel model = modelChiDoc("Mã SP", "Tên mặt hàng", "Số lượng",
+            "Đơn giá nhập", "Hạn sử dụng", "Thành tiền");
+    private final JTable tblPhieuNhap = new JTable(model);
     private final JLabel lblTong = new JLabel("Tổng thanh toán: 0 ₫");
     private final List<ChiTietPhieuNhap> dong = new ArrayList<>();
     private LocalDateTime ngayNhap = LocalDateTime.now();
     private NhaCungCap nccHienTai = null;
     private boolean dangNapCombo = false;
     private boolean daNapDongMau = false;
+    private static DefaultTableModel modelChiDoc(String... tenCot) {
+        return new DefaultTableModel(tenCot, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+    }
+    private static String ngay(LocalDate date) { return date == null ? "—" : date.format(NGAY_THANG); }
+    private static void trongSuot(JComponent... thanhPhan) {
+        for (JComponent item : thanhPhan) item.setOpaque(false);
+    }
     public NhapKhoUI() {
         this(() -> {
         });
@@ -47,11 +51,11 @@ private final Runnable moTraCuu;
         setLayout(new BorderLayout(0, 12));
         getContentPane().setBackground(UIStyle.LIGHT_BLUE);
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(20, 25, 20, 25));
-        JLabel lblTieuDe2 = new JLabel("Lập phiếu nhập hàng");
-        lblTieuDe2.setFont(UIStyle.font(Font.BOLD, 26));
+        JLabel lblTieuDe = new JLabel("Lập phiếu nhập hàng");
+        lblTieuDe.setFont(UIStyle.font(Font.BOLD, 26));
         JPanel pnlPhanDau = new JPanel(new BorderLayout(0, 12));
-        pnlPhanDau.setOpaque(false);
-        pnlPhanDau.add(lblTieuDe2, BorderLayout.NORTH);
+        trongSuot(pnlPhanDau);
+        pnlPhanDau.add(lblTieuDe, BorderLayout.NORTH);
         pnlPhanDau.add(taoThongTinPhieu(), BorderLayout.CENTER);
         add(pnlPhanDau, BorderLayout.NORTH);
         add(taoPhanChiTiet(), BorderLayout.CENTER);
@@ -67,7 +71,7 @@ private final Runnable moTraCuu;
         btnThemNcc.setToolTipText("Thêm nhà cung cấp mới");
         btnThemNcc.addActionListener(e -> themNhaCungCapMoi());
         JPanel pnlHangNcc = new JPanel(new BorderLayout(6, 0));
-        pnlHangNcc.setOpaque(false);
+        trongSuot(pnlHangNcc);
         pnlHangNcc.add(cmbNhaCungCap, BorderLayout.CENTER);
         pnlHangNcc.add(btnThemNcc, BorderLayout.EAST);
         themHang(pnlThe, 0, "Mã phiếu", txtMaPhieu, "Ngày nhập", txtNgayNhap);
@@ -75,27 +79,21 @@ private final Runnable moTraCuu;
         return pnlThe;
     }
     private void themHang(JPanel pnlThe, int dong, String nhan1, JComponent c1,
-            String nhan2, JComponent c2) {
-        GridBagConstraints g = new GridBagConstraints();
-        g.gridy = dong;
-        g.anchor = GridBagConstraints.WEST;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.gridx = 0;
-        g.weightx = 0;
-        g.insets = new Insets(8, 5, 8, 25);
-        pnlThe.add(UIStyle.nhan(nhan1), g);
-        g.gridx = 1;
-        g.weightx = 1;
-        g.insets = new Insets(8, 0, 8, 40);
-        pnlThe.add(c1, g);
-        g.gridx = 2;
-        g.weightx = 0;
-        g.insets = new Insets(8, 0, 8, 25);
-        pnlThe.add(UIStyle.nhan(nhan2), g);
-        g.gridx = 3;
-        g.weightx = 1;
-        g.insets = new Insets(8, 0, 8, 5);
-        pnlThe.add(c2, g);
+            String nhanPhai, JComponent thanhPhanPhai) {
+        themO(pnlThe, dong, 0, UIStyle.nhan(nhan1), 0, new Insets(8, 5, 8, 25));
+        themO(pnlThe, dong, 1, c1, 1, new Insets(8, 0, 8, 40));
+        themO(pnlThe, dong, 2, UIStyle.nhan(nhanPhai), 0, new Insets(8, 0, 8, 25));
+        themO(pnlThe, dong, 3, thanhPhanPhai, 1, new Insets(8, 0, 8, 5));
+    }
+    private void themO(JPanel panel, int hang, int cot, JComponent component, double trongSo, Insets le) {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = hang;
+        gbc.gridx = cot;
+        gbc.weightx = trongSo;
+        gbc.insets = le;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(component, gbc);
     }
     private JPanel taoPhanChiTiet() {
         JPanel pnlThe = UIStyle.the();
@@ -109,21 +107,21 @@ private final Runnable moTraCuu;
         JButton btnTraCuu = UIStyle.nutPhu("Tra cứu nhập kho");
         btnTraCuu.addActionListener(e -> moTraCuu.run());
         JPanel pnlNhomTrai = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        pnlNhomTrai.setOpaque(false);
+        trongSuot(pnlNhomTrai);
         pnlNhomTrai.add(btnThem);
         pnlNhomTrai.add(btnXoaDong);
         pnlNhomTrai.add(btnNhap);
         pnlNhomTrai.add(btnTraCuu);
-        UIStyle.taoBang(tblDuLieu2, 2, 3, 4);
+        UIStyle.taoBang(tblPhieuNhap, 2, 3, 4);
         JLabel lblHuongDanPdf = new JLabel("Xuất PDF: Tra cứu nhập kho → Xem chi tiết");
         lblHuongDanPdf.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         lblHuongDanPdf.setForeground(new Color(85, 101, 120));
         JPanel pnlThanhCongCu = new JPanel(new BorderLayout());
-        pnlThanhCongCu.setOpaque(false);
+        trongSuot(pnlThanhCongCu);
         pnlThanhCongCu.add(pnlNhomTrai, BorderLayout.WEST);
         pnlThanhCongCu.add(lblHuongDanPdf, BorderLayout.EAST);
         pnlThe.add(pnlThanhCongCu, BorderLayout.NORTH);
-        pnlThe.add(UIStyle.cuon(tblDuLieu2), BorderLayout.CENTER);
+        pnlThe.add(UIStyle.cuon(tblPhieuNhap), BorderLayout.CENTER);
         return pnlThe;
     }
     private JPanel taoPhanCuoi() {
@@ -132,15 +130,15 @@ private final Runnable moTraCuu;
         JButton btnHoanTat = UIStyle.nutXanh("Hoàn tất nhập kho");
         btnLuuNhap.addActionListener(e -> luuPhieuNhap(false));
         btnHoanTat.addActionListener(e -> luuPhieuNhap(true));
-        JPanel pnlNut2 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        pnlNut2.setOpaque(false);
-        pnlNut2.add(btnLuuNhap);
-        pnlNut2.add(btnHoanTat);
-        JPanel pnlKhung2 = new JPanel(new BorderLayout());
-        pnlKhung2.setOpaque(false);
-        pnlKhung2.add(lblTong, BorderLayout.WEST);
-        pnlKhung2.add(pnlNut2, BorderLayout.EAST);
-        return pnlKhung2;
+        JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        trongSuot(pnlNut);
+        pnlNut.add(btnLuuNhap);
+        pnlNut.add(btnHoanTat);
+        JPanel pnlKhung = new JPanel(new BorderLayout());
+        trongSuot(pnlKhung);
+        pnlKhung.add(lblTong, BorderLayout.WEST);
+        pnlKhung.add(pnlNut, BorderLayout.EAST);
+        return pnlKhung;
     }
     public void napLai() {
         napNhaCungCap(null);
@@ -205,7 +203,7 @@ private final Runnable moTraCuu;
             UIStyle.loi(this, ex);
         }
         ngayNhap = LocalDateTime.now();
-        txtNgayNhap.setText(ngayNhap.format(DINH_DANG_NGAY));
+        txtNgayNhap.setText(ngayNhap.format(NGAY_GIO));
         txtNhanVien.setText(PhienLamViecControl.hoTen);
         dong.clear();
         capNhatBangChiTietPhieuNhap();
@@ -220,7 +218,7 @@ private final Runnable moTraCuu;
                     ct.getSoLuongNhap(),
                     UIStyle.tien(ct.getDonGiaNhap()),
                     ct.getHanSuDung() == null ? "—"
-                            : ct.getHanSuDung().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                            : ngay(ct.getHanSuDung()),
                     UIStyle.tien(ct.getThanhTien())
             });
             tong += ct.getThanhTien();
@@ -258,11 +256,7 @@ private final Runnable moTraCuu;
             winDlg.setVisible(true);
             NhaCungCap moi = winDlg.getKetQua();
             if (moi != null) {
-                if (dong.isEmpty()) {
-                    napNhaCungCap(moi.getMaNhaCungCap());
-                } else {
-                    napNhaCungCap(null);
-                }
+                napNhaCungCap(dong.isEmpty() ? moi.getMaNhaCungCap() : null);
             }
         } catch (Exception ex) {
             UIStyle.loi(this, ex);
@@ -310,7 +304,7 @@ private final Runnable moTraCuu;
         }
     }
     private void xoaSanPhamKhoiPhieuNhap() {
-        int row = tblDuLieu2.getSelectedRow();
+        int row = tblPhieuNhap.getSelectedRow();
         if (row < 0) {
             UIStyle.canhBao(this, "Vui lòng chọn dòng cần xóa.");
             return;
@@ -330,7 +324,7 @@ private final Runnable moTraCuu;
                 napNhaCungCap(canSua.getMaNhaCungCap());
                 txtMaPhieu.setText(canSua.getMaPhieuNhap());
                 ngayNhap = canSua.getNgayNhap() == null ? LocalDateTime.now() : canSua.getNgayNhap();
-                txtNgayNhap.setText(ngayNhap.format(DINH_DANG_NGAY));
+                txtNgayNhap.setText(ngayNhap.format(NGAY_GIO));
                 txtNhanVien.setText(canSua.getMaNhanVien());
                 dong.clear();
                 dong.addAll(NhapKhoControl.layChiTietPhieuNhap(canSua.getMaPhieuNhap()));
@@ -355,10 +349,6 @@ private final Runnable moTraCuu;
             UIStyle.canhBao(this, "Chưa tạo được mã phiếu. Vui lòng tải lại màn hình.");
             return;
         }
-        if (maPhieu.length() > 10) {
-            UIStyle.canhBao(this, "Mã phiếu tối đa 10 ký tự.");
-            return;
-        }
         if (dong.isEmpty()) {
             UIStyle.canhBao(this, "Phiếu chưa có mặt hàng nào.");
             return;
@@ -375,9 +365,8 @@ private final Runnable moTraCuu;
                 ncc.getMaNhaCungCap());
         try {
             if (!NhapKhoControl.luuPhieuNhap(phieu, dong)) throw new IllegalStateException("Không lưu được phiếu nhập.");
-            UIStyle.thongBao(this, hoanTatPhieuNhap
-                    ? "Đã nhập kho phiếu " + phieu.getMaPhieuNhap() + "."
-                    : "Đã lưu nháp phiếu " + phieu.getMaPhieuNhap() + ".");
+            String ketQua = hoanTatPhieuNhap ? "Đã nhập kho phiếu " : "Đã lưu nháp phiếu ";
+            UIStyle.thongBao(this, ketQua + phieu.getMaPhieuNhap() + ".");
             taoPhieuNhapMoi();
         } catch (Exception ex) {
             UIStyle.loi(this, ex);
@@ -392,33 +381,32 @@ private final Runnable moTraCuu;
         private NhaCungCap ketQua = null;
         public NhaCungCapDialog(Window winCha, String maMoi) {
             super(winCha, "Thêm nhà cung cấp", ModalityType.APPLICATION_MODAL);
-            JPanel pnlForm2 = new JPanel(new GridBagLayout());
-            pnlForm2.setBorder(new EmptyBorder(20, 25, 10, 25));
-            UIStyle.hang(pnlForm2, 0, "Mã NCC", txtMa, false);
-            UIStyle.hang(pnlForm2, 1, "Tên NCC", txtTen, false);
-            UIStyle.hang(pnlForm2, 2, "Số điện thoại", txtSdt, false);
-            UIStyle.hang(pnlForm2, 3, "Email", txtEmail, false);
-            UIStyle.hang(pnlForm2, 4, "Địa chỉ", txtDiaChi, false);
+            JPanel pnlForm = new JPanel(new GridBagLayout());
+            pnlForm.setBorder(new EmptyBorder(20, 25, 10, 25));
+            UIStyle.hang(pnlForm, 0, "Mã NCC", txtMa, false);
+            UIStyle.hang(pnlForm, 1, "Tên NCC", txtTen, false);
+            UIStyle.hang(pnlForm, 2, "Số điện thoại", txtSdt, false);
+            UIStyle.hang(pnlForm, 3, "Email", txtEmail, false);
+            UIStyle.hang(pnlForm, 4, "Địa chỉ", txtDiaChi, false);
             txtMa.setText(maMoi);
             JButton btnHuy = UIStyle.nutPhu("Hủy");
             JButton btnLuu = UIStyle.nutXanh("Lưu");
             btnHuy.addActionListener(e -> dispose());
-            btnLuu.addActionListener(e -> luuPhieuNhap());
-            JPanel pnlNut2 = UIStyle.hangNut(btnHuy, btnLuu);
-            pnlNut2.setBorder(new EmptyBorder(5, 25, 20, 25));
+            btnLuu.addActionListener(e -> luuNhaCungCap());
+            JPanel pnlNut = UIStyle.hangNut(btnHuy, btnLuu);
+            pnlNut.setBorder(new EmptyBorder(5, 25, 20, 25));
             setLayout(new BorderLayout());
-            add(pnlForm2, BorderLayout.CENTER);
-            add(pnlNut2, BorderLayout.SOUTH);
+            add(pnlForm, BorderLayout.CENTER);
+            add(pnlNut, BorderLayout.SOUTH);
             getRootPane().setDefaultButton(btnLuu);
             pack();
             setResizable(false);
             setLocationRelativeTo(winCha);
         }
-        private String chuyenChuoiRongThanhNull(String s) {
-            s = s.trim();
+        private static String chuyenChuoiRongThanhNull(String s) {
             return s.isEmpty() ? null : s;
         }
-        private void luuPhieuNhap() {
+        private void luuNhaCungCap() {
             String ma = txtMa.getText().trim();
             String ten = txtTen.getText().trim();
             String sdt = txtSdt.getText().trim();
@@ -477,21 +465,20 @@ private final Runnable moTraCuu;
                     txtDonGia.setText(String.valueOf((long) sp.getGiaNhap()));
                 }
             });
-            JPanel pnlForm2 = new JPanel(new GridBagLayout());
-            pnlForm2.setBorder(new EmptyBorder(20, 25, 10, 25));
-            UIStyle.hang(pnlForm2, 0, "Sản phẩm", cmbSanPham, false);
-            UIStyle.hang(pnlForm2, 1, "Số lượng nhập", spnSoLuong, false);
-            UIStyle.hang(pnlForm2, 2, "Đơn giá nhập", txtDonGia, false);
+            JPanel pnlForm = new JPanel(new GridBagLayout());
+            pnlForm.setBorder(new EmptyBorder(20, 25, 10, 25));
+            UIStyle.hang(pnlForm, 0, "Sản phẩm", cmbSanPham, false);
+            UIStyle.hang(pnlForm, 1, "Số lượng nhập", spnSoLuong, false);
+            UIStyle.hang(pnlForm, 2, "Đơn giá nhập", txtDonGia, false);
             JPanel pnlHanSuDung = new JPanel(new BorderLayout(5, 0));
-            pnlHanSuDung.setOpaque(false);
+            trongSuot(pnlHanSuDung);
             JButton btnChonNgay = UIStyle.nutPhu("Chọn ngày");
             btnChonNgay.setToolTipText("Mở lịch để chọn hạn sử dụng");
             btnChonNgay.addActionListener(e -> chonHanSuDungSanPham(btnChonNgay));
             pnlHanSuDung.add(txtHanSuDung, BorderLayout.CENTER);
             pnlHanSuDung.add(btnChonNgay, BorderLayout.EAST);
-            UIStyle.hang(pnlForm2, 3, "Hạn sử dụng (tùy chọn)", pnlHanSuDung, false);
+            UIStyle.hang(pnlForm, 3, "Hạn sử dụng (tùy chọn)", pnlHanSuDung, false);
             if (cmbSanPham.getItemCount() > 0) {
-                cmbSanPham.setSelectedIndex(0);
                 txtDonGia.setText(String.valueOf(
                         (long) dsSanPham.get(0).getGiaNhap()));
             }
@@ -499,11 +486,11 @@ private final Runnable moTraCuu;
             JButton btnThem = UIStyle.nutXanh("Thêm vào phiếu");
             btnHuy.addActionListener(e -> dispose());
             btnThem.addActionListener(e -> themChiTietPhieuNhap());
-            JPanel pnlNut2 = UIStyle.hangNut(btnHuy, btnThem);
-            pnlNut2.setBorder(new EmptyBorder(5, 25, 20, 25));
+            JPanel pnlNut = UIStyle.hangNut(btnHuy, btnThem);
+            pnlNut.setBorder(new EmptyBorder(5, 25, 20, 25));
             setLayout(new BorderLayout());
-            add(pnlForm2, BorderLayout.CENTER);
-            add(pnlNut2, BorderLayout.SOUTH);
+            add(pnlForm, BorderLayout.CENTER);
+            add(pnlNut, BorderLayout.SOUTH);
             getRootPane().setDefaultButton(btnThem);
             pack();
             setMinimumSize(new Dimension(420, getHeight()));
@@ -527,16 +514,14 @@ private final Runnable moTraCuu;
                 UIStyle.canhBao(this, "Đơn giá nhập phải lớn hơn 0.");
                 return;
             }
-            java.time.LocalDate han = null;
+            LocalDate han;
             try {
-                if (!txtHanSuDung.getText().trim().isEmpty())
-                    han = java.time.LocalDate.parse(txtHanSuDung.getText().trim(),
-                            java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu"));
-            } catch (java.time.format.DateTimeParseException e) {
+                han = docHanSuDung();
+            } catch (DateTimeParseException e) {
                 UIStyle.canhBao(this, "Hạn sử dụng phải theo định dạng dd/MM/yyyy.");
                 return;
             }
-            if (han != null && han.isBefore(java.time.LocalDate.now())) {
+            if (han != null && han.isBefore(LocalDate.now())) {
                 UIStyle.canhBao(this, "Hạn sử dụng không thể ở quá khứ.");
                 return;
             }
@@ -549,43 +534,34 @@ private final Runnable moTraCuu;
             ketQua = ct;
             dispose();
         }
+        private LocalDate docHanSuDung() {
+            String text = txtHanSuDung.getText().trim();
+            return text.isEmpty() ? null : LocalDate.parse(text, NGAY_THANG);
+        }
         public ChiTietPhieuNhap getKetQua() {
             return ketQua;
         }
         private void chonHanSuDungSanPham(Component anchor) {
             LocalDate selected = null;
             try {
-                if (!txtHanSuDung.getText().trim().isEmpty()) {
-                    selected = LocalDate.parse(txtHanSuDung.getText().trim(),
-                            DateTimeFormatter.ofPattern("dd/MM/uuuu"));
-                }
-            } catch (java.time.format.DateTimeParseException ignored) {
+                selected = docHanSuDung();
+            } catch (DateTimeParseException ignored) {
             }
             LocalDate date = LichChonNgay.chonNgayLichHen(anchor, selected, false);
-            if (date != null) {
-                txtHanSuDung.setText(date.format(DateTimeFormatter.ofPattern("dd/MM/uuuu")));
-            }
+            if (date != null) txtHanSuDung.setText(date.format(NGAY_THANG));
         }
     }
     private static class PhieuNhapNhapDialog extends JDialog {
-        private static final DateTimeFormatter NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        private final DefaultTableModel model = new DefaultTableModel(
-                new String[] { "Mã phiếu", "Ngày lập", "Nhà cung cấp",
-                        "Số mặt hàng", "Tổng tiền" },
-                0) {
-            @Override
-            public boolean isCellEditable(int row, int col) {
-                return false;
-            }
-        };
-        private final JTable tblDuLieu2 = new JTable(model);
+        private final DefaultTableModel model = modelChiDoc("Mã phiếu", "Ngày lập", "Nhà cung cấp",
+                "Số mặt hàng", "Tổng tiền");
+        private final JTable tblPhieuNhap = new JTable(model);
         private ArrayList<PhieuNhapKho> ds = new ArrayList<>();
         private boolean coThayDoi = false;
         private PhieuNhapKho phieuSua;
         public PhieuNhapNhapDialog(Window winCha) {
             super(winCha, "Phiếu nhập đang lưu nháp", ModalityType.APPLICATION_MODAL);
-            UIStyle.taoBang(tblDuLieu2, 3, 4);
-            JScrollPane scrCuon = UIStyle.cuon(tblDuLieu2);
+            UIStyle.taoBang(tblPhieuNhap, 3, 4);
+            JScrollPane scrCuon = UIStyle.cuon(tblPhieuNhap);
             scrCuon.setPreferredSize(new Dimension(700, 280));
             JButton btnHoanTat = UIStyle.nutXanh("Hoàn tất nhập kho");
             JButton btnSua = UIStyle.nutChinh("Sửa / tiếp tục");
@@ -595,17 +571,17 @@ private final Runnable moTraCuu;
             btnSua.addActionListener(e -> suaPhieuNhap());
             btnXoa.addActionListener(e -> xoaPhieuNhap());
             btnDong.addActionListener(e -> dispose());
-            JPanel pnlNut2 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-            pnlNut2.setOpaque(false);
-            pnlNut2.add(btnHoanTat);
-            pnlNut2.add(btnSua);
-            pnlNut2.add(btnXoa);
-            pnlNut2.add(btnDong);
-            JPanel pnlNoiDung2 = new JPanel(new BorderLayout(0, 12));
-            pnlNoiDung2.setBorder(new EmptyBorder(18, 20, 18, 20));
-            pnlNoiDung2.add(scrCuon, BorderLayout.CENTER);
-            pnlNoiDung2.add(pnlNut2, BorderLayout.SOUTH);
-            setContentPane(pnlNoiDung2);
+            JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+            trongSuot(pnlNut);
+            pnlNut.add(btnHoanTat);
+            pnlNut.add(btnSua);
+            pnlNut.add(btnXoa);
+            pnlNut.add(btnDong);
+            JPanel pnlNoiDung = new JPanel(new BorderLayout(0, 12));
+            pnlNoiDung.setBorder(new EmptyBorder(18, 20, 18, 20));
+            pnlNoiDung.add(scrCuon, BorderLayout.CENTER);
+            pnlNoiDung.add(pnlNut, BorderLayout.SOUTH);
+            setContentPane(pnlNoiDung);
             pack();
             setLocationRelativeTo(winCha);
             napDanhSachPhieuNhap();
@@ -617,7 +593,7 @@ private final Runnable moTraCuu;
                 for (PhieuNhapKho p : ds) {
                     model.addRow(new Object[] {
                             p.getMaPhieuNhap(),
-                            p.getNgayNhap() == null ? "" : p.getNgayNhap().format(NGAY),
+                            p.getNgayNhap() == null ? "" : p.getNgayNhap().format(NGAY_GIO),
                             p.getTenNhaCungCap(),
                             p.getSoMatHang(),
                             UIStyle.tien(p.getTongTien())
@@ -628,7 +604,7 @@ private final Runnable moTraCuu;
             }
         }
         private PhieuNhapKho layPhieuNhapDangChon() {
-            int row = tblDuLieu2.getSelectedRow();
+            int row = tblPhieuNhap.getSelectedRow();
             if (row < 0) {
                 UIStyle.canhBao(this, "Vui lòng chọn một phiếu nháp trong bảng.");
                 return null;

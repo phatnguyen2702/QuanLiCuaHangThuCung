@@ -17,9 +17,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Tầng xử lý dữ liệu và quy tắc của Trang chủ; không tạo hay điều khiển JPanel.
- */
+
+
+
 public final class TrangChuControl {
     public void kiemTraPhien(String maNV, String vaiTro) {
         if (maNV == null || maNV.isBlank()
