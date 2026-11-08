@@ -15,18 +15,18 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-/**
- * Màn hình quản lý khách hàng.
- * UI chỉ: vẽ giao diện, lấy dữ liệu từ ô nhập, gọi KhachHangControl,
- * rồi hiện JOptionPane theo KhachHangControl.KetQua.
- */
+
+
+
+
+
 public class QuanLyKhachHangUI extends JPanel {
 
     private static final String[] COLS = { "Mã KH", "Họ tên", "Số điện thoại", "Số thú cưng", "Tổng chi" };
 
     private final KhachHangControl control = new KhachHangControl();
 
-    // --- Thanh tìm kiếm + bảng ---
+
     private final JTextField txtTim = UIStyle.o(16);
     private final JLabel lblDem = UIStyle.nhan("0 khách hàng");
 
@@ -38,10 +38,10 @@ public class QuanLyKhachHangUI extends JPanel {
     };
     private final JTable tblDuLieu = new JTable(model);
 
-    /** Danh sách đang hiển thị (dòng i của bảng ứng với phần tử i). */
+
     private ArrayList<KhachHang> dsHienThi = new ArrayList<>();
 
-    // --- Khung thông tin chi tiết bên dưới bảng ---
+
     private final CardLayout cardChiTiet = new CardLayout();
     private final JPanel pnlKhungChiTiet = new JPanel(cardChiTiet);
     private final JLabel lblMa = taoNhanGiaTri();
@@ -73,9 +73,9 @@ public class QuanLyKhachHangUI extends JPanel {
         taiLai(null);
     }
 
-    // =====================================================================
-    // VẼ GIAO DIỆN
-    // =====================================================================
+
+
+
 
     private JPanel taoTieuDe() {
         JLabel lblTieuDe = new JLabel("Quản lý khách hàng");
@@ -128,14 +128,14 @@ public class QuanLyKhachHangUI extends JPanel {
             tblDuLieu.getColumnModel().getColumn(i).setPreferredWidth(doRong[i]);
         }
 
-        // Chọn dòng -> hiện chi tiết
+
         tblDuLieu.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 hienThongTin();
             }
         });
 
-        // Nhấp đúp -> sửa
+
         tblDuLieu.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -147,7 +147,7 @@ public class QuanLyKhachHangUI extends JPanel {
     }
 
     private JPanel taoPhanChiTiet() {
-        // Trang "chưa chọn ai"
+
         JLabel lblGoiY = new JLabel("Chọn một khách hàng trong bảng để xem thông tin chi tiết.");
         lblGoiY.setFont(UIStyle.font(Font.PLAIN, 13));
         lblGoiY.setForeground(Color.GRAY);
@@ -156,7 +156,7 @@ public class QuanLyKhachHangUI extends JPanel {
         pnlTrong.setOpaque(false);
         pnlTrong.add(lblGoiY);
 
-        // Trang "đã chọn": 4 ô thông tin + danh sách thú cưng
+
         JPanel pnlLuoi = new JPanel(new GridLayout(2, 3, 18, 8));
         pnlLuoi.setOpaque(false);
         pnlLuoi.add(taoCapThongTin("Mã khách hàng", lblMa));
@@ -202,7 +202,7 @@ public class QuanLyKhachHangUI extends JPanel {
         return lbl;
     }
 
-    /** Một ô gồm tiêu đề nhỏ màu xám và giá trị bên dưới. */
+
     private static JPanel taoCapThongTin(String tieuDe, JLabel lblGiaTri) {
         JLabel lblTieuDe = new JLabel(tieuDe);
         lblTieuDe.setFont(UIStyle.font(Font.PLAIN, 12));
@@ -219,9 +219,9 @@ public class QuanLyKhachHangUI extends JPanel {
         return pnl;
     }
 
-    // =====================================================================
-    // HIỂN THỊ DỮ LIỆU
-    // =====================================================================
+
+
+
 
     private KhachHang dongDangChon() {
         int row = tblDuLieu.getSelectedRow();
@@ -236,7 +236,7 @@ public class QuanLyKhachHangUI extends JPanel {
         return k == null ? null : k.getMaKhachHang();
     }
 
-    /** Tải lại bảng theo từ khóa đang nhập; chọn lại dòng có mã chonMa (nếu có). */
+
     public void taiLai(String chonMa) {
         dsHienThi = control.timKiem(txtTim.getText());
 
@@ -291,7 +291,7 @@ public class QuanLyKhachHangUI extends JPanel {
         cardChiTiet.show(pnlKhungChiTiet, "CO");
     }
 
-    /** Ghép danh sách thú cưng { tên, loại, giống, giới tính, cân nặng } thành 1 đoạn HTML ngắn. */
+
     private static String moTaThuCung(ArrayList<String[]> ds) {
         if (ds.isEmpty()) {
             return "Chưa có thú cưng nào.";
@@ -320,7 +320,7 @@ public class QuanLyKhachHangUI extends JPanel {
         return sb.append("</body></html>").toString();
     }
 
-    /** Tránh tên thú cưng có ký tự < > & làm hỏng HTML. */
+
     private static String html(String s) {
         if (s == null) {
             return "";
@@ -328,9 +328,9 @@ public class QuanLyKhachHangUI extends JPanel {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    // =====================================================================
-    // HÀNH ĐỘNG (sửa / xóa / mở hộp thoại) - dùng JOptionPane
-    // =====================================================================
+
+
+
 
     private void sua() {
         KhachHang k = dongDangChon();
@@ -364,7 +364,7 @@ public class QuanLyKhachHangUI extends JPanel {
         }
     }
 
-    /** goc = null: thêm mới; goc != null: sửa khách hàng đó. */
+
     private void moDialog(KhachHang goc) {
         KhachHangDialog dlg = new KhachHangDialog(SwingUtilities.getWindowAncestor(this), goc, control);
         dlg.setVisible(true);
@@ -378,7 +378,7 @@ public class QuanLyKhachHangUI extends JPanel {
         JOptionPane.showMessageDialog(cha, noiDung, "Thông báo", JOptionPane.WARNING_MESSAGE);
     }
 
-    /** Hiện JOptionPane theo kết quả Control trả về: thành công -> thông tin, thất bại -> cảnh báo. */
+
     private static void hienKetQua(Component cha, KhachHangControl.KetQua kq) {
         if (kq.isThanhCong()) {
             JOptionPane.showMessageDialog(cha, kq.getThongBao(), "Thành công",
@@ -389,9 +389,9 @@ public class QuanLyKhachHangUI extends JPanel {
         }
     }
 
-    // =====================================================================
-    // HỘP THOẠI THÊM / SỬA KHÁCH HÀNG
-    // =====================================================================
+
+
+
 
     public static class KhachHangDialog extends JDialog {
 
@@ -405,7 +405,7 @@ public class QuanLyKhachHangUI extends JPanel {
         private static final Font F_NHAN = new Font("Segoe UI", Font.BOLD, 12);
 
         private final KhachHangControl control;
-        private final KhachHang goc; // null = đang thêm mới
+        private final KhachHang goc;
 
         private boolean daLuu = false;
         private String maDaLuu = null;
@@ -413,7 +413,7 @@ public class QuanLyKhachHangUI extends JPanel {
         private final JTextField txtTen = new JTextField();
         private final JTextField txtSdt = new JTextField();
 
-        private final JPanel pnlThuCung = new JPanel();          // chứa các dòng thú cưng
+        private final JPanel pnlThuCung = new JPanel();
         private final ArrayList<PetRow> cacDong = new ArrayList<>();
 
         public KhachHangDialog(Window cha, KhachHang goc, KhachHangControl control) {
@@ -429,7 +429,7 @@ public class QuanLyKhachHangUI extends JPanel {
             kieuO(txtTen);
             kieuO(txtSdt);
 
-            // --- Phần thân ---
+
             JPanel pnlThan = new JPanel();
             pnlThan.setLayout(new BoxLayout(pnlThan, BoxLayout.Y_AXIS));
             pnlThan.setOpaque(false);
@@ -441,14 +441,14 @@ public class QuanLyKhachHangUI extends JPanel {
             themVao(pnlThan, taoHaiCot(taoCot("Họ và tên: *", txtTen), taoCot("Số điện thoại: *", txtSdt)));
 
             if (goc == null) {
-                taoPhanThuCung(pnlThan); // chỉ khi thêm mới mới nhập thú cưng
+                taoPhanThuCung(pnlThan);
             }
 
             JPanel pnlTren = new JPanel(new BorderLayout());
             pnlTren.setOpaque(false);
             pnlTren.add(pnlThan, BorderLayout.NORTH);
 
-            // --- Hàng nút ---
+
             JButton btnHuy = taoNut("Hủy", new Color(138, 144, 153));
             JButton btnLuu = taoNut(goc == null ? "Thêm mới" : "Lưu thay đổi", NAVY);
             btnHuy.addActionListener(e -> dispose());
@@ -480,9 +480,9 @@ public class QuanLyKhachHangUI extends JPanel {
             return maDaLuu;
         }
 
-        // ---------------------------------------------------------------
-        // Lưu: lấy dữ liệu từ ô nhập -> gọi Control -> hiện JOptionPane
-        // ---------------------------------------------------------------
+
+
+
         private void luu() {
             KhachHangControl.KetQua kq;
 
@@ -505,9 +505,9 @@ public class QuanLyKhachHangUI extends JPanel {
             }
         }
 
-        // ---------------------------------------------------------------
-        // Phần nhập thú cưng (chỉ hiện khi thêm mới)
-        // ---------------------------------------------------------------
+
+
+
         private void taoPhanThuCung(JPanel pnlThan) {
             pnlThuCung.setLayout(new BoxLayout(pnlThuCung, BoxLayout.Y_AXIS));
             pnlThuCung.setOpaque(false);
@@ -541,7 +541,7 @@ public class QuanLyKhachHangUI extends JPanel {
             pnlThuCung.repaint();
         }
 
-        /** Một dòng nhập thú cưng. */
+
         private class PetRow extends JPanel {
 
             private final JTextField txtTenTC = new JTextField();
@@ -584,7 +584,7 @@ public class QuanLyKhachHangUI extends JPanel {
                 add(pnlXoa);
             }
 
-            /** Dữ liệu thô của dòng: { tên, loại, giống, giới tính, cân nặng } (đúng thứ tự Control cần). */
+
             String[] layDuLieu() {
                 return new String[] {
                         txtTenTC.getText(),
@@ -595,9 +595,9 @@ public class QuanLyKhachHangUI extends JPanel {
             }
         }
 
-        // ---------------------------------------------------------------
-        // Hàm dựng giao diện nhỏ
-        // ---------------------------------------------------------------
+
+
+
         private static JPanel taoCot(String nhan, JComponent c) {
             JLabel lbl = new JLabel(nhan);
             lbl.setFont(F_NHAN);

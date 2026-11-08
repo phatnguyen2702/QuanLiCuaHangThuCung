@@ -3,6 +3,7 @@ import ConnectDB.connectDB;
 import control.PhanQuyenControl;
 import entity.DanhMuc;
 import entity.NhaCungCap;
+import entity.PhieuNhapKho;
 import entity.SanPham;
 import java.sql.*;
 import java.time.LocalDate;
@@ -277,12 +278,19 @@ public class SanPhamDAO {
                 sp.setTenSanPham(rs.getString("tenSanPham"));
                 sp.setGiaNhap(rs.getDouble("donGiaNhap"));
                 sp.setGiaBan(rs.getDouble("giaBan"));
-                sp.setMaDanhMuc(rs.getString("maDanhMuc"));
-                sp.setTenDanhMuc(rs.getString("tenDanhMuc"));
-                sp.setMaNhaCungCap(rs.getString("maNhaCungCap"));
-                sp.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
-                sp.setMaPhieuNhap(rs.getString("maPhieuNhap"));
-                sp.setNgayNhap(toLocalDate(rs.getTimestamp("ngayNhap")));
+                DanhMuc danhMuc = new DanhMuc(rs.getString("maDanhMuc"), rs.getString("tenDanhMuc"), null);
+                NhaCungCap nhaCungCap = new NhaCungCap(rs.getString("maNhaCungCap"),
+                        rs.getString("tenNhaCungCap"), null, null, null);
+                sp.setDanhMuc(danhMuc);
+                sp.setTenDanhMuc(danhMuc.getTenDanhMuc());
+                sp.setNhaCungCap(nhaCungCap);
+                sp.setTenNhaCungCap(nhaCungCap.getTenNhaCungCap());
+                PhieuNhapKho phieuNhap = new PhieuNhapKho();
+                phieuNhap.setMaPhieuNhap(rs.getString("maPhieuNhap"));
+                Timestamp ngayNhap = rs.getTimestamp("ngayNhap");
+                phieuNhap.setNgayNhap(ngayNhap == null ? null : ngayNhap.toLocalDateTime());
+                sp.setPhieuNhapKho(phieuNhap);
+                sp.setNgayNhap(toLocalDate(ngayNhap));
                 sp.setHanSuDung(toLocalDate(rs.getDate("hanSuDung")));
                 sp.setNgungKinhDoanh(rs.getBoolean("ngungKinhDoanh"));
                 lots.add(new LoTon(sp, rs.getInt("soLuongNhap"), rs.getInt("soLuongDaXuLy")));
@@ -586,10 +594,13 @@ public class SanPhamDAO {
         sp.setTenSanPham(rs.getString("tenSanPham"));
         sp.setGiaNhap(rs.getDouble("giaNhap"));
         sp.setGiaBan(rs.getDouble("giaBan"));
-        sp.setMaDanhMuc(rs.getString("maDanhMuc"));
-        sp.setTenDanhMuc(rs.getString("tenDanhMuc"));
-        sp.setMaNhaCungCap(rs.getString("maNhaCungCap"));
-        sp.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
+        DanhMuc danhMuc = new DanhMuc(rs.getString("maDanhMuc"), rs.getString("tenDanhMuc"), null);
+        NhaCungCap nhaCungCap = new NhaCungCap(rs.getString("maNhaCungCap"),
+                rs.getString("tenNhaCungCap"), null, null, null);
+        sp.setDanhMuc(danhMuc);
+        sp.setTenDanhMuc(danhMuc.getTenDanhMuc());
+        sp.setNhaCungCap(nhaCungCap);
+        sp.setTenNhaCungCap(nhaCungCap.getTenNhaCungCap());
         return sp;
     }
     private String taoMaMoi(String bang, String cot, String tienTo) throws SQLException {

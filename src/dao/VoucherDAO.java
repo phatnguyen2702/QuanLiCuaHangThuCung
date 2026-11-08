@@ -6,24 +6,24 @@ import entity.Voucher;
 import java.sql.*;
 import java.util.ArrayList;
 
-/**
- * DAO voucher: chỉ chạy SQL, kiểm tra phân quyền và độ dài chuỗi.
- * Kiểm tra rỗng / sai định dạng / logic ngày tháng là việc của VoucherControl.
- *
- * Quy ước: các hàm ghi (them / sua / doiTrangThai / xoa) trả về null nếu thành công,
- * ngược lại trả về câu thông báo lỗi.
- */
+
+
+
+
+
+
+
 public class VoucherDAO {
 
-    // Độ dài tối đa của cột trong CSDL (sửa lại nếu CSDL của bạn khác)
+
     private static final int MAX_TEN = 50;
     private static final int MAX_DIEU_KIEN = 255;
 
-    // =====================================================================
-    // TRUY VẤN (đọc dữ liệu)
-    // =====================================================================
 
-    /** Lấy voucher theo mã hoặc tên (để trống = lấy tất cả). */
+
+
+
+
     public ArrayList<Voucher> getAll(String tuKhoa) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
@@ -49,7 +49,7 @@ public class VoucherDAO {
                     Date kt = rs.getDate("ngayKetThuc");
 
                     int sl = rs.getInt("soLuongToiDa");
-                    Integer soLuong = rs.wasNull() ? null : sl; // cột NULL = không giới hạn
+                    Integer soLuong = rs.wasNull() ? null : sl;
 
                     Voucher v = new Voucher(
                             rs.getString("maVoucher"),
@@ -71,7 +71,7 @@ public class VoucherDAO {
         return list;
     }
 
-    /** Thống kê: [0] hóa đơn dùng voucher tháng này, [1] tổng tiền đã giảm, [2] % hóa đơn có voucher. */
+
     public double[] thongKeHoaDon() {
         double[] kq = new double[3];
 
@@ -100,11 +100,11 @@ public class VoucherDAO {
         return kq;
     }
 
-    // =====================================================================
-    // GHI DỮ LIỆU - trả về null nếu thành công
-    // =====================================================================
 
-    /** Thêm voucher. Thành công: mã mới được gán vào v (v.getMaVoucher()). */
+
+
+
+
     public String them(Voucher v) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
@@ -124,7 +124,7 @@ public class VoucherDAO {
 
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, ma);
-                ganGiaTri(ps, v, 2); // các cột còn lại bắt đầu từ dấu ? thứ 2
+                ganGiaTri(ps, v, 2);
                 ps.executeUpdate();
             }
 
@@ -137,7 +137,7 @@ public class VoucherDAO {
         }
     }
 
-    /** Sửa toàn bộ thông tin voucher (theo mã v.getMaVoucher()). */
+
     public String sua(Voucher v) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
@@ -153,7 +153,7 @@ public class VoucherDAO {
         try (Connection con = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ganGiaTri(ps, v, 1); // 7 dấu ? đầu
+            ganGiaTri(ps, v, 1);
             ps.setString(8, v.getMaVoucher());
 
             if (ps.executeUpdate() == 0) {
@@ -167,7 +167,7 @@ public class VoucherDAO {
         }
     }
 
-    /** Kích hoạt (true) hoặc hủy (false) voucher. */
+
     public String doiTrangThai(String maVoucher, boolean hoatDong) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
@@ -190,13 +190,13 @@ public class VoucherDAO {
         }
     }
 
-    /** Xóa hẳn voucher. Không xóa được nếu đã có hóa đơn dùng. */
+
     public String xoa(String maVoucher) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.VOUCHER);
 
         try (Connection con = ConnectDB.connectDB.getConnection()) {
 
-            // 1. Đã có hóa đơn dùng voucher này chưa?
+
             try (PreparedStatement ps = con.prepareStatement(
                     "SELECT COUNT(*) FROM HoaDon WHERE maVoucher = ?")) {
                 ps.setString(1, maVoucher);
@@ -209,7 +209,7 @@ public class VoucherDAO {
                 }
             }
 
-            // 2. Chưa ai dùng -> xóa
+
             try (PreparedStatement ps = con.prepareStatement(
                     "DELETE FROM Vocher WHERE maVoucher = ?")) {
                 ps.setString(1, maVoucher);
@@ -223,9 +223,9 @@ public class VoucherDAO {
         }
     }
 
-    // =====================================================================
-    // HÀM PHỤ (private)
-    // =====================================================================
+
+
+
 
     private String kiemTraDoDai(Voucher v) {
         if (v.getTenVoucher() != null && v.getTenVoucher().length() > MAX_TEN) {
@@ -237,10 +237,10 @@ public class VoucherDAO {
         return null;
     }
 
-    /**
-     * Gán 7 giá trị (tên, %, điều kiện, trạng thái, ngày bắt đầu, ngày kết thúc, số lượt)
-     * vào PreparedStatement, bắt đầu từ dấu ? thứ batDau. Dùng chung cho them() và sua().
-     */
+
+
+
+
     private void ganGiaTri(PreparedStatement ps, Voucher v, int batDau) throws SQLException {
         int i = batDau;
 
@@ -268,7 +268,7 @@ public class VoucherDAO {
         }
     }
 
-    /** Sinh mã kế tiếp, ví dụ VC001 -> VC002. */
+
     private String taoMa(Connection con) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
                 "SELECT MAX(maVoucher) FROM Vocher WHERE maVoucher LIKE 'VC%'");

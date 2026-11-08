@@ -1,6 +1,6 @@
 package entity;
 
-/** Khách hàng của cửa hàng. */
+
 public class KhachHang {
 
     private String maKhachHang;
@@ -10,11 +10,11 @@ public class KhachHang {
     private String diaChi;
     private int diemTichLuy;
 
-    // Các trường chỉ dùng để hiển thị trên bảng (DAO tính sẵn khi truy vấn)
-    private String thuCung;   // số thú cưng
+
+    private String thuCung;
     private String hangThe;
-    private long tongChi;     // tổng tiền đã chi
-    private String ganNhat;   // ngày mua gần nhất (dd/MM/yyyy)
+    private long tongChi;
+    private String ganNhat;
 
     public KhachHang() {
     }

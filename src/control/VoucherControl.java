@@ -8,15 +8,15 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
-/**
- * Control voucher: kiểm tra dữ liệu rỗng / sai định dạng / sai logic,
- * gọi DAO, rồi trả về KetQua cho UI.
- *
- * Dữ liệu từ form UI truyền xuống toàn là chuỗi thô (đúng như người dùng gõ).
- */
+
+
+
+
+
+
 public class VoucherControl {
 
-    // Lựa chọn "Trạng thái" trong form (thứ tự giống ComboBox bên UI)
+
     public static final int TT_KICH_HOAT = 0;
     public static final int TT_SAP_CHAY = 1;
     public static final int TT_DA_HUY = 2;
@@ -25,14 +25,14 @@ public class VoucherControl {
 
     private final VoucherDAO dao = new VoucherDAO();
 
-    /**
-     * Kết quả Control trả về cho UI sau khi thêm / sửa / xóa / đổi trạng thái.
-     * UI chỉ cần isThanhCong() và getThongBao() để hiện JOptionPane.
-     */
+
+
+
+
     public static class KetQua {
         private final boolean thanhCong;
         private final String thongBao;
-        private final String maVoucher; // mã voucher vừa thao tác (có thể null)
+        private final String maVoucher;
 
         private KetQua(boolean thanhCong, String thongBao, String maVoucher) {
             this.thanhCong = thanhCong;
@@ -61,14 +61,14 @@ public class VoucherControl {
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Đọc dữ liệu
-    // ---------------------------------------------------------------------
 
-    /**
-     * Lấy voucher theo từ khóa (mã / tên) và lọc theo trạng thái.
-     * locTrangThai: "Tat ca", "Dang chay", "Sap chay", "Het han", "Het luot" hoặc "Da huy".
-     */
+
+
+
+
+
+
+
     public ArrayList<Voucher> timKiem(String tuKhoa, String locTrangThai) {
         ArrayList<Voucher> ketQua = new ArrayList<>();
 
@@ -80,27 +80,27 @@ public class VoucherControl {
         return ketQua;
     }
 
-    // ---------------------------------------------------------------------
-    // Thêm / sửa / xóa
-    // ---------------------------------------------------------------------
+
+
+
 
     public KetQua them(String ten, String phanTram, String dieuKien,
             String ngayBd, String ngayKt, String soLuong, int luaChonTrangThai) {
         try {
             Voucher v = docForm(null, 0, ten, phanTram, dieuKien, ngayBd, ngayKt, soLuong, luaChonTrangThai);
 
-            String loiDao = dao.them(v); // thành công: v có mã mới
+            String loiDao = dao.them(v);
             if (loiDao != null) {
                 return KetQua.loi(loiDao);
             }
             return KetQua.ok("Đã tạo voucher " + v.getMaVoucher() + ".", v.getMaVoucher());
 
         } catch (IllegalArgumentException e) {
-            return KetQua.loi(e.getMessage()); // dữ liệu nhập chưa hợp lệ
+            return KetQua.loi(e.getMessage());
         }
     }
 
-    /** goc = voucher đang sửa (lấy mã và số lượt đã dùng từ đây). */
+
     public KetQua sua(Voucher goc, String ten, String phanTram, String dieuKien,
             String ngayBd, String ngayKt, String soLuong, int luaChonTrangThai) {
         try {
@@ -126,9 +126,9 @@ public class VoucherControl {
         return KetQua.ok("Đã xóa voucher " + maVoucher + ".", maVoucher);
     }
 
-    // ---------------------------------------------------------------------
-    // Kích hoạt / hủy / dừng
-    // ---------------------------------------------------------------------
+
+
+
 
     public KetQua kichHoat(Voucher v) {
         String tt = v.getTrangThaiText();
@@ -166,7 +166,7 @@ public class VoucherControl {
         return KetQua.ok("Đã hủy voucher " + v.getMaVoucher() + ".", v.getMaVoucher());
     }
 
-    /** Dừng voucher đang chạy: đặt ngày kết thúc = hôm qua (voucher chuyển sang "Hết hạn"). */
+
     public KetQua dung(Voucher v) {
         String tt = v.getTrangThaiText();
 
@@ -194,24 +194,24 @@ public class VoucherControl {
         return KetQua.ok("Đã dừng voucher " + v.getMaVoucher() + ".", v.getMaVoucher());
     }
 
-    // ---------------------------------------------------------------------
-    // Hàm phụ: đọc + kiểm tra dữ liệu form (dùng chung cho them và sua)
-    // ---------------------------------------------------------------------
 
-    /**
-     * Đổi các chuỗi nhập thành Voucher. Nếu dữ liệu sai thì ném IllegalArgumentException
-     * kèm câu thông báo; them() / sua() sẽ bắt lại và trả về KetQua.loi(...).
-     */
+
+
+
+
+
+
+
     private Voucher docForm(String ma, int daDung, String ten, String phanTram, String dieuKien,
             String ngayBd, String ngayKt, String soLuong, int luaChonTrangThai) {
 
-        // Tên
+
         ten = ten.trim();
         if (ten.isEmpty()) {
             throw new IllegalArgumentException("Tên chương trình bắt buộc nhập.");
         }
 
-        // Mức giảm
+
         String pt = phanTram.trim().replace(',', '.');
         if (!pt.matches("\\d+(\\.\\d+)?")) {
             throw new IllegalArgumentException("Mức giảm phải là số, ví dụ 10 hoặc 12.5");
@@ -220,19 +220,19 @@ public class VoucherControl {
         if (giam <= 0 || giam > 100) {
             throw new IllegalArgumentException("Mức giảm phải lớn hơn 0 và không quá 100 (%).");
         }
-        giam = Math.round(giam * 100) / 100.0; // làm tròn 2 chữ số
+        giam = Math.round(giam * 100) / 100.0;
 
-        // Điều kiện (có thể để trống)
+
         dieuKien = dieuKien.trim();
 
-        // Ngày (có thể để trống = không giới hạn)
+
         LocalDate bd = docNgay(ngayBd);
         LocalDate kt = docNgay(ngayKt);
         if (bd != null && kt != null && kt.isBefore(bd)) {
             throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu.");
         }
 
-        // Số lượt tối đa (có thể để trống = không giới hạn)
+
         Integer sl = null;
         if (!soLuong.trim().isEmpty()) {
             try {
@@ -249,7 +249,7 @@ public class VoucherControl {
             }
         }
 
-        // Trạng thái phải khớp với ngày bắt đầu
+
         boolean batDauTuongLai = bd != null && bd.isAfter(LocalDate.now());
 
         if (luaChonTrangThai == TT_KICH_HOAT && batDauTuongLai) {
@@ -265,7 +265,7 @@ public class VoucherControl {
         return v;
     }
 
-    /** Chuỗi dd/MM/yyyy -> LocalDate; chuỗi rỗng -> null. */
+
     private LocalDate docNgay(String s) {
         s = s.trim();
         if (s.isEmpty()) {

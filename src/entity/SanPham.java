@@ -4,12 +4,12 @@ public class SanPham {
     private String tenSanPham;
     private double giaNhap;
     private double giaBan;
-    private String maDanhMuc;
-    private String maNhaCungCap;
+    private DanhMuc maDanhMuc;
+    private NhaCungCap maNhaCungCap;
     private String tenDanhMuc;
     private String tenNhaCungCap;
     private int tonKho;
-    private String maPhieuNhap;
+    private PhieuNhapKho maPhieuNhap;
     private java.time.LocalDate ngayNhap;
     private java.time.LocalDate hanSuDung;
     private boolean ngungKinhDoanh;
@@ -21,8 +21,8 @@ public class SanPham {
         this.tenSanPham = tenSanPham;
         this.giaNhap = giaNhap;
         this.giaBan = giaBan;
-        this.maDanhMuc = maDanhMuc;
-        this.maNhaCungCap = maNhaCungCap;
+        setMaDanhMuc(maDanhMuc);
+        setMaNhaCungCap(maNhaCungCap);
     }
     public String getMaSanPham() { return maSanPham; }
     public void setMaSanPham(String maSanPham) { this.maSanPham = maSanPham; }
@@ -32,18 +32,48 @@ public class SanPham {
     public void setGiaNhap(double giaNhap) { this.giaNhap = giaNhap; }
     public double getGiaBan() { return giaBan; }
     public void setGiaBan(double giaBan) { this.giaBan = giaBan; }
-    public String getMaDanhMuc() { return maDanhMuc; }
-    public void setMaDanhMuc(String maDanhMuc) { this.maDanhMuc = maDanhMuc; }
-    public String getMaNhaCungCap() { return maNhaCungCap; }
-    public void setMaNhaCungCap(String maNhaCungCap) { this.maNhaCungCap = maNhaCungCap; }
-    public String getTenDanhMuc() { return tenDanhMuc; }
-    public void setTenDanhMuc(String tenDanhMuc) { this.tenDanhMuc = tenDanhMuc; }
-    public String getTenNhaCungCap() { return tenNhaCungCap; }
-    public void setTenNhaCungCap(String tenNhaCungCap) { this.tenNhaCungCap = tenNhaCungCap; }
+    public String getMaDanhMuc() { return maDanhMuc == null ? null : maDanhMuc.getMaDanhMuc(); }
+    public void setMaDanhMuc(String maDanhMuc) {
+        this.maDanhMuc = maDanhMuc == null ? null : new DanhMuc(maDanhMuc, null, null);
+    }
+    public DanhMuc getDanhMuc() { return maDanhMuc; }
+    public void setDanhMuc(DanhMuc danhMuc) {
+        maDanhMuc = danhMuc;
+        if (danhMuc != null) tenDanhMuc = danhMuc.getTenDanhMuc();
+    }
+    public String getMaNhaCungCap() { return maNhaCungCap == null ? null : maNhaCungCap.getMaNhaCungCap(); }
+    public void setMaNhaCungCap(String maNhaCungCap) {
+        this.maNhaCungCap = maNhaCungCap == null ? null : new NhaCungCap(maNhaCungCap, null, null, null, null);
+    }
+    public NhaCungCap getNhaCungCap() { return maNhaCungCap; }
+    public void setNhaCungCap(NhaCungCap nhaCungCap) {
+        maNhaCungCap = nhaCungCap;
+        if (nhaCungCap != null) tenNhaCungCap = nhaCungCap.getTenNhaCungCap();
+    }
+    public String getTenDanhMuc() {
+        return tenDanhMuc != null ? tenDanhMuc : maDanhMuc == null ? null : maDanhMuc.getTenDanhMuc();
+    }
+    public void setTenDanhMuc(String tenDanhMuc) {
+        this.tenDanhMuc = tenDanhMuc;
+        if (maDanhMuc != null) maDanhMuc.setTenDanhMuc(tenDanhMuc);
+    }
+    public String getTenNhaCungCap() {
+        return tenNhaCungCap != null ? tenNhaCungCap
+                : maNhaCungCap == null ? null : maNhaCungCap.getTenNhaCungCap();
+    }
+    public void setTenNhaCungCap(String tenNhaCungCap) {
+        this.tenNhaCungCap = tenNhaCungCap;
+        if (maNhaCungCap != null) maNhaCungCap.setTenNhaCungCap(tenNhaCungCap);
+    }
     public int getTonKho() { return tonKho; }
     public void setTonKho(int tonKho) { this.tonKho = tonKho; }
-    public String getMaPhieuNhap() { return maPhieuNhap; }
-    public void setMaPhieuNhap(String maPhieuNhap) { this.maPhieuNhap = maPhieuNhap; }
+    public String getMaPhieuNhap() { return maPhieuNhap == null ? null : maPhieuNhap.getMaPhieuNhap(); }
+    public void setMaPhieuNhap(String maPhieuNhap) {
+        this.maPhieuNhap = maPhieuNhap == null ? null : new PhieuNhapKho();
+        if (this.maPhieuNhap != null) this.maPhieuNhap.setMaPhieuNhap(maPhieuNhap);
+    }
+    public PhieuNhapKho getPhieuNhapKho() { return maPhieuNhap; }
+    public void setPhieuNhapKho(PhieuNhapKho phieuNhapKho) { maPhieuNhap = phieuNhapKho; }
     public java.time.LocalDate getNgayNhap() { return ngayNhap; }
     public void setNgayNhap(java.time.LocalDate ngayNhap) { this.ngayNhap = ngayNhap; }
     public java.time.LocalDate getHanSuDung() { return hanSuDung; }

@@ -3,19 +3,19 @@ package entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** Voucher / mã giảm giá. */
+
 public class Voucher {
 
     private String maVoucher;
     private String tenVoucher;
     private double phanTramGiam;
     private String dieuKien;
-    private boolean trangThai;        // false = đã hủy
-    private LocalDate ngayBatDau;     // null = không giới hạn
-    private LocalDate ngayKetThuc;    // null = không giới hạn
-    private Integer soLuongToiDa;     // null = không giới hạn
+    private boolean trangThai;
+    private LocalDate ngayBatDau;
+    private LocalDate ngayKetThuc;
+    private Integer soLuongToiDa;
 
-    private int daDung;               // số hóa đơn đã dùng voucher (DAO tính sẵn)
+    private int daDung;
 
     public Voucher() {
     }
@@ -40,7 +40,7 @@ public class Voucher {
         this.dieuKien = dieuKien;
     }
 
-    /** Trạng thái hiện tại: "Da huy", "Sap chay", "Het han", "Het luot" hoặc "Dang chay". */
+
     public String getTrangThaiText() {
         if (!trangThai) {
             return "Da huy";

@@ -22,11 +22,11 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-/**
- * Màn hình quản lý voucher.
- * UI chỉ: vẽ giao diện, lấy dữ liệu từ ô nhập, gọi VoucherControl,
- * rồi hiện JOptionPane theo KetQua.
- */
+
+
+
+
+
 public class QuanLyVoucherUI extends JPanel {
 
     private static final DateTimeFormatter D = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -34,7 +34,7 @@ public class QuanLyVoucherUI extends JPanel {
     private static final String[] COLS = { "Mã", "Tên chương trình", "Điều kiện",
             "Mức giảm", "Đã dùng", "Hiệu lực", "Trạng thái" };
 
-    // Tên hiển thị trong ComboBox lọc, và mã tương ứng mà Voucher.getTrangThaiText() trả về
+
     private static final String[] LOC_HIEN_THI = { "Tất cả trạng thái", "Đang chạy", "Sắp chạy",
             "Hết hạn", "Hết lượt", "Đã hủy" };
     private static final String[] LOC_MA = { "Tat ca", "Dang chay", "Sap chay",
@@ -42,7 +42,7 @@ public class QuanLyVoucherUI extends JPanel {
 
     private final VoucherControl control = new VoucherControl();
 
-    // --- Thanh công cụ ---
+
     private final JTextField txtTim = UIStyle.o(16);
     private final JComboBox<String> cmbLoc = new JComboBox<>(LOC_HIEN_THI);
     private final JLabel lblDem = UIStyle.nhan("0 voucher");
@@ -50,7 +50,7 @@ public class QuanLyVoucherUI extends JPanel {
     private final JButton btnHuyVc = UIStyle.nutPhu("Hủy voucher");
     private final JButton btnDung = UIStyle.nutPhu("Dừng voucher");
 
-    // --- Bảng ---
+
     private final DefaultTableModel model = new DefaultTableModel(COLS, 0) {
         @Override
         public boolean isCellEditable(int r, int c) {
@@ -59,10 +59,10 @@ public class QuanLyVoucherUI extends JPanel {
     };
     private final JTable tblDuLieu = new JTable(model);
 
-    /** Danh sách đang hiển thị (dòng i của bảng ứng với phần tử i). */
+
     private ArrayList<Voucher> dsHienThi = new ArrayList<>();
 
-    // --- Khung chi tiết bên dưới bảng ---
+
     private final CardLayout cardChiTiet = new CardLayout();
     private final JPanel pnlKhungChiTiet = new JPanel(cardChiTiet);
     private final JLabel lblMa = taoNhanGiaTri();
@@ -94,9 +94,9 @@ public class QuanLyVoucherUI extends JPanel {
         taiLai(null);
     }
 
-    // =====================================================================
-    // VẼ GIAO DIỆN
-    // =====================================================================
+
+
+
 
     private JPanel taoTieuDe() {
         JLabel lblTieuDe = new JLabel("Mã giảm giá và Voucher");
@@ -160,14 +160,14 @@ public class QuanLyVoucherUI extends JPanel {
             tblDuLieu.getColumnModel().getColumn(i).setPreferredWidth(doRong[i]);
         }
 
-        // Chọn dòng -> hiện chi tiết
+
         tblDuLieu.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 hienThongTin();
             }
         });
 
-        // Nhấp đúp -> sửa
+
         tblDuLieu.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -179,7 +179,7 @@ public class QuanLyVoucherUI extends JPanel {
     }
 
     private JPanel taoPhanChiTiet() {
-        // Trang "chưa chọn voucher"
+
         JLabel lblGoiY = new JLabel("Chọn một voucher trong bảng để xem thông tin chi tiết.");
         lblGoiY.setFont(UIStyle.font(Font.PLAIN, 13));
         lblGoiY.setForeground(Color.GRAY);
@@ -188,7 +188,7 @@ public class QuanLyVoucherUI extends JPanel {
         pnlTrong.setOpaque(false);
         pnlTrong.add(lblGoiY);
 
-        // Trang "đã chọn": 8 ô thông tin + điều kiện
+
         JPanel pnlLuoi = new JPanel(new GridLayout(2, 4, 18, 8));
         pnlLuoi.setOpaque(false);
         pnlLuoi.add(taoCapThongTin("Mã voucher", lblMa));
@@ -238,7 +238,7 @@ public class QuanLyVoucherUI extends JPanel {
         return lbl;
     }
 
-    /** Một ô gồm tiêu đề nhỏ màu xám và giá trị bên dưới. */
+
     private static JPanel taoCapThongTin(String tieuDe, JLabel lblGiaTri) {
         JLabel lblTieuDe = new JLabel(tieuDe);
         lblTieuDe.setFont(UIStyle.font(Font.PLAIN, 12));
@@ -255,7 +255,7 @@ public class QuanLyVoucherUI extends JPanel {
         return pnl;
     }
 
-    /** Tô màu ô "Trạng thái" trong bảng. */
+
     private static class TrangThaiRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(
@@ -296,16 +296,16 @@ public class QuanLyVoucherUI extends JPanel {
         }
     }
 
-    // =====================================================================
-    // HIỂN THỊ DỮ LIỆU
-    // =====================================================================
 
-    /** 10 -> "10%", 12.5 -> "12.50%". */
+
+
+
+
     private static String phanTram(double v) {
         return (v == Math.floor(v) ? String.valueOf((long) v) : String.format(Locale.US, "%.2f", v)) + "%";
     }
 
-    /** Đổi mã trạng thái (không dấu) sang chữ hiển thị. */
+
     private static String tenTrangThai(String ma) {
         switch (ma) {
             case "Dang chay":
@@ -360,7 +360,7 @@ public class QuanLyVoucherUI extends JPanel {
         taiLai(null);
     }
 
-    /** Tải lại bảng theo từ khóa + bộ lọc; chọn lại dòng có mã chonMa (nếu có). */
+
     public void taiLai(String chonMa) {
         dsHienThi = control.timKiem(txtTim.getText(), LOC_MA[cmbLoc.getSelectedIndex()]);
 
@@ -406,7 +406,7 @@ public class QuanLyVoucherUI extends JPanel {
             return;
         }
 
-        // Bật / tắt nút theo trạng thái (chỉ để gợi ý; Control vẫn kiểm tra lại)
+
         String tt = v.getTrangThaiText();
         btnKichHoat.setEnabled(!tt.equals("Dang chay") && !tt.equals("Sap chay"));
         btnHuyVc.setEnabled(v.isTrangThai());
@@ -428,7 +428,7 @@ public class QuanLyVoucherUI extends JPanel {
                 ? "Không có điều kiện."
                 : v.getDieuKien();
 
-        // Escape < > & để điều kiện có ký tự lạ không làm hỏng HTML
+
         lblDieuKien.setText("<html><body style='width:760px'>"
                 + dk.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 + "</body></html>");
@@ -436,11 +436,11 @@ public class QuanLyVoucherUI extends JPanel {
         cardChiTiet.show(pnlKhungChiTiet, "CO");
     }
 
-    // =====================================================================
-    // HÀNH ĐỘNG - lấy dữ liệu, gọi Control, hiện JOptionPane
-    // =====================================================================
 
-    /** Trả về voucher đang chọn; chưa chọn thì báo và trả về null. */
+
+
+
+
     private Voucher chonVoucher(String thongBaoNeuChuaChon) {
         Voucher v = dongDangChon();
         if (v == null) {
@@ -455,7 +455,7 @@ public class QuanLyVoucherUI extends JPanel {
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
     }
 
-    /** Hiện kết quả Control trả về; thành công thì tải lại bảng và chọn dòng chonMa. */
+
     private void xuLyKetQua(KetQua kq, String chonMa) {
         hienKetQua(this, kq);
         if (kq.isThanhCong()) {
@@ -515,7 +515,7 @@ public class QuanLyVoucherUI extends JPanel {
         xuLyKetQua(control.dung(v), v.getMaVoucher());
     }
 
-    /** goc = null: tạo mới; goc != null: sửa voucher đó. */
+
     private void moDialog(Voucher goc) {
         VoucherDialog dlg = new VoucherDialog(SwingUtilities.getWindowAncestor(this), goc, control);
         dlg.setVisible(true);
@@ -525,9 +525,9 @@ public class QuanLyVoucherUI extends JPanel {
         }
     }
 
-    // =====================================================================
-    // HỘP THOẠI TẠO / SỬA VOUCHER
-    // =====================================================================
+
+
+
 
     public static class VoucherDialog extends JDialog {
 
@@ -538,7 +538,7 @@ public class QuanLyVoucherUI extends JPanel {
         private static final Font F_NHAN = new Font("Segoe UI", Font.BOLD, 12);
 
         private final VoucherControl control;
-        private final Voucher goc; // null = đang tạo mới
+        private final Voucher goc;
 
         private boolean daLuu = false;
         private String maDaLuu = null;
@@ -549,7 +549,7 @@ public class QuanLyVoucherUI extends JPanel {
         private final JTextField txtKt = new JTextField();
         private final JTextField txtSl = new JTextField();
         private final JComboBox<String> cmbTrangThai = new JComboBox<>(
-                new String[] { "Đang kích hoạt", "Sắp chạy", "Đã hủy" }); // thứ tự = VoucherControl.TT_...
+                new String[] { "Đang kích hoạt", "Sắp chạy", "Đã hủy" });
         private final JTextArea txaDk = new JTextArea(3, 30);
 
         public VoucherDialog(Window cha, Voucher goc, VoucherControl control) {
@@ -584,7 +584,7 @@ public class QuanLyVoucherUI extends JPanel {
             lblGhiChu.setFont(F_NHAN);
             lblGhiChu.setForeground(XAM);
 
-            // --- Phần thân ---
+
             JPanel pnlThan = new JPanel();
             pnlThan.setLayout(new BoxLayout(pnlThan, BoxLayout.Y_AXIS));
             pnlThan.setOpaque(false);
@@ -610,7 +610,7 @@ public class QuanLyVoucherUI extends JPanel {
             pnlTren.setOpaque(false);
             pnlTren.add(pnlThan, BorderLayout.NORTH);
 
-            // --- Hàng nút ---
+
             JButton btnHuy = taoNut("Hủy", new Color(138, 144, 153));
             JButton btnLuu = taoNut(goc == null ? "Thêm mới" : "Lưu thay đổi", NAVY);
             btnHuy.addActionListener(e -> dispose());
@@ -628,7 +628,7 @@ public class QuanLyVoucherUI extends JPanel {
             pnlGoc.add(pnlNut, BorderLayout.SOUTH);
             setContentPane(pnlGoc);
 
-            // --- Điền sẵn dữ liệu khi sửa ---
+
             if (goc != null) {
                 txtTen.setText(goc.getTenVoucher());
                 txtPt.setText(phanTram(goc.getPhanTramGiam()).replace("%", ""));
@@ -651,9 +651,9 @@ public class QuanLyVoucherUI extends JPanel {
             return maDaLuu;
         }
 
-        // ---------------------------------------------------------------
-        // Lưu: lấy dữ liệu từ ô nhập -> gọi Control -> hiện JOptionPane
-        // ---------------------------------------------------------------
+
+
+
         private void luu() {
             String ten = txtTen.getText();
             String pt = txtPt.getText();
@@ -679,9 +679,9 @@ public class QuanLyVoucherUI extends JPanel {
             }
         }
 
-        // ---------------------------------------------------------------
-        // Ô chọn ngày: ô chữ (chỉ đọc) + nút "Lịch"
-        // ---------------------------------------------------------------
+
+
+
         private JPanel oChonNgay(JTextField txt) {
             txt.setEditable(false);
             txt.setFocusable(false);
@@ -716,7 +716,7 @@ public class QuanLyVoucherUI extends JPanel {
             return pnl;
         }
 
-        /** Hộp thoại lịch tháng để chọn 1 ngày. */
+
         private static class LichDialog extends JDialog {
 
             private static final Color XANH_NHAT = new Color(222, 236, 250);
@@ -725,7 +725,7 @@ public class QuanLyVoucherUI extends JPanel {
 
             private final LocalDate dangChon;
             private YearMonth thang;
-            private LocalDate ketQua = null; // ngày được chọn (null = bấm Hủy)
+            private LocalDate ketQua = null;
 
             private final JLabel lblThang = new JLabel("", SwingConstants.CENTER);
             private final JPanel pnlLuoi = new JPanel(new GridLayout(7, 7, 6, 6));
@@ -804,7 +804,7 @@ public class QuanLyVoucherUI extends JPanel {
                 return btn;
             }
 
-            /** Vẽ lại lưới ngày của tháng hiện tại. */
+
             private void veLich() {
                 lblThang.setText("Tháng " + thang.getMonthValue() + " / " + thang.getYear());
                 pnlLuoi.removeAll();
@@ -816,7 +816,7 @@ public class QuanLyVoucherUI extends JPanel {
                     pnlLuoi.add(lbl);
                 }
 
-                int lech = thang.atDay(1).getDayOfWeek().getValue() - 1; // số ô trống đầu tháng
+                int lech = thang.atDay(1).getDayOfWeek().getValue() - 1;
                 int soNgay = thang.lengthOfMonth();
                 LocalDate homNay = LocalDate.now();
 
@@ -861,9 +861,9 @@ public class QuanLyVoucherUI extends JPanel {
             }
         }
 
-        // ---------------------------------------------------------------
-        // Hàm dựng giao diện nhỏ
-        // ---------------------------------------------------------------
+
+
+
         private static JPanel taoCot(String nhan, JComponent c) {
             JLabel lbl = new JLabel(nhan);
             lbl.setFont(F_NHAN);

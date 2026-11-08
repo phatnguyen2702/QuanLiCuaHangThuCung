@@ -3,6 +3,7 @@ import ConnectDB.connectDB;
 import control.PhanQuyenControl;
 import entity.ChiTietPhieuKiemKe;
 import entity.PhieuKiemKe;
+import entity.PhieuNhapKho;
 import entity.SanPham;
 import java.sql.*;
 import java.util.ArrayList;
@@ -170,9 +171,19 @@ public class KiemKeDAO {
     private ChiTietPhieuKiemKe docChiTietPhieuKiemKe(ResultSet rs, String maPhieu) throws SQLException {
         ChiTietPhieuKiemKe row = new ChiTietPhieuKiemKe();
         row.setMaPhieuKiemKe(maPhieu);
-        row.setMaSanPham(rs.getString("maSanPham"));
-        row.setTenSanPham(rs.getString("tenSanPham"));
-        row.setMaPhieuNhap(rs.getString("maPhieuNhap"));
+        SanPham sanPham = new SanPham();
+        sanPham.setMaSanPham(rs.getString("maSanPham"));
+        sanPham.setTenSanPham(rs.getString("tenSanPham"));
+        row.setSanPham(sanPham);
+        row.setTenSanPham(sanPham.getTenSanPham());
+        String maPhieuNhap = rs.getString("maPhieuNhap");
+        if (maPhieuNhap != null) {
+            PhieuNhapKho phieuNhap = new PhieuNhapKho();
+            phieuNhap.setMaPhieuNhap(maPhieuNhap);
+            Timestamp ngayNhap = rs.getTimestamp("ngayNhap");
+            phieuNhap.setNgayNhap(ngayNhap == null ? null : ngayNhap.toLocalDateTime());
+            row.setPhieuNhapKho(phieuNhap);
+        }
         Timestamp ngayNhap = rs.getTimestamp("ngayNhap");
         row.setNgayNhap(ngayNhap == null ? null : ngayNhap.toLocalDateTime().toLocalDate());
         row.setSoLuongHeThong(rs.getInt("soLuongHeThong"));
