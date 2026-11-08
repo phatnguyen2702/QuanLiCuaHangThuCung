@@ -55,22 +55,36 @@ public class HoaDonDAO {
         String sql = """
                 SELECT (SELECT COUNT(*) FROM HoaDon) AS tongHoaDon,
                        (SELECT COUNT(*) FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)) AS hoaDonHomNay,
-                       (SELECT COUNT(DISTINCT maKhachHang) FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)) AS khachHangHomNay,
-                       (SELECT COALESCE(SUM(ct.soLuong * ct.donGia * (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0)
-                        FROM HoaDon hd JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon
-                        WHERE CAST(hd.ngayLap AS DATE) = CAST(GETDATE() AS DATE)) AS doanhThuHomNay
+                       (SELECT COUNT(DISTINCT maKhachHang) FROM HoaDon WHERE CAST(ngayLap AS DATE) = CAST(GETDATE() AS DATE)) AS khachHangHomNay
+                """;
+        String sqlDoanhThu = """
+                SELECT ct.soLuong, ct.donGia, ct.phanTramGiam
+                FROM HoaDon hd JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon
+                WHERE CAST(hd.ngayLap AS DATE) = CAST(GETDATE() AS DATE)
                 """;
         try (Connection con = connectDB.getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) {
+                PreparedStatement psThongKe = con.prepareStatement(sql);
+                ResultSet rsThongKe = psThongKe.executeQuery()) {
+            if (!rsThongKe.next()) {
                 throw new SQLException("Không đọc được số liệu hóa đơn.");
             }
+
+            double doanhThuHomNay = 0;
+            try (PreparedStatement psDoanhThu = con.prepareStatement(sqlDoanhThu);
+                    ResultSet rsDoanhThu = psDoanhThu.executeQuery()) {
+                while (rsDoanhThu.next()) {
+                    double phanTramGiam = rsDoanhThu.getDouble("phanTramGiam");
+                    doanhThuHomNay += rsDoanhThu.getInt("soLuong")
+                            * rsDoanhThu.getDouble("donGia")
+                            * (1 - phanTramGiam / 100.0);
+                }
+            }
+
             return new ThongKe(
-                    rs.getInt("tongHoaDon"),
-                    rs.getInt("hoaDonHomNay"),
-                    rs.getInt("khachHangHomNay"),
-                    rs.getDouble("doanhThuHomNay"));
+                    rsThongKe.getInt("tongHoaDon"),
+                    rsThongKe.getInt("hoaDonHomNay"),
+                    rsThongKe.getInt("khachHangHomNay"),
+                    doanhThuHomNay);
         }
     }
 
@@ -116,15 +130,19 @@ public class HoaDonDAO {
 
     public double layTongTienHoaDon(String maHoaDon) throws SQLException {
         control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
-        String sql = "SELECT COALESCE(SUM(ct.soLuong * ct.donGia * (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS tongTien FROM ChiTietHoaDon ct WHERE ct.maHoaDon = ?";
+        String sql = "SELECT soLuong, donGia, phanTramGiam "
+                + "FROM ChiTietHoaDon WHERE maHoaDon = ?";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maHoaDon);
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    throw new SQLException("Không đọc được tổng tiền hóa đơn.");
+                double tongTien = 0;
+                while (rs.next()) {
+                    double phanTramGiam = rs.getDouble("phanTramGiam");
+                    tongTien += rs.getInt("soLuong") * rs.getDouble("donGia")
+                            * (1 - phanTramGiam / 100.0);
                 }
-                return rs.getDouble("tongTien");
+                return tongTien;
             }
         }
     }

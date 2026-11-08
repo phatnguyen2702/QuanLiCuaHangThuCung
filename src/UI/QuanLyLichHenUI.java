@@ -725,7 +725,7 @@ public class QuanLyLichHenUI extends JPanel {
                 txtTxt.setBorder(BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(new Color(200, 200, 200)),
                         new EmptyBorder(5, 10, 5, 10)));
-                txtTxt.setToolTipText("Giờ theo HH:mm, ví dụ 09:30 (00:00-23:59)");
+                txtTxt.setToolTipText("Giờ theo HH:mm, chỉ nhận từ 06:00 đến 22:00.");
                 return txtTxt;
             } catch (ParseException e) {
                 throw new IllegalStateException("Không khởi tạo được định dạng giờ HH:mm", e);

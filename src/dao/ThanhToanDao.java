@@ -1,10 +1,9 @@
 package dao;
 
-import control.PhanQuyenControl;
-
 import ConnectDB.connectDB;
-import entity.KhachHang;
+import control.PhanQuyenControl;
 import entity.ChiTietHoaDon;
+import entity.KhachHang;
 import entity.PhuongThucThanhToan;
 import entity.Voucher;
 import java.math.BigDecimal;
@@ -94,12 +93,7 @@ public class ThanhToanDao {
     public List<ChiTietHoaDon> timMatHang(String tuKhoa) throws SQLException {
         String sql = "SELECT maSanPham AS maHang,tenSanPham AS tenHang,"
                 + "giaBan AS donGia FROM SanPham sp "
-                + "WHERE (sp.maSanPham = ? OR sp.tenSanPham LIKE ?) "
-                + "AND EXISTS (SELECT 1 FROM ChiTietPhieuNhap ct JOIN PhieuNhapKho pn "
-                + "ON pn.maPhieuNhap=ct.maPhieuNhap WHERE ct.maSanPham=sp.maSanPham "
-                + "AND pn.trangThai=1 AND ISNULL(ct.trangThai,1)=1 "
-                + "AND ISNULL(ct.ngungKinhDoanh,0)=0 "
-                + "AND (ct.hanSuDung IS NULL OR ct.hanSuDung>=CAST(GETDATE() AS date)))";
+                + "WHERE sp.maSanPham = ? OR sp.tenSanPham LIKE ?";
 
         List<ChiTietHoaDon> matHangs = new ArrayList<>();
         SanPhamDAO sanPhamDAO = new SanPhamDAO();
@@ -240,15 +234,14 @@ public class ThanhToanDao {
     }
 
     private static String dieuKienVoucherApDung(String alias) {
-        return alias + ".trangThai = 1 "
-                + "AND (" + alias + ".ngayBatDau IS NULL "
-                + "OR " + alias + ".ngayBatDau <= CAST(GETDATE() AS DATE)) "
-                + "AND (" + alias + ".ngayKetThuc IS NULL "
-                + "OR " + alias + ".ngayKetThuc >= CAST(GETDATE() AS DATE)) "
-                + "AND (" + alias + ".soLuongToiDa IS NULL "
-                + "OR (SELECT COUNT(*) FROM HoaDon h "
-                + "WHERE h.maVoucher = " + alias + ".maVoucher) < "
-                + alias + ".soLuongToiDa)";
+        String voucher = alias + ".";
+        String homNay = "CAST(GETDATE() AS DATE)";
+        return voucher + "trangThai = 1 "
+                + "AND COALESCE(" + voucher + "ngayBatDau, " + homNay + ") <= " + homNay + " "
+                + "AND COALESCE(" + voucher + "ngayKetThuc, " + homNay + ") >= " + homNay + " "
+                + "AND (" + voucher + "soLuongToiDa IS NULL "
+                + "OR (SELECT COUNT(*) FROM HoaDon h WHERE h.maVoucher = "
+                + voucher + "maVoucher) < " + voucher + "soLuongToiDa)";
     }
 
     public boolean laKhachHangThanhVien(String maKhachHang) throws SQLException {
