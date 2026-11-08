@@ -66,7 +66,7 @@ public final class DichVuControl {
     }
 
     public void kiemTra(DichVu dv) {
-        // Giữ chung một quy tắc cho form và cả lời gọi từ nơi khác.
+
         taoDichVu(dv.getMaDichVu(), dv.getTenDichVu(),
                 dv.getGiaDichVu() == null ? "" : dv.getGiaDichVu().toPlainString(), dv.getMoTa());
     }

@@ -65,9 +65,6 @@ public class DichVuDAO {
                 }
             }
         }
-        if (max >= 999) {
-            throw new SQLException("Đã dùng hết dải mã DV001 đến DV999.");
-        }
         return String.format("DV%03d", max + 1);
     }
 

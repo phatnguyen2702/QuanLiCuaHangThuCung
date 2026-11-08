@@ -164,6 +164,7 @@ public final class PhanQuyenControl {
         return switch (ten) {
             case "Quản lý tài khoản" -> Quyen.TAI_KHOAN;
             case "Ma trận phân quyền" -> Quyen.PHAN_QUYEN;
+            case "Bảng phân quyền" -> Quyen.PHAN_QUYEN;
             case "Quản lý ca làm" -> Quyen.CA_LAM;
             case "Phân ca nhân viên" -> Quyen.PHAN_CA;
             case "Danh mục sản phẩm" -> Quyen.DANH_MUC_SAN_PHAM;

@@ -323,7 +323,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
     }
 
     private void moMaTranPhanQuyen() {
-        hienManHinh("phanquyen", "Bảng phân quyền", btnHeThong,
+        hienManHinh("phanquyen", "Ma trận phân quyền", btnHeThong,
                 () -> new MaTranPhanQuyenUI(this::moQuanLyTaiKhoan));
     }
 
@@ -334,7 +334,10 @@ public class TrangChuUI extends JFrame implements ActionListener {
 
     private void moQuanLyPhanCa() {
         hienManHinh("phanca", "Phân ca nhân viên", btnXuLy,
-                QuanLyPhanCaUI::new);
+                () -> {
+                    QuanLyPhanCaUI pnl = new QuanLyPhanCaUI();
+                    return pnl.getContentPane();
+                });
     }
 
     private void moQuanLyCaLam() {
@@ -827,40 +830,58 @@ public class TrangChuUI extends JFrame implements ActionListener {
     private JPanel taoPnlGioiThieu() {
         JPanel pnlPanel = new JPanel(new BorderLayout());
         pnlPanel.setBackground(Color.WHITE);
-        pnlPanel.setBorder(new LineBorder(UIStyle.LINE));
 
-        java.net.URL url = getClass().getResource("/img/giothieutrangchu.png");
-        if (url == null) {
-            pnlPanel.add(new JLabel("Không tìm thấy ảnh giới thiệu", SwingConstants.CENTER));
+        ImageIcon anhGioiThieu = taiAnh("/img/giothieutrangchu.png");
+        if (anhGioiThieu != null) {
+            JLabel lblAnhGioiThieu = new JLabel("", SwingConstants.CENTER);
+            lblAnhGioiThieu.setOpaque(true);
+            lblAnhGioiThieu.setBackground(Color.WHITE);
+            pnlPanel.add(lblAnhGioiThieu, BorderLayout.CENTER);
+            pnlPanel.addComponentListener(new java.awt.event.ComponentAdapter() {
+                @Override
+                public void componentResized(java.awt.event.ComponentEvent e) {
+                    Dimension kichThuoc = pnlPanel.getSize();
+                    Insets vien = pnlPanel.getInsets();
+                    int rong = Math.max(1, kichThuoc.width - vien.left - vien.right);
+                    int cao = Math.max(1, kichThuoc.height - vien.top - vien.bottom);
+                    lblAnhGioiThieu.setIcon(phongToDayAnh(anhGioiThieu, rong, cao));
+                }
+            });
             return pnlPanel;
         }
-        Image anh = new ImageIcon(url).getImage();
-        JPanel pnlAnhCoGian = new JPanel() {
-            @Override
 
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                int w = getWidth(), h = getHeight();
-                int iw = anh.getWidth(this), ih = anh.getHeight(this);
-                if (iw <= 0 || ih <= 0 || w <= 0 || h <= 0)
-                    return;
-
-                double tile = Math.max((double) w / iw, (double) h / ih);
-                int newW = (int) Math.ceil(iw * tile);
-                int newH = (int) Math.ceil(ih * tile);
-                int x = (w - newW) / 2;
-                int y = 0;
-
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                g2.drawImage(anh, x, y, newW, newH, this);
-                g2.dispose();
-            }
-        };
-        pnlAnhCoGian.setBackground(Color.WHITE);
-        pnlPanel.add(pnlAnhCoGian, BorderLayout.CENTER);
+        JLabel lblChaoMung = new JLabel("PET SHOP PRO", SwingConstants.CENTER);
+        lblChaoMung.setFont(UIStyle.font(Font.BOLD, 30));
+        lblChaoMung.setForeground(UIStyle.NAVY);
+        pnlPanel.add(lblChaoMung, BorderLayout.CENTER);
         return pnlPanel;
+    }
+
+    private ImageIcon taiAnh(String path) {
+        java.net.URL url = getClass().getResource(path);
+        if (url != null) {
+            return new ImageIcon(url);
+        }
+
+        java.io.File tep = new java.io.File("src", path.replace('/', java.io.File.separatorChar).substring(1));
+        if (tep.isFile()) {
+            return new ImageIcon(tep.getAbsolutePath());
+        }
+        return null;
+    }
+
+    private ImageIcon phongToDayAnh(ImageIcon icon, int rong, int cao) {
+        int rongGoc = icon.getIconWidth();
+        int caoGoc = icon.getIconHeight();
+        if (rongGoc <= 0 || caoGoc <= 0) {
+            return icon;
+        }
+
+        double tyLe = Math.max((double) rong / rongGoc, (double) cao / caoGoc);
+        int rongMoi = Math.max(1, (int) Math.round(rongGoc * tyLe));
+        int caoMoi = Math.max(1, (int) Math.round(caoGoc * tyLe));
+        Image anh = icon.getImage().getScaledInstance(rongMoi, caoMoi, Image.SCALE_SMOOTH);
+        return new ImageIcon(anh);
     }
 
     private JPanel taoPnlTruyCapNhanh() {
@@ -1143,12 +1164,10 @@ public class TrangChuUI extends JFrame implements ActionListener {
     }
 
     private void moModalHoTro() {
-
         JDialog winHoTro = new JDialog(this, "Hỗ trợ sử dụng Pet Shop Pro", true);
         winHoTro.setSize(760, 560);
         winHoTro.setLocationRelativeTo(this);
         winHoTro.setLayout(new BorderLayout(0, 10));
-
         JPanel pnlTieuDeHoTro = new JPanel(new BorderLayout());
         pnlTieuDeHoTro.setBackground(UIStyle.NAVY);
         pnlTieuDeHoTro.setBorder(new EmptyBorder(14, 18, 14, 18));
@@ -1168,31 +1187,21 @@ public class TrangChuUI extends JFrame implements ActionListener {
                         <html>
                         <body style='font-family:Segoe UI; font-size:12px; padding:8px 10px;'>
                         <h2 style='color:#123052; margin-top:0;'>Pet Shop Pro</h2>
-                        <p>Đây là màn hình trung tâm giúp nhân viên thao tác nhanh với các chức năng chính của cửa hàng thú cưng.</p>
-                        <h3 style='color:#123052;'>Mô tả menu trên thanh điều hướng</h3>
+                        <p>Màn hình trung tâm để thao tác các chức năng của cửa hàng.</p>
                         <ul>
                           <li><b>Trang chủ:</b> màn hình tổng quan, truy cập nhanh, lịch Spa sắp tới và hỗ trợ sử dụng.</li>
-                          <li><b>Hệ thống:</b> quản lý tài khoản nhân viên, quản lý ca làm, đăng xuất và quay về trang chủ.</li>
-                          <li><b>Danh mục:</b> quản lý danh mục sản phẩm, sản phẩm, khách hàng và thú cưng.</li>
-                          <li><b>Nghiệp vụ:</b> các thao tác vận hành cửa hàng như nhập kho, kiểm kê, lịch hẹn Spa, phiếu dịch vụ, thanh toán, voucher và phân ca nhân viên.</li>
-                          <li><b>Tìm kiếm:</b> tra cứu lịch sử hóa đơn, phiếu nhập kho và phiếu kiểm kê kho; xem chi tiết và lọc theo thông tin liên quan.</li>
-                          <li><b>Thống kê:</b> thống kê doanh thu và thống kê lượt mua từ dữ liệu hóa đơn.</li>
-                        </ul>
-                        <h3 style='color:#123052;'>Khu vực trong trang chủ</h3>
-                        <ul>
-                          <li><b>Ảnh giới thiệu:</b> hình ảnh nhận diện thương hiệu Pet Shop Pro.</li>
-                          <li><b>Truy cập nhanh:</b> mở nhanh các chức năng thường dùng bằng chuột hoặc phím tắt F4-F8.</li>
-                          <li><b>Lịch Spa sắp tới:</b> hiển thị lịch hẹn gần nhất lấy từ dữ liệu lịch hẹn Spa.</li>
-                          <li><b>Hỗ trợ:</b> mở cửa sổ hướng dẫn tổng quan cách sử dụng giao diện.</li>
+                          <li><b>Hệ thống:</b> tài khoản, ca làm và phân quyền.</li>
+                          <li><b>Danh mục:</b> danh mục, sản phẩm, khách hàng, thú cưng và dịch vụ.</li>
+                          <li><b>Nghiệp vụ:</b> nhập kho, kiểm kê, lịch hẹn, phiếu dịch vụ và thanh toán.</li>
+                          <li><b>Tìm kiếm:</b> tra cứu hóa đơn, nhập kho và kiểm kê.</li>
+                          <li><b>Thống kê:</b> doanh thu và lượt mua.</li>
                         </ul>
                         <h3 style='color:#123052;'>Gợi ý sử dụng</h3>
                         <ol>
                           <li>Chọn menu chức năng trên thanh điều hướng để mở màn hình tương ứng.</li>
                           <li>Dùng truy cập nhanh khi cần mở nhanh thao tác thường dùng.</li>
-                          <li>Kiểm tra lịch Spa sắp tới ở góc dưới bên trái để nắm các lịch hẹn gần nhất.</li>
                           <li>Nhấn tên nhân viên ở góc trên bên phải để xem thông tin đăng nhập hoặc đăng xuất.</li>
                         </ol>
-                        <p style='color:#666;'>Lưu ý: một số chức năng phụ thuộc dữ liệu SQL Server. Nếu không hiển thị, hãy kiểm tra kết nối CSDL.</p>
                         </body>
                         </html>
                         """);

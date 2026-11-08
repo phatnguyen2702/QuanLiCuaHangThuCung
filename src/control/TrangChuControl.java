@@ -27,7 +27,15 @@ public final class TrangChuControl {
             throw new SecurityException("Chưa đăng nhập hoặc vai trò không hợp lệ.");
     }
 
-    public record ThongKeHoaDon(double doanhThuHomNay, int hoaDonHomNay) {
+    public static final class ThongKeHoaDon {
+        private final double doanhThuHomNay;
+        private final int hoaDonHomNay;
+
+        public ThongKeHoaDon(double doanhThuHomNay, int hoaDonHomNay) {
+            this.doanhThuHomNay = doanhThuHomNay;
+            this.hoaDonHomNay = hoaDonHomNay;
+        }
+
         public double getDoanhThuHomNay() {
             return doanhThuHomNay;
         }
