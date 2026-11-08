@@ -90,9 +90,26 @@ public class NhanVienControl {
     }
 
     public KetQuaThaoTac xoaNhanVien(String maNhanVien) {
-        return dao.xoa(maNhanVien)
-                ? new KetQuaThaoTac(true, "Xóa tài khoản thành công!")
-                : new KetQuaThaoTac(false, "Xóa tài khoản thất bại!");
+        if (maNhanVien == null || maNhanVien.isBlank()) {
+            return new KetQuaThaoTac(false, "Vui lòng chọn nhân viên cần xóa.");
+        }
+        if (maNhanVien.equals(TrangChuControl.maNV)) {
+            return new KetQuaThaoTac(false, "Không thể xóa tài khoản đang đăng nhập.");
+        }
+        try {
+            return dao.xoa(maNhanVien)
+                    ? new KetQuaThaoTac(true, "Xóa tài khoản thành công!")
+                    : new KetQuaThaoTac(false, "Không tìm thấy nhân viên cần xóa.");
+        } catch (SQLException ex) {
+            if (ex.getErrorCode() == 547 || ex.getMessage().contains("REFERENCE constraint")) {
+                return new KetQuaThaoTac(false,
+                        "Không thể xóa nhân viên vì đang có dữ liệu liên quan (lịch làm, lịch hẹn, phiếu dịch vụ, hóa đơn hoặc phiếu kho). "
+                                + "Hãy chuyển/xóa các dữ liệu liên quan trước.");
+            }
+            return new KetQuaThaoTac(false, "Lỗi xóa nhân viên: " + ex.getMessage());
+        } catch (SecurityException ex) {
+            return new KetQuaThaoTac(false, ex.getMessage());
+        }
     }
 
     public NhanVien taoNhanVien(String ma, String hoTen, String soDienThoai,

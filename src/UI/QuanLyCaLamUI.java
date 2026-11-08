@@ -190,7 +190,7 @@ public class QuanLyCaLamUI extends JPanel implements ActionListener {
                 txtTimKiem = new JTextField(18);
                 txtTimKiem.setPreferredSize(new Dimension(180, 32));
                 btnTim = createButton("Tìm", NAVY, 65, 32, 11);
-                btnTatCa = createButton("Tất cả", new Color(100, 110, 120), 65, 32, 11);
+                btnTatCa = createButton("Tất cả", new Color(100, 110, 120), 75, 32, 11);
                 search.add(new JLabel("Tìm kiếm:"));
                 search.add(txtTimKiem);
                 search.add(btnTim);

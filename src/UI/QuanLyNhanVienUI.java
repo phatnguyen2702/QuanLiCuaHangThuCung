@@ -331,7 +331,8 @@ public class QuanLyNhanVienUI extends JPanel implements ActionListener {
 
                         return;
                 }
-                String ma = txtMaNV.getText().trim();
+                int modelRow = tblDuLieu.convertRowIndexToModel(tblDuLieu.getSelectedRow());
+                String ma = valueAt(modelRow, 0).trim();
                 int result = JOptionPane.showConfirmDialog(
                                 this,
                                 "Bạn có chắc muốn xóa tài khoản "
