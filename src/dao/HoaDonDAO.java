@@ -77,9 +77,11 @@ public class HoaDonDAO {
     public List<HoaDon> timHoaDon(String tuKhoa) throws SQLException {
         control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         String sql = """
-                SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, kh.maKhachHang, kh.hoTen, kh.soDienThoai, pt.tenPhuongThuc
+                SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, kh.maKhachHang, kh.hoTen, kh.soDienThoai, pt.tenPhuongThuc,
+                       nv.maNhanVien, nv.hoTen AS tenNhanVien
                 FROM HoaDon hd JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang
                 JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc
+                LEFT JOIN NhanVien nv ON nv.maNhanVien = hd.maNhanVien
                 WHERE ? = '' OR hd.maHoaDon LIKE ? OR kh.hoTen LIKE ? OR kh.soDienThoai LIKE ?
                 ORDER BY hd.ngayLap DESC, hd.maHoaDon DESC
                 """;
@@ -103,7 +105,9 @@ public class HoaDonDAO {
                             maKhachHang,
                             rs.getString("hoTen"),
                             rs.getString("soDienThoai"),
-                            rs.getString("tenPhuongThuc")));
+                            rs.getString("tenPhuongThuc"),
+                            rs.getString("maNhanVien"),
+                            rs.getString("tenNhanVien")));
                 }
             }
         }
@@ -205,9 +209,11 @@ public class HoaDonDAO {
     public HoaDon layChiTietHoaDon(String maHoaDon) throws SQLException {
         control.PhanQuyenControl.yeuCau(control.PhanQuyenControl.Quyen.TRA_CUU_HOA_DON);
         String sql = """
-                SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, kh.maKhachHang, kh.hoTen, kh.soDienThoai, pt.tenPhuongThuc
+                SELECT hd.maHoaDon, hd.ngayLap, hd.maPhuongThuc, kh.maKhachHang, kh.hoTen, kh.soDienThoai, pt.tenPhuongThuc,
+                       nv.maNhanVien, nv.hoTen AS tenNhanVien
                 FROM HoaDon hd JOIN KhachHang kh ON kh.maKhachHang = hd.maKhachHang
                 JOIN PhuongThucThanhToan pt ON pt.maPhuongThuc = hd.maPhuongThuc
+                LEFT JOIN NhanVien nv ON nv.maNhanVien = hd.maNhanVien
                 WHERE hd.maHoaDon = ?
                 """;
         try (Connection con = connectDB.getConnection();
@@ -225,7 +231,9 @@ public class HoaDonDAO {
                         rs.getString("maKhachHang"),
                         rs.getString("hoTen"),
                         rs.getString("soDienThoai"),
-                        rs.getString("tenPhuongThuc"));
+                        rs.getString("tenPhuongThuc"),
+                        rs.getString("maNhanVien"),
+                        rs.getString("tenNhanVien"));
             }
         }
     }

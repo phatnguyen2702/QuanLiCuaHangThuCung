@@ -76,6 +76,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
 
     private final ThanhToanControl thanhToanControl = new ThanhToanControl();
     private final String maNhanVien;
+    private final String tenNhanVien;
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout(10, 12));
     private final Runnable moLichSuHoaDon;
     private final Runnable capNhatPhieuDichVu;
@@ -122,7 +123,14 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
 
     public QuanLyThanhToanUI(
             String maNhanVien, Runnable moLichSuHoaDon, Runnable capNhatPhieuDichVu) {
+        this(maNhanVien, null, moLichSuHoaDon, capNhatPhieuDichVu);
+    }
+
+    public QuanLyThanhToanUI(
+            String maNhanVien, String tenNhanVien,
+            Runnable moLichSuHoaDon, Runnable capNhatPhieuDichVu) {
         this.maNhanVien = maNhanVien;
+        this.tenNhanVien = tenNhanVien;
         this.moLichSuHoaDon = moLichSuHoaDon;
         this.capNhatPhieuDichVu = capNhatPhieuDichVu;
         setTitle("Thanh toán hóa đơn");
@@ -1363,7 +1371,10 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
             }
             String noiDungHoaDon = taoNoiDungHoaDon(
                     phuongThuc.getTenPhuongThuc(), tongThanhToan);
-            noiDungHoaDon = "PET SHOP PRO\nHÓA ĐƠN: " + maHoaDonDaLuu + "\n"
+            noiDungHoaDon = "PET SHOP PRO\n"
+                    + "Địa chỉ: 12 Nguyễn Văn Bảo, Hạnh Thông, Hồ Chí Minh\n"
+                    + "Nhân viên lập: " + (tenNhanVien == null ? "" : tenNhanVien) + "\n"
+                    + "HÓA ĐƠN: " + maHoaDonDaLuu + "\n"
                     + noiDungHoaDon;
             hienXacNhanHoaDon(noiDungHoaDon, maHoaDonDaLuu);
             chiTiet.clear();

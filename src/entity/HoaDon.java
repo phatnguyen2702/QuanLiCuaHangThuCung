@@ -32,6 +32,20 @@ public class HoaDon {
             String tenKhachHang,
             String soDienThoai,
             String tenPhuongThuc) {
+        this(maHoaDon, ngayLap, maPhuongThuc, maKhachHang,
+                tenKhachHang, soDienThoai, tenPhuongThuc, null, null);
+    }
+
+    public HoaDon(
+            String maHoaDon,
+            LocalDateTime ngayLap,
+            String maPhuongThuc,
+            String maKhachHang,
+            String tenKhachHang,
+            String soDienThoai,
+            String tenPhuongThuc,
+            String maNhanVien,
+            String tenNhanVien) {
         this.maHoaDon = maHoaDon;
         this.ngayLap = ngayLap;
         if (maPhuongThuc != null) {
@@ -41,6 +55,10 @@ public class HoaDon {
         if (maKhachHang != null) {
             this.maKhachHang = new KhachHang(
                     maKhachHang, tenKhachHang, soDienThoai, null, null, 0);
+        }
+        if (maNhanVien != null) {
+            this.maNhanVien = new NhanVien(
+                    maNhanVien, tenNhanVien, null, null, null, null, null);
         }
     }
 
@@ -93,6 +111,10 @@ public class HoaDon {
 
     public NhanVien getNhanVien() {
         return maNhanVien;
+    }
+
+    public String getTenNhanVien() {
+        return maNhanVien == null ? null : maNhanVien.getHoTen();
     }
 
     public String getMaVoucher() {

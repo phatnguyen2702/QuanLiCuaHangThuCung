@@ -43,6 +43,7 @@ public class ChiTietHoaDonUI extends JPanel {
     private final JLabel lblMaHoaDon = new JLabel();
     private final JLabel lblNgayLap = new JLabel();
     private final JLabel lblKhachHang = new JLabel();
+    private final JLabel lblNhanVienLap = new JLabel();
     private final JLabel lblTrangThai = new JLabel("Đã thanh toán");
     private final JLabel lblMaKhachHang = new JLabel();
     private final JLabel lblTenKhachHang = new JLabel();
@@ -95,6 +96,7 @@ public class ChiTietHoaDonUI extends JPanel {
         lblMaHoaDon.setText(hoaDon.getMaHoaDon());
         lblNgayLap.setText(formatDate(hoaDon.getNgayLap()));
         lblKhachHang.setText(hoaDon.getTenKhachHang());
+        lblNhanVienLap.setText(safe(hoaDon.getTenNhanVien()));
         lblMaKhachHang.setText(hoaDon.getMaKhachHang());
         lblTenKhachHang.setText(hoaDon.getTenKhachHang());
         lblSoDienThoai.setText(hoaDon.getSoDienThoai());
@@ -116,6 +118,7 @@ public class ChiTietHoaDonUI extends JPanel {
         addInfo(pnlInvoiceInfo, "Mã hóa đơn:", lblMaHoaDon);
         addInfo(pnlInvoiceInfo, "Ngày:", lblNgayLap);
         addInfo(pnlInvoiceInfo, "Khách hàng:", lblKhachHang);
+        addInfo(pnlInvoiceInfo, "Nhân viên lập:", lblNhanVienLap);
         addInfo(pnlInvoiceInfo, "Trạng thái:", lblTrangThai);
         lblTrangThai.setForeground(GREEN);
         lblTrangThai.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -267,10 +270,12 @@ public class ChiTietHoaDonUI extends JPanel {
     private String taoNoiDungHoaDon() {
         StringBuilder text = new StringBuilder();
         text.append("PET SHOP PRO\n");
+        text.append("Địa chỉ: 12 Nguyễn Văn Bảo, Hạnh Thông, Hồ Chí Minh\n");
         text.append("HÓA ĐƠN THANH TOÁN\n");
         text.append("Mã hóa đơn: ").append(safe(hoaDon.getMaHoaDon())).append('\n');
         text.append("Ngày lập: ").append(formatDate(hoaDon.getNgayLap())).append('\n');
         text.append("Khách hàng: ").append(safe(hoaDon.getTenKhachHang())).append('\n');
+        text.append("Nhân viên lập: ").append(safe(hoaDon.getTenNhanVien())).append('\n');
         text.append("Mã khách hàng: ").append(safe(hoaDon.getMaKhachHang())).append('\n');
         text.append("Số điện thoại: ").append(safe(hoaDon.getSoDienThoai())).append('\n');
         text.append("Thú cưng: ").append(layTenThuCung(chiTiet)).append('\n');
