@@ -19,6 +19,8 @@ public class LichHenControl {
             .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter GIO = DateTimeFormatter.ofPattern("HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
+    private static final LocalTime GIO_MO_CUA = LocalTime.of(6, 0);
+    private static final LocalTime GIO_DONG_CUA = LocalTime.of(22, 0);
 
     public ArrayList<LichHen> layDanhSach() {
         return dao.getAll();
@@ -99,6 +101,7 @@ public class LichHenControl {
         } catch (DateTimeParseException ex) {
             throw new IllegalArgumentException("Ngày phải theo dd/MM/yyyy và giờ theo HH:mm.");
         }
+        kiemTraKhungGio(ngayGioHen);
         if (!ngayGioHen.isAfter(LocalDateTime.now()))
             throw new IllegalArgumentException("Giờ hẹn phải lớn hơn thời gian hiện tại.");
 
@@ -139,6 +142,7 @@ public class LichHenControl {
         if (lichHen.getNgayGioHen() == null
                 || !lichHen.getNgayGioHen().isAfter(LocalDateTime.now()))
             throw new IllegalArgumentException("Giờ hẹn phải lớn hơn thời gian hiện tại.");
+        kiemTraKhungGio(lichHen.getNgayGioHen());
         if (!thuCungCuaKhach(lichHen.getMaThuCung(), lichHen.getMaKhachHang()))
             throw new IllegalArgumentException("Thú cưng không thuộc khách hàng đã chọn.");
         if (biTrungLich(lichHen))
@@ -166,6 +170,12 @@ public class LichHenControl {
                 return true;
         }
         return false;
+    }
+
+    private static void kiemTraKhungGio(LocalDateTime ngayGioHen) {
+        LocalTime gioHen = ngayGioHen.toLocalTime();
+        if (gioHen.isBefore(GIO_MO_CUA) || gioHen.isAfter(GIO_DONG_CUA))
+            throw new IllegalArgumentException("Giờ hẹn chỉ được đặt trong khung 06:00 đến 22:00.");
     }
 
     private static String safe(String value) {

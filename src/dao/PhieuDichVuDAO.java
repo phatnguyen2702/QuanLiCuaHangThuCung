@@ -16,17 +16,14 @@ public class PhieuDichVuDAO {
     public ArrayList<PhieuDichVu> getAll() {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHIEU_DICH_VU);
         ArrayList<PhieuDichVu> list = new ArrayList<>();
-        String sql = "SELECT p.*, tc.tenThuCung, tc.giong, " +
-                "nv.hoTen AS tenNhanVien, kh.hoTen AS tenKhachHang, " +
-                "ISNULL((SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), dv.tenDichVu), N', ') " +
-                "FROM ChiTietDichVu ctdv JOIN DichVu dv " +
-                "ON ctdv.maDichVu = dv.maDichVu " +
-                "WHERE ctdv.maPhieuDichVu = p.maPhieuDichVu), N'') AS cacDichVu " +
-                "FROM PhieuDichVu p " +
-                "JOIN ThuCung tc ON p.maThuCung = tc.maThuCung " +
-                "JOIN NhanVien nv ON p.maNhanVien = nv.maNhanVien " +
-                "JOIN KhachHang kh ON p.maKhachHang = kh.maKhachHang " +
-                "ORDER BY p.maPhieuDichVu DESC";
+        String sql = "SELECT p.*, tc.tenThuCung, tc.giong, nv.hoTen AS tenNhanVien, kh.hoTen AS tenKhachHang, "
+                + "ISNULL((SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), dv.tenDichVu), N', ') "
+                + "FROM ChiTietDichVu ctdv JOIN DichVu dv ON ctdv.maDichVu = dv.maDichVu "
+                + "WHERE ctdv.maPhieuDichVu = p.maPhieuDichVu), N'') AS cacDichVu "
+                + "FROM PhieuDichVu p JOIN ThuCung tc ON p.maThuCung = tc.maThuCung "
+                + "JOIN NhanVien nv ON p.maNhanVien = nv.maNhanVien "
+                + "JOIN KhachHang kh ON p.maKhachHang = kh.maKhachHang "
+                + "ORDER BY p.maPhieuDichVu DESC";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -81,7 +78,6 @@ public class PhieuDichVuDAO {
         return list;
     }
 
-
     private void kiemTraLienKet(Connection con, PhieuDichVu p) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
                 "SELECT 1 FROM ThuCung WHERE maThuCung = ? AND maKhachHang = ?")) {
@@ -123,7 +119,6 @@ public class PhieuDichVuDAO {
             }
         }
     }
-
 
     private void chenDichVu(Connection con, String maPhieu, List<String[]> ds) throws SQLException {
         if (ds == null || ds.isEmpty())
