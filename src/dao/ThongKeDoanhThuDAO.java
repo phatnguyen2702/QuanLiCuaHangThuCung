@@ -11,11 +11,23 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import ConnectDB.connectDB;
 
 public class ThongKeDoanhThuDAO {
+
+    private record MatHangKey(
+            String tenDanhMuc,
+            String maDichVu,
+            String maThuCung,
+            String tenSanPham,
+            String tenDichVu,
+            String tenThuCung) {
+    }
 
     public enum CheDo {
         NGAY("Ngày"),
@@ -153,31 +165,25 @@ public class ThongKeDoanhThuDAO {
         double tongDoanhThu = 0;
         int tongHoaDon;
         List<DongBieuDo> bieuDo = new ArrayList<>();
+        List<Double> doanhThuTheoMoc = new ArrayList<>();
         for (int i = 1; i <= soMoc; i++) {
             bieuDo.add(new DongBieuDo(
                     cheDo == CheDo.NGAY ? i - 1 : i,
                     0));
+            doanhThuTheoMoc.add(0.0);
         }
         List<DongMatHang> matHangs = new ArrayList<>();
 
         String tongHoaDonSql = "SELECT COUNT(*) FROM HoaDon WHERE ngayLap >= ? AND ngayLap < ?";
         String bieuDoSql = """
-                SELECT %1$s AS moc,
-                       COALESCE(SUM(ct.soLuong * ct.donGia * (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)), 0) AS doanhThu
+                SELECT %1$s AS moc, ct.soLuong, ct.donGia, ct.phanTramGiam
                 FROM HoaDon hd JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon
                 WHERE hd.ngayLap >= ? AND hd.ngayLap < ?
-                GROUP BY %1$s ORDER BY moc
                 """.formatted(cotNhom);
         String matHangSql = """
-                SELECT COALESCE(dm.tenDanhMuc,
-                           CASE WHEN dv.maDichVu IS NOT NULL THEN N'Dịch vụ'
-                                WHEN tc.maThuCung IS NOT NULL THEN N'Thú cưng'
-                                ELSE N'Khác' END)
-                           + N' / ' + COALESCE(sp.tenSanPham, dv.tenDichVu, tc.tenThuCung, N'Không rõ')
-                           AS tenMatHang,
-                       SUM(ct.soLuong) AS soLuong,
-                       SUM(ct.soLuong * ct.donGia
-                           * (1 - COALESCE(ct.phanTramGiam, 0) / 100.0)) AS doanhThu
+                SELECT dm.tenDanhMuc, sp.maSanPham, sp.tenSanPham,
+                       dv.maDichVu, dv.tenDichVu, tc.maThuCung, tc.tenThuCung,
+                       ct.soLuong, ct.donGia, ct.phanTramGiam
                 FROM HoaDon hd
                 JOIN ChiTietHoaDon ct ON ct.maHoaDon = hd.maHoaDon
                 LEFT JOIN SanPham sp ON sp.maSanPham = ct.maSanPham
@@ -185,9 +191,6 @@ public class ThongKeDoanhThuDAO {
                 LEFT JOIN DichVu dv ON dv.maDichVu = ct.maDichVu
                 LEFT JOIN ThuCung tc ON tc.maThuCung = ct.maThuCung
                 WHERE hd.ngayLap >= ? AND hd.ngayLap < ?
-                GROUP BY dm.tenDanhMuc, dv.maDichVu, tc.maThuCung,
-                         sp.tenSanPham, dv.tenDichVu, tc.tenThuCung
-                ORDER BY doanhThu DESC, tenMatHang
                 """;
 
         try (Connection con = connectDB.getConnection()) {
@@ -211,28 +214,88 @@ public class ThongKeDoanhThuDAO {
                         if (moc >= 0 && moc < bieuDo.size()) {
                             int viTri = cheDo == CheDo.NGAY ? moc : moc - 1;
                             if (viTri >= 0 && viTri < bieuDo.size()) {
-                                bieuDo.set(viTri, new DongBieuDo(
-                                        bieuDo.get(viTri).getThuTu(),
-                                        rs.getDouble("doanhThu")));
+                                int soLuong = rs.getInt("soLuong");
+                                double donGia = rs.getDouble("donGia");
+                                boolean donGiaNull = rs.wasNull();
+                                double phanTramGiam = rs.getDouble("phanTramGiam");
+                                if (rs.wasNull()) {
+                                    phanTramGiam = 0;
+                                }
+                                if (!donGiaNull) {
+                                    double thanhTien = soLuong * donGia
+                                            * (1 - phanTramGiam / 100.0);
+                                    doanhThuTheoMoc.set(
+                                            viTri,
+                                            doanhThuTheoMoc.get(viTri) + thanhTien);
+                                }
                             }
                         }
                     }
                 }
             }
+            for (int i = 0; i < bieuDo.size(); i++) {
+                bieuDo.set(i, new DongBieuDo(
+                        bieuDo.get(i).getThuTu(),
+                        doanhThuTheoMoc.get(i)));
+            }
 
+            Map<MatHangKey, DongMatHang> matHangTheoMa = new LinkedHashMap<>();
             try (PreparedStatement ps = con.prepareStatement(matHangSql)) {
                 ps.setTimestamp(1, java.sql.Timestamp.valueOf(batDau));
                 ps.setTimestamp(2, java.sql.Timestamp.valueOf(ketThuc));
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        DongMatHang dong = new DongMatHang(
-                                rs.getString("tenMatHang"),
-                                rs.getInt("soLuong"),
-                                rs.getDouble("doanhThu"));
-                        matHangs.add(dong);
-                        tongDoanhThu += dong.getDoanhThu();
+                        String maDichVu = rs.getString("maDichVu");
+                        String maThuCung = rs.getString("maThuCung");
+                        String tenDanhMuc = rs.getString("tenDanhMuc");
+                        String tenSanPham = rs.getString("tenSanPham");
+                        String tenDichVu = rs.getString("tenDichVu");
+                        String tenThuCung = rs.getString("tenThuCung");
+                        String tenHang = rs.getString("tenSanPham");
+                        if (tenHang == null) {
+                            tenHang = tenDichVu;
+                        }
+                        if (tenHang == null) {
+                            tenHang = tenThuCung;
+                        }
+                        if (tenHang == null) {
+                            tenHang = "Không rõ";
+                        }
+
+                        String nhomHang = tenDanhMuc != null ? tenDanhMuc
+                                : maDichVu != null ? "Dịch vụ"
+                                : maThuCung != null ? "Thú cưng"
+                                : "Khác";
+                        String tenMatHang = nhomHang + " / " + tenHang;
+                        double phanTramGiam = rs.getDouble("phanTramGiam");
+                        if (rs.wasNull()) {
+                            phanTramGiam = 0;
+                        }
+                        int soLuong = rs.getInt("soLuong");
+                        double doanhThu = soLuong * rs.getDouble("donGia")
+                                * (1 - phanTramGiam / 100.0);
+
+                        MatHangKey khoa = new MatHangKey(
+                                tenDanhMuc,
+                                maDichVu,
+                                maThuCung,
+                                tenSanPham,
+                                tenDichVu,
+                                tenThuCung);
+                        DongMatHang dongCu = matHangTheoMa.get(khoa);
+                        int tongSoLuong = soLuong + (dongCu == null ? 0 : dongCu.getSoLuong());
+                        double tongTien = doanhThu + (dongCu == null ? 0 : dongCu.getDoanhThu());
+                        matHangTheoMa.put(
+                                khoa,
+                                new DongMatHang(tenMatHang, tongSoLuong, tongTien));
                     }
                 }
+            }
+            matHangs.addAll(matHangTheoMa.values());
+            matHangs.sort(Comparator.comparingDouble(DongMatHang::getDoanhThu).reversed()
+                    .thenComparing(DongMatHang::getTenMatHang));
+            for (DongMatHang dong : matHangs) {
+                tongDoanhThu += dong.getDoanhThu();
             }
         }
 

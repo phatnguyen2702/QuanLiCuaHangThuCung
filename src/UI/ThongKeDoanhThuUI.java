@@ -47,59 +47,31 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
-
 public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseListener {
 
-
     private static final Color NAVY = new Color(18, 48, 82);
-
     private static final Color BLUE = new Color(45, 125, 205);
-
     private static final Color BORDER = new Color(210, 220, 230);
-
     private static final Color MUTED = new Color(105, 116, 130);
-
     private static final NumberFormat MONEY = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
-
-
     private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-
     private static final DateTimeFormatter MONTH_FORMAT = DateTimeFormatter.ofPattern("MM/yyyy");
-
-
     private final ThongKeDoanhThuControl thongKeControl = new ThongKeDoanhThuControl();
-
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout(0, 12));
-
     private final JComboBox<CheDo> cmbCheDo = new JComboBox<>(CheDo.values());
-
     private final JLabel lblKy = new JLabel();
-
     private final JLabel lblTongDoanhThu = new JLabel("—", SwingConstants.CENTER);
-
     private final JLabel lblTongHoaDon = new JLabel("—", SwingConstants.CENTER);
-
     private final JLabel lblTrungBinh = new JLabel("—", SwingConstants.CENTER);
-
     private final JLabel lblTrangThai = new JLabel(" ");
-
     private final JButton btnTruoc = new JButton("‹");
-
     private final JButton btnSau = new JButton("›");
-
     private final JButton btnPdf = new JButton("Xuất file");
-
     private final BangMatHangModel bangModel = new BangMatHangModel();
-
     private final JTable tblMatHang = new JTable(bangModel);
-
     private final BieuDoPanel pnlBieuDo = new BieuDoPanel();
-
     private LocalDate ngayThamChieu = LocalDate.now();
-
     private BaoCao baoCao;
-
 
     public ThongKeDoanhThuUI() {
         setTitle("Thống kê doanh thu");
@@ -110,7 +82,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         pnlNoiDung.add(taoTieuDe(), BorderLayout.NORTH);
         pnlNoiDung.add(taoNoiDung(), BorderLayout.CENTER);
 
-
         cmbCheDo.addActionListener(this);
 
         btnTruoc.addActionListener(this);
@@ -119,9 +90,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         tblMatHang.addMouseListener(this);
         capNhatBaoCao();
     }
-
-
-
 
     public JPanel getContentPanel() {
         return pnlNoiDung;
@@ -165,12 +133,9 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
     public void mouseExited(MouseEvent event) {
     }
 
-
     public void lamMoi() {
         capNhatBaoCao();
     }
-
-
 
     private JPanel taoTieuDe() {
 
@@ -184,13 +149,10 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         return pnlKhung;
     }
 
-
-
     private JPanel taoNoiDung() {
 
         JPanel pnlContent = new JPanel(new BorderLayout(0, 12));
         pnlContent.setBackground(new Color(229, 241, 252));
-
 
         JPanel pnlToolbar = new JPanel(new BorderLayout(10, 0));
         pnlToolbar.setOpaque(false);
@@ -208,11 +170,8 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         pnlKyChon.add(btnSau);
         pnlToolbar.add(pnlKyChon, BorderLayout.WEST);
 
-
-
         btnPdf.addActionListener(this);
         pnlToolbar.add(btnPdf, BorderLayout.EAST);
-
 
         JPanel pnlStats = new JPanel(new java.awt.GridLayout(1, 3, 12, 0));
         pnlStats.setOpaque(false);
@@ -225,7 +184,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         pnlHeaderContent.add(pnlToolbar, BorderLayout.NORTH);
         pnlHeaderContent.add(pnlStats, BorderLayout.CENTER);
 
-
         JPanel pnlChartCard = taoTheNoiDung("Biểu đồ doanh thu");
         pnlChartCard.add(pnlBieuDo, BorderLayout.CENTER);
 
@@ -236,12 +194,10 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         scrCuon2.setBorder(BorderFactory.createLineBorder(BORDER));
         pnlTableCard.add(scrCuon2, BorderLayout.CENTER);
 
-
         JPanel pnlResults = new JPanel(new java.awt.GridLayout(1, 2, 14, 0));
         pnlResults.setOpaque(false);
         pnlResults.add(pnlChartCard);
         pnlResults.add(pnlTableCard);
-
 
         JPanel pnlCenter2 = new JPanel(new BorderLayout(0, 10));
         pnlCenter2.setOpaque(false);
@@ -253,10 +209,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         pnlContent.add(lblTrangThai, BorderLayout.SOUTH);
         return pnlContent;
     }
-
-
-
-
 
     private JPanel taoTheChiSo(String tieuDe, JLabel lblGiaTri2) {
 
@@ -276,9 +228,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         return pnlCard;
     }
 
-
-
-
     private JPanel taoTheNoiDung(String tieuDe) {
 
         JPanel pnlKhung = new JPanel(new BorderLayout(0, 8));
@@ -293,7 +242,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         return pnlKhung;
     }
 
-
     private void cauHinhBang() {
         tblMatHang.setRowHeight(25);
         tblMatHang.setFillsViewportHeight(true);
@@ -302,13 +250,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         tblMatHang.getTableHeader().setBackground(new Color(245, 247, 250));
         tblMatHang.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         tblMatHang.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-
-
-
-
-
-
-
 
             @Override
             public java.awt.Component getTableCellRendererComponent(
@@ -322,7 +263,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
             }
         });
     }
-
 
     private void capNhatBaoCao() {
         CheDo cheDo = (CheDo) cmbCheDo.getSelectedItem();
@@ -364,8 +304,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         }
     }
 
-
-
     private void dichKy(int soKy) {
         CheDo cheDo = (CheDo) cmbCheDo.getSelectedItem();
         if (cheDo == null) {
@@ -387,10 +325,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         capNhatBaoCao();
     }
 
-
-
-
-
     private boolean laKyTruocHienTai(CheDo cheDo, LocalDate ngay) {
         switch (cheDo) {
             case NGAY:
@@ -403,10 +337,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                 return false;
         }
     }
-
-
-
-
 
     private String nhanKy(CheDo cheDo, LocalDate ngay) {
         switch (cheDo) {
@@ -421,15 +351,9 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         }
     }
 
-
-
-
     private String dinhDangTien(double amount) {
         return MONEY.format(amount);
     }
-
-
-
 
     private double tinhTyTrong(double doanhThu) {
         if (baoCao == null || baoCao.getTongDoanhThu() == 0) {
@@ -437,7 +361,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         }
         return Math.round(doanhThu * 1000 / baoCao.getTongDoanhThu()) / 10.0;
     }
-
 
     private void xuatPdf() {
         if (baoCao == null) {
@@ -471,8 +394,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                     "Lỗi xuất", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-
 
     private byte[] taoPdf() throws IOException {
 
@@ -529,12 +450,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
                 + pageReferences + "] /Count " + pageCount + " >>\nendobj\n"));
         return assemblePdf(objects);
     }
-
-
-
-
-
-
 
     private void vePdfTrang(
             Graphics2D g, int page, CheDo cheDo, int firstPageRows, int followingPageRows) {
@@ -598,13 +513,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         g.drawString("Trang " + (page + 1), 770, 578);
     }
 
-
-
-
-
-
-
-
     private void veBieuDoPdf(Graphics2D g, int x, int y, int width, int height, CheDo cheDo) {
         g.setColor(new Color(247, 249, 251));
         g.fillRoundRect(x, y, width, height, 8, 8);
@@ -652,16 +560,9 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         }
     }
 
-
-
-
-
     private String catChuoi(String text, int maxLength) {
         return text.length() <= maxLength ? text : text.substring(0, maxLength - 1) + "…";
     }
-
-
-
 
     private byte[] nenAnhRgb(java.awt.image.BufferedImage image) throws IOException {
 
@@ -686,11 +587,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         return compressed.toByteArray();
     }
 
-
-
-
-
-
     private byte[] streamObject(int number, String dictionary, byte[] data) throws IOException {
 
         ByteArrayOutputStream object = new ByteArrayOutputStream();
@@ -700,9 +596,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         object.write(ascii("\nendstream\nendobj\n"));
         return object.toByteArray();
     }
-
-
-
 
     private byte[] assemblePdf(List<byte[]> objects) throws IOException {
 
@@ -725,13 +618,9 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         return pdf.toByteArray();
     }
 
-
-
-
     private byte[] ascii(String text) {
         return text.getBytes(StandardCharsets.ISO_8859_1);
     }
-
 
     private final class BieuDoPanel extends JPanel {
 
@@ -739,22 +628,16 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
 
         private CheDo cheDo = CheDo.NGAY;
 
-
         private BieuDoPanel() {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(380, 270));
         }
-
-
-
 
         private void setBaoCao(BaoCao data, CheDo cheDo) {
             this.data = data;
             this.cheDo = cheDo;
             repaint();
         }
-
-
 
         @Override
         protected void paintComponent(Graphics graphics) {
@@ -824,10 +707,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
             }
         }
 
-
-
-
-
         private boolean hienNhanMoc(int index, int count) {
             if (count <= 12) {
                 return true;
@@ -837,10 +716,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
             }
             return index % 5 == 0 || index == count - 1;
         }
-
-
-
-
 
         private String nhanMoc(CheDo cheDo, int moc) {
             if (cheDo == CheDo.NGAY) {
@@ -854,7 +729,6 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
         }
     }
 
-
     private final class BangMatHangModel extends AbstractTableModel {
 
         private final String[] cot = { "STT", "Danh mục / Sản phẩm", "Số lượng",
@@ -862,35 +736,25 @@ public class ThongKeDoanhThuUI extends JFrame implements ActionListener, MouseLi
 
         private List<DongMatHang> rows = new ArrayList<>();
 
-
-
         private void setBaoCao(BaoCao baoCao) {
             rows = baoCao == null ? new ArrayList<>() : baoCao.getMatHangs();
             fireTableDataChanged();
         }
-
 
         @Override
         public int getRowCount() {
             return rows.size();
         }
 
-
         @Override
         public int getColumnCount() {
             return cot.length;
         }
 
-
-
         @Override
         public String getColumnName(int column) {
             return cot[column];
         }
-
-
-
-
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
