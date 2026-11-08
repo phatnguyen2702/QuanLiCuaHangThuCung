@@ -115,16 +115,13 @@ public class NhanVienDAO {
         }
     }
 
-    public boolean xoa(String maNhanVien) {
+    public boolean xoa(String maNhanVien) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.TAI_KHOAN);
         String sql = "DELETE FROM NhanVien WHERE maNhanVien=?";
         try (Connection con = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, maNhanVien);
             return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
         }
     }
 
