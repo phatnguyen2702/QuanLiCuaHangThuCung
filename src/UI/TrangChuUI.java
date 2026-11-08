@@ -293,7 +293,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
     private void moThanhToan() {
         hienManHinh("thanhtoan", "Thanh toán", btnXuLy,
                 () -> {
-                    pnlThanhToan = new QuanLyThanhToanUI(maNV,
+                    pnlThanhToan = new QuanLyThanhToanUI(maNV, hoTen,
                             () -> chuyenTuNhom(btnTimKiem, this::moTraCuuHoaDon),
                             this::capNhatDanhSachPhieuDichVu);
                     return pnlThanhToan.getContentPanel();
