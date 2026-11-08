@@ -43,19 +43,18 @@ public class DichVuDAO {
     public String maDuKien() throws SQLException {
 
         try (Connection con = connectDB.getConnection()) {
-            return timMaTiepTheo(con, false);
+            return timMaTiepTheo(con);
         }
     }
 
-    private String timMaTiepTheo(Connection con, boolean khoaBang) throws SQLException {
-
-        String sql = "SELECT maDichVu FROM DichVu" + khoaBang;
+    private String timMaTiepTheo(Connection con) throws SQLException {
+        String sql = "SELECT maDichVu FROM DichVu";
         int max = 0;
+
         try (PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-
                 String ma = rs.getString(1);
                 if (ma != null && ma.matches("DV\\d+")) {
                     try {
@@ -65,6 +64,7 @@ public class DichVuDAO {
                 }
             }
         }
+
         return String.format("DV%03d", max + 1);
     }
 
@@ -75,7 +75,7 @@ public class DichVuDAO {
                 + "VALUES (?, ?, ?, ?)";
 
         try (Connection con = connectDB.getConnection()) {
-            String ma = timMaTiepTheo(con, false);
+            String ma = timMaTiepTheo(con);
 
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, ma);
