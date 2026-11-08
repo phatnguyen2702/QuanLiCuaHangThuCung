@@ -3,190 +3,132 @@ package entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-
+/** Voucher / mã giảm giá. */
 public class Voucher {
 
+    private String maVoucher;
+    private String tenVoucher;
+    private double phanTramGiam;
+    private String dieuKien;
+    private boolean trangThai;        // false = đã hủy
+    private LocalDate ngayBatDau;     // null = không giới hạn
+    private LocalDate ngayKetThuc;    // null = không giới hạn
+    private Integer soLuongToiDa;     // null = không giới hạn
 
-        private String maVoucher;
+    private int daDung;               // số hóa đơn đã dùng voucher (DAO tính sẵn)
 
-        private String tenVoucher;
+    public Voucher() {
+    }
 
-        private double phanTramGiam;
+    public Voucher(String maVoucher, String tenVoucher, double phanTramGiam,
+            String dieuKien, boolean trangThai,
+            LocalDate ngayBatDau, LocalDate ngayKetThuc, Integer soLuongToiDa) {
+        this.maVoucher = maVoucher;
+        this.tenVoucher = tenVoucher;
+        this.phanTramGiam = phanTramGiam;
+        this.dieuKien = dieuKien;
+        this.trangThai = trangThai;
+        this.ngayBatDau = ngayBatDau;
+        this.ngayKetThuc = ngayKetThuc;
+        this.soLuongToiDa = soLuongToiDa;
+    }
 
-        private String dieuKien;
+    public Voucher(String maVoucher, String tenVoucher, BigDecimal phanTramGiam, String dieuKien) {
+        this.maVoucher = maVoucher;
+        this.tenVoucher = tenVoucher;
+        this.phanTramGiam = phanTramGiam == null ? 0 : phanTramGiam.doubleValue();
+        this.dieuKien = dieuKien;
+    }
 
-        private boolean trangThai;
-
-        private LocalDate ngayBatDau;
-
-        private LocalDate ngayKetThuc;
-
-        private Integer soLuongToiDa;
-
-
-
-        private int daDung;
-
-
-        public Voucher() {
+    /** Trạng thái hiện tại: "Da huy", "Sap chay", "Het han", "Het luot" hoặc "Dang chay". */
+    public String getTrangThaiText() {
+        if (!trangThai) {
+            return "Da huy";
         }
 
+        LocalDate homNay = LocalDate.now();
 
-
-
-
-
-
-
-
-
-        public Voucher(String maVoucher, String tenVoucher, double phanTramGiam,
-                        String dieuKien, boolean trangThai,
-                        LocalDate ngayBatDau, LocalDate ngayKetThuc, Integer soLuongToiDa) {
-                this.maVoucher = maVoucher;
-                this.tenVoucher = tenVoucher;
-                this.phanTramGiam = phanTramGiam;
-                this.dieuKien = dieuKien;
-                this.trangThai = trangThai;
-                this.ngayBatDau = ngayBatDau;
-                this.ngayKetThuc = ngayKetThuc;
-                this.soLuongToiDa = soLuongToiDa;
+        if (ngayBatDau != null && homNay.isBefore(ngayBatDau)) {
+            return "Sap chay";
         }
-
-        public Voucher(
-                        String maVoucher,
-                        String tenVoucher,
-                        BigDecimal phanTramGiam,
-                        String dieuKien) {
-                this.maVoucher = maVoucher;
-                this.tenVoucher = tenVoucher;
-                this.phanTramGiam = phanTramGiam == null ? 0 : phanTramGiam.doubleValue();
-                this.dieuKien = dieuKien;
+        if (ngayKetThuc != null && homNay.isAfter(ngayKetThuc)) {
+            return "Het han";
         }
-
-
-
-
-        public String getTrangThaiText() {
-
-                if (!trangThai) {
-                        return "Da huy";
-                }
-
-
-                LocalDate homNay = LocalDate.now();
-
-                if (ngayBatDau != null && homNay.isBefore(ngayBatDau)) {
-                        return "Sap chay";
-                }
-
-                if (ngayKetThuc != null && homNay.isAfter(ngayKetThuc)) {
-                        return "Het han";
-                }
-
-                if (soLuongToiDa != null && daDung >= soLuongToiDa) {
-                        return "Het luot";
-                }
-
-                return "Dang chay";
+        if (soLuongToiDa != null && daDung >= soLuongToiDa) {
+            return "Het luot";
         }
+        return "Dang chay";
+    }
 
+    public String getMaVoucher() {
+        return maVoucher;
+    }
 
-        public String getMaVoucher() {
-                return maVoucher;
-        }
+    public void setMaVoucher(String maVoucher) {
+        this.maVoucher = maVoucher;
+    }
 
+    public String getTenVoucher() {
+        return tenVoucher;
+    }
 
+    public void setTenVoucher(String tenVoucher) {
+        this.tenVoucher = tenVoucher;
+    }
 
-        public void setMaVoucher(String v) {
-                this.maVoucher = v;
-        }
+    public double getPhanTramGiam() {
+        return phanTramGiam;
+    }
 
+    public void setPhanTramGiam(double phanTramGiam) {
+        this.phanTramGiam = phanTramGiam;
+    }
 
-        public String getTenVoucher() {
-                return tenVoucher;
-        }
+    public String getDieuKien() {
+        return dieuKien;
+    }
 
+    public void setDieuKien(String dieuKien) {
+        this.dieuKien = dieuKien;
+    }
 
+    public boolean isTrangThai() {
+        return trangThai;
+    }
 
-        public void setTenVoucher(String v) {
-                this.tenVoucher = v;
-        }
+    public void setTrangThai(boolean trangThai) {
+        this.trangThai = trangThai;
+    }
 
+    public LocalDate getNgayBatDau() {
+        return ngayBatDau;
+    }
 
-        public double getPhanTramGiam() {
-                return phanTramGiam;
-        }
+    public void setNgayBatDau(LocalDate ngayBatDau) {
+        this.ngayBatDau = ngayBatDau;
+    }
 
+    public LocalDate getNgayKetThuc() {
+        return ngayKetThuc;
+    }
 
+    public void setNgayKetThuc(LocalDate ngayKetThuc) {
+        this.ngayKetThuc = ngayKetThuc;
+    }
 
-        public void setPhanTramGiam(double v) {
-                this.phanTramGiam = v;
-        }
+    public Integer getSoLuongToiDa() {
+        return soLuongToiDa;
+    }
 
+    public void setSoLuongToiDa(Integer soLuongToiDa) {
+        this.soLuongToiDa = soLuongToiDa;
+    }
 
-        public String getDieuKien() {
-                return dieuKien;
-        }
+    public int getDaDung() {
+        return daDung;
+    }
 
-
-
-        public void setDieuKien(String v) {
-                this.dieuKien = v;
-        }
-
-
-        public boolean isTrangThai() {
-                return trangThai;
-        }
-
-
-
-        public void setTrangThai(boolean v) {
-                this.trangThai = v;
-        }
-
-
-        public LocalDate getNgayBatDau() {
-                return ngayBatDau;
-        }
-
-
-
-        public void setNgayBatDau(LocalDate v) {
-                this.ngayBatDau = v;
-        }
-
-
-        public LocalDate getNgayKetThuc() {
-                return ngayKetThuc;
-        }
-
-
-
-        public void setNgayKetThuc(LocalDate v) {
-                this.ngayKetThuc = v;
-        }
-
-
-        public Integer getSoLuongToiDa() {
-                return soLuongToiDa;
-        }
-
-
-
-        public void setSoLuongToiDa(Integer v) {
-                this.soLuongToiDa = v;
-        }
-
-
-        public int getDaDung() {
-                return daDung;
-        }
-
-
-
-        public void setDaDung(int v) {
-                this.daDung = v;
-        }
+    public void setDaDung(int daDung) {
+        this.daDung = daDung;
+    }
 }
