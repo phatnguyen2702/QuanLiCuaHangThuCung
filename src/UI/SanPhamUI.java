@@ -1,7 +1,7 @@
 package UI;
-import control.PhienLamViecControl;
 import UI.TrangChuUI.UIStyle;
 import control.SanPhamControl;
+import control.TrangChuControl;
 import entity.DanhMuc;
 import entity.NhaCungCap;
 import entity.SanPham;
@@ -397,7 +397,7 @@ private static final String TONG_CAC_DOT = "Tổng các đợt nhập";
         try {
             if (!SanPhamControl.ghiNhanXuLySanPhamTheoDotNhap(sp.getMaSanPham(), sp.getMaPhieuNhap(),
                     soLuongXuLy, (String) lyDo.getSelectedItem(), ghiChu.getText(),
-                    PhienLamViecControl.maNV)) throw new IllegalStateException("Không ghi nhận được xử lý lô hàng.");
+                    TrangChuControl.maNV)) throw new IllegalStateException("Không ghi nhận được xử lý lô hàng.");
             UIStyle.thongBao(this, "Đã xác nhận hủy hàng lỗi. Số lượng đã được trừ khỏi tồn kho và lưu lịch sử xử lý.");
             napLai();
         } catch (Exception ex) {
@@ -655,7 +655,7 @@ private static final String TONG_CAC_DOT = "Tổng các đợt nhập";
             try {
                 if (!SanPhamControl.luuThongTinSanPham(sp, dangSua, dm.getTenDanhMuc(),
                         (String) cmbNhomTuoi.getSelectedItem(),
-                        (String) cmbKichThuoc.getSelectedItem(), PhienLamViecControl.maNV)) throw new IllegalStateException("Không lưu được sản phẩm.");
+                        (String) cmbKichThuoc.getSelectedItem(), TrangChuControl.maNV)) throw new IllegalStateException("Không lưu được sản phẩm.");
                 String loiAnh = null;
                 try {
                     luuAnhSanPham(ma);

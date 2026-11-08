@@ -1,11 +1,11 @@
 package control;
 
-import dao.NhanVienDAO;
+import dao.DangNhapDAO;
 import entity.NhanVien;
 import java.sql.SQLException;
 
 public final class DangNhapControl {
-    private final NhanVienDAO dao = new NhanVienDAO();
+    private final DangNhapDAO dao = new DangNhapDAO();
 
     public NhanVien dangNhap(String taiKhoanNhap, char[] matKhau) throws SQLException {
         String ten = taiKhoanNhap == null ? "" : taiKhoanNhap.trim().toLowerCase(java.util.Locale.ROOT);

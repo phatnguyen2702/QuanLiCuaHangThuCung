@@ -3,7 +3,7 @@ import UI.TrangChuUI.UIStyle;
 import control.SanPhamControl;
 import entity.SanPham;
 import entity.ChiTietHoaDon;
-import control.PhienLamViecControl;
+import control.TrangChuControl;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -129,14 +129,14 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
         return pnlCard;
     }
     private ChiTietHoaDon timSanPhamTrongGioGoiY(String maSanPham) {
-        for (ChiTietHoaDon item : PhienLamViecControl.gioHang()) {
+        for (ChiTietHoaDon item : TrangChuControl.gioHang()) {
             if (maSanPham.equals(item.getMaSanPham()))
                 return item;
         }
         return null;
     }
     private int tinhTongSoLuongTrongGio() {
-        return PhienLamViecControl.gioHang().stream().mapToInt(ChiTietHoaDon::getSoLuong).sum();
+        return TrangChuControl.gioHang().stream().mapToInt(ChiTietHoaDon::getSoLuong).sum();
     }
     private void themSanPhamGoiYVaoGio(SanPham product) {
         ChiTietHoaDon item = timSanPhamTrongGioGoiY(product.getMaSanPham());
@@ -150,7 +150,7 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
         } else {
             if (product.getTonKho() < 1)
                 return;
-            PhienLamViecControl.gioHang().add(ChiTietHoaDon.sanPham(
+            TrangChuControl.gioHang().add(ChiTietHoaDon.sanPham(
                     product.getMaSanPham(), product.getTenSanPham(), product.getGiaBan()));
         }
         napLai();
@@ -207,7 +207,7 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
         return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
     private void moDanhSachSanPhamDaChon() {
-        List<ChiTietHoaDon> hangTrongBang = new java.util.ArrayList<>(PhienLamViecControl.gioHang());
+        List<ChiTietHoaDon> hangTrongBang = new java.util.ArrayList<>(TrangChuControl.gioHang());
         DefaultTableModel model = new DefaultTableModel(
                 new String[] { "Mã SP", "Tên sản phẩm", "Số lượng", "Đơn giá", "Thành tiền" }, 0) {
             @Override
@@ -266,7 +266,7 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
         UIStyle.taoBang(tblDuLieu, 2, 3, 4);
         JButton btnRemove = UIStyle.nutXoa("Xóa sản phẩm khỏi giỏ");
         JButton btnCheckout = UIStyle.nutXanh("Chuyển sang thanh toán");
-        btnCheckout.setEnabled(!PhienLamViecControl.gioHang().isEmpty());
+        btnCheckout.setEnabled(!TrangChuControl.gioHang().isEmpty());
         JButton btnClose = UIStyle.nutPhu("Đóng");
         JPanel pnlActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlActions.add(btnRemove);
@@ -288,9 +288,9 @@ private final JComboBox<String> cmbPet = new JComboBox<>(new String[] { "Chó", 
                 return;
             int rowModel = tblDuLieu.convertRowIndexToModel(row);
             ChiTietHoaDon item = hangTrongBang.remove(rowModel);
-            PhienLamViecControl.gioHang().remove(item);
+            TrangChuControl.gioHang().remove(item);
             model.removeRow(rowModel);
-            btnCheckout.setEnabled(!PhienLamViecControl.gioHang().isEmpty());
+            btnCheckout.setEnabled(!TrangChuControl.gioHang().isEmpty());
             napLai();
         });
         btnCheckout.addActionListener(e -> {

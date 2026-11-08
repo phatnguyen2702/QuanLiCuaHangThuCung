@@ -1,6 +1,5 @@
 package UI;
 
-import control.PhienLamViecControl;
 
 import control.TrangChuControl;
 import control.PhanQuyenControl;
@@ -97,7 +96,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
 
         control.kiemTraPhien(maNV, vaiTro);
 
-        PhienLamViecControl.dat(maNV, hoTen, vaiTro);
+        TrangChuControl.dat(maNV, hoTen, vaiTro);
 
         setTitle("Pet Shop Pro - Trang chủ");
 
@@ -314,7 +313,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
     }
 
     public void moThanhToanTuGioHang() {
-        if (PhienLamViecControl.gioHang().isEmpty()) {
+        if (TrangChuControl.gioHang().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.", "Giỏ hàng",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
@@ -757,7 +756,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
     }
 
     private void dangXuat() {
-        PhienLamViecControl.dat(null, null, null);
+        TrangChuControl.dat(null, null, null);
         dispose();
         new DangNhapUI().setVisible(true);
     }

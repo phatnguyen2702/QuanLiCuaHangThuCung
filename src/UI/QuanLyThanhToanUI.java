@@ -79,7 +79,7 @@ public class QuanLyThanhToanUI extends JFrame implements ActionListener, MouseLi
     private final JPanel pnlNoiDung = new JPanel(new BorderLayout(10, 12));
     private final Runnable moLichSuHoaDon;
     private final Runnable capNhatPhieuDichVu;
-    private final List<entity.ChiTietHoaDon> chiTiet = control.PhienLamViecControl.gioHang();
+    private final List<entity.ChiTietHoaDon> chiTiet = control.TrangChuControl.gioHang();
     private final List<entity.KhachHang> danhSachKhachHang = new ArrayList<>();
     private final List<String> danhSachMaSanPham = new ArrayList<>();
     private final Map<String, String> tenSanPhamTheoMa = new LinkedHashMap<>();
