@@ -228,7 +228,18 @@ public class QuanLyDichVuUI extends JPanel implements ActionListener, MouseListe
         try {
             txtMa.setText(control.maDuKien());
         } catch (SQLException ex) {
-            txtMa.setText("(Tự động)");
+            int max = 0;
+            for (DichVu dv : dsHienThi) {
+                String ma = dv.getMaDichVu();
+                if (ma != null && ma.matches("DV\\d+")) {
+                    try {
+                        max = Math.max(max, Integer.parseInt(ma.substring(2)));
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+            txtMa.setText(String.format(Locale.ROOT, "DV%03d", max + 1));
+            UIStyle.loi(this, ex);
         }
     }
 
