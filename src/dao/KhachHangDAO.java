@@ -7,23 +7,23 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-/**
- * DAO khách hàng (đã gộp KhachHangDAO + KhachHangChiTietDAO).
- * Chỉ làm 3 việc: chạy SQL, kiểm tra phân quyền, kiểm tra độ dài chuỗi.
- * Kiểm tra rỗng / sai định dạng là việc của KhachHangControl.
- *
- * Quy ước: các hàm ghi (them / sua / xoa) trả về null nếu thành công,
- * ngược lại trả về câu thông báo lỗi.
- */
+
+
+
+
+
+
+
+
 public class KhachHangDAO {
 
-    /** Dữ liệu 1 thú cưng mới khi thêm khách hàng. */
+
     public static class ThuCungMoi {
         public final String ten;
         public final String loai;
         public final String giong;
         public final String gioiTinh;
-        public final Double canNang; // null = chưa nhập
+        public final Double canNang;
 
         public ThuCungMoi(String ten, String loai, String giong, String gioiTinh, Double canNang) {
             this.ten = ten;
@@ -34,7 +34,7 @@ public class KhachHangDAO {
         }
     }
 
-    // Độ dài tối đa của cột trong CSDL (sửa lại nếu CSDL của bạn khác)
+
     private static final int MAX_TEN_KH = 50;
     private static final int MAX_SDT = 11;
     private static final int MAX_TEN_THU_CUNG = 50;
@@ -48,11 +48,11 @@ public class KhachHangDAO {
             + "(SELECT MAX(h2.ngayLap) FROM HoaDon h2 WHERE h2.maKhachHang = k.maKhachHang) AS ganNhat "
             + "FROM KhachHang k ";
 
-    // =====================================================================
-    // TRUY VẤN (đọc dữ liệu)
-    // =====================================================================
 
-    /** Tìm theo mã / tên / số điện thoại (để trống = lấy tất cả). */
+
+
+
+
     public ArrayList<KhachHang> timKiem(String tuKhoa) {
         ArrayList<KhachHang> list = new ArrayList<>();
 
@@ -79,7 +79,7 @@ public class KhachHangDAO {
         return list;
     }
 
-    /** Lấy 1 khách hàng theo số điện thoại (không có thì trả về null). */
+
     public KhachHang getBySdt(String sdt) {
         String sql = BASE_SELECT + "WHERE k.soDienThoai = ?";
 
@@ -98,7 +98,7 @@ public class KhachHangDAO {
         return null;
     }
 
-    /** Danh sách thú cưng của 1 khách hàng, mỗi phần tử: { tên, loại, giống, giới tính, cân nặng }. */
+
     public ArrayList<String[]> getThuCung(String maKhachHang) {
         ArrayList<String[]> list = new ArrayList<>();
 
@@ -127,18 +127,18 @@ public class KhachHangDAO {
         return list;
     }
 
-    /** Số điện thoại này đã có khách hàng nào dùng chưa? (dùng khi thêm) */
+
     public boolean tonTaiSdt(String sdt) {
         return tonTai("SELECT 1 FROM KhachHang WHERE soDienThoai = ?", sdt);
     }
 
-    /** Số điện thoại này đã có khách hàng KHÁC dùng chưa? (dùng khi sửa) */
+
     public boolean tonTaiSdtKhac(String sdt, String maKhachHang) {
         return tonTai("SELECT 1 FROM KhachHang WHERE soDienThoai = ? AND maKhachHang <> ?",
                 sdt, maKhachHang);
     }
 
-    /** Thống kê: [0] tổng khách, [1] và [2] chưa dùng, [3] khách có mua trong tháng này. */
+
     public long[] thongKe() {
         long[] kq = new long[4];
 
@@ -164,14 +164,14 @@ public class KhachHangDAO {
         return kq;
     }
 
-    // =====================================================================
-    // GHI DỮ LIỆU (thêm / sửa / xóa) - trả về null nếu thành công
-    // =====================================================================
 
-    /**
-     * Thêm khách hàng kèm danh sách thú cưng (trong 1 transaction).
-     * Thành công: mã khách hàng mới được gán vào kh (kh.getMaKhachHang()).
-     */
+
+
+
+
+
+
+
     public String them(KhachHang kh, ArrayList<ThuCungMoi> dsThuCung) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KHACH_HANG);
 
@@ -235,7 +235,7 @@ public class KhachHangDAO {
         }
     }
 
-    /** Sửa họ tên + số điện thoại của khách hàng. */
+
     public String sua(KhachHang kh) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KHACH_HANG);
 
@@ -264,11 +264,11 @@ public class KhachHangDAO {
         }
     }
 
-    /** Xóa khách hàng (cùng thú cưng). Không xóa được nếu đã có lịch hẹn / hóa đơn / phiếu dịch vụ. */
+
     public String xoa(String maKhachHang) {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.KHACH_HANG);
 
-        // { tên bảng, tên hiển thị trong thông báo }
+
         String[][] rangBuoc = {
                 { "LichHen", "lịch hẹn" },
                 { "HoaDon", "hóa đơn" },
@@ -299,9 +299,9 @@ public class KhachHangDAO {
         }
     }
 
-    // =====================================================================
-    // HÀM PHỤ (private)
-    // =====================================================================
+
+
+
 
     private String kiemTraDoDai(KhachHang kh) {
         if (kh.getHoTen() != null && kh.getHoTen().length() > MAX_TEN_KH) {
@@ -323,7 +323,7 @@ public class KhachHangDAO {
         return null;
     }
 
-    /** Đọc 1 dòng kết quả của BASE_SELECT thành KhachHang. */
+
     private KhachHang docKhachHang(ResultSet rs) throws SQLException {
         KhachHang kh = new KhachHang(
                 rs.getString("maKhachHang"),
@@ -341,7 +341,7 @@ public class KhachHangDAO {
         return kh;
     }
 
-    /** Chạy câu SELECT 1 ... WHERE ...: có dòng nào khớp không? (các ? là chuỗi) */
+
     private boolean tonTai(String sql, String... thamSo) {
         try (Connection con = ConnectDB.connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -358,7 +358,7 @@ public class KhachHangDAO {
         }
     }
 
-    /** Chạy câu DELETE/UPDATE có 1 tham số mã. */
+
     private static void chay(Connection con, String sql, String ma) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, ma);
@@ -366,7 +366,7 @@ public class KhachHangDAO {
         }
     }
 
-    /** Sinh mã kế tiếp, ví dụ KH001 -> KH002. */
+
     private static String taoMa(Connection con, String bang, String cot, String tienTo, int doRong)
             throws SQLException {
 

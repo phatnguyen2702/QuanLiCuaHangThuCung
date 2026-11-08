@@ -6,25 +6,25 @@ import entity.KhachHang;
 
 import java.util.ArrayList;
 
-/**
- * Control khách hàng: kiểm tra dữ liệu rỗng / sai định dạng, gọi DAO,
- * rồi trả về KetQua cho UI.
- *
- * Thú cưng từ UI truyền xuống là mảng chuỗi thô, thứ tự:
- * { tên, loại, giống, giới tính, cân nặng }
- */
+
+
+
+
+
+
+
 public class KhachHangControl {
 
     private final KhachHangDAO dao = new KhachHangDAO();
 
-    /**
-     * Kết quả Control trả về cho UI sau khi thêm / sửa / xóa.
-     * UI chỉ cần isThanhCong() và getThongBao() để hiện JOptionPane.
-     */
+
+
+
+
     public static class KetQua {
         private final boolean thanhCong;
         private final String thongBao;
-        private final String maKhachHang; // mã khách hàng vừa thêm / sửa (có thể null)
+        private final String maKhachHang;
 
         private KetQua(boolean thanhCong, String thongBao, String maKhachHang) {
             this.thanhCong = thanhCong;
@@ -53,9 +53,9 @@ public class KhachHangControl {
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Đọc dữ liệu (không cần kiểm tra gì thêm)
-    // ---------------------------------------------------------------------
+
+
+
 
     public ArrayList<KhachHang> timKiem(String tuKhoa) {
         return dao.timKiem(tuKhoa);
@@ -65,9 +65,9 @@ public class KhachHangControl {
         return dao.getThuCung(maKhachHang);
     }
 
-    // ---------------------------------------------------------------------
-    // Thêm / sửa / xóa
-    // ---------------------------------------------------------------------
+
+
+
 
     public KetQua them(String hoTen, String sdt, ArrayList<String[]> dsThuCungTho) {
         hoTen = hoTen.trim();
@@ -81,7 +81,7 @@ public class KhachHangControl {
             return KetQua.loi("Số điện thoại " + sdt + " đã thuộc về khách hàng khác.");
         }
 
-        // Đổi từng dòng thú cưng thô thành ThuCungMoi, kiểm tra luôn
+
         ArrayList<ThuCungMoi> dsThuCung = new ArrayList<>();
         for (String[] r : dsThuCungTho) {
             String ten = r[0].trim();
@@ -108,7 +108,7 @@ public class KhachHangControl {
 
         KhachHang kh = new KhachHang(null, hoTen, sdt, null, null, 0);
 
-        String loiDao = dao.them(kh, dsThuCung); // thành công: kh có mã mới
+        String loiDao = dao.them(kh, dsThuCung);
         if (loiDao != null) {
             return KetQua.loi(loiDao);
         }
@@ -144,11 +144,11 @@ public class KhachHangControl {
         return KetQua.ok("Đã xóa khách hàng " + maKhachHang + ".", maKhachHang);
     }
 
-    // ---------------------------------------------------------------------
-    // Hàm phụ
-    // ---------------------------------------------------------------------
 
-    /** Kiểm tra họ tên + số điện thoại (dùng chung cho thêm và sửa). Hợp lệ -> null. */
+
+
+
+
     private String kiemTraKhachHang(String hoTen, String sdt) {
         if (hoTen.isEmpty()) {
             return "Họ tên không được để trống.";

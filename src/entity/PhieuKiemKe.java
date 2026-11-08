@@ -4,7 +4,7 @@ public class PhieuKiemKe {
     private String maPhieuKiemKe;
     private LocalDateTime ngayKiemKe;
     private boolean trangThai;
-    private String maNhanVien;
+    private NhanVien maNhanVien;
     private LocalDateTime ngayBatDau;
     private LocalDateTime ngayChot;
     public PhieuKiemKe() {
@@ -14,7 +14,7 @@ public class PhieuKiemKe {
         this.maPhieuKiemKe = maPhieuKiemKe;
         this.ngayKiemKe = ngayKiemKe;
         this.trangThai = trangThai;
-        this.maNhanVien = maNhanVien;
+        setMaNhanVien(maNhanVien);
     }
     public String getMaPhieuKiemKe() { return maPhieuKiemKe; }
     public void setMaPhieuKiemKe(String maPhieuKiemKe) { this.maPhieuKiemKe = maPhieuKiemKe; }
@@ -22,8 +22,13 @@ public class PhieuKiemKe {
     public void setNgayKiemKe(LocalDateTime ngayKiemKe) { this.ngayKiemKe = ngayKiemKe; }
     public boolean isTrangThai() { return trangThai; }
     public void setTrangThai(boolean trangThai) { this.trangThai = trangThai; }
-    public String getMaNhanVien() { return maNhanVien; }
-    public void setMaNhanVien(String maNhanVien) { this.maNhanVien = maNhanVien; }
+    public String getMaNhanVien() { return maNhanVien == null ? null : maNhanVien.getMaNhanVien(); }
+    public void setMaNhanVien(String maNhanVien) {
+        this.maNhanVien = maNhanVien == null ? null : new NhanVien();
+        if (this.maNhanVien != null) this.maNhanVien.setMaNhanVien(maNhanVien);
+    }
+    public NhanVien getNhanVien() { return maNhanVien; }
+    public void setNhanVien(NhanVien nhanVien) { maNhanVien = nhanVien; }
     public LocalDateTime getNgayBatDau() { return ngayBatDau; }
     public void setNgayBatDau(LocalDateTime ngayBatDau) { this.ngayBatDau = ngayBatDau; }
     public LocalDateTime getNgayChot() { return ngayChot; }

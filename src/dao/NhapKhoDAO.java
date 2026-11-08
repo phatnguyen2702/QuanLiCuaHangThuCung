@@ -254,8 +254,11 @@ public class NhapKhoDAO {
     private ChiTietPhieuNhap docChiTietPhieuNhap(ResultSet rs, String maPhieu) throws SQLException {
         ChiTietPhieuNhap dong = new ChiTietPhieuNhap();
         dong.setMaPhieuNhap(maPhieu);
-        dong.setMaSanPham(rs.getString("maSanPham"));
-        dong.setTenSanPham(rs.getString("tenSanPham"));
+        SanPham sanPham = new SanPham();
+        sanPham.setMaSanPham(rs.getString("maSanPham"));
+        sanPham.setTenSanPham(rs.getString("tenSanPham"));
+        dong.setSanPham(sanPham);
+        dong.setTenSanPham(sanPham.getTenSanPham());
         dong.setSoLuongNhap(rs.getInt("soLuongNhap"));
         dong.setDonGiaNhap(rs.getDouble("donGiaNhap"));
         Date han = rs.getDate("hanSuDung");
@@ -269,7 +272,10 @@ public class NhapKhoDAO {
         phieu.setNgayNhap(ngay == null ? null : ngay.toLocalDateTime());
         phieu.setTrangThai(rs.getBoolean("trangThai"));
         phieu.setMaNhanVien(rs.getString("maNhanVien"));
-        phieu.setMaNhaCungCap(rs.getString("maNhaCungCap"));
+        NhaCungCap nhaCungCap = new NhaCungCap();
+        nhaCungCap.setMaNhaCungCap(rs.getString("maNhaCungCap"));
+        nhaCungCap.setTenNhaCungCap(rs.getString("tenNhaCungCap"));
+        phieu.setNhaCungCap(nhaCungCap);
         return phieu;
     }
     private String taoMaMoi(String bang, String cot, String tienTo) throws SQLException {
