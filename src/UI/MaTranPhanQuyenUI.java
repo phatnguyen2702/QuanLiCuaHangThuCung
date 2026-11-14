@@ -40,7 +40,7 @@ public final class MaTranPhanQuyenUI extends JPanel implements ActionListener, M
         lblTitle2.setForeground(new Color(18, 48, 82));
         pnlHeader2.add(lblTitle2, BorderLayout.NORTH);
 
-        JLabel lblDesc = new JLabel("Quyền cố định theo vai trò. Đổi vai trò từng nhân viên trong Quản lý tài khoản.");
+        JLabel lblDesc = new JLabel("Quyền cố định theo vai trò. Đổi vai trò từng nhân viên trong Quản lý nhân viên.");
         lblDesc.setBorder(new EmptyBorder(10, 0, 6, 0));
         lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         pnlHeader2.add(lblDesc, BorderLayout.SOUTH);
@@ -91,7 +91,7 @@ public final class MaTranPhanQuyenUI extends JPanel implements ActionListener, M
         JPanel pnlBottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         pnlBottom.setOpaque(false);
 
-        btnAccounts = new JButton("Mở Quản lý tài khoản");
+        btnAccounts = new JButton("Mở Quản lý nhân viên");
         btnAccounts.setBackground(new Color(18, 48, 82));
         btnAccounts.setForeground(Color.WHITE);
         btnAccounts.setFocusPainted(false);

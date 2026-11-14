@@ -13,7 +13,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
 import ConnectDB.connectDB;
 import control.PhanQuyenControl;
 import entity.CaLam;
@@ -101,9 +100,9 @@ public class LichPhanCaDAO {
 
     public boolean sua(LichPhanCa pc) throws SQLException {
         PhanQuyenControl.yeuCau(PhanQuyenControl.Quyen.PHAN_CA);
-        String sql = "UPDATE LichPhanCa SET ngayLamViec=?, maNhanVien=?,maCa=?" +
-                "WHERE maPhanCa =? AND ngayLamViec >= CONVERT(date, GETDATE())" +
-                "AND ? >= CONVERT(date, GETDATE())";
+        String sql = "UPDATE LichPhanCa SET ngayLamViec=?, maNhanVien=?, maCa=? "
+                + "WHERE maPhanCa=? AND ngayLamViec >= CONVERT(date, GETDATE()) "
+                + "AND ? >= CONVERT(date, GETDATE())";
         try (Connection con = connectDB.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             java.sql.Date ngay = java.sql.Date.valueOf(pc.getNgayLamViec());

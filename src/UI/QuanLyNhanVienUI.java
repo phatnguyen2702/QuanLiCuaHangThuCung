@@ -53,10 +53,10 @@ public class QuanLyNhanVienUI extends JPanel implements ActionListener {
                 JPanel lines = new JPanel();
                 lines.setOpaque(false);
                 lines.setLayout(new BoxLayout(lines, BoxLayout.Y_AXIS));
-                JLabel heading = new JLabel("QUẢN LÝ TÀI KHOẢN");
+                JLabel heading = new JLabel("QUẢN LÝ NHÂN VIÊN");
                 heading.setFont(new Font("Segoe UI", Font.BOLD, 24));
                 heading.setForeground(NAVY);
-                JLabel sub = new JLabel("Quản lý thông tin tài khoản nhân viên");
+                JLabel sub = new JLabel("Quản lý thông tin nhân viên");
                 sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 sub.setForeground(Color.GRAY);
                 lines.add(heading);

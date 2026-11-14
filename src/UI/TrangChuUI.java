@@ -1,6 +1,5 @@
 package UI;
 
-
 import control.TrangChuControl;
 import control.PhanQuyenControl;
 
@@ -508,7 +507,7 @@ public class TrangChuUI extends JFrame implements ActionListener {
 
     private JPopupMenu taoMenuHeThong() {
         JPopupMenu pmnP = new JPopupMenu();
-        themMuc(pmnP, "Quản lý tài khoản", btnHeThong, this::moQuanLyTaiKhoan);
+        themMuc(pmnP, "Quản lý nhân viên", btnHeThong, this::moQuanLyTaiKhoan);
         themMuc(pmnP, "Bảng phân quyền", btnHeThong, this::moMaTranPhanQuyen);
         themMuc(pmnP, "Quản lý ca làm", btnHeThong, this::moQuanLyCaLam);
         return pmnP;
