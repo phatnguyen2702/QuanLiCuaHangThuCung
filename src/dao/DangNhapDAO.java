@@ -1,14 +1,13 @@
 package dao;
 
 import ConnectDB.connectDB;
+import control.DangNhapControl;
 import entity.NhanVien;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.Normalizer;
-import java.util.Locale;
 
 public class DangNhapDAO {
 
@@ -24,7 +23,7 @@ public class DangNhapDAO {
                 if (maNhanVien == null || hoTen == null || maNhanVien.length() < 3)
                     continue;
 
-                boolean dungTaiKhoan = taoTaiKhoanKhongDau(hoTen, maNhanVien)
+                boolean dungTaiKhoan = DangNhapControl.taoTaiKhoan(hoTen, maNhanVien)
                         .equalsIgnoreCase(tenDangNhap)
                         || maNhanVien.equalsIgnoreCase(tenDangNhap);
                 if (dungTaiKhoan && matKhau != null && matKhau.equals(rs.getString("matKhau"))) {
@@ -40,17 +39,5 @@ public class DangNhapDAO {
             }
         }
         return null;
-    }
-
-    private static String taoTaiKhoanKhongDau(String hoTen, String maNhanVien) {
-        if (hoTen == null || maNhanVien == null || maNhanVien.length() < 3)
-            return "";
-
-        String ten = Normalizer.normalize(hoTen, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replace('đ', 'd').replace('Đ', 'D')
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("\\s+", "");
-        return ten + maNhanVien.substring(maNhanVien.length() - 3);
     }
 }

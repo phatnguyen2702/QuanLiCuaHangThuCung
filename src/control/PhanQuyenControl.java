@@ -73,7 +73,6 @@ public final class PhanQuyenControl {
         };
     }
 
-
     public static void yeuCau(Quyen q) {
         if (!coQuyen(q))
             throw new SecurityException(
@@ -105,7 +104,7 @@ public final class PhanQuyenControl {
 
     public static String tenQuyen(Quyen q) {
         return switch (q) {
-            case TAI_KHOAN -> "Quản lý tài khoản nhân viên";
+            case TAI_KHOAN -> "Quản lý nhân viên";
             case PHAN_QUYEN -> "Xem ma trận phân quyền";
             case CA_LAM -> "Quản lý ca làm";
             case PHAN_CA -> "Phân ca nhân viên";
@@ -162,7 +161,7 @@ public final class PhanQuyenControl {
         if (ten == null)
             return null;
         return switch (ten) {
-            case "Quản lý tài khoản" -> Quyen.TAI_KHOAN;
+            case "Quản lý nhân viên" -> Quyen.TAI_KHOAN;
             case "Ma trận phân quyền" -> Quyen.PHAN_QUYEN;
             case "Bảng phân quyền" -> Quyen.PHAN_QUYEN;
             case "Quản lý ca làm" -> Quyen.CA_LAM;

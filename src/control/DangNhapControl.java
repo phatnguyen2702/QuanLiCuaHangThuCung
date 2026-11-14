@@ -3,6 +3,8 @@ package control;
 import dao.DangNhapDAO;
 import entity.NhanVien;
 import java.sql.SQLException;
+import java.text.Normalizer;
+import java.util.Locale;
 
 public final class DangNhapControl {
     private final DangNhapDAO dao = new DangNhapDAO();
@@ -18,6 +20,18 @@ public final class DangNhapControl {
 
     public String chuanHoaTaiKhoan(String text) {
         return (text == null ? "" : text).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    public static String taoTaiKhoan(String hoTen, String maNhanVien) {
+        if (hoTen == null || maNhanVien == null || maNhanVien.length() < 3)
+            return "";
+
+        String ten = Normalizer.normalize(hoTen, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd').replace('Đ', 'D')
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", "");
+        return ten + maNhanVien.substring(maNhanVien.length() - 3);
     }
 
 }
